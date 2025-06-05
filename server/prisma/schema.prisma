@@ -21,10 +21,30 @@ model Users {
 
 model Products {
   productId     String      @id
+  sku           String? // Computed key for duplicate detection (e.g., SKU)
   name          String
   price         Float
-  rating        Float?
   stockQuantity Int
+  source        Source      @default(prom)
+  externalIds   Json // Marketplace-specific IDs (e.g., { prom: "id", rozetka: "rz_item_id" })
+  description   String?
+  mainImage     String?
+  images        String[]
+  inStock       Int // Changed to Int? to store the stock count
+  available     Boolean // Changed to Boolean? to indicate availability
+  priceOld      Float?
+  pricePromo    Float?
+  updatedPrice  Float?
+  currency      String?
+  sellingType   String?
+  presence      String?
+  dateModified  DateTime?
+  lastSynced    DateTime?
+  needsSync     Boolean     @default(false)
+  multilangData Json?
+  categoryData  Json?
+  measureUnit   String?
+  status        String?
   Sales         Sales[]
   Purchases     Purchases[]
 }
@@ -84,4 +104,9 @@ model ExpenseByCategory {
   amount              BigInt
   date                DateTime
   expenseSummary      ExpenseSummary @relation(fields: [expenseSummaryId], references: [expenseSummaryId])
+}
+
+enum Source {
+  prom
+  rozetka
 }

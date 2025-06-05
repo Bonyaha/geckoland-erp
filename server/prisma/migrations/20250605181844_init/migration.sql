@@ -1,3 +1,6 @@
+-- CreateEnum
+CREATE TYPE "Source" AS ENUM ('prom', 'rozetka');
+
 -- CreateTable
 CREATE TABLE "Users" (
     "userId" TEXT NOT NULL,
@@ -10,10 +13,30 @@ CREATE TABLE "Users" (
 -- CreateTable
 CREATE TABLE "Products" (
     "productId" TEXT NOT NULL,
+    "sku" TEXT,
     "name" TEXT NOT NULL,
     "price" DOUBLE PRECISION NOT NULL,
-    "rating" DOUBLE PRECISION,
     "stockQuantity" INTEGER NOT NULL,
+    "source" "Source" NOT NULL DEFAULT 'prom',
+    "externalIds" JSONB NOT NULL,
+    "description" TEXT,
+    "mainImage" TEXT,
+    "images" TEXT[],
+    "inStock" INTEGER NOT NULL,
+    "available" BOOLEAN NOT NULL,
+    "priceOld" DOUBLE PRECISION,
+    "pricePromo" DOUBLE PRECISION,
+    "updatedPrice" DOUBLE PRECISION,
+    "currency" TEXT,
+    "sellingType" TEXT,
+    "presence" TEXT,
+    "dateModified" TIMESTAMP(3),
+    "lastSynced" TIMESTAMP(3),
+    "needsSync" BOOLEAN NOT NULL DEFAULT false,
+    "multilangData" JSONB,
+    "categoryData" JSONB,
+    "measureUnit" TEXT,
+    "status" TEXT,
 
     CONSTRAINT "Products_pkey" PRIMARY KEY ("productId")
 );
