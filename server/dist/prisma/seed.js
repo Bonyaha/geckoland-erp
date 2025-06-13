@@ -36,17 +36,17 @@ function deleteAllData(orderedFileNames) {
 }
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
-        const dataDirectory = path_1.default.join(__dirname, "seedData");
+        const dataDirectory = path_1.default.join(__dirname, "data");
         const orderedFileNames = [
-            "products.json",
-            "expenseSummary.json",
-            "sales.json",
-            "salesSummary.json",
-            "purchases.json",
-            "purchaseSummary.json",
-            "users.json",
-            "expenses.json",
-            "expenseByCategory.json",
+            'products.json',
+            'expenseSummary.json',
+            'sales.json',
+            'salesSummary.json',
+            'purchases.json',
+            'purchaseSummary.json',
+            'users.json',
+            'expenses.json',
+            'expenseByCategory.json',
         ];
         yield deleteAllData(orderedFileNames);
         for (const fileName of orderedFileNames) {
