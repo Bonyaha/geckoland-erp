@@ -87,14 +87,13 @@ const Sidebar = () => {
         }`}
       >
         <div className='text-gray-700 dark:text-gray-300'>
-          {' '}
           <Image
             src='https://s3-geckoerp.s3.eu-central-1.amazonaws.com/logo.png'
-            alt='Profile'
-            width={50}
-            height={50}
-            className='rounded-full h-full object-cover'
-          />{' '}
+            alt='warehouse logo'
+            width={27}
+            height={27}
+            className='rounded w-8'
+          />
         </div>
         <h1
           className={`${
