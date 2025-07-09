@@ -15,6 +15,7 @@ import { useAppDispatch, useAppSelector } from '@/app/redux'
 import { setIsSidebarCollapsed } from '@/state'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface SidebarLinkProps {
   href: string
@@ -85,7 +86,16 @@ const Sidebar = () => {
           isSidebarCollapsed ? 'px-5' : 'px-8'
         }`}
       >
-        <div className='text-gray-700 dark:text-gray-300'>Logo</div>
+        <div className='text-gray-700 dark:text-gray-300'>
+          {' '}
+          <Image
+            src='https://s3-geckoerp.s3.eu-central-1.amazonaws.com/logo.png'
+            alt='Profile'
+            width={50}
+            height={50}
+            className='rounded-full h-full object-cover'
+          />{' '}
+        </div>
         <h1
           className={`${
             isSidebarCollapsed ? 'hidden' : 'block'
