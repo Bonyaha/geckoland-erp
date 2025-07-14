@@ -27,7 +27,7 @@ console.log('dashboardMetrics', dashboardMetrics);
               >
                 <div className='flex items-center gap-3'>
                   <Image
-                    src={product.mainImage}
+                    src={product.mainImage || '/server/assets/no_image_placeholder.png'}
                     alt={product.name}
                     width={48}
                     height={48}
