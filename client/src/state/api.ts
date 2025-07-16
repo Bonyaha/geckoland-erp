@@ -7,6 +7,7 @@ export interface Product {
   price: number
   rating?: number
   stockQuantity: number
+  sku: string
 }
 
 export interface NewProduct {
@@ -14,6 +15,7 @@ export interface NewProduct {
   price: number
   rating?: number
   stockQuantity: number
+  sku: string
 }
 
 export interface SalesSummary {

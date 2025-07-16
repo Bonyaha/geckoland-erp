@@ -4,7 +4,7 @@ import { useCreateProductMutation, useGetProductsQuery } from '@/state/api'
 import { PlusCircleIcon, SearchIcon } from 'lucide-react'
 import { useState } from 'react'
 import Header from '@/app/(components)/Header'
-import Rating from '@/app/(components)/Rating'
+//import Rating from '@/app/(components)/Rating'
 import CreateProductModal from './CreateProductModal'
 import Image from 'next/image'
 // import Image from 'next/image'
@@ -14,7 +14,7 @@ type ProductFormData = {
   name: string
   price: number
   stockQuantity: number
-  sku?: string
+  sku: string
   source?: string
   externalIds?: string
   description?: string
@@ -100,10 +100,7 @@ const Products = () => {
             >
               <div className='flex flex-col items-center'>
                 <Image
-                  src={
-                    product.mainImage ||
-                    '/no_image_placeholder.png'
-                  }
+                  src={product.mainImage || '/no_image_placeholder.png'}
                   alt={product.name}
                   width={150}
                   height={150}
@@ -116,11 +113,14 @@ const Products = () => {
                 <div className='text-sm text-gray-600 mt-1'>
                   Stock: {product.stockQuantity}
                 </div>
-                {product.rating && (
+                {/* {product.rating && (
                   <div className='flex items-center mt-2'>
                     <Rating rating={product.rating} />
                   </div>
-                )}
+                )} */}
+                <div className='text-sm text-gray-600 mt-1'>
+                  SKU: {product.sku}
+                </div>
               </div>
             </div>
           ))
