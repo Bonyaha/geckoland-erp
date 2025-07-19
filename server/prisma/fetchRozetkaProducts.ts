@@ -112,10 +112,10 @@ async function fetchRozetkaProducts() {
     const allProducts = await fetchAllRozetkaProducts(accessToken)
 
     // Step 3: Save products to file
-   /* const transformedProducts = allProducts.map((item: any) => ({
+   const transformedProducts = allProducts.map((item: any) => ({
      productId: String(item.rz_item_id),
      uniqueProductKey: item.article || `${item.name}-${item.price}`,
-     externalIds: { prom: null, rozetka: String(item.rz_item_id) },
+     externalIds: { prom: null, rozetka: String(item.item_id) },
      name: item.name,
      price: item.price,
      stockQuantity: item.stock_quantity,
@@ -141,7 +141,7 @@ async function fetchRozetkaProducts() {
    )
    console.log(
      'Rozetka products data saved to prisma/realData/rozetkaProducts.json'
-   ) */
+   )
 console.log(
   'allProducts',
   allProducts.find((item: any) => item.article === '920D-KF-030')

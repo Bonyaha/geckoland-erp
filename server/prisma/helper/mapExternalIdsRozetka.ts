@@ -19,7 +19,10 @@ async function updateProductsExternalIds() {
 		// Create a map for quick lookup: uniqueProductKey -> productId
 		const rozetkaProductsMap = new Map()
 		rozetkaProducts.forEach((rozetkaProduct: any) => {
-			rozetkaProductsMap.set(rozetkaProduct.uniqueProductKey, rozetkaProduct.productId)
+			rozetkaProductsMap.set(rozetkaProduct.uniqueProductKey, {
+        rz_item_id: rozetkaProduct.productId,
+        item_id: rozetkaProduct.externalIds.rozetka,
+      })
 		})
 
 		let updatedCount = 0
@@ -27,15 +30,18 @@ async function updateProductsExternalIds() {
 
 		// Update products with matching SKUs
 		products = products.map((product: any) => {
-			const matchingRozetkaProductId = rozetkaProductsMap.get(product.sku)
+			const matchingRozetkaData = rozetkaProductsMap.get(product.sku)
 
-			if (matchingRozetkaProductId) {
+			if (matchingRozetkaData) {
 				updatedCount++
 				return {
           ...product,
           externalIds: {
             ...product.externalIds,
-            rozetka: matchingRozetkaProductId,
+            rozetka: {
+              rz_item_id: matchingRozetkaData.rz_item_id,
+              item_id: matchingRozetkaData.item_id,
+            },
           },
         }
 			} else {

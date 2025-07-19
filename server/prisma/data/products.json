@@ -102,7 +102,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2597113395",
-      "rozetka": "506685609"
+      "rozetka": {
+        "rz_item_id": "506685609",
+        "item_id": "141094256"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-5728775-0.jpg",
@@ -154,7 +157,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2597066841",
-      "rozetka": "506685604"
+      "rozetka": {
+        "rz_item_id": "506685604",
+        "item_id": "141094255"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-5728774-0.jpg",
@@ -206,7 +212,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1729613222",
-      "rozetka": "401577789"
+      "rozetka": {
+        "rz_item_id": "401577789",
+        "item_id": "109938625"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-5728773-0.jpg",
@@ -258,7 +267,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1729613014",
-      "rozetka": "401577804"
+      "rozetka": {
+        "rz_item_id": "401577804",
+        "item_id": "109938626"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-5728772-0.jpg",
@@ -310,7 +322,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1729610009",
-      "rozetka": "401577774"
+      "rozetka": {
+        "rz_item_id": "401577774",
+        "item_id": "109938620"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-5728771-0.jpg",
@@ -1442,7 +1457,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2570206119",
-      "rozetka": "501253814"
+      "rozetka": {
+        "rz_item_id": "501253814",
+        "item_id": "139788520"
+      }
     },
     "description": null,
     "mainImage": null,
@@ -1577,7 +1595,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2560624312",
-      "rozetka": "498694074"
+      "rozetka": {
+        "rz_item_id": "498694074",
+        "item_id": "139113804"
+      }
     },
     "description": "",
     "mainImage": null,
@@ -1900,7 +1921,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2549730379",
-      "rozetka": "493132269"
+      "rozetka": {
+        "rz_item_id": "493132269",
+        "item_id": "138155701"
+      }
     },
     "description": "",
     "mainImage": null,
@@ -2371,7 +2395,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2477343817",
-      "rozetka": "498694064"
+      "rozetka": {
+        "rz_item_id": "498694064",
+        "item_id": "139113802"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4722093-0.jpg",
@@ -2414,7 +2441,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2476327277",
-      "rozetka": "498694069"
+      "rozetka": {
+        "rz_item_id": "498694069",
+        "item_id": "139113803"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4722092-0.jpg",
@@ -2457,7 +2487,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2476290579",
-      "rozetka": "501253819"
+      "rozetka": {
+        "rz_item_id": "501253819",
+        "item_id": "139788521"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4722091-0.jpg",
@@ -2553,7 +2586,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2476253434",
-      "rozetka": "498694054"
+      "rozetka": {
+        "rz_item_id": "498694054",
+        "item_id": "139113800"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4722089-0.jpg",
@@ -2740,7 +2776,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2000037963",
-      "rozetka": "425287575"
+      "rozetka": {
+        "rz_item_id": "425287575",
+        "item_id": "118433105"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654454-0.jpg",
@@ -2778,7 +2817,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1799540009",
-      "rozetka": "424768740"
+      "rozetka": {
+        "rz_item_id": "424768740",
+        "item_id": "118166152"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654453-0.jpg",
@@ -2816,7 +2858,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1879284167",
-      "rozetka": "424768737"
+      "rozetka": {
+        "rz_item_id": "424768737",
+        "item_id": "118166149"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654452-0.jpg",
@@ -2854,7 +2899,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1799542745",
-      "rozetka": "424768734"
+      "rozetka": {
+        "rz_item_id": "424768734",
+        "item_id": "118166154"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654451-0.jpg",
@@ -2892,7 +2940,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1799536227",
-      "rozetka": "424768731"
+      "rozetka": {
+        "rz_item_id": "424768731",
+        "item_id": "118166157"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654450-0.jpg",
@@ -2930,7 +2981,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2012977522",
-      "rozetka": "404154273"
+      "rozetka": {
+        "rz_item_id": "404154273",
+        "item_id": "110850319"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654449-0.jpg",
@@ -2968,7 +3022,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1798219339",
-      "rozetka": "402715386"
+      "rozetka": {
+        "rz_item_id": "402715386",
+        "item_id": "110481356"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654448-0.jpg",
@@ -3006,7 +3063,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1814980383",
-      "rozetka": "402715383"
+      "rozetka": {
+        "rz_item_id": "402715383",
+        "item_id": "110481355"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654447-0.jpg",
@@ -3044,7 +3104,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1799544712",
-      "rozetka": "402715380"
+      "rozetka": {
+        "rz_item_id": "402715380",
+        "item_id": "110481357"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654446-0.jpg",
@@ -3082,7 +3145,10 @@
     "source": "prom",
     "externalIds": {
       "prom": null,
-      "rozetka": "402543087"
+      "rozetka": {
+        "rz_item_id": "402543087",
+        "item_id": "110365564"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654445-0.jpg",
@@ -3120,7 +3186,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1762231691",
-      "rozetka": "402543051"
+      "rozetka": {
+        "rz_item_id": "402543051",
+        "item_id": "110365586"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654444-0.jpg",
@@ -3158,7 +3227,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1884516591",
-      "rozetka": "402543036"
+      "rozetka": {
+        "rz_item_id": "402543036",
+        "item_id": "110365579"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654443-0.jpg",
@@ -3196,7 +3268,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1763142221",
-      "rozetka": "402543033"
+      "rozetka": {
+        "rz_item_id": "402543033",
+        "item_id": "110365582"
+      }
     },
     "description": null,
     "mainImage": null,
@@ -3232,7 +3307,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1798214594",
-      "rozetka": "402543018"
+      "rozetka": {
+        "rz_item_id": "402543018",
+        "item_id": "110365572"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654441-0.jpg",
@@ -3270,7 +3348,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1925406111",
-      "rozetka": "402543012"
+      "rozetka": {
+        "rz_item_id": "402543012",
+        "item_id": "110365568"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654440-0.jpg",
@@ -3308,7 +3389,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1938316449",
-      "rozetka": "402543000"
+      "rozetka": {
+        "rz_item_id": "402543000",
+        "item_id": "110365563"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654439-0.jpg",
@@ -3346,7 +3430,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1963510145",
-      "rozetka": "402542991"
+      "rozetka": {
+        "rz_item_id": "402542991",
+        "item_id": "110365555"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654438-0.jpg",
@@ -3384,7 +3471,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1884537250",
-      "rozetka": "402542952"
+      "rozetka": {
+        "rz_item_id": "402542952",
+        "item_id": "110365570"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654437-0.jpg",
@@ -3422,7 +3512,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1733744716",
-      "rozetka": "402542949"
+      "rozetka": {
+        "rz_item_id": "402542949",
+        "item_id": "110365581"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654436-0.jpg",
@@ -3460,7 +3553,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1942514440",
-      "rozetka": "402542946"
+      "rozetka": {
+        "rz_item_id": "402542946",
+        "item_id": "110365587"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654435-0.jpg",
@@ -3498,7 +3594,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1939406713",
-      "rozetka": "402542940"
+      "rozetka": {
+        "rz_item_id": "402542940",
+        "item_id": "110365561"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654434-0.jpg",
@@ -3622,7 +3721,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2426942802",
-      "rozetka": "473198529"
+      "rozetka": {
+        "rz_item_id": "473198529",
+        "item_id": "133770940"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654390-0.jpg",
@@ -3665,7 +3767,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2426927679",
-      "rozetka": "464040389"
+      "rozetka": {
+        "rz_item_id": "464040389",
+        "item_id": "130511817"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654389-0.jpg",
@@ -3756,7 +3861,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2379213770",
-      "rozetka": "402543006"
+      "rozetka": {
+        "rz_item_id": "402543006",
+        "item_id": "110365562"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654387-0.jpg",
@@ -4100,7 +4208,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2365504335",
-      "rozetka": "454456238"
+      "rozetka": {
+        "rz_item_id": "454456238",
+        "item_id": "128606410"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654379-0.jpg",
@@ -4320,7 +4431,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2365224837",
-      "rozetka": "455621554"
+      "rozetka": {
+        "rz_item_id": "455621554",
+        "item_id": "128955709"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654374-0.jpg",
@@ -4416,7 +4530,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2354771064",
-      "rozetka": "455621564"
+      "rozetka": {
+        "rz_item_id": "455621564",
+        "item_id": "128955707"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654372-0.jpg",
@@ -4464,7 +4581,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2354768010",
-      "rozetka": "455621569"
+      "rozetka": {
+        "rz_item_id": "455621569",
+        "item_id": "128955706"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654371-0.jpg",
@@ -4560,7 +4680,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2352362315",
-      "rozetka": "454456241"
+      "rozetka": {
+        "rz_item_id": "454456241",
+        "item_id": "128606411"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654369-0.jpg",
@@ -4603,7 +4726,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2350066637",
-      "rozetka": "460855199"
+      "rozetka": {
+        "rz_item_id": "460855199",
+        "item_id": "129901534"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654368-0.jpg",
@@ -5063,7 +5189,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2302487322",
-      "rozetka": "482067519"
+      "rozetka": {
+        "rz_item_id": "482067519",
+        "item_id": "135813198"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654358-0.jpg",
@@ -5240,7 +5369,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2278851511",
-      "rozetka": "401577783"
+      "rozetka": {
+        "rz_item_id": "401577783",
+        "item_id": "109938621"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654354-0.jpg",
@@ -5288,7 +5420,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2278848772",
-      "rozetka": "401577795"
+      "rozetka": {
+        "rz_item_id": "401577795",
+        "item_id": "109938624"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654353-0.jpg",
@@ -5336,7 +5471,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2276652305",
-      "rozetka": "482067509"
+      "rozetka": {
+        "rz_item_id": "482067509",
+        "item_id": "135813197"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654352-0.jpg",
@@ -5814,7 +5952,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2247973779",
-      "rozetka": "402543063"
+      "rozetka": {
+        "rz_item_id": "402543063",
+        "item_id": "110365591"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654341-0.jpg",
@@ -6087,7 +6228,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2233628302",
-      "rozetka": "440064536"
+      "rozetka": {
+        "rz_item_id": "440064536",
+        "item_id": "124008285"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654335-0.jpg",
@@ -6656,7 +6800,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2184146314",
-      "rozetka": "428951639"
+      "rozetka": {
+        "rz_item_id": "428951639",
+        "item_id": "119804754"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654322-0.jpg",
@@ -6790,7 +6937,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2181666567",
-      "rozetka": "416319504"
+      "rozetka": {
+        "rz_item_id": "416319504",
+        "item_id": "115390126"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654319-0.jpg",
@@ -6833,7 +6983,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2181617852",
-      "rozetka": "427867235"
+      "rozetka": {
+        "rz_item_id": "427867235",
+        "item_id": "119594423"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654318-0.jpg",
@@ -6876,7 +7029,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2180657028",
-      "rozetka": "427867229"
+      "rozetka": {
+        "rz_item_id": "427867229",
+        "item_id": "119594422"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654317-0.jpg",
@@ -6924,7 +7080,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2180081546",
-      "rozetka": "429386945"
+      "rozetka": {
+        "rz_item_id": "429386945",
+        "item_id": "120135727"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654316-0.jpg",
@@ -7230,7 +7389,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2124887223",
-      "rozetka": "421252557"
+      "rozetka": {
+        "rz_item_id": "421252557",
+        "item_id": "117052501"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654309-0.jpg",
@@ -7273,7 +7435,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2124872898",
-      "rozetka": "422400618"
+      "rozetka": {
+        "rz_item_id": "422400618",
+        "item_id": "117318332"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654308-0.jpg",
@@ -7799,7 +7964,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2117947141",
-      "rozetka": "422400612"
+      "rozetka": {
+        "rz_item_id": "422400612",
+        "item_id": "117403671"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654296-0.jpg",
@@ -7847,7 +8015,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2117938220",
-      "rozetka": "425468880"
+      "rozetka": {
+        "rz_item_id": "425468880",
+        "item_id": "118523620"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654295-0.jpg",
@@ -8062,7 +8233,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2105524284",
-      "rozetka": "418749723"
+      "rozetka": {
+        "rz_item_id": "418749723",
+        "item_id": "116245393"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654290-0.jpg",
@@ -8105,7 +8279,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2104273736",
-      "rozetka": "420824934"
+      "rozetka": {
+        "rz_item_id": "420824934",
+        "item_id": "116898193"
+      }
     },
     "description": "",
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654289-0.jpg",
@@ -8148,7 +8325,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1813919584",
-      "rozetka": "420824937"
+      "rozetka": {
+        "rz_item_id": "420824937",
+        "item_id": "116898192"
+      }
     },
     "description": "",
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654288-0.jpg",
@@ -8191,7 +8371,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2104273734",
-      "rozetka": "420824931"
+      "rozetka": {
+        "rz_item_id": "420824931",
+        "item_id": "116898191"
+      }
     },
     "description": "",
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654287-0.jpg",
@@ -8234,7 +8417,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2080625613",
-      "rozetka": "415733058"
+      "rozetka": {
+        "rz_item_id": "415733058",
+        "item_id": "115298697"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654286-0.jpg",
@@ -8277,7 +8463,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2080575730",
-      "rozetka": "503230439"
+      "rozetka": {
+        "rz_item_id": "503230439",
+        "item_id": "140265196"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654285-0.jpg",
@@ -8411,7 +8600,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2076806101",
-      "rozetka": "425287572"
+      "rozetka": {
+        "rz_item_id": "425287572",
+        "item_id": "118426102"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654282-0.jpg",
@@ -9154,7 +9346,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2031879092",
-      "rozetka": "455621559"
+      "rozetka": {
+        "rz_item_id": "455621559",
+        "item_id": "128955708"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654266-0.jpg",
@@ -9250,7 +9445,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2031869302",
-      "rozetka": "428951636"
+      "rozetka": {
+        "rz_item_id": "428951636",
+        "item_id": "119804755"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654264-0.jpg",
@@ -9346,7 +9544,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2021711155",
-      "rozetka": "407723529"
+      "rozetka": {
+        "rz_item_id": "407723529",
+        "item_id": "112026195"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654262-0.jpg",
@@ -9389,7 +9590,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2020919456",
-      "rozetka": "408043371"
+      "rozetka": {
+        "rz_item_id": "408043371",
+        "item_id": "112106214"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654261-0.jpg",
@@ -9432,7 +9636,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2020918095",
-      "rozetka": "408043374"
+      "rozetka": {
+        "rz_item_id": "408043374",
+        "item_id": "112106217"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654260-0.jpg",
@@ -9475,7 +9682,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2020895624",
-      "rozetka": "408043365"
+      "rozetka": {
+        "rz_item_id": "408043365",
+        "item_id": "112106216"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654259-0.jpg",
@@ -9566,7 +9776,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2013010090",
-      "rozetka": "404052264"
+      "rozetka": {
+        "rz_item_id": "404052264",
+        "item_id": "110843189"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654257-0.jpg",
@@ -9652,7 +9865,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "2000028181",
-      "rozetka": "402715377"
+      "rozetka": {
+        "rz_item_id": "402715377",
+        "item_id": "110481354"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654255-0.jpg",
@@ -9834,7 +10050,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1976075730",
-      "rozetka": "402543009"
+      "rozetka": {
+        "rz_item_id": "402543009",
+        "item_id": "110365566"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654251-0.jpg",
@@ -9882,7 +10101,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1976071234",
-      "rozetka": "402542970"
+      "rozetka": {
+        "rz_item_id": "402542970",
+        "item_id": "110365547"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654250-0.jpg",
@@ -9930,7 +10152,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1974194312",
-      "rozetka": "402542973"
+      "rozetka": {
+        "rz_item_id": "402542973",
+        "item_id": "110365544"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654249-0.jpg",
@@ -10299,7 +10524,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1960016921",
-      "rozetka": "402543069"
+      "rozetka": {
+        "rz_item_id": "402543069",
+        "item_id": "110365590"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654241-0.jpg",
@@ -10347,7 +10575,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1960008664",
-      "rozetka": "402542985"
+      "rozetka": {
+        "rz_item_id": "402542985",
+        "item_id": "110365549"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654240-0.jpg",
@@ -10395,7 +10626,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1959827564",
-      "rozetka": "402543042"
+      "rozetka": {
+        "rz_item_id": "402543042",
+        "item_id": "110365585"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654239-0.jpg",
@@ -10443,7 +10677,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1942525756",
-      "rozetka": "402543054"
+      "rozetka": {
+        "rz_item_id": "402543054",
+        "item_id": "110365592"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654238-0.jpg",
@@ -10491,7 +10728,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1942521638",
-      "rozetka": "402542937"
+      "rozetka": {
+        "rz_item_id": "402542937",
+        "item_id": "110365594"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654237-0.jpg",
@@ -10539,7 +10779,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1942520001",
-      "rozetka": "402542955"
+      "rozetka": {
+        "rz_item_id": "402542955",
+        "item_id": "110365546"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654236-0.jpg",
@@ -10587,7 +10830,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1942516045",
-      "rozetka": "427867232"
+      "rozetka": {
+        "rz_item_id": "427867232",
+        "item_id": "119594424"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654235-0.jpg",
@@ -10731,7 +10977,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1942500345",
-      "rozetka": "402542979"
+      "rozetka": {
+        "rz_item_id": "402542979",
+        "item_id": "110365550"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654232-0.jpg",
@@ -10827,7 +11076,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1941335752",
-      "rozetka": "401577768"
+      "rozetka": {
+        "rz_item_id": "401577768",
+        "item_id": "109938614"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654230-0.jpg",
@@ -10875,7 +11127,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1940757785",
-      "rozetka": "401577798"
+      "rozetka": {
+        "rz_item_id": "401577798",
+        "item_id": "109938627"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654228-0.jpg",
@@ -10923,7 +11178,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1940757153",
-      "rozetka": "401577801"
+      "rozetka": {
+        "rz_item_id": "401577801",
+        "item_id": "109938623"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654227-0.jpg",
@@ -10971,7 +11229,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1940753770",
-      "rozetka": "401577786"
+      "rozetka": {
+        "rz_item_id": "401577786",
+        "item_id": "109938619"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654226-0.jpg",
@@ -11019,7 +11280,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1939667936",
-      "rozetka": "402543084"
+      "rozetka": {
+        "rz_item_id": "402543084",
+        "item_id": "110365559"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654223-0.jpg",
@@ -11067,7 +11331,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1939664473",
-      "rozetka": "422400609"
+      "rozetka": {
+        "rz_item_id": "422400609",
+        "item_id": "117403675"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654222-0.jpg",
@@ -11115,7 +11382,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1939650611",
-      "rozetka": "402542964"
+      "rozetka": {
+        "rz_item_id": "402542964",
+        "item_id": "110365554"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654221-0.jpg",
@@ -11287,7 +11557,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1928630907",
-      "rozetka": "402543015"
+      "rozetka": {
+        "rz_item_id": "402543015",
+        "item_id": "110365573"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654217-0.jpg",
@@ -11618,7 +11891,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1919745182",
-      "rozetka": "408043368"
+      "rozetka": {
+        "rz_item_id": "408043368",
+        "item_id": "112106215"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654210-0.jpg",
@@ -11790,7 +12066,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1919718634",
-      "rozetka": "402543048"
+      "rozetka": {
+        "rz_item_id": "402543048",
+        "item_id": "110365589"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654206-0.jpg",
@@ -11833,7 +12112,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1919700674",
-      "rozetka": "402543027"
+      "rozetka": {
+        "rz_item_id": "402543027",
+        "item_id": "110365578"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654205-0.jpg",
@@ -13813,7 +14095,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1893907683",
-      "rozetka": "402543024"
+      "rozetka": {
+        "rz_item_id": "402543024",
+        "item_id": "110365575"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654165-0.jpg",
@@ -13856,7 +14141,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1893902467",
-      "rozetka": "402542994"
+      "rozetka": {
+        "rz_item_id": "402542994",
+        "item_id": "110365556"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654164-0.jpg",
@@ -13899,7 +14187,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1884579699",
-      "rozetka": "406517313"
+      "rozetka": {
+        "rz_item_id": "406517313",
+        "item_id": "111724127"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654163-0.jpg",
@@ -13990,7 +14281,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1736979476",
-      "rozetka": "402543072"
+      "rozetka": {
+        "rz_item_id": "402543072",
+        "item_id": "110365599"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654161-0.jpg",
@@ -14033,7 +14327,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1864053162",
-      "rozetka": "402542943"
+      "rozetka": {
+        "rz_item_id": "402542943",
+        "item_id": "110365545"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654160-0.jpg",
@@ -14081,7 +14378,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1861890961",
-      "rozetka": "406517310"
+      "rozetka": {
+        "rz_item_id": "406517310",
+        "item_id": "111724128"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654159-0.jpg",
@@ -14124,7 +14424,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1853433951",
-      "rozetka": "402543066"
+      "rozetka": {
+        "rz_item_id": "402543066",
+        "item_id": "110365595"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654158-0.jpg",
@@ -14167,7 +14470,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1853423738",
-      "rozetka": "402543093"
+      "rozetka": {
+        "rz_item_id": "402543093",
+        "item_id": "110365600"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654157-0.jpg",
@@ -14397,7 +14703,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1835080381",
-      "rozetka": "408391449"
+      "rozetka": {
+        "rz_item_id": "408391449",
+        "item_id": "112259300"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654152-0.jpg",
@@ -14708,7 +15017,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1820860420",
-      "rozetka": "401577780"
+      "rozetka": {
+        "rz_item_id": "401577780",
+        "item_id": "109938617"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654145-0.jpg",
@@ -14756,7 +15068,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1820860127",
-      "rozetka": "482067514"
+      "rozetka": {
+        "rz_item_id": "482067514",
+        "item_id": "135813199"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654144-0.jpg",
@@ -14799,7 +15114,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1820463817",
-      "rozetka": "402542931"
+      "rozetka": {
+        "rz_item_id": "402542931",
+        "item_id": "110365577"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654143-0.jpg",
@@ -14933,7 +15251,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1814905926",
-      "rozetka": "422400615"
+      "rozetka": {
+        "rz_item_id": "422400615",
+        "item_id": "117403674"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654140-0.jpg",
@@ -14981,7 +15302,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1814513550",
-      "rozetka": "415733055"
+      "rozetka": {
+        "rz_item_id": "415733055",
+        "item_id": "115298699"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654139-0.jpg",
@@ -15024,7 +15348,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1814513445",
-      "rozetka": "415733052"
+      "rozetka": {
+        "rz_item_id": "415733052",
+        "item_id": "115298696"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654138-0.jpg",
@@ -15067,7 +15394,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1814486498",
-      "rozetka": "415733064"
+      "rozetka": {
+        "rz_item_id": "415733064",
+        "item_id": "115298698"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654137-0.jpg",
@@ -15110,7 +15440,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1813926786",
-      "rozetka": "402543078"
+      "rozetka": {
+        "rz_item_id": "402543078",
+        "item_id": "110365598"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654136-0.jpg",
@@ -15196,7 +15529,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1794257370",
-      "rozetka": "404154270"
+      "rozetka": {
+        "rz_item_id": "404154270",
+        "item_id": "110850318"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654134-0.jpg",
@@ -15239,7 +15575,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1794246451",
-      "rozetka": "402542934"
+      "rozetka": {
+        "rz_item_id": "402542934",
+        "item_id": "110365597"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654133-0.jpg",
@@ -15368,7 +15707,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1794219989",
-      "rozetka": "402543057"
+      "rozetka": {
+        "rz_item_id": "402543057",
+        "item_id": "110365588"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654130-0.jpg",
@@ -15454,7 +15796,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1790650432",
-      "rozetka": "401577765"
+      "rozetka": {
+        "rz_item_id": "401577765",
+        "item_id": "109938618"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654128-0.jpg",
@@ -15502,7 +15847,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1785769704",
-      "rozetka": "402543075"
+      "rozetka": {
+        "rz_item_id": "402543075",
+        "item_id": "110365596"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654127-0.jpg",
@@ -15550,7 +15898,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1785766662",
-      "rozetka": "402542958"
+      "rozetka": {
+        "rz_item_id": "402542958",
+        "item_id": "110365543"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654126-0.jpg",
@@ -15646,7 +15997,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1783739225",
-      "rozetka": "402542976"
+      "rozetka": {
+        "rz_item_id": "402542976",
+        "item_id": "110365548"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654124-0.jpg",
@@ -15775,7 +16129,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1773963036",
-      "rozetka": "459334989"
+      "rozetka": {
+        "rz_item_id": "459334989",
+        "item_id": "129789670"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654121-0.jpg",
@@ -15866,7 +16223,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1762967789",
-      "rozetka": "402542967"
+      "rozetka": {
+        "rz_item_id": "402542967",
+        "item_id": "110365560"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654119-0.jpg",
@@ -15909,7 +16269,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1762776949",
-      "rozetka": "459334999"
+      "rozetka": {
+        "rz_item_id": "459334999",
+        "item_id": "129789669"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654118-0.jpg",
@@ -15952,7 +16315,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1762773581",
-      "rozetka": "459334994"
+      "rozetka": {
+        "rz_item_id": "459334994",
+        "item_id": "129789671"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654117-0.jpg",
@@ -16038,7 +16404,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1762246612",
-      "rozetka": "402543045"
+      "rozetka": {
+        "rz_item_id": "402543045",
+        "item_id": "110365583"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654115-0.jpg",
@@ -16124,7 +16493,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1752719952",
-      "rozetka": "402543030"
+      "rozetka": {
+        "rz_item_id": "402543030",
+        "item_id": "110365576"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654113-0.jpg",
@@ -16167,7 +16539,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1748537242",
-      "rozetka": "401577771"
+      "rozetka": {
+        "rz_item_id": "401577771",
+        "item_id": "109938616"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654112-0.jpg",
@@ -16215,7 +16590,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1748527527",
-      "rozetka": "401577777"
+      "rozetka": {
+        "rz_item_id": "401577777",
+        "item_id": "109938615"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654111-0.jpg",
@@ -16306,7 +16684,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1745890000",
-      "rozetka": "402543090"
+      "rozetka": {
+        "rz_item_id": "402543090",
+        "item_id": "110365584"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654109-0.jpg",
@@ -16397,7 +16778,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1736990874",
-      "rozetka": "482067529"
+      "rozetka": {
+        "rz_item_id": "482067529",
+        "item_id": "135813200"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654107-0.jpg",
@@ -16670,7 +17054,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1729613338",
-      "rozetka": "401577792"
+      "rozetka": {
+        "rz_item_id": "401577792",
+        "item_id": "109938622"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654101-0.jpg",
@@ -16718,7 +17105,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1729613222",
-      "rozetka": "401577789"
+      "rozetka": {
+        "rz_item_id": "401577789",
+        "item_id": "109938625"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654100-0.jpg",
@@ -16766,7 +17156,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1729613014",
-      "rozetka": "401577804"
+      "rozetka": {
+        "rz_item_id": "401577804",
+        "item_id": "109938626"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654099-0.jpg",
@@ -16814,7 +17207,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1729610009",
-      "rozetka": "401577774"
+      "rozetka": {
+        "rz_item_id": "401577774",
+        "item_id": "109938620"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654098-0.jpg",
@@ -16905,7 +17301,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1727246613",
-      "rozetka": "433154051"
+      "rozetka": {
+        "rz_item_id": "433154051",
+        "item_id": "120989445"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654096-0.jpg",
@@ -16991,7 +17390,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1727138638",
-      "rozetka": "422400606"
+      "rozetka": {
+        "rz_item_id": "422400606",
+        "item_id": "117403673"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654094-0.jpg",
@@ -17034,7 +17436,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1727138235",
-      "rozetka": "402542961"
+      "rozetka": {
+        "rz_item_id": "402542961",
+        "item_id": "110365551"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654093-0.jpg",
@@ -17077,7 +17482,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1727105406",
-      "rozetka": "402542988"
+      "rozetka": {
+        "rz_item_id": "402542988",
+        "item_id": "110365552"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654092-0.jpg",
@@ -17302,7 +17710,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1726738070",
-      "rozetka": "404052267"
+      "rozetka": {
+        "rz_item_id": "404052267",
+        "item_id": "110843190"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654087-0.jpg",
@@ -17350,7 +17761,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1726591711",
-      "rozetka": "415733067"
+      "rozetka": {
+        "rz_item_id": "415733067",
+        "item_id": "115299951"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654086-0.jpg",
@@ -17393,7 +17807,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1726590626",
-      "rozetka": "415733061"
+      "rozetka": {
+        "rz_item_id": "415733061",
+        "item_id": "115298695"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654085-0.jpg",
@@ -17436,7 +17853,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1726584894",
-      "rozetka": "415733070"
+      "rozetka": {
+        "rz_item_id": "415733070",
+        "item_id": "115298694"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654084-0.jpg",
@@ -17479,7 +17899,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1726584462",
-      "rozetka": "402542982"
+      "rozetka": {
+        "rz_item_id": "402542982",
+        "item_id": "110365553"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654083-0.jpg",
@@ -17527,7 +17950,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1726393036",
-      "rozetka": "402543060"
+      "rozetka": {
+        "rz_item_id": "402543060",
+        "item_id": "110365593"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654082-0.jpg",
@@ -17661,7 +18087,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1726345052",
-      "rozetka": "433154054"
+      "rozetka": {
+        "rz_item_id": "433154054",
+        "item_id": "120989446"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654079-0.jpg",
@@ -17704,7 +18133,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1726058724",
-      "rozetka": "498694059"
+      "rozetka": {
+        "rz_item_id": "498694059",
+        "item_id": "139113801"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654078-0.jpg",
@@ -17747,7 +18179,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1726045347",
-      "rozetka": "402543021"
+      "rozetka": {
+        "rz_item_id": "402543021",
+        "item_id": "110365574"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654077-0.jpg",
@@ -17790,7 +18225,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1725068356",
-      "rozetka": "402543003"
+      "rozetka": {
+        "rz_item_id": "402543003",
+        "item_id": "110365558"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654076-0.jpg",
@@ -17833,7 +18271,10 @@
     "source": "prom",
     "externalIds": {
       "prom": "1725064951",
-      "rozetka": "402543039"
+      "rozetka": {
+        "rz_item_id": "402543039",
+        "item_id": "110365580"
+      }
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654075-0.jpg",
