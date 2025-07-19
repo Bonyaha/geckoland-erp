@@ -10,7 +10,8 @@ async function fetchRozetkaAccessToken(): Promise<string> {
     username: process.env.ROZETKA_API_USERNAME,
     password: process.env.ROZETKA_API_PASSWORD,
   }
-
+console.log('username', credentials.username)
+console.log('password', credentials.password)
   try {
     console.log('🔑 Fetching Rozetka access token...')
 
@@ -111,7 +112,7 @@ async function fetchRozetkaProducts() {
     const allProducts = await fetchAllRozetkaProducts(accessToken)
 
     // Step 3: Save products to file
-   const transformedProducts = allProducts.map((item: any) => ({
+   /* const transformedProducts = allProducts.map((item: any) => ({
      productId: String(item.rz_item_id),
      uniqueProductKey: item.article || `${item.name}-${item.price}`,
      externalIds: { prom: null, rozetka: String(item.rz_item_id) },
@@ -140,8 +141,11 @@ async function fetchRozetkaProducts() {
    )
    console.log(
      'Rozetka products data saved to prisma/realData/rozetkaProducts.json'
-   )
-console.log('allProducts', allProducts[0]);
+   ) */
+console.log(
+  'allProducts',
+  allProducts.find((item: any) => item.article === '920D-KF-030')
+)
 
     // return allProducts
   } catch (error: any) {

@@ -7,7 +7,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2606867344",
       "rozetka": null
     },
     "description": null,
@@ -54,7 +54,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2599108333",
       "rozetka": null
     },
     "description": null,
@@ -101,8 +101,8 @@
     "stockQuantity": 5,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2597113395",
+      "rozetka": "506685609"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-5728775-0.jpg",
@@ -153,8 +153,8 @@
     "stockQuantity": 3,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2597066841",
+      "rozetka": "506685604"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-5728774-0.jpg",
@@ -205,8 +205,8 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1729613222",
+      "rozetka": "401577789"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-5728773-0.jpg",
@@ -257,8 +257,8 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1729613014",
+      "rozetka": "401577804"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-5728772-0.jpg",
@@ -309,8 +309,8 @@
     "stockQuantity": 3,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1729610009",
+      "rozetka": "401577774"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-5728771-0.jpg",
@@ -361,7 +361,7 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1762242932",
       "rozetka": null
     },
     "description": null,
@@ -444,7 +444,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2619330052",
       "rozetka": null
     },
     "description": "",
@@ -480,7 +480,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2618221933",
       "rozetka": null
     },
     "description": "",
@@ -516,7 +516,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2619325876",
       "rozetka": null
     },
     "description": "",
@@ -552,7 +552,7 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2618248415",
       "rozetka": null
     },
     "description": "",
@@ -588,7 +588,7 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2618212685",
       "rozetka": null
     },
     "description": "",
@@ -624,7 +624,7 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2619102127",
       "rozetka": null
     },
     "description": "",
@@ -660,7 +660,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2619336916",
       "rozetka": null
     },
     "description": "",
@@ -696,7 +696,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2619355052",
       "rozetka": null
     },
     "description": "",
@@ -840,7 +840,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2606883906",
       "rozetka": null
     },
     "description": "",
@@ -912,7 +912,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2606919043",
       "rozetka": null
     },
     "description": "",
@@ -948,7 +948,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2606930546",
       "rozetka": null
     },
     "description": "",
@@ -984,7 +984,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2606934059",
       "rozetka": null
     },
     "description": "",
@@ -1020,7 +1020,7 @@
     "stockQuantity": 3,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2606936959",
       "rozetka": null
     },
     "description": "",
@@ -1056,7 +1056,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2606947291",
       "rozetka": null
     },
     "description": "",
@@ -1092,7 +1092,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2597031694",
       "rozetka": null
     },
     "description": "",
@@ -1313,7 +1313,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2570260675",
       "rozetka": null
     },
     "description": null,
@@ -1354,7 +1354,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2570241962",
       "rozetka": null
     },
     "description": null,
@@ -1395,7 +1395,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2570220528",
       "rozetka": null
     },
     "description": null,
@@ -1441,8 +1441,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2570206119",
+      "rozetka": "501253814"
     },
     "description": null,
     "mainImage": null,
@@ -1487,7 +1487,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2570195521",
       "rozetka": null
     },
     "description": null,
@@ -1533,7 +1533,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2560663284",
       "rozetka": null
     },
     "description": "",
@@ -1576,8 +1576,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2560624312",
+      "rozetka": "498694074"
     },
     "description": "",
     "mainImage": null,
@@ -1617,7 +1617,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2544041176",
       "rozetka": null
     },
     "description": null,
@@ -1664,7 +1664,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2544027830",
       "rozetka": null
     },
     "description": null,
@@ -1711,7 +1711,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2543963967",
       "rozetka": null
     },
     "description": null,
@@ -1758,7 +1758,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2543953865",
       "rozetka": null
     },
     "description": null,
@@ -1805,7 +1805,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2543854451",
       "rozetka": null
     },
     "description": null,
@@ -1852,7 +1852,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2543827034",
       "rozetka": null
     },
     "description": null,
@@ -1899,8 +1899,8 @@
     "stockQuantity": 3,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2549730379",
+      "rozetka": "493132269"
     },
     "description": "",
     "mainImage": null,
@@ -1935,7 +1935,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2543699319",
       "rozetka": null
     },
     "description": "",
@@ -1971,7 +1971,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2560637350",
       "rozetka": null
     },
     "description": "",
@@ -2007,7 +2007,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2560680320",
       "rozetka": null
     },
     "description": "",
@@ -2161,7 +2161,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2543728663",
       "rozetka": null
     },
     "description": "",
@@ -2202,7 +2202,7 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2561687029",
       "rozetka": null
     },
     "description": "",
@@ -2243,7 +2243,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2561696803",
       "rozetka": null
     },
     "description": "",
@@ -2279,7 +2279,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2477416934",
       "rozetka": null
     },
     "description": null,
@@ -2322,7 +2322,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2477375724",
       "rozetka": null
     },
     "description": "до 30град",
@@ -2370,8 +2370,8 @@
     "stockQuantity": 3,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2477343817",
+      "rozetka": "498694064"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4722093-0.jpg",
@@ -2413,8 +2413,8 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2476327277",
+      "rozetka": "498694069"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4722092-0.jpg",
@@ -2456,8 +2456,8 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2476290579",
+      "rozetka": "501253819"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4722091-0.jpg",
@@ -2504,7 +2504,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2476270049",
       "rozetka": null
     },
     "description": null,
@@ -2552,8 +2552,8 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2476253434",
+      "rozetka": "498694054"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4722089-0.jpg",
@@ -2600,7 +2600,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2476225004",
       "rozetka": null
     },
     "description": null,
@@ -2648,7 +2648,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2471335117",
       "rozetka": null
     },
     "description": null,
@@ -2691,7 +2691,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2469514672",
       "rozetka": null
     },
     "description": null,
@@ -2739,8 +2739,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2000037963",
+      "rozetka": "425287575"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654454-0.jpg",
@@ -2777,8 +2777,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1799540009",
+      "rozetka": "424768740"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654453-0.jpg",
@@ -2815,8 +2815,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1879284167",
+      "rozetka": "424768737"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654452-0.jpg",
@@ -2853,8 +2853,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1799542745",
+      "rozetka": "424768734"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654451-0.jpg",
@@ -2891,8 +2891,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1799536227",
+      "rozetka": "424768731"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654450-0.jpg",
@@ -2929,8 +2929,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2012977522",
+      "rozetka": "404154273"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654449-0.jpg",
@@ -2967,8 +2967,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1798219339",
+      "rozetka": "402715386"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654448-0.jpg",
@@ -3005,8 +3005,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1814980383",
+      "rozetka": "402715383"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654447-0.jpg",
@@ -3043,8 +3043,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1799544712",
+      "rozetka": "402715380"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654446-0.jpg",
@@ -3082,7 +3082,7 @@
     "source": "prom",
     "externalIds": {
       "prom": null,
-      "rozetka": null
+      "rozetka": "402543087"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654445-0.jpg",
@@ -3119,8 +3119,8 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1762231691",
+      "rozetka": "402543051"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654444-0.jpg",
@@ -3157,8 +3157,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1884516591",
+      "rozetka": "402543036"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654443-0.jpg",
@@ -3195,8 +3195,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1763142221",
+      "rozetka": "402543033"
     },
     "description": null,
     "mainImage": null,
@@ -3231,8 +3231,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1798214594",
+      "rozetka": "402543018"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654441-0.jpg",
@@ -3269,8 +3269,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1925406111",
+      "rozetka": "402543012"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654440-0.jpg",
@@ -3307,8 +3307,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1938316449",
+      "rozetka": "402543000"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654439-0.jpg",
@@ -3345,8 +3345,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1963510145",
+      "rozetka": "402542991"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654438-0.jpg",
@@ -3383,8 +3383,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1884537250",
+      "rozetka": "402542952"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654437-0.jpg",
@@ -3421,8 +3421,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1733744716",
+      "rozetka": "402542949"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654436-0.jpg",
@@ -3459,8 +3459,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1942514440",
+      "rozetka": "402542946"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654435-0.jpg",
@@ -3497,8 +3497,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1939406713",
+      "rozetka": "402542940"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654434-0.jpg",
@@ -3535,7 +3535,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2461289116",
       "rozetka": null
     },
     "description": null,
@@ -3578,7 +3578,7 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2452682325",
       "rozetka": null
     },
     "description": null,
@@ -3621,8 +3621,8 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2426942802",
+      "rozetka": "473198529"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654390-0.jpg",
@@ -3664,8 +3664,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2426927679",
+      "rozetka": "464040389"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654389-0.jpg",
@@ -3707,7 +3707,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2401956547",
       "rozetka": null
     },
     "description": null,
@@ -3755,8 +3755,8 @@
     "stockQuantity": 3,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2379213770",
+      "rozetka": "402543006"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654387-0.jpg",
@@ -3798,7 +3798,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2379202937",
       "rozetka": null
     },
     "description": null,
@@ -3841,7 +3841,7 @@
     "stockQuantity": 3,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2379183544",
       "rozetka": null
     },
     "description": null,
@@ -3884,7 +3884,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2374660642",
       "rozetka": null
     },
     "description": null,
@@ -3927,7 +3927,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2374652242",
       "rozetka": null
     },
     "description": null,
@@ -3970,7 +3970,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2374622994",
       "rozetka": null
     },
     "description": null,
@@ -4013,7 +4013,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2365535188",
       "rozetka": null
     },
     "description": null,
@@ -4056,7 +4056,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2365532445",
       "rozetka": null
     },
     "description": null,
@@ -4099,8 +4099,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2365504335",
+      "rozetka": "454456238"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654379-0.jpg",
@@ -4142,7 +4142,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2365485993",
       "rozetka": null
     },
     "description": null,
@@ -4185,7 +4185,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2365471446",
       "rozetka": null
     },
     "description": null,
@@ -4228,7 +4228,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2365459509",
       "rozetka": null
     },
     "description": null,
@@ -4271,7 +4271,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2365454159",
       "rozetka": null
     },
     "description": "",
@@ -4319,8 +4319,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2365224837",
+      "rozetka": "455621554"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654374-0.jpg",
@@ -4367,7 +4367,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2365223064",
       "rozetka": null
     },
     "description": null,
@@ -4415,8 +4415,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2354771064",
+      "rozetka": "455621564"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654372-0.jpg",
@@ -4463,8 +4463,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2354768010",
+      "rozetka": "455621569"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654371-0.jpg",
@@ -4511,7 +4511,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2352409028",
       "rozetka": null
     },
     "description": null,
@@ -4559,8 +4559,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2352362315",
+      "rozetka": "454456241"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654369-0.jpg",
@@ -4602,8 +4602,8 @@
     "stockQuantity": 6,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2350066637",
+      "rozetka": "460855199"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654368-0.jpg",
@@ -4650,7 +4650,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2350021101",
       "rozetka": null
     },
     "description": null,
@@ -4693,7 +4693,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2350009694",
       "rozetka": null
     },
     "description": null,
@@ -4741,7 +4741,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2338726708",
       "rozetka": null
     },
     "description": null,
@@ -4784,7 +4784,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2338613237",
       "rozetka": null
     },
     "description": null,
@@ -4832,7 +4832,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2338563419",
       "rozetka": null
     },
     "description": null,
@@ -4880,7 +4880,7 @@
     "stockQuantity": 3,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2326467024",
       "rozetka": null
     },
     "description": null,
@@ -4928,7 +4928,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2326462590",
       "rozetka": null
     },
     "description": null,
@@ -4971,7 +4971,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2316398699",
       "rozetka": null
     },
     "description": null,
@@ -5014,7 +5014,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2302499523",
       "rozetka": null
     },
     "description": null,
@@ -5062,8 +5062,8 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2302487322",
+      "rozetka": "482067519"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654358-0.jpg",
@@ -5105,7 +5105,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2296945383",
       "rozetka": null
     },
     "description": null,
@@ -5153,7 +5153,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2294565824",
       "rozetka": null
     },
     "description": null,
@@ -5196,7 +5196,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2294561285",
       "rozetka": null
     },
     "description": null,
@@ -5239,8 +5239,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2278851511",
+      "rozetka": "401577783"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654354-0.jpg",
@@ -5287,8 +5287,8 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2278848772",
+      "rozetka": "401577795"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654353-0.jpg",
@@ -5335,8 +5335,8 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2276652305",
+      "rozetka": "482067509"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654352-0.jpg",
@@ -5378,7 +5378,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2276639955",
       "rozetka": null
     },
     "description": null,
@@ -5426,7 +5426,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2276634344",
       "rozetka": null
     },
     "description": null,
@@ -5512,7 +5512,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2253743777",
       "rozetka": null
     },
     "description": null,
@@ -5555,7 +5555,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2250426875",
       "rozetka": null
     },
     "description": null,
@@ -5598,7 +5598,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2248332755",
       "rozetka": null
     },
     "description": null,
@@ -5641,7 +5641,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2248329017",
       "rozetka": null
     },
     "description": null,
@@ -5684,7 +5684,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2248072009",
       "rozetka": null
     },
     "description": null,
@@ -5727,7 +5727,7 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2248042238",
       "rozetka": null
     },
     "description": null,
@@ -5770,7 +5770,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2248007523",
       "rozetka": null
     },
     "description": null,
@@ -5813,8 +5813,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2247973779",
+      "rozetka": "402543063"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654341-0.jpg",
@@ -5856,7 +5856,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2241039930",
       "rozetka": null
     },
     "description": null,
@@ -5904,7 +5904,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2241032832",
       "rozetka": null
     },
     "description": null,
@@ -5952,7 +5952,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2241014456",
       "rozetka": null
     },
     "description": null,
@@ -6000,7 +6000,7 @@
     "stockQuantity": 3,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2240995815",
       "rozetka": null
     },
     "description": null,
@@ -6043,7 +6043,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2233638189",
       "rozetka": null
     },
     "description": null,
@@ -6086,8 +6086,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2233628302",
+      "rozetka": "440064536"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654335-0.jpg",
@@ -6129,7 +6129,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2228912173",
       "rozetka": null
     },
     "description": null,
@@ -6172,7 +6172,7 @@
     "stockQuantity": 3,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2226831947",
       "rozetka": null
     },
     "description": null,
@@ -6215,7 +6215,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2226790627",
       "rozetka": null
     },
     "description": null,
@@ -6258,7 +6258,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2222328811",
       "rozetka": null
     },
     "description": null,
@@ -6301,7 +6301,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2218348077",
       "rozetka": null
     },
     "description": null,
@@ -6344,7 +6344,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2218343808",
       "rozetka": null
     },
     "description": null,
@@ -6387,7 +6387,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2215294610",
       "rozetka": null
     },
     "description": null,
@@ -6435,7 +6435,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2188000046",
       "rozetka": null
     },
     "description": null,
@@ -6478,7 +6478,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2187970964",
       "rozetka": null
     },
     "description": "",
@@ -6526,7 +6526,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2184211567",
       "rozetka": null
     },
     "description": null,
@@ -6569,7 +6569,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2184208889",
       "rozetka": null
     },
     "description": null,
@@ -6612,7 +6612,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2184197717",
       "rozetka": null
     },
     "description": null,
@@ -6655,8 +6655,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2184146314",
+      "rozetka": "428951639"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654322-0.jpg",
@@ -6698,7 +6698,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2181795557",
       "rozetka": null
     },
     "description": null,
@@ -6741,7 +6741,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2181704446",
       "rozetka": null
     },
     "description": null,
@@ -6789,8 +6789,8 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2181666567",
+      "rozetka": "416319504"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654319-0.jpg",
@@ -6832,8 +6832,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2181617852",
+      "rozetka": "427867235"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654318-0.jpg",
@@ -6875,8 +6875,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2180657028",
+      "rozetka": "427867229"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654317-0.jpg",
@@ -6923,8 +6923,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2180081546",
+      "rozetka": "429386945"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654316-0.jpg",
@@ -6971,7 +6971,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2179833680",
       "rozetka": null
     },
     "description": null,
@@ -7014,7 +7014,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2141822424",
       "rozetka": null
     },
     "description": null,
@@ -7057,7 +7057,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2141805257",
       "rozetka": null
     },
     "description": null,
@@ -7100,7 +7100,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2141805252",
       "rozetka": null
     },
     "description": null,
@@ -7143,7 +7143,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2141803086",
       "rozetka": null
     },
     "description": null,
@@ -7186,7 +7186,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2141791861",
       "rozetka": null
     },
     "description": null,
@@ -7229,8 +7229,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2124887223",
+      "rozetka": "421252557"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654309-0.jpg",
@@ -7272,8 +7272,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2124872898",
+      "rozetka": "422400618"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654308-0.jpg",
@@ -7315,7 +7315,7 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2121364941",
       "rozetka": null
     },
     "description": null,
@@ -7358,7 +7358,7 @@
     "stockQuantity": 5,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2121363398",
       "rozetka": null
     },
     "description": null,
@@ -7401,7 +7401,7 @@
     "stockQuantity": 4,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2121361183",
       "rozetka": null
     },
     "description": null,
@@ -7444,7 +7444,7 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2121359667",
       "rozetka": null
     },
     "description": null,
@@ -7487,7 +7487,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2121352883",
       "rozetka": null
     },
     "description": "",
@@ -7530,7 +7530,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2118936939",
       "rozetka": null
     },
     "description": null,
@@ -7578,7 +7578,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2118908564",
       "rozetka": null
     },
     "description": null,
@@ -7621,7 +7621,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2118858388",
       "rozetka": null
     },
     "description": null,
@@ -7664,7 +7664,7 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2118816123",
       "rozetka": null
     },
     "description": null,
@@ -7707,7 +7707,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2117972433",
       "rozetka": null
     },
     "description": null,
@@ -7750,7 +7750,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2117957986",
       "rozetka": null
     },
     "description": null,
@@ -7798,8 +7798,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2117947141",
+      "rozetka": "422400612"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654296-0.jpg",
@@ -7846,8 +7846,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2117938220",
+      "rozetka": "425468880"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654295-0.jpg",
@@ -7889,7 +7889,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2114652589",
       "rozetka": null
     },
     "description": null,
@@ -7932,7 +7932,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2114649735",
       "rozetka": null
     },
     "description": null,
@@ -7975,7 +7975,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2114646247",
       "rozetka": null
     },
     "description": null,
@@ -8018,7 +8018,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2114632818",
       "rozetka": null
     },
     "description": null,
@@ -8061,8 +8061,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2105524284",
+      "rozetka": "418749723"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654290-0.jpg",
@@ -8104,8 +8104,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2104273736",
+      "rozetka": "420824934"
     },
     "description": "",
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654289-0.jpg",
@@ -8147,8 +8147,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1813919584",
+      "rozetka": "420824937"
     },
     "description": "",
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654288-0.jpg",
@@ -8190,8 +8190,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2104273734",
+      "rozetka": "420824931"
     },
     "description": "",
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654287-0.jpg",
@@ -8233,8 +8233,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2080625613",
+      "rozetka": "415733058"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654286-0.jpg",
@@ -8276,8 +8276,8 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2080575730",
+      "rozetka": "503230439"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654285-0.jpg",
@@ -8319,7 +8319,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2077897498",
       "rozetka": null
     },
     "description": null,
@@ -8362,7 +8362,7 @@
     "stockQuantity": 3,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2077012655",
       "rozetka": null
     },
     "description": null,
@@ -8410,8 +8410,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2076806101",
+      "rozetka": "425287572"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654282-0.jpg",
@@ -8458,7 +8458,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2076674802",
       "rozetka": null
     },
     "description": "",
@@ -8506,7 +8506,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2076639935",
       "rozetka": null
     },
     "description": "",
@@ -8554,7 +8554,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2075748312",
       "rozetka": null
     },
     "description": null,
@@ -8602,7 +8602,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2075748311",
       "rozetka": null
     },
     "description": null,
@@ -8650,7 +8650,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2075742362",
       "rozetka": null
     },
     "description": null,
@@ -8698,7 +8698,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2075738841",
       "rozetka": null
     },
     "description": null,
@@ -8746,7 +8746,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2075736782",
       "rozetka": null
     },
     "description": null,
@@ -8794,7 +8794,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2075723283",
       "rozetka": null
     },
     "description": null,
@@ -8842,7 +8842,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2040589410",
       "rozetka": null
     },
     "description": null,
@@ -8885,7 +8885,7 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2040587582",
       "rozetka": null
     },
     "description": null,
@@ -8928,7 +8928,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2034133419",
       "rozetka": null
     },
     "description": null,
@@ -8971,7 +8971,7 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2034133417",
       "rozetka": null
     },
     "description": null,
@@ -9014,7 +9014,7 @@
     "stockQuantity": 9,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2033075720",
       "rozetka": null
     },
     "description": "",
@@ -9057,7 +9057,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2032284002",
       "rozetka": null
     },
     "description": null,
@@ -9105,7 +9105,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2032261614",
       "rozetka": null
     },
     "description": null,
@@ -9153,8 +9153,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2031879092",
+      "rozetka": "455621559"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654266-0.jpg",
@@ -9201,7 +9201,7 @@
     "stockQuantity": 4,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2031874098",
       "rozetka": null
     },
     "description": null,
@@ -9249,8 +9249,8 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2031869302",
+      "rozetka": "428951636"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654264-0.jpg",
@@ -9297,7 +9297,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2031863343",
       "rozetka": null
     },
     "description": null,
@@ -9345,8 +9345,8 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2021711155",
+      "rozetka": "407723529"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654262-0.jpg",
@@ -9388,8 +9388,8 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2020919456",
+      "rozetka": "408043371"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654261-0.jpg",
@@ -9431,8 +9431,8 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2020918095",
+      "rozetka": "408043374"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654260-0.jpg",
@@ -9474,8 +9474,8 @@
     "stockQuantity": 4,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2020895624",
+      "rozetka": "408043365"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654259-0.jpg",
@@ -9517,7 +9517,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2013019657",
       "rozetka": null
     },
     "description": null,
@@ -9565,8 +9565,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2013010090",
+      "rozetka": "404052264"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654257-0.jpg",
@@ -9608,7 +9608,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2012947995",
       "rozetka": null
     },
     "description": null,
@@ -9651,8 +9651,8 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "2000028181",
+      "rozetka": "402715377"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654255-0.jpg",
@@ -9694,7 +9694,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "2000026208",
       "rozetka": null
     },
     "description": "",
@@ -9737,7 +9737,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1976099096",
       "rozetka": null
     },
     "description": null,
@@ -9785,7 +9785,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1976092533",
       "rozetka": null
     },
     "description": null,
@@ -9833,8 +9833,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1976075730",
+      "rozetka": "402543009"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654251-0.jpg",
@@ -9881,8 +9881,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1976071234",
+      "rozetka": "402542970"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654250-0.jpg",
@@ -9929,8 +9929,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1974194312",
+      "rozetka": "402542973"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654249-0.jpg",
@@ -9977,7 +9977,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1973788645",
       "rozetka": null
     },
     "description": null,
@@ -10025,7 +10025,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1973777086",
       "rozetka": null
     },
     "description": null,
@@ -10073,7 +10073,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1973756626",
       "rozetka": null
     },
     "description": null,
@@ -10250,7 +10250,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1960022481",
       "rozetka": null
     },
     "description": null,
@@ -10298,8 +10298,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1960016921",
+      "rozetka": "402543069"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654241-0.jpg",
@@ -10346,8 +10346,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1960008664",
+      "rozetka": "402542985"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654240-0.jpg",
@@ -10394,8 +10394,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1959827564",
+      "rozetka": "402543042"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654239-0.jpg",
@@ -10442,8 +10442,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1942525756",
+      "rozetka": "402543054"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654238-0.jpg",
@@ -10490,8 +10490,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1942521638",
+      "rozetka": "402542937"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654237-0.jpg",
@@ -10538,8 +10538,8 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1942520001",
+      "rozetka": "402542955"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654236-0.jpg",
@@ -10586,8 +10586,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1942516045",
+      "rozetka": "427867232"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654235-0.jpg",
@@ -10634,7 +10634,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1942508329",
       "rozetka": null
     },
     "description": null,
@@ -10682,7 +10682,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1942503200",
       "rozetka": null
     },
     "description": null,
@@ -10730,8 +10730,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1942500345",
+      "rozetka": "402542979"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654232-0.jpg",
@@ -10778,7 +10778,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1942496039",
       "rozetka": null
     },
     "description": null,
@@ -10826,8 +10826,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1941335752",
+      "rozetka": "401577768"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654230-0.jpg",
@@ -10874,8 +10874,8 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1940757785",
+      "rozetka": "401577798"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654228-0.jpg",
@@ -10922,8 +10922,8 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1940757153",
+      "rozetka": "401577801"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654227-0.jpg",
@@ -10970,8 +10970,8 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1940753770",
+      "rozetka": "401577786"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654226-0.jpg",
@@ -11018,8 +11018,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1939667936",
+      "rozetka": "402543084"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654223-0.jpg",
@@ -11066,8 +11066,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1939664473",
+      "rozetka": "422400609"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654222-0.jpg",
@@ -11114,8 +11114,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1939650611",
+      "rozetka": "402542964"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654221-0.jpg",
@@ -11157,7 +11157,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1935925724",
       "rozetka": null
     },
     "description": null,
@@ -11200,7 +11200,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1935894338",
       "rozetka": null
     },
     "description": null,
@@ -11243,7 +11243,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1935870382",
       "rozetka": null
     },
     "description": null,
@@ -11286,8 +11286,8 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1928630907",
+      "rozetka": "402543015"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654217-0.jpg",
@@ -11334,7 +11334,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1925390039",
       "rozetka": null
     },
     "description": null,
@@ -11382,7 +11382,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1925382775",
       "rozetka": null
     },
     "description": null,
@@ -11430,7 +11430,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1925356847",
       "rozetka": null
     },
     "description": null,
@@ -11478,7 +11478,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1925345420",
       "rozetka": null
     },
     "description": null,
@@ -11531,7 +11531,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1919756366",
       "rozetka": null
     },
     "description": null,
@@ -11574,7 +11574,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1919748360",
       "rozetka": null
     },
     "description": null,
@@ -11617,8 +11617,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1919745182",
+      "rozetka": "408043368"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654210-0.jpg",
@@ -11660,7 +11660,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1919744845",
       "rozetka": null
     },
     "description": null,
@@ -11703,7 +11703,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1919734895",
       "rozetka": null
     },
     "description": null,
@@ -11746,7 +11746,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1919723810",
       "rozetka": null
     },
     "description": null,
@@ -11789,8 +11789,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1919718634",
+      "rozetka": "402543048"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654206-0.jpg",
@@ -11832,8 +11832,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1919700674",
+      "rozetka": "402543027"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654205-0.jpg",
@@ -11875,7 +11875,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1914809272",
       "rozetka": null
     },
     "description": null,
@@ -11918,7 +11918,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1903256634",
       "rozetka": null
     },
     "description": null,
@@ -11966,7 +11966,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1903254326",
       "rozetka": null
     },
     "description": null,
@@ -12014,7 +12014,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1903206641",
       "rozetka": null
     },
     "description": null,
@@ -12062,7 +12062,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1902030092",
       "rozetka": null
     },
     "description": null,
@@ -12110,7 +12110,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1901872672",
       "rozetka": null
     },
     "description": null,
@@ -12158,7 +12158,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1896545098",
       "rozetka": null
     },
     "description": null,
@@ -12206,7 +12206,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1896541713",
       "rozetka": null
     },
     "description": null,
@@ -12254,7 +12254,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1896540271",
       "rozetka": null
     },
     "description": null,
@@ -12302,7 +12302,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1896538568",
       "rozetka": null
     },
     "description": null,
@@ -12350,7 +12350,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1896535843",
       "rozetka": null
     },
     "description": null,
@@ -12398,7 +12398,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1896533750",
       "rozetka": null
     },
     "description": null,
@@ -12446,7 +12446,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1896472185",
       "rozetka": null
     },
     "description": null,
@@ -12494,7 +12494,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1896468874",
       "rozetka": null
     },
     "description": null,
@@ -12542,7 +12542,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1896439226",
       "rozetka": null
     },
     "description": null,
@@ -12590,7 +12590,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1895900916",
       "rozetka": null
     },
     "description": null,
@@ -12638,7 +12638,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1895898240",
       "rozetka": null
     },
     "description": null,
@@ -12686,7 +12686,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1895896126",
       "rozetka": null
     },
     "description": null,
@@ -12734,7 +12734,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1895894328",
       "rozetka": null
     },
     "description": null,
@@ -12782,7 +12782,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1895891233",
       "rozetka": null
     },
     "description": null,
@@ -12830,7 +12830,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1895871318",
       "rozetka": null
     },
     "description": null,
@@ -12883,7 +12883,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1895843686",
       "rozetka": null
     },
     "description": null,
@@ -12936,7 +12936,7 @@
     "stockQuantity": 3,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1895823679",
       "rozetka": null
     },
     "description": null,
@@ -12984,7 +12984,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1895794610",
       "rozetka": null
     },
     "description": null,
@@ -13032,7 +13032,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1895249071",
       "rozetka": null
     },
     "description": null,
@@ -13085,7 +13085,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1895242143",
       "rozetka": null
     },
     "description": null,
@@ -13138,7 +13138,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1894970752",
       "rozetka": null
     },
     "description": null,
@@ -13191,7 +13191,7 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1894942880",
       "rozetka": null
     },
     "description": null,
@@ -13244,7 +13244,7 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1894934574",
       "rozetka": null
     },
     "description": null,
@@ -13297,7 +13297,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1894924718",
       "rozetka": null
     },
     "description": null,
@@ -13350,7 +13350,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1894913078",
       "rozetka": null
     },
     "description": null,
@@ -13393,7 +13393,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1893927444",
       "rozetka": null
     },
     "description": null,
@@ -13446,7 +13446,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1893925821",
       "rozetka": null
     },
     "description": null,
@@ -13499,7 +13499,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1893925489",
       "rozetka": null
     },
     "description": null,
@@ -13552,7 +13552,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1893920939",
       "rozetka": null
     },
     "description": null,
@@ -13605,7 +13605,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1893919398",
       "rozetka": null
     },
     "description": null,
@@ -13658,7 +13658,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1893919398",
       "rozetka": null
     },
     "description": null,
@@ -13711,7 +13711,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1893919398",
       "rozetka": null
     },
     "description": null,
@@ -13764,7 +13764,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1893918881",
       "rozetka": null
     },
     "description": null,
@@ -13812,8 +13812,8 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1893907683",
+      "rozetka": "402543024"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654165-0.jpg",
@@ -13855,8 +13855,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1893902467",
+      "rozetka": "402542994"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654164-0.jpg",
@@ -13898,8 +13898,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1884579699",
+      "rozetka": "406517313"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654163-0.jpg",
@@ -13941,7 +13941,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1884495088",
       "rozetka": null
     },
     "description": null,
@@ -13989,8 +13989,8 @@
     "stockQuantity": 20,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1736979476",
+      "rozetka": "402543072"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654161-0.jpg",
@@ -14032,8 +14032,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1864053162",
+      "rozetka": "402542943"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654160-0.jpg",
@@ -14080,8 +14080,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1861890961",
+      "rozetka": "406517310"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654159-0.jpg",
@@ -14123,8 +14123,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1853433951",
+      "rozetka": "402543066"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654158-0.jpg",
@@ -14166,8 +14166,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1853423738",
+      "rozetka": "402543093"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654157-0.jpg",
@@ -14209,7 +14209,7 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1853416232",
       "rozetka": null
     },
     "description": null,
@@ -14252,7 +14252,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1853412217",
       "rozetka": null
     },
     "description": null,
@@ -14300,7 +14300,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1853411537",
       "rozetka": null
     },
     "description": null,
@@ -14348,7 +14348,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1853410719",
       "rozetka": null
     },
     "description": null,
@@ -14396,8 +14396,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1835080381",
+      "rozetka": "408391449"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654152-0.jpg",
@@ -14439,7 +14439,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1824852256",
       "rozetka": null
     },
     "description": null,
@@ -14482,7 +14482,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1824833106",
       "rozetka": null
     },
     "description": null,
@@ -14525,7 +14525,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1823750122",
       "rozetka": null
     },
     "description": null,
@@ -14568,7 +14568,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1822877336",
       "rozetka": null
     },
     "description": null,
@@ -14611,7 +14611,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1822623028",
       "rozetka": null
     },
     "description": null,
@@ -14659,7 +14659,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1822611091",
       "rozetka": null
     },
     "description": null,
@@ -14707,8 +14707,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1820860420",
+      "rozetka": "401577780"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654145-0.jpg",
@@ -14755,8 +14755,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1820860127",
+      "rozetka": "482067514"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654144-0.jpg",
@@ -14798,8 +14798,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1820463817",
+      "rozetka": "402542931"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654143-0.jpg",
@@ -14846,7 +14846,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1814941329",
       "rozetka": null
     },
     "description": null,
@@ -14889,7 +14889,7 @@
     "stockQuantity": 15,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1814918680",
       "rozetka": null
     },
     "description": null,
@@ -14932,8 +14932,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1814905926",
+      "rozetka": "422400615"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654140-0.jpg",
@@ -14980,8 +14980,8 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1814513550",
+      "rozetka": "415733055"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654139-0.jpg",
@@ -15023,8 +15023,8 @@
     "stockQuantity": 3,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1814513445",
+      "rozetka": "415733052"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654138-0.jpg",
@@ -15066,8 +15066,8 @@
     "stockQuantity": 8,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1814486498",
+      "rozetka": "415733064"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654137-0.jpg",
@@ -15109,8 +15109,8 @@
     "stockQuantity": 3,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1813926786",
+      "rozetka": "402543078"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654136-0.jpg",
@@ -15152,7 +15152,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1794272903",
       "rozetka": null
     },
     "description": null,
@@ -15195,8 +15195,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1794257370",
+      "rozetka": "404154270"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654134-0.jpg",
@@ -15238,8 +15238,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1794246451",
+      "rozetka": "402542934"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654133-0.jpg",
@@ -15281,7 +15281,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1794230782",
       "rozetka": null
     },
     "description": null,
@@ -15324,7 +15324,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1794225395",
       "rozetka": null
     },
     "description": null,
@@ -15367,8 +15367,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1794219989",
+      "rozetka": "402543057"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654130-0.jpg",
@@ -15410,7 +15410,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1793964879",
       "rozetka": null
     },
     "description": null,
@@ -15453,8 +15453,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1790650432",
+      "rozetka": "401577765"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654128-0.jpg",
@@ -15501,8 +15501,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1785769704",
+      "rozetka": "402543075"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654127-0.jpg",
@@ -15549,8 +15549,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1785766662",
+      "rozetka": "402542958"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654126-0.jpg",
@@ -15597,7 +15597,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1785763487",
       "rozetka": null
     },
     "description": null,
@@ -15645,8 +15645,8 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1783739225",
+      "rozetka": "402542976"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654124-0.jpg",
@@ -15688,7 +15688,7 @@
     "stockQuantity": 8,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1783737713",
       "rozetka": null
     },
     "description": null,
@@ -15731,7 +15731,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1774075743",
       "rozetka": null
     },
     "description": null,
@@ -15774,8 +15774,8 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1773963036",
+      "rozetka": "459334989"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654121-0.jpg",
@@ -15817,7 +15817,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1773945397",
       "rozetka": null
     },
     "description": null,
@@ -15865,8 +15865,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1762967789",
+      "rozetka": "402542967"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654119-0.jpg",
@@ -15908,8 +15908,8 @@
     "stockQuantity": 4,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1762776949",
+      "rozetka": "459334999"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654118-0.jpg",
@@ -15951,8 +15951,8 @@
     "stockQuantity": 4,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1762773581",
+      "rozetka": "459334994"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654117-0.jpg",
@@ -15994,7 +15994,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1762765749",
       "rozetka": null
     },
     "description": null,
@@ -16037,8 +16037,8 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1762246612",
+      "rozetka": "402543045"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654115-0.jpg",
@@ -16080,7 +16080,7 @@
     "stockQuantity": 12,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1752733750",
       "rozetka": null
     },
     "description": "",
@@ -16123,8 +16123,8 @@
     "stockQuantity": 9,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1752719952",
+      "rozetka": "402543030"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654113-0.jpg",
@@ -16166,8 +16166,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1748537242",
+      "rozetka": "401577771"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654112-0.jpg",
@@ -16214,8 +16214,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1748527527",
+      "rozetka": "401577777"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654111-0.jpg",
@@ -16262,7 +16262,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1748517405",
       "rozetka": null
     },
     "description": null,
@@ -16305,8 +16305,8 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1745890000",
+      "rozetka": "402543090"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654109-0.jpg",
@@ -16353,7 +16353,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1736997048",
       "rozetka": null
     },
     "description": null,
@@ -16396,8 +16396,8 @@
     "stockQuantity": 8,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1736990874",
+      "rozetka": "482067529"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654107-0.jpg",
@@ -16439,7 +16439,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1736988646",
       "rozetka": null
     },
     "description": null,
@@ -16482,7 +16482,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1736980583",
       "rozetka": null
     },
     "description": null,
@@ -16525,7 +16525,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1735514406",
       "rozetka": null
     },
     "description": null,
@@ -16573,7 +16573,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1733794883",
       "rozetka": null
     },
     "description": null,
@@ -16621,7 +16621,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1731508805",
       "rozetka": null
     },
     "description": null,
@@ -16669,8 +16669,8 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1729613338",
+      "rozetka": "401577792"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654101-0.jpg",
@@ -16717,8 +16717,8 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1729613222",
+      "rozetka": "401577789"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654100-0.jpg",
@@ -16765,8 +16765,8 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1729613014",
+      "rozetka": "401577804"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654099-0.jpg",
@@ -16813,8 +16813,8 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1729610009",
+      "rozetka": "401577774"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654098-0.jpg",
@@ -16861,7 +16861,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1727246892",
       "rozetka": null
     },
     "description": null,
@@ -16904,8 +16904,8 @@
     "stockQuantity": 2,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1727246613",
+      "rozetka": "433154051"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654096-0.jpg",
@@ -16947,7 +16947,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1727242216",
       "rozetka": null
     },
     "description": null,
@@ -16990,8 +16990,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1727138638",
+      "rozetka": "422400606"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654094-0.jpg",
@@ -17033,8 +17033,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1727138235",
+      "rozetka": "402542961"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654093-0.jpg",
@@ -17076,8 +17076,8 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1727105406",
+      "rozetka": "402542988"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654092-0.jpg",
@@ -17119,7 +17119,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1727092760",
       "rozetka": null
     },
     "description": null,
@@ -17167,7 +17167,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1727080409",
       "rozetka": null
     },
     "description": null,
@@ -17215,7 +17215,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1726788025",
       "rozetka": null
     },
     "description": null,
@@ -17258,7 +17258,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1726771190",
       "rozetka": null
     },
     "description": null,
@@ -17301,8 +17301,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1726738070",
+      "rozetka": "404052267"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654087-0.jpg",
@@ -17349,8 +17349,8 @@
     "stockQuantity": 4,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1726591711",
+      "rozetka": "415733067"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654086-0.jpg",
@@ -17392,8 +17392,8 @@
     "stockQuantity": 3,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1726590626",
+      "rozetka": "415733061"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654085-0.jpg",
@@ -17435,8 +17435,8 @@
     "stockQuantity": 10,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1726584894",
+      "rozetka": "415733070"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654084-0.jpg",
@@ -17478,8 +17478,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1726584462",
+      "rozetka": "402542982"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654083-0.jpg",
@@ -17526,8 +17526,8 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1726393036",
+      "rozetka": "402543060"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654082-0.jpg",
@@ -17574,7 +17574,7 @@
     "stockQuantity": 1,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1726357532",
       "rozetka": null
     },
     "description": null,
@@ -17617,7 +17617,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1726355158",
       "rozetka": null
     },
     "description": null,
@@ -17660,8 +17660,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1726345052",
+      "rozetka": "433154054"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654079-0.jpg",
@@ -17703,8 +17703,8 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1726058724",
+      "rozetka": "498694059"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654078-0.jpg",
@@ -17746,8 +17746,8 @@
     "stockQuantity": 10,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1726045347",
+      "rozetka": "402543021"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654077-0.jpg",
@@ -17789,8 +17789,8 @@
     "stockQuantity": 11,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1725068356",
+      "rozetka": "402543003"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654076-0.jpg",
@@ -17832,8 +17832,8 @@
     "stockQuantity": 10,
     "source": "prom",
     "externalIds": {
-      "prom": null,
-      "rozetka": null
+      "prom": "1725064951",
+      "rozetka": "402543039"
     },
     "description": null,
     "mainImage": "https://crm.h-profit.com/bimages/get/0-26128-4654075-0.jpg",
@@ -17875,7 +17875,7 @@
     "stockQuantity": 0,
     "source": "prom",
     "externalIds": {
-      "prom": null,
+      "prom": "1722611429",
       "rozetka": null
     },
     "description": null,
