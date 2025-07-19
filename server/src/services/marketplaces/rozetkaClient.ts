@@ -77,15 +77,15 @@ export const getProductQuantity = async (
 export const updateProductQuantity = async (
   productId: string,
   quantity: number,
-  price: number,
-  accessToken: string
+  price: number
 ) => {
-  const baseUrl = 'https://api-seller.rozetka.com.ua/items/mass-update'
-  const headers = {
-    Authorization: `Bearer ${accessToken}`,
-    'Content-Language': 'uk',
-  }
   try {
+    const accessToken = await fetchRozetkaAccessToken()
+    const baseUrl = 'https://api-seller.rozetka.com.ua/items/mass-update'
+    const headers = {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    }
     const requestBody = {
       isIgnoreCheck: false, // Set to true if you want to skip validation
       items: [
@@ -119,6 +119,105 @@ export const updateProductQuantity = async (
   }
 }
 
+// Updated function to handle multiple products at once (more efficient)
+export const updateMultipleProductQuantities = async (
+  products: Array<{ productId: string; quantity: number }>
+) => {
+  try {
+    const accessToken = await fetchRozetkaAccessToken()
+    const baseUrl = 'https://api-seller.rozetka.com.ua/items/mass-update'
+    const headers = {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    }
+
+    const requestBody = {
+      isIgnoreCheck: false,
+      items: products.map((product) => ({
+        item_id: parseInt(product.productId),
+        stock_quantity: product.quantity,
+      })),
+    }
+
+    console.log(`🔄 Updating ${products.length} products quantities...`)
+
+    const response = await axios.put(baseUrl, requestBody, {
+      headers,
+    })
+
+    if (response.data.success) {
+      console.log(`✅ ${products.length} products updated successfully`)
+      return response.data
+    } else {
+      console.error(`❌ Failed to update products:`, response.data)
+      throw new Error(`Update failed: ${JSON.stringify(response.data)}`)
+    }
+  } catch (error: any) {
+    console.error(
+      `❌ Error updating products quantities:`,
+      error.response?.data || error.message
+    )
+    throw new Error(`Failed to update products quantities: ${error.message}`)
+  }
+}
+
+// Function to update both price and quantity (since the API supports both)
+export const updateProductPriceAndQuantity = async (
+  productId: string,
+  price?: number,
+  quantity?: number
+) => {
+  try {
+    const accessToken = await fetchRozetkaAccessToken()
+    const baseUrl = 'https://api-seller.rozetka.com.ua/items/mass-update'
+    const headers = {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    }
+
+console.log('price', price);
+
+
+    const item: any = {
+      item_id: parseInt(productId)
+    }
+
+    if (price !== undefined) {
+      item.price = price
+    }
+    if (quantity !== undefined) {
+      item.stock_quantity = quantity
+    }
+
+    const requestBody = {
+      isIgnoreCheck: false,
+      items: [item]
+    }
+console.log('requestBody', requestBody);
+
+
+    console.log(`🔄 Updating product ${productId}...`)
+    
+    const response = await axios.put(baseUrl, requestBody, {
+      headers,
+    })
+
+    if (response.data.success) {
+      console.log(`✅ Product ${productId} updated successfully`)
+      return response.data
+    } else {
+      console.error(`❌ Failed to update product ${productId}:`, response.data)
+      throw new Error(`Update failed: ${JSON.stringify(response.data)}`)
+    }
+  } catch (error: any) {
+    console.error(
+      `❌ Error updating product ${productId}:`,
+      error.response?.data || error.message
+    )
+    throw new Error(`Failed to update product: ${error.message}`)
+  }
+}
+
 async function fetchRozetkaProduct() {
   try {
     // Step 1: Get access token
@@ -135,15 +234,22 @@ async function fetchRozetkaProduct() {
   }
 }
 
-async function updateRozetkaProduct() {
+async function updateRozetkaProducts() {
   try {
     // Step 1: Get access token
-    const accessToken = await fetchRozetkaAccessToken()
+    //const accessToken = await fetchRozetkaAccessToken()
 
     // Step 2: Fetch all products using the token
-    const response = await updateProductQuantity('110365589', 5, 51, accessToken)
-    console.log(response)
+    /* const response = await updateProductQuantity('110365589', 5, 51)
+    console.log(response) */
 
+    /* const response = await updateMultipleProductQuantities([
+      { productId: '110365589', quantity: 11 },
+      { productId: '110365578', quantity: 5 },
+    ]) */
+
+const response = await updateProductPriceAndQuantity('110365589', 4350, 3)
+    console.log(response)
     // return allProducts
   } catch (error: any) {
     console.error('❌ Main process failed:', error.message)
@@ -151,4 +257,4 @@ async function updateRozetkaProduct() {
   }
 }
 //fetchRozetkaProduct()
-updateRozetkaProduct()
+updateRozetkaProducts()
