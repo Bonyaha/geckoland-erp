@@ -74,10 +74,9 @@ export const getProductQuantity = async (
   }
 }
 
-export const updateProductQuantity = async (
+export const updateRozetkaQuantity = async (
   productId: string,
-  quantity: number,
-  price: number
+  quantity: number
 ) => {
   try {
     const accessToken = await fetchRozetkaAccessToken()
@@ -91,8 +90,7 @@ export const updateProductQuantity = async (
       items: [
         {
           item_id: parseInt(productId), // Convert to number as required by API
-          stock_quantity: quantity,
-          price,
+          stock_quantity: quantity
         },
       ],
     }
@@ -120,7 +118,7 @@ export const updateProductQuantity = async (
 }
 
 // Updated function to handle multiple products at once (more efficient)
-export const updateMultipleProductQuantities = async (
+export const updateMultipleRozetkaQuantities = async (
   products: Array<{ productId: string; quantity: number }>
 ) => {
   try {
@@ -162,7 +160,7 @@ export const updateMultipleProductQuantities = async (
 }
 
 // Function to update both price and quantity (since the API supports both)
-export const updateProductPriceAndQuantity = async (
+export const updateRozetkaPriceAndQuantity = async (
   productId: string,
   price?: number,
   quantity?: number
@@ -239,16 +237,16 @@ async function updateRozetkaProducts() {
     // Step 1: Get access token
     //const accessToken = await fetchRozetkaAccessToken()
 
-    // Step 2: Fetch all products using the token
-    /* const response = await updateProductQuantity('110365589', 5, 51)
+    // Step 2: Update product using the token, product ID and quantity
+    /* const response = await updateRozetkaQuantity('110365589', 5, 51)
     console.log(response) */
 
-    /* const response = await updateMultipleProductQuantities([
+    /* const response = await updateMultipleRozetkaQuantities([
       { productId: '110365589', quantity: 11 },
       { productId: '110365578', quantity: 5 },
     ]) */
 
-const response = await updateProductPriceAndQuantity('110365589', 4350, 3)
+const response = await updateRozetkaPriceAndQuantity('110365589', 4350, 3)
     console.log(response)
     // return allProducts
   } catch (error: any) {
@@ -257,4 +255,4 @@ const response = await updateProductPriceAndQuantity('110365589', 4350, 3)
   }
 }
 //fetchRozetkaProduct()
-updateRozetkaProducts()
+//updateRozetkaProducts()

@@ -20,7 +20,7 @@ const headers = getHeaders()
   return response.data.quantity // Adjust based on Prom’s actual response structure
 }
 
-export const updateProductQuantity = async (
+export const updatePromQuantity = async (
   productId: string,
   quantity: number
 ) => {
