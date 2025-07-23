@@ -74,9 +74,24 @@ export const getProductQuantity = async (
   }
 }
 
-export const updateRozetkaQuantity = async (
+interface RozetkaUpdateParams {
+  quantity?: number
+  price?: number
+  // Add more fields as needed in the future
+  // isIgnoreCheck?: boolean
+}
+
+interface RozetkaProductUpdate {
+  item_id: number
+  stock_quantity?: number
+  price?: number
+  // Add more fields as needed
+}
+
+export const updateRozetkaProduct = async (
   productId: string,
-  quantity: number
+  updates: RozetkaUpdateParams,
+  options: { isIgnoreCheck?: boolean } = {}
 ) => {
   try {
     const accessToken = await fetchRozetkaAccessToken()
@@ -85,17 +100,24 @@ export const updateRozetkaQuantity = async (
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     }
-    const requestBody = {
-      isIgnoreCheck: false, // Set to true if you want to skip validation
-      items: [
-        {
-          item_id: parseInt(productId), // Convert to number as required by API
-          stock_quantity: quantity
-        },
-      ],
+
+    const item: RozetkaProductUpdate = {
+      item_id: parseInt(productId),
     }
 
-    console.log(`🔄 Updating product ${productId} quantity to ${quantity}...`)
+    if (updates.quantity !== undefined) {
+      item.stock_quantity = updates.quantity
+    }
+    if (updates.price !== undefined) {
+      item.price = updates.price
+    }
+
+    const requestBody = {
+      isIgnoreCheck: options.isIgnoreCheck || true,
+      items: [item],
+    }
+
+    console.log(`🔄 Updating Rozetka product ${productId}:`, updates)
 
     const response = await axios.put(baseUrl, requestBody, {
       headers,
@@ -118,8 +140,9 @@ export const updateRozetkaQuantity = async (
 }
 
 // Updated function to handle multiple products at once (more efficient)
-export const updateMultipleRozetkaQuantities = async (
-  products: Array<{ productId: string; quantity: number }>
+export const updateMultipleRozetkaProducts = async (
+  products: Array<{ productId: string; updates: RozetkaUpdateParams }>,
+  options: { isIgnoreCheck?: boolean } = {}
 ) => {
   try {
     const accessToken = await fetchRozetkaAccessToken()
@@ -130,21 +153,31 @@ export const updateMultipleRozetkaQuantities = async (
     }
 
     const requestBody = {
-      isIgnoreCheck: false,
-      items: products.map((product) => ({
-        item_id: parseInt(product.productId),
-        stock_quantity: product.quantity,
-      })),
+      isIgnoreCheck: options.isIgnoreCheck || false,
+      items: products.map(({ productId, updates }) => {
+        const item: RozetkaProductUpdate = {
+          item_id: parseInt(productId),
+        }
+
+        if (updates.quantity !== undefined) {
+          item.stock_quantity = updates.quantity
+        }
+        if (updates.price !== undefined) {
+          item.price = updates.price
+        }
+
+        return item
+      }),
     }
 
-    console.log(`🔄 Updating ${products.length} products quantities...`)
+    console.log(`🔄 Updating ${products.length} Rozetka products...`)
 
     const response = await axios.put(baseUrl, requestBody, {
       headers,
     })
 
     if (response.data.success) {
-      console.log(`✅ ${products.length} products updated successfully`)
+      console.log(`✅ ${products.length} Rozetka products updated successfully`)
       return response.data
     } else {
       console.error(`❌ Failed to update products:`, response.data)
@@ -152,68 +185,30 @@ export const updateMultipleRozetkaQuantities = async (
     }
   } catch (error: any) {
     console.error(
-      `❌ Error updating products quantities:`,
+      `❌ Error updating Rozetka products:`,
       error.response?.data || error.message
     )
-    throw new Error(`Failed to update products quantities: ${error.message}`)
+    throw new Error(`Failed to update Rozetka products: ${error.message}`)
   }
 }
 
-// Function to update both price and quantity (since the API supports both)
+// Backward compatibility functions (optional - can be removed later)
+export const updateRozetkaQuantity = async (
+  productId: string,
+  quantity: number
+) => {
+  return updateRozetkaProduct(productId, { quantity })
+}
+
 export const updateRozetkaPriceAndQuantity = async (
   productId: string,
   price?: number,
   quantity?: number
 ) => {
-  try {
-    const accessToken = await fetchRozetkaAccessToken()
-    const baseUrl = 'https://api-seller.rozetka.com.ua/items/mass-update'
-    const headers = {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    }
-
-console.log('price', price);
-
-
-    const item: any = {
-      item_id: parseInt(productId)
-    }
-
-    if (price !== undefined) {
-      item.price = price
-    }
-    if (quantity !== undefined) {
-      item.stock_quantity = quantity
-    }
-
-    const requestBody = {
-      isIgnoreCheck: false,
-      items: [item]
-    }
-console.log('requestBody', requestBody);
-
-
-    console.log(`🔄 Updating product ${productId}...`)
-    
-    const response = await axios.put(baseUrl, requestBody, {
-      headers,
-    })
-
-    if (response.data.success) {
-      console.log(`✅ Product ${productId} updated successfully`)
-      return response.data
-    } else {
-      console.error(`❌ Failed to update product ${productId}:`, response.data)
-      throw new Error(`Update failed: ${JSON.stringify(response.data)}`)
-    }
-  } catch (error: any) {
-    console.error(
-      `❌ Error updating product ${productId}:`,
-      error.response?.data || error.message
-    )
-    throw new Error(`Failed to update product: ${error.message}`)
-  }
+  const updates: RozetkaUpdateParams = {}
+  if (price !== undefined) updates.price = price
+  if (quantity !== undefined) updates.quantity = quantity
+  return updateRozetkaProduct(productId, updates)
 }
 
 async function fetchRozetkaProduct() {
@@ -232,27 +227,7 @@ async function fetchRozetkaProduct() {
   }
 }
 
-async function updateRozetkaProducts() {
-  try {
-    // Step 1: Get access token
-    //const accessToken = await fetchRozetkaAccessToken()
 
-    // Step 2: Update product using the token, product ID and quantity
-    /* const response = await updateRozetkaQuantity('110365589', 5, 51)
-    console.log(response) */
-
-    /* const response = await updateMultipleRozetkaQuantities([
-      { productId: '110365589', quantity: 11 },
-      { productId: '110365578', quantity: 5 },
-    ]) */
-
-const response = await updateRozetkaPriceAndQuantity('110365589', 4350, 3)
-    console.log(response)
-    // return allProducts
-  } catch (error: any) {
-    console.error('❌ Main process failed:', error.message)
-    throw error
-  }
-}
-//fetchRozetkaProduct()
-//updateRozetkaProducts()
+updateRozetkaProduct('110365589', {
+  price: 4340,
+})

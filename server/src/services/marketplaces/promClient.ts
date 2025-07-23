@@ -230,5 +230,11 @@ export const updateMultiplePromProducts = async (
   // Return the response data, which includes processed_ids and errors
   return response.data
 } */
-updatePromProduct('2121361183', { quantity: 8, price: 43 })
+
 //updatePromQuantity('2121361183',  2 )
+
+//updatePromProduct('2121361183', { quantity: 8, price: 43 })
+updateMultiplePromProducts([
+  { productId: '2121361183', updates: { quantity: 8, price: 43 } },//4 39
+  { productId: '1726584894', updates: { quantity: 5, price: 50 } }, //3 57
+])
