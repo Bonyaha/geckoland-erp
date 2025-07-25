@@ -234,7 +234,7 @@ export const updateMultiplePromProducts = async (
 //updatePromQuantity('2121361183',  2 )
 
 //updatePromProduct('2121361183', { quantity: 8, price: 43 })
-updateMultiplePromProducts([
+/* updateMultiplePromProducts([
   { productId: '2121361183', updates: { quantity: 8, price: 43 } },//4 39
   { productId: '1726584894', updates: { quantity: 5, price: 50 } }, //3 57
-])
+]) */

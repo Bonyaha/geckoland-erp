@@ -228,6 +228,6 @@ async function fetchRozetkaProduct() {
 }
 
 
-updateRozetkaProduct('110365589', {
+/* updateRozetkaProduct('110365589', {
   price: 4340,
-})
+}) */

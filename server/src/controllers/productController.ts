@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { PrismaClient } from '@prisma/client'
-import { updateRozetkaQuantity } from '../services/marketplaces/rozetkaClient'
-import { updatePromQuantity } from '../services/marketplaces/promClient'
+import { updateRozetkaProduct } from '../services/marketplaces/rozetkaClient'
+import { updatePromProduct } from '../services/marketplaces/promClient'
 
 const prisma = new PrismaClient()
 
@@ -58,9 +58,16 @@ export const createProduct = async (
     } = req.body
 
     // Validate required fields
-    if (!productId || !name || price === undefined || stockQuantity === undefined) {
-      res.status(400).json({ message: 'productId, name, price, and stockQuantity are required' });
-      return;
+    if (
+      !productId ||
+      !name ||
+      price === undefined ||
+      stockQuantity === undefined
+    ) {
+      res.status(400).json({
+        message: 'productId, name, price, and stockQuantity are required',
+      })
+      return
     }
 
     const product = await prisma.products.create({
@@ -91,30 +98,74 @@ export const createProduct = async (
         measureUnit,
         status,
       },
-    });
-    res.status(201).json(product);
+    })
+    res.status(201).json(product)
   } catch (error) {
-    res.status(500).json({ message: 'Error creating product' });
+    res.status(500).json({ message: 'Error creating product' })
   }
 }
 
-export const updateProductQuantity = async (req: Request, res: Response) => {
-  const { productId, newQuantity } = req.body
+interface ProductUpdateParams {
+  quantity?: number
+  price?: number
+  // Add more fields as needed
+}
+
+export const updateProduct = async (req: Request, res: Response) => {
+  const { productId } = req.params
+  const updates: ProductUpdateParams = {}
+
+  // Extract update parameters from request body
+  if (req.body.quantity !== undefined) updates.quantity = req.body.quantity
+  if (req.body.price !== undefined) updates.price = req.body.price
+
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ message: 'No valid update parameters provided' })
+    return
+  }
 
   try {
+    // Prepare database update data
+    const dbUpdateData: any = {
+      needsSync: true,
+      lastSynced: new Date(),
+    }
+
+    if (updates.quantity !== undefined)
+      dbUpdateData.stockQuantity = updates.quantity
+    if (updates.price !== undefined) dbUpdateData.price = updates.price
+
+    console.log(`Updating product ${productId} with data:`, dbUpdateData)
+
     // Update app database
     const product = await prisma.products.update({
       where: { productId },
-      data: {
-        stockQuantity: newQuantity,
-        needsSync: true,
-        lastSynced: new Date(),
-      },
+      data: dbUpdateData,
     })
 
-    // Handle external IDs safely with type checking
+    // Handle external marketplace updates
     const syncPromises: Promise<any>[] = []
+    const syncResults: string[] = []
 
+    // Helper function to handle marketplace sync with unified error handling and logging
+    const createMarketplaceUpdatePromise = async (
+      marketplaceName: string,
+      productId: string,
+      updateFunction: () => Promise<any>
+    ) => {
+      try {
+        await updateFunction()
+        syncResults.push(marketplaceName)
+        console.log(
+          `✅ ${marketplaceName} product ${productId} updated successfully`
+        )
+      } catch (error) {
+        console.error(
+          `Failed to update ${marketplaceName} product ${productId}:`,
+          error
+        )
+      }
+    }
     if (
       product.externalIds &&
       typeof product.externalIds === 'object' &&
@@ -124,13 +175,15 @@ export const updateProductQuantity = async (req: Request, res: Response) => {
 
       // Update Prom if ID exists
       if (externalIds.prom && typeof externalIds.prom === 'string') {
+        const promUpdates: any = {}
+        if (updates.quantity !== undefined)
+          promUpdates.quantity = updates.quantity
+        if (updates.price !== undefined) promUpdates.price = updates.price
+
         syncPromises.push(
-          updatePromQuantity(externalIds.prom, newQuantity).catch((error) => {
-            console.error(
-              `Failed to update Prom quantity for product ${productId}:`,
-              error
-            )
-          })
+          createMarketplaceUpdatePromise('Prom', productId, () =>
+            updatePromProduct(externalIds.prom, promUpdates)
+          )
         )
       }
 
@@ -141,15 +194,14 @@ export const updateProductQuantity = async (req: Request, res: Response) => {
         externalIds.rozetka.item_id &&
         typeof externalIds.rozetka.item_id === 'string'
       ) {
+        const rozetkaUpdates: any = {}
+        if (updates.quantity !== undefined)
+          rozetkaUpdates.quantity = updates.quantity
+        if (updates.price !== undefined) rozetkaUpdates.price = updates.price
+
         syncPromises.push(
-          updateRozetkaQuantity(externalIds.rozetka.item_id, newQuantity).catch(
-            (error) => {
-              console.error(
-                `Failed to update Rozetka quantity for product ${productId}:`,
-                error
-              )
-              // Don't throw - continue with other updates
-            }
+          createMarketplaceUpdatePromise('Rozetka', productId, () =>
+            updateRozetkaProduct(externalIds.rozetka.item_id, rozetkaUpdates)
           )
         )
       }
@@ -167,11 +219,13 @@ export const updateProductQuantity = async (req: Request, res: Response) => {
     })
 
     res.json({
-      message: 'Quantity updated and synced successfully',
-      syncedMarketplaces: syncPromises.length,
+      message: 'Product updated and synced successfully',
+      updates: updates,
+      syncedMarketplaces: syncResults,
+      totalMarketplaces: syncPromises.length,
     })
   } catch (error) {
-    console.error('Sync error:', error)
-    res.status(500).json({ message: 'Failed to update quantity' })
+    console.error('Product update error:', error)
+    res.status(500).json({ message: 'Failed to update product' })
   }
 }
