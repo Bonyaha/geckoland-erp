@@ -30,6 +30,7 @@ interface PromProductUpdate {
   id: number // Changed from string to number
   price?: number
   quantity_in_stock?: number
+  presence?: 'available' | 'not_available'
   // Add more fields as needed
 }
 
@@ -56,6 +57,13 @@ export const updatePromProduct = async (
   }
   if (updates.quantity !== undefined) {
     productUpdate.quantity_in_stock = updates.quantity
+
+    // Automatically set presence based on quantity
+    if (updates.quantity > 0) {
+      productUpdate.presence = 'available'
+    } else {
+      productUpdate.presence = 'not_available'
+    }
   }
 
   const payload = [productUpdate]
@@ -142,7 +150,15 @@ export const updateMultiplePromProducts = async (
 
     if (updates.quantity !== undefined) {
       productUpdate.quantity_in_stock = updates.quantity
+
+      // Automatically set presence based on quantity
+      if (updates.quantity > 0) {
+        productUpdate.presence = 'available'
+      } else {
+        productUpdate.presence = 'not_available'
+      }
     }
+
     if (updates.price !== undefined) {
       productUpdate.price = updates.price
     }
