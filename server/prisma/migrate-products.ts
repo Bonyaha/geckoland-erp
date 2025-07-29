@@ -1,4 +1,4 @@
-// migrate-products.ts
+// This file contains a script to modify the products table in Prisma: adding or updating the externalIds field for each product
 import { PrismaClient } from '@prisma/client'
 import fs from 'fs'
 import path from 'path'
