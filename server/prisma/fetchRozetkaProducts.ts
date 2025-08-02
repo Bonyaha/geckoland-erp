@@ -48,13 +48,13 @@ async function fetchAllRozetkaProducts(accessToken: string): Promise<any[]> {
   const pageSize = 20 // Maximum items per page
   let totalPages = 1 // Will be updated from first response
 
-  console.log('📦 Starting to fetch all products with pagination...')
+  //console.log('📦 Starting to fetch all products with pagination...')
 
   try {
     while (currentPage <= totalPages) {
-      console.log(
+    /*   console.log(
         `Fetching page ${currentPage}/${totalPages} (${pageSize} items per page)`
-      )
+      ) */
 
       const response = await axios.get(baseUrl, {
         headers,
@@ -73,16 +73,16 @@ async function fetchAllRozetkaProducts(accessToken: string): Promise<any[]> {
       // Update pagination info from first response
       if (currentPage === 1) {
         totalPages = _meta.pageCount
-        console.log(
+        /* console.log(
           `📊 Total products: ${_meta.totalCount}, Total pages: ${totalPages}`
-        )
+        ) */
       }
 
       if (items && items.length > 0) {
         allProducts.push(...items)
-        console.log(
+       /*  console.log(
           `✅ Fetched ${items.length} products from page ${currentPage}. Total so far: ${allProducts.length}`
-        )
+        ) */
       } else {
         console.log(`⚠️ No products returned from page ${currentPage}`)
       }
@@ -92,7 +92,7 @@ async function fetchAllRozetkaProducts(accessToken: string): Promise<any[]> {
       await new Promise((resolve) => setTimeout(resolve, 200))
     }
 
-    console.log(`🎉 Finished! Total products fetched: ${allProducts.length}`)
+    //console.log(`🎉 Finished! Total products fetched: ${allProducts.length}`)
     return allProducts
   } catch (error: any) {
     console.error(
@@ -172,14 +172,14 @@ async function fetchRozetkaChangedProducts(
   let totalPages = 1
   const pageSize = 100
 
-  console.log('🔄 Starting to fetch changed products...')
+  //console.log('🔄 Starting to fetch changed products...')
   //console.log('📋 Filters applied:', filters)
 
   try {
     while (currentPage <= totalPages) {
-      console.log(
+      /* console.log(
         `Fetching page ${currentPage}/${totalPages} (${pageSize} items per page)`
-      )
+      ) */
 
       const params: Record<string, any> = {
         params: {
@@ -207,16 +207,16 @@ async function fetchRozetkaChangedProducts(
       // Update pagination info from first response
       if (currentPage === 1) {
         totalPages = _meta.pageCount
-        console.log(
+        /* console.log(
           `📊 Total changed products: ${_meta.totalCount}, Total pages: ${totalPages}`
-        )
+        ) */
       }
 
       if (items && items.length > 0) {
         allChangedProducts.push(...items)
-        console.log(
+        /* console.log(
           `✅ Fetched ${items.length} changed products from page ${currentPage}. Total so far: ${allChangedProducts.length}`
-        )
+        ) */
       } else {
         console.log(`⚠️ No changed products returned from page ${currentPage}`)
       }
@@ -227,9 +227,9 @@ async function fetchRozetkaChangedProducts(
       await new Promise((resolve) => setTimeout(resolve, 200))
     }
 
-    console.log(
+   /*  console.log(
       `🎉 Finished! Total changed products fetched: ${allChangedProducts.length}`
-    )
+    ) */
     return allChangedProducts
   } catch (error: any) {
     console.error(
@@ -247,7 +247,7 @@ export async function fetchChangedRozetkaProducts() {
 
     // Step 2: Fetch all products using the token
     const allProducts = await fetchAllRozetkaProducts(accessToken)
-    console.log('allProducts', allProducts[0])
+    //console.log('allProducts', allProducts[0])
 
      return allProducts
   } catch (error: any) {

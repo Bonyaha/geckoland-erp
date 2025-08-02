@@ -131,7 +131,7 @@ export async function fetchPromProducts() {
   let lastId = null // For cursor-based pagination
   let hasMoreProducts = true
 
-  console.log('Starting to fetch all products using last_id pagination...')
+  //console.log('Starting to fetch all products using last_id pagination...')
 
   while (hasMoreProducts) {
     try {
@@ -142,11 +142,11 @@ export async function fetchPromProducts() {
       // Add last_id parameter if we have it (for subsequent requests)
       if (lastId !== null) {
         params.last_id = lastId
-        console.log(
+       /*  console.log(
           `Fetching products with last_id: ${lastId}, limit: ${limit}`
-        )
+        ) */
       } else {
-        console.log(`Fetching first batch with limit: ${limit}`)
+        //console.log(`Fetching first batch with limit: ${limit}`)
       }
 
       const response = await axios.get(baseUrl, {
@@ -158,25 +158,25 @@ export async function fetchPromProducts() {
 
       if (products && products.length > 0) {
         allProducts.push(...products)
-        console.log(
+      /*   console.log(
           `Fetched ${products.length} products. Total so far: ${allProducts.length}`
-        )
+        ) */
 
         // Get the ID of the last product for the next request
         // Assuming each product has an 'id' field
         const lastProduct = products[products.length - 1]
         const newLastId = lastProduct.id
 
-        console.log(`Last product ID in this batch: ${newLastId}`)
+        //console.log(`Last product ID in this batch: ${newLastId}`)
 
         // If we got fewer products than the limit, we've reached the end
         if (products.length < limit) {
           hasMoreProducts = false
-          console.log('Reached the end - got fewer products than limit')
+         // console.log('Reached the end - got fewer products than limit')
         } else if (newLastId === lastId) {
           // Safety check: if last_id hasn't changed, break to avoid infinite loop
           hasMoreProducts = false
-          console.log('Stopping - last_id unchanged')
+          //console.log('Stopping - last_id unchanged')
         } else {
           lastId = newLastId
         }
@@ -196,12 +196,12 @@ export async function fetchPromProducts() {
     }
   }
 
-  console.log(`\nFinished! Total products fetched: ${allProducts.length}`)
-  console.log(
+  //console.log(`\nFinished! Total products fetched: ${allProducts.length}`)
+  /* console.log(
     'Product with id 1919700674:',
     allProducts.find((product) => product.id === 1919700674) ||
       'Product not found'
-  )
+  ) */
   return allProducts
 }
 //fetchPromProducts()
