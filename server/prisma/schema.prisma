@@ -20,33 +20,47 @@ model Users {
 }
 
 model Products {
-  productId     String      @id
-  sku           String? // Computed key for duplicate detection (e.g., SKU)
-  name          String
-  price         Float
-  stockQuantity Int
-  source        Source      @default(prom)
-  externalIds   Json // Marketplace-specific IDs (e.g., { prom: "id", rozetka: "rz_item_id" })
-  description   String?
-  mainImage     String?
-  images        String[]
-  inStock       Int // Changed to Int? to store the stock count
-  available     Boolean // Changed to Boolean? to indicate availability
-  priceOld      Float?
-  pricePromo    Float?
-  updatedPrice  Float?
-  currency      String?
-  sellingType   String?
-  presence      String?
-  dateModified  DateTime?
-  lastSynced    DateTime?
-  needsSync     Boolean     @default(false)
-  multilangData Json?
-  categoryData  Json?
-  measureUnit   String?
-  status        String?
-  Sales         Sales[]
-  Purchases     Purchases[]
+  productId         String      @id
+  sku               String? // Computed key for duplicate detection (e.g., SKU)
+  name              String
+  price             Float
+  stockQuantity     Int // Master/total quantity across all channels
+  
+  // Independent marketplace quantities
+  promQuantity      Int? // Current quantity on Prom marketplace
+  rozetkaQuantity   Int? // Current quantity on Rozetka marketplace
+  
+  // Last sync timestamps per marketplace
+  lastPromSync      DateTime?
+  lastRozetkaSync   DateTime?
+  
+  source            Source      @default(prom)
+  externalIds       Json // Marketplace-specific IDs (e.g., { prom: "id", rozetka: "rz_item_id" })
+  description       String?
+  mainImage         String?
+  images            String[]
+  inStock           Int // Changed to Int? to store the stock count
+  available         Boolean // Changed to Boolean? to indicate availability
+  priceOld          Float?
+  pricePromo        Float?
+  updatedPrice      Float?
+  currency          String?
+  sellingType       String?
+  presence          String?
+  dateModified      DateTime?
+  lastSynced        DateTime? // General last sync timestamp
+  needsSync         Boolean     @default(false)
+  
+  // Sync flags per marketplace
+  needsPromSync     Boolean     @default(false)
+  needsRozetkaSync  Boolean     @default(false)
+  
+  multilangData     Json?
+  categoryData      Json?
+  measureUnit       String?
+  status            String?
+  Sales             Sales[]
+  Purchases         Purchases[]
 }
 
 model Sales {
