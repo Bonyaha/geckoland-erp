@@ -4,7 +4,7 @@ import * as dotenv from 'dotenv'
 
 dotenv.config()
 
-async function fetchCRMProducts() {
+export async function fetchCRMProducts() {
   const apiKey = process.env.HUGEPROFIT_API_KEY
   if (!apiKey) throw new Error('HUGEPROFIT_API_KEY is not defined in .env')
 
@@ -16,42 +16,57 @@ async function fetchCRMProducts() {
 
   try {
     const response = await axios.get(baseUrl, { headers })
-    console.log('Sample product:', response.data.data[0])
+    //console.log('Sample product:', response.data.data[0])
 
     const { data: products } = response.data
     console.log(`Fetched ${products.length} products.`)
 
     allProducts.push(...products)
 
-    const transformedProducts = allProducts.map((product: any) => ({
-      productId: String(product.id),
-      sku: product.sku,
-      name: product.name,
-      price: parseFloat(product.stock[0]?.price || 0),
-      stockQuantity: parseInt(product.stock[0]?.quantity || 0, 10),
-      source: 'crm',
-      externalIds: { prom: null, rozetka: null },
-      description: product.description === 'None' ? null : product.description,
-      mainImage: product.images[0] || null,
-      images: product.images || [],
-      inStock: parseInt(product.stock[0]?.instock || 0, 10), // Keep as integer
-      available: Boolean(product.stock[0]?.instock), // Convert to boolean (true if instock > 0)
-      priceOld: null,
-      pricePromo: null,
-      updatedPrice: null,
-      currency: null,
-      sellingType: null,
-      presence: null,
-      dateModified: null,
-      lastSynced: null,
-      needsSync: false,
-      multilangData: null,
-      categoryData: product.category || [],
-      measureUnit: product.unit || null,
-      status: null,
-    }))
+    // Transform products to match database structure
+    const transformedProducts = allProducts.map((product: any) => {
+      const stockInfo = product.stock?.[0] || {}
 
-    await fs.writeFile(
+      return {
+        productId: String(product.id),
+        sku: product.sku || null,
+        name: product.name || null,
+        price: parseFloat(stockInfo.price || 0),
+        stockQuantity: parseInt(stockInfo.quantity || 0, 10),
+
+        externalIds: { prom: null, rozetka: null },
+        description:
+          product.description === 'None' ? null : product.description,
+        mainImage: product.images?.[0] || null,
+        images: product.images || [],
+        inStock: parseInt(stockInfo.instock || 0, 10),
+        available: Boolean(stockInfo.instock > 0),
+        priceOld: null,
+        pricePromo:
+          parseFloat(stockInfo.sale_price || 0) !==
+          parseFloat(stockInfo.price || 0)
+            ? parseFloat(stockInfo.sale_price || 0)
+            : null,
+        updatedPrice: parseFloat(stockInfo.price || 0),
+        currency: 'UAH', // Assuming Ukrainian Hryvnia based on your location
+        sellingType: product.type_product === 1 ? 'regular' : 'other',
+        presence: stockInfo.instock > 0 ? 'available' : 'out_of_stock',
+        dateModified: new Date(),
+        lastSynced: new Date(),
+        needsSync: false,        
+        categoryData: product.category || [],
+        measureUnit: product.unit || 'units',
+        status: 'active',
+        lastPromSync: null,
+        lastRozetkaSync: null,
+        needsPromSync: false,
+        needsRozetkaSync: false,
+        promQuantity: parseInt(stockInfo.quantity || 0, 10),
+        rozetkaQuantity: parseInt(stockInfo.quantity || 0, 10),
+      }
+    })
+
+    /* await fs.writeFile(
       'prisma/data/crmProducts.json',
       JSON.stringify(transformedProducts, null, 2)
     )
@@ -59,11 +74,12 @@ async function fetchCRMProducts() {
     console.log(`\nFinished! Total products fetched: ${allProducts.length}`)
     console.log(
       `Transformed products saved to prisma/realData/crmProducts.json`
-    )
+    ) */
+    return transformedProducts
   } catch (error) {
     console.error('Error fetching products from HugeProfit API:', error)
     throw error
   }
 }
 
-fetchCRMProducts()
+//fetchCRMProducts()

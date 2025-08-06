@@ -1,6 +1,10 @@
 //import cron from 'node-cron'
 import { PrismaClient } from '@prisma/client'
-import { fetchPromProducts } from '../prisma/fetchPromProducts'
+import { fetchCRMProducts } from '../prisma/fetchHPData'
+import {
+  fetchAndTransformPromProducts,
+  fetchPromProducts,
+} from '../prisma/fetchPromProducts'
 import { fetchChangedRozetkaProducts } from '../prisma/fetchRozetkaProducts'
 import { updatePromProduct } from './services/marketplaces/promClient'
 import { updateRozetkaProduct } from './services/marketplaces/rozetkaClient'
@@ -8,12 +12,37 @@ import { updateRozetkaProduct } from './services/marketplaces/rozetkaClient'
 const prisma = new PrismaClient()
 
 // Updating quntities for all products in app database
-const updateAllMarketplaceQuantities = async () => {
+//in the future fetch from HugeProfit API needs to be removed
+// and replaced with fetching from Prom and Rozetka APIs solely
+
+/* const updateAllMarketplaceQuantitiesOld = async () => {
   console.log('Updating all marketplace quantities for all products...')
 
-  // Get all products
+  // First, fetch and sync CRM products
+  console.log('🔄 Fetching CRM products data...')
+  const crmProducts = await fetchCRMProducts()
+  console.log(`Found ${crmProducts.length} CRM products`)
+
+  // Update database with CRM products (stockQuantity and add new products)
+  for (const crmProduct of crmProducts) {
+    await prisma.products.upsert({
+      where: { productId: crmProduct.productId },
+      update: {
+        stockQuantity: normalizeQuantity(crmProduct.stockQuantity),
+      },
+      create: {
+        ...crmProduct,
+        stockQuantity: normalizeQuantity(crmProduct.stockQuantity),
+      },
+    })
+  }
+  console.log(`✅ Updated/created ${crmProducts.length} products from CRM`)
+
+  // Get all products after CRM sync
   const allProducts = await prisma.products.findMany()
-  console.log(`Found ${allProducts.length} products to update`)
+  console.log(
+    `Found ${allProducts.length} products to update marketplace quantities`
+  )
 
   // Separate products by marketplace for processing
   const productsWithProm = allProducts.filter((p) => {
@@ -51,20 +80,140 @@ const updateAllMarketplaceQuantities = async () => {
           return prisma.products.update({
             where: { productId: product.productId },
             data: {
-              stockQuantity: quantity,
               promQuantity: quantity,
               lastPromSync: new Date(),
             },
           })
         })
       )
-      console.log(
-        `✅ Updated ${productsWithProm.length} Prom quantities (stockQuantity and promQuantity)`
-      )
+      console.log(`✅ Updated ${productsWithProm.length} Prom quantities`)
     } catch (error) {
       console.error('❌ Error with Prom update:', error)
     }
   }
+
+  // Process Rozetka products (updates only rozetkaQuantity)
+  if (productsWithRozetka.length > 0) {
+    try {
+      console.log('🔄 Fetching ALL Rozetka products data...')
+      const rozetkaProducts = await fetchChangedRozetkaProducts()
+      const rozetkaProductsMap = new Map(
+        rozetkaProducts.map((p) => {
+          if (p.rz_item_id === null || p.rz_item_id === undefined) {
+            console.warn('⚠️ Product with null rz_item_id:', p)
+            return [Symbol(), p] // Using a unique key to avoid map error
+          }
+          return [p.rz_item_id.toString(), p]
+        })
+      )
+
+      // Use Prisma transaction for bulk updates
+      await prisma.$transaction(
+        productsWithRozetka.map((product) => {
+          const externalIds = product.externalIds as {
+            rozetka?: { rz_item_id: string; item_id: string }
+          }
+          const rozetkaProduct = externalIds?.rozetka
+            ? rozetkaProductsMap.get(externalIds.rozetka.rz_item_id)
+            : null
+          const quantity = rozetkaProduct
+            ? normalizeQuantity(rozetkaProduct.stock_quantity)
+            : product.stockQuantity
+
+          return prisma.products.update({
+            where: { productId: product.productId },
+            data: {
+              rozetkaQuantity: quantity,
+              lastRozetkaSync: new Date(),
+            },
+          })
+        })
+      )
+      console.log(`✅ Updated ${productsWithRozetka.length} Rozetka quantities`)
+    } catch (error) {
+      console.error('❌ Error with Rozetka update:', error)
+    }
+  }
+
+  console.log('✅ All marketplace quantities update completed')
+} */
+
+const updateAllMarketplaceQuantities = async () => {
+  console.log('Updating all marketplace quantities for all products...')
+
+  // First, fetch and sync Prom products as main source
+  console.log('🔄 Fetching Prom products data...')
+  const promProducts = await fetchAndTransformPromProducts()
+
+  // After Prom sync, clean up orphaned products and their related records
+  const promProductIds = promProducts.map((p) => p.productId)
+
+  // First, delete related Sales records
+  await prisma.sales.deleteMany({
+    where: {
+      productId: {
+        notIn: promProductIds,
+      },
+    },
+  })
+
+  // Then delete related Purchases records
+  await prisma.purchases.deleteMany({
+    where: {
+      productId: {
+        notIn: promProductIds,
+      },
+    },
+  })
+
+  // Finally, delete the orphaned products
+  const orphanedProducts = await prisma.products.deleteMany({
+    where: {
+      productId: {
+        notIn: promProductIds,
+      },
+      source: 'prom',
+    },
+  })
+
+  console.log(`🗑️ Removed ${orphanedProducts.count} orphaned products`)
+  // Create a map for quick lookup
+  //const promProductsMap = new Map(promProducts.map((p) => [p.id.toString(), p]))
+
+  // Update database with Prom products (stockQuantity and add new products)
+  for (const promProduct of promProducts) {
+    const quantity = normalizeQuantity(promProduct.stockQuantity)
+
+    await prisma.products.upsert({
+      where: { productId: promProduct.productId },
+      update: {
+        stockQuantity: quantity,
+        promQuantity: quantity,
+        lastPromSync: new Date(),
+      },
+      create: {
+        ...promProduct,
+        stockQuantity: normalizeQuantity(promProduct.stockQuantity),
+      },
+    })
+  }
+  console.log(`✅ Updated/created ${promProducts.length} products from Prom`)
+
+  // Get all products after Prom sync
+  const allProducts = await prisma.products.findMany()
+  console.log(
+    `Found ${allProducts.length} products to update marketplace quantities`
+  )
+
+  const productsWithRozetka = allProducts.filter((p) => {
+    const externalIds = p.externalIds as {
+      rozetka?: { rz_item_id: string; item_id: string }
+    }
+    return externalIds?.rozetka
+  })
+
+console.log(`Found ${productsWithRozetka.length} products with Rozetka IDs`);
+
 
   // Process Rozetka products (updates only rozetkaQuantity)
   if (productsWithRozetka.length > 0) {
@@ -106,39 +255,134 @@ const updateAllMarketplaceQuantities = async () => {
   console.log('✅ All marketplace quantities update completed')
 }
 
+//Function for updating products in app database. It updates externalIds.rozetka fields
+async function syncRozetkaProductIds() {
+  try {
+    const allRozetkaProducts = await fetchChangedRozetkaProducts()
+
+    console.log(
+      `Found ${allRozetkaProducts.length} products on Rozetka. Starting sync...`
+    )
+    let updatedCount = 0
+    let notFoundCount = 0
+
+    // Step 3: Iterate and update products in the database
+    for (const rozetkaProduct of allRozetkaProducts) {
+      const sku = rozetkaProduct.article
+
+      if (!sku) {
+        console.warn(
+          `Skipping Rozetka product without an article/SKU: Name: ${rozetkaProduct.name}`
+        )
+        continue
+      }
+
+      if (!rozetkaProduct.rz_item_id || !rozetkaProduct.item_id) {
+        console.warn(`Skipping SKU ${sku} due to missing Rozetka ID fields.`)
+        continue
+      }
+
+      // Find ALL products in your database that match this SKU
+      const existingProducts = await prisma.products.findMany({
+        where: { sku: sku },
+      })
+
+      if (existingProducts.length > 0) {
+        // This log will confirm it's finding the duplicates you saw in pgAdmin
+        if (existingProducts.length > 1) {
+          console.warn(
+            `Found ${existingProducts.length} products with the same SKU: ${sku}. Updating all of them.`
+          )
+        }
+
+        // Loop through each product found with that SKU
+        for (const productToUpdate of existingProducts) {
+          const currentExternalIds = (productToUpdate.externalIds as any) || {}
+
+          const rozetkaData = {
+            rz_item_id: String(rozetkaProduct.rz_item_id),
+            item_id: String(rozetkaProduct.item_id),
+          }
+
+          const newExternalIds = {
+            ...currentExternalIds,
+            rozetka: rozetkaData,
+          }
+
+          // Update each product using its actual primary key, `productId`
+          await prisma.products.update({
+            where: { productId: productToUpdate.productId }, // Use the guaranteed unique @id field
+            data: {
+              externalIds: newExternalIds,
+            },
+          })
+
+          updatedCount++
+          console.log(
+            `Updated product with ID ${productToUpdate.productId} (SKU: ${sku}) with Rozetka data.`
+          )
+        }
+      } else {
+        // Product with this SKU was not found in your database
+        notFoundCount++
+        console.warn(`SKU ${sku} from Rozetka not found in the local database.`)
+      }
+    }
+
+    console.log('--- Sync Complete ---')
+    console.log(
+      `Successfully updated/processed ${updatedCount} product entries.`
+    )
+    console.log(
+      `${notFoundCount} SKUs from Rozetka were not found in the database.`
+    )
+  } catch (error: any) {
+    console.error('❌ Main sync process failed:', error.message)
+    throw error
+  } finally {
+    await prisma.$disconnect()
+  }
+}
+
 // Utility function to replace null in promQuantity and rozetkaQuantity with numbers
+
 const initializeMarketplaceQuantitiesOptimized = async () => {
   console.log('Initializing marketplace quantities for existing products...')
-  
+
   // Get all products that need initialization
   const productsToInitialize = await prisma.products.findMany({
     where: {
-      OR: [
-        { promQuantity: null },
-        { rozetkaQuantity: null }
-      ]
-    }
+      OR: [{ promQuantity: null }, { rozetkaQuantity: null }],
+    },
   })
 
   console.log(`Found ${productsToInitialize.length} products to initialize`)
 
   // Separate products by marketplace
-  const needsPromInit = productsToInitialize.filter(p => p.promQuantity === null)
-  const needsRozetkaInit = productsToInitialize.filter(p => p.rozetkaQuantity === null)
+  const needsPromInit = productsToInitialize.filter(
+    (p) => p.promQuantity === null
+  )
+  const needsRozetkaInit = productsToInitialize.filter(
+    (p) => p.rozetkaQuantity === null
+  )
 
   // Process Prom products
   if (needsPromInit.length > 0) {
     try {
       console.log('🔄 Fetching ALL Prom products data...')
       const promProducts = await fetchPromProducts()
-      const promProductsMap = new Map(promProducts.map(p => [p.id.toString(), p]))
+      const promProductsMap = new Map(
+        promProducts.map((p) => [p.id.toString(), p])
+      )
 
       // Use Prisma transaction for bulk updates
       await prisma.$transaction(
-        needsPromInit.map(product => {
+        needsPromInit.map((product) => {
           const externalIds = product.externalIds as { prom?: string }
-          const promProduct = externalIds?.prom ? promProductsMap.get(externalIds.prom) : null
-          const quantity = promProduct 
+          const promProduct = externalIds?.prom
+            ? promProductsMap.get(externalIds.prom)
+            : null
+          const quantity = promProduct
             ? normalizeQuantity(promProduct.quantity_in_stock)
             : product.stockQuantity
 
@@ -146,8 +390,8 @@ const initializeMarketplaceQuantitiesOptimized = async () => {
             where: { productId: product.productId },
             data: {
               promQuantity: quantity,
-              lastPromSync: new Date()
-            }
+              lastPromSync: new Date(),
+            },
           })
         })
       )
@@ -162,18 +406,20 @@ const initializeMarketplaceQuantitiesOptimized = async () => {
     try {
       console.log('🔄 Fetching ALL Rozetka products data...')
       const rozetkaProducts = await fetchChangedRozetkaProducts()
-      const rozetkaProductsMap = new Map(rozetkaProducts.map(p => [p.rz_item_id.toString(), p]))
+      const rozetkaProductsMap = new Map(
+        rozetkaProducts.map((p) => [p.rz_item_id.toString(), p])
+      )
 
       // Use Prisma transaction for bulk updates
       await prisma.$transaction(
-        needsRozetkaInit.map(product => {
+        needsRozetkaInit.map((product) => {
           const externalIds = product.externalIds as {
             rozetka?: { rz_item_id: string; item_id: string }
           }
-          const rozetkaProduct = externalIds?.rozetka 
-            ? rozetkaProductsMap.get(externalIds.rozetka.rz_item_id) 
+          const rozetkaProduct = externalIds?.rozetka
+            ? rozetkaProductsMap.get(externalIds.rozetka.rz_item_id)
             : null
-          const quantity = rozetkaProduct 
+          const quantity = rozetkaProduct
             ? normalizeQuantity(rozetkaProduct.stock_quantity)
             : product.stockQuantity
 
@@ -181,8 +427,8 @@ const initializeMarketplaceQuantitiesOptimized = async () => {
             where: { productId: product.productId },
             data: {
               rozetkaQuantity: quantity,
-              lastRozetkaSync: new Date()
-            }
+              lastRozetkaSync: new Date(),
+            },
           })
         })
       )
@@ -201,7 +447,9 @@ const initializeMarketplaceQuantitiesOptimized = async () => {
 // quantities, which could lead to incorrect updates or comparisons
 const normalizeQuantity = (qty: number | null | undefined): number => qty ?? 0
 
-const syncMarketplaces = async () => {
+// Main function to sync marketplaces
+// This will be called periodically to keep marketplace data in sync
+/* const syncMarketplaces = async () => {
   // Fetch products from Prom
   const promProducts = await fetchPromProducts()
   console.log(`Fetched ${promProducts.length} Prom products`)
@@ -588,12 +836,14 @@ const syncMarketplaces = async () => {
   }
 
   console.log('Marketplace synchronization completed')
-}
+} */
 
 // Run every 5 minutes
 //cron.schedule('*/5 * * * *', syncMarketplaces)
 
 // Add to end of index.ts
 //console.log('Synchronization scheduled')
-//initializeMarketplaceQuantitiesOptimized()
-syncMarketplaces()
+initializeMarketplaceQuantitiesOptimized()
+//syncMarketplaces()
+//updateAllMarketplaceQuantities()
+//syncRozetkaProductIds()

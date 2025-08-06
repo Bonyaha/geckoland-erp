@@ -4,7 +4,7 @@ import * as dotenv from 'dotenv'
 
 dotenv.config()
 
-async function fetchAndTransformPromProducts() {
+export async function fetchAndTransformPromProducts() {
   const apiKey = process.env.PROM_API_KEY
   if (!apiKey) throw new Error('PROM_API_KEY is not defined in .env')
 
@@ -82,41 +82,58 @@ async function fetchAndTransformPromProducts() {
   }
 
   console.log(`\nFinished! Total products fetched: ${allProducts.length}`)
-  console.log('Example product data:', allProducts[0] || 'No products found')
+  //console.log('Example product data:', allProducts[0] || 'No products found')
 
-  /* const transformedProducts = allProducts.map((product: any) => ({
+  const transformedProducts = allProducts.map((product: any) => ({
     productId: String(product.id),
-    uniqueProductKey: product.sku || `${product.name}-${product.price}`, // Fallback if SKU is missing
+    sku: product.sku || null,
     externalIds: { prom: String(product.id), rozetka: null },
-    name: product.name,
-    price: product.price,
+    name: product.name || '',
+    price: product.price || 0,
+    priceOld: null,
+    pricePromo: null,
+    updatedPrice: parseFloat(product.price || 0),
     stockQuantity: product.quantity_in_stock,
-    inStock: product.in_stock,
-    description: product.description,
-    mainImage: product.main_image,
-    images: product.images.map((img: any) => img.url),
-    currency: product.currency,
-    sellingType: product.selling_type,
-    presence: product.presence,
-    dateModified: new Date(product.date_modified),
+    promQuantity: product.quantity_in_stock,
+    inStock: product.quantity_in_stock || 0,
+    available: product.in_stock || false,
+    description: product.description || null,
+    mainImage: product.main_image || null,
+    images: product.images ? product.images.map((img: any) => img.url) : [],
+    currency: product.currency || 'UAH',
+    sellingType: product.selling_type || null,
+    presence: product.presence || null,
+    dateModified: product.date_modified
+      ? new Date(product.date_modified)
+      : new Date(),
+    lastSynced: new Date(),
+    lastPromSync: new Date(),
+    needsSync: false,
+    needsPromSync: false,
+    needsRozetkaSync: false,
     multilangData: {
-      ru: product.name_multilang?.ru,
-      uk: product.name_multilang?.uk,
+      ru: product.name_multilang?.ru || null,
+      uk: product.name_multilang?.uk || null,
+      description_ru: product.description_multilang?.ru || null,
+      description_uk: product.description_multilang?.uk || null,
     },
     categoryData: {
-      id: product.category.id,
-      caption: product.category.caption,
+      id: product.category?.id || null,
+      caption: product.category?.caption || null,
+      group: product.group || null,
     },
-    measureUnit: product.measure_unit,
-    status: product.status,
-    source: 'prom',
+    measureUnit: product.measure_unit || 'шт.',
+    status: product.status || 'active',
+    rozetkaQuantity: null,
+    lastRozetkaSync: null,
   }))
 
-  await fs.writeFile(
+  /* await fs.writeFile(
     'prisma/data/promProducts.json',
     JSON.stringify(transformedProducts, null, 2)
   )
   console.log('Prom products data saved to prisma/realData/promProducts.json') */
+  return transformedProducts
 }
 
 export async function fetchPromProducts() {
@@ -142,7 +159,7 @@ export async function fetchPromProducts() {
       // Add last_id parameter if we have it (for subsequent requests)
       if (lastId !== null) {
         params.last_id = lastId
-       /*  console.log(
+        /*  console.log(
           `Fetching products with last_id: ${lastId}, limit: ${limit}`
         ) */
       } else {
@@ -158,7 +175,7 @@ export async function fetchPromProducts() {
 
       if (products && products.length > 0) {
         allProducts.push(...products)
-      /*   console.log(
+        /*   console.log(
           `Fetched ${products.length} products. Total so far: ${allProducts.length}`
         ) */
 
@@ -172,7 +189,7 @@ export async function fetchPromProducts() {
         // If we got fewer products than the limit, we've reached the end
         if (products.length < limit) {
           hasMoreProducts = false
-         // console.log('Reached the end - got fewer products than limit')
+          // console.log('Reached the end - got fewer products than limit')
         } else if (newLastId === lastId) {
           // Safety check: if last_id hasn't changed, break to avoid infinite loop
           hasMoreProducts = false
