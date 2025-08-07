@@ -36,6 +36,7 @@ async function fetchRozetkaAccessToken(): Promise<string> {
   }
 }
 
+// Function to fetch all Rozetka products with pagination. It is used internally by functions below.
 async function fetchAllRozetkaProducts(accessToken: string): Promise<any[]> {
   const baseUrl = 'https://api-seller.rozetka.com.ua/goods/all'
   const headers = {
@@ -103,7 +104,25 @@ async function fetchAllRozetkaProducts(accessToken: string): Promise<any[]> {
   }
 }
 
-async function fetchRozetkaProducts() {
+//Function to fetch Rozetka products without transformation
+export async function fetchRozetkaProducts() {
+  try {
+    // Step 1: Get access token
+    const accessToken = await fetchRozetkaAccessToken()
+
+    // Step 2: Fetch all products using the token
+    const allProducts = await fetchAllRozetkaProducts(accessToken)
+    //console.log('allProducts', allProducts[0])
+
+     return allProducts
+  } catch (error: any) {
+    console.error('❌ Main process failed:', error.message)
+    throw error
+  }
+}
+
+//Function to fetch Rozetka products and transform them to match the database structure
+export async function fetchRozetkaProductsWithTransformation() {
   try {
     // Step 1: Get access token
     const accessToken = await fetchRozetkaAccessToken()
@@ -148,108 +167,6 @@ async function fetchRozetkaProducts() {
     )
 
     // return allProducts
-  } catch (error: any) {
-    console.error('❌ Main process failed:', error.message)
-    throw error
-  }
-}
-
-/**
- * Fetches products from Rozetka that have been changed/updated (not applied to simple change of quantity)
- * @returns Promise<RozetkaChangedProduct[]> Array of changed products
- */
-async function fetchRozetkaChangedProducts(
-  accessToken: string
-): Promise<any[]> {
-  const baseUrl = 'https://api-seller.rozetka.com.ua/goods/changes'
-  const headers = {
-    Authorization: `Bearer ${accessToken}`,
-    'Content-Language': 'uk',
-  }
-
-  let allChangedProducts: any[] = []
-  let currentPage = 1
-  let totalPages = 1
-  const pageSize = 100
-
-  //console.log('🔄 Starting to fetch changed products...')
-  //console.log('📋 Filters applied:', filters)
-
-  try {
-    while (currentPage <= totalPages) {
-      /* console.log(
-        `Fetching page ${currentPage}/${totalPages} (${pageSize} items per page)`
-      ) */
-
-      const params: Record<string, any> = {
-        params: {
-          page: currentPage,
-          pageSize: pageSize,
-          sort: 'rz_item_id', // Optional: sort by item ID
-        },
-      }
-
-      // Remove undefined values to keep URL clean
-      Object.keys(params).forEach((key) => {
-        if (params[key] === undefined) {
-          delete params[key]
-        }
-      })
-
-      const response = await axios.get(baseUrl, {
-        headers,
-        params,
-      })
-
-      const { content } = response.data
-      const { items, _meta } = content
-
-      // Update pagination info from first response
-      if (currentPage === 1) {
-        totalPages = _meta.pageCount
-        /* console.log(
-          `📊 Total changed products: ${_meta.totalCount}, Total pages: ${totalPages}`
-        ) */
-      }
-
-      if (items && items.length > 0) {
-        allChangedProducts.push(...items)
-        /* console.log(
-          `✅ Fetched ${items.length} changed products from page ${currentPage}. Total so far: ${allChangedProducts.length}`
-        ) */
-      } else {
-        console.log(`⚠️ No changed products returned from page ${currentPage}`)
-      }
-
-      currentPage++
-
-      // Small delay to be respectful to the API
-      await new Promise((resolve) => setTimeout(resolve, 200))
-    }
-
-   /*  console.log(
-      `🎉 Finished! Total changed products fetched: ${allChangedProducts.length}`
-    ) */
-    return allChangedProducts
-  } catch (error: any) {
-    console.error(
-      '❌ Error fetching changed products:',
-      error.response?.data || error.message
-    )
-    throw new Error(`Failed to fetch changed products: ${error.message}`)
-  }
-}
-
-export async function fetchChangedRozetkaProducts() {
-  try {
-    // Step 1: Get access token
-    const accessToken = await fetchRozetkaAccessToken()
-
-    // Step 2: Fetch all products using the token
-    const allProducts = await fetchAllRozetkaProducts(accessToken)
-    //console.log('allProducts', allProducts[0])
-
-     return allProducts
   } catch (error: any) {
     console.error('❌ Main process failed:', error.message)
     throw error
