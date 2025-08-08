@@ -1,6 +1,7 @@
 import axios from 'axios'
 import * as fs from 'fs/promises'
 import * as dotenv from 'dotenv'
+import { rozetkaTokenManager } from './rozetkaTokenCache'
 
 dotenv.config()
 
@@ -108,7 +109,7 @@ async function fetchAllRozetkaProducts(accessToken: string): Promise<any[]> {
 export async function fetchRozetkaProducts() {
   try {
     // Step 1: Get access token
-    const accessToken = await fetchRozetkaAccessToken()
+    const accessToken = await rozetkaTokenManager.getValidToken()
 
     // Step 2: Fetch all products using the token
     const allProducts = await fetchAllRozetkaProducts(accessToken)
@@ -116,6 +117,21 @@ export async function fetchRozetkaProducts() {
 
      return allProducts
   } catch (error: any) {
+    // If error might be due to invalid token, clear cache and retry once
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      console.log('🔄 Token might be invalid, clearing cache and retrying...')
+      rozetkaTokenManager.clearCache()
+
+      try {
+        const accessToken = await rozetkaTokenManager.getValidToken()
+        const allProducts = await fetchAllRozetkaProducts(accessToken)
+        return allProducts
+      } catch (retryError: any) {
+        console.error('❌ Main process failed on retry:', retryError.message)
+        throw retryError
+      }
+    }
+
     console.error('❌ Main process failed:', error.message)
     throw error
   }

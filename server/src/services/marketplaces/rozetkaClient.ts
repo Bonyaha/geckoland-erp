@@ -1,5 +1,6 @@
 import axios from 'axios'
 import * as dotenv from 'dotenv'
+import { rozetkaTokenManager } from '../../../prisma/rozetkaTokenCache'
 
 dotenv.config()
 
@@ -94,7 +95,7 @@ export const updateRozetkaProduct = async (
   options: { isIgnoreCheck?: boolean } = {}
 ) => {
   try {
-    const accessToken = await fetchRozetkaAccessToken()
+    const accessToken = await rozetkaTokenManager.getValidToken()
     const baseUrl = 'https://api-seller.rozetka.com.ua/items/mass-update'
     const headers = {
       Authorization: `Bearer ${accessToken}`,
