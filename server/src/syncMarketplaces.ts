@@ -1041,7 +1041,7 @@ const syncMarketplaces = async () => {
         update.newPromQuantity = newMasterQuantity // Sync Prom to master
       }
 
-      /* // If both changed, both should be set to the new master quantity
+      // If both changed, both should be set to the new master quantity
       if (
         update.promQuantityDelta !== undefined &&
         update.rozetkaQuantityDelta !== undefined
@@ -1053,7 +1053,7 @@ const syncMarketplaces = async () => {
         update.newRozetkaQuantity = newMasterQuantity
         update.needsPromSync = true
         update.needsRozetkaSync = true
-      } */
+      }
     } else {
       // DIFFERENT QUANTITY STRATEGY: Only update the marketplace that changed, leave others unchanged
       if (
