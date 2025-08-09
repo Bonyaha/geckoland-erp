@@ -7,7 +7,7 @@ import {
 } from '../prisma/fetchPromProducts'
 import { fetchRozetkaProducts } from '../prisma/fetchRozetkaProducts'
 import { updatePromProduct } from './services/marketplaces/promClient'
-import { updateRozetkaProduct } from './services/marketplaces/rozetkaClient'
+import { updateMultipleRozetkaProducts,RozetkaUpdateParams } from './services/marketplaces/rozetkaClient'
 
 const prisma = new PrismaClient()
 
@@ -210,8 +210,7 @@ const updateAllMarketplaceQuantities = async () => {
     return externalIds?.rozetka
   })
 
-console.log(`Found ${productsWithRozetka.length} products with Rozetka IDs`);
-
+  console.log(`Found ${productsWithRozetka.length} products with Rozetka IDs`)
 
   // Process Rozetka products (updates only rozetkaQuantity)
   if (productsWithRozetka.length > 0) {
@@ -836,7 +835,6 @@ const normalizeQuantity = (qty: number | null | undefined): number => qty ?? 0
   console.log('Marketplace synchronization completed')
 } */
 
-
 const syncMarketplaces = async () => {
   // Fetch products from Prom
   const promProducts = await fetchPromProducts()
@@ -1043,7 +1041,7 @@ const syncMarketplaces = async () => {
         update.newPromQuantity = newMasterQuantity // Sync Prom to master
       }
 
-      // If both changed, both should be set to the new master quantity
+      /* // If both changed, both should be set to the new master quantity
       if (
         update.promQuantityDelta !== undefined &&
         update.rozetkaQuantityDelta !== undefined
@@ -1055,7 +1053,7 @@ const syncMarketplaces = async () => {
         update.newRozetkaQuantity = newMasterQuantity
         update.needsPromSync = true
         update.needsRozetkaSync = true
-      }
+      } */
     } else {
       // DIFFERENT QUANTITY STRATEGY: Only update the marketplace that changed, leave others unchanged
       if (
@@ -1156,10 +1154,14 @@ const syncMarketplaces = async () => {
     `Found ${productsNeedingSync.length} products needing marketplace sync`
   )
 
-  for (const product of productsNeedingSync) {
-    try {
-      const syncPromises: Promise<any>[] = []
+  // Prepare batch updates
+  const promUpdates: Array<{ productId: string; quantity: number }> = []
+  const rozetkaUpdates: Array<{
+    productId: string
+    updates: RozetkaUpdateParams
+  }> = []
 
+  for (const product of productsNeedingSync) {
       // Type assertion for externalIds
       const externalIds = product.externalIds as {
         prom?: string
@@ -1169,61 +1171,90 @@ const syncMarketplaces = async () => {
         }
       }
 
-      // Sync to Prom if needed
+      // Collect Prom updates
       if (
         product.needsPromSync &&
         externalIds?.prom &&
         product.promQuantity !== null
       ) {
         console.log(
-          `Syncing product ${product.productId} to Prom with quantity ${product.promQuantity}`
+          `Preparing Prom sync for product ${product.productId} with quantity ${product.promQuantity}`
         )
-        syncPromises.push(
-          updatePromProduct(externalIds.prom, {
-            quantity: product.promQuantity,
-          })
-        )
+        promUpdates.push({
+          productId: externalIds.prom,
+          quantity: product.promQuantity,
+        })
       }
 
-      // Sync to Rozetka if needed
+      // Collect Rozetka updates
       if (
         product.needsRozetkaSync &&
         externalIds?.rozetka &&
         product.rozetkaQuantity !== null
       ) {
         console.log(
-          `Syncing product ${product.productId} to Rozetka with quantity ${product.rozetkaQuantity}`
+          `Preparing Rozetka sync for product ${product.productId} with quantity ${product.rozetkaQuantity}`
         )
-        syncPromises.push(
-          updateRozetkaProduct(externalIds.rozetka.item_id, {
-            quantity: product.rozetkaQuantity,
-          })
-        )
+        rozetkaUpdates.push({
+          productId: externalIds.rozetka.item_id,
+          updates: { quantity: product.rozetkaQuantity },
+        })
       }
-
-      if (syncPromises.length > 0) {
-        await Promise.all(syncPromises)
-      }
-
-      // Clear sync flags
-      await prisma.products.update({
-        where: { productId: product.productId },
-        data: {
-          needsSync: false,
-          needsPromSync: false,
-          needsRozetkaSync: false,
-        },
-      })
-
-      console.log(`✅ Successfully synced product ${product.productId}`)
-    } catch (error) {
-      console.error(`❌ Failed to sync product ${product.productId}:`, error)
     }
-  }
+
+      // Execute batch updates
+      const syncPromises: Promise<any>[] = []
+
+      if (promUpdates.length > 0) {
+        console.log(`🚀 Batch updating ${promUpdates.length} Prom products`)
+        // If you have updateMultiplePromProducts, use it here
+        // syncPromises.push(updateMultiplePromProducts(promUpdates))
+
+        // Otherwise, use individual updates (you might want to batch these too)
+        for (const { productId, quantity } of promUpdates) {
+          syncPromises.push(updatePromProduct(productId, { quantity }))
+        }
+      }
+
+      // Batch update Rozetka products
+      if (rozetkaUpdates.length > 0) {
+        console.log(
+          `🚀 Batch updating ${rozetkaUpdates.length} Rozetka products`
+        )
+        syncPromises.push(updateMultipleRozetkaProducts(rozetkaUpdates))
+      }
+
+      // Execute all updates
+      if (syncPromises.length > 0) {
+        try {
+          await Promise.all(syncPromises)
+          console.log('✅ All batch updates completed successfully')
+        } catch (error) {
+          console.error('❌ Some batch updates failed:', error)
+          throw error
+        }
+      }
+
+      // Clear sync flags for all products that were processed
+      if (productsNeedingSync.length > 0) {
+        const productIds = productsNeedingSync.map((p) => p.productId)
+
+        await prisma.products.updateMany({
+          where: {
+            productId: { in: productIds },
+          },
+          data: {
+            needsSync: false,
+            needsPromSync: false,
+            needsRozetkaSync: false,
+          },
+        })
+
+        console.log(`✅ Cleared sync flags for ${productIds.length} products`)
+      }  
 
   console.log('Marketplace synchronization completed')
 }
-
 
 // Run every 5 minutes
 //cron.schedule('*/5 * * * *', syncMarketplaces)
@@ -1232,6 +1263,5 @@ const syncMarketplaces = async () => {
 //console.log('Synchronization scheduled')
 //initializeMarketplaceQuantitiesOptimized()
 syncMarketplaces()
-//updateAllMarketplaceQuantities()
 //syncRozetkaProductIds()
 //updateAllMarketplaceQuantities()

@@ -75,7 +75,7 @@ export const getProductQuantity = async (
   }
 }
 
-interface RozetkaUpdateParams {
+export interface RozetkaUpdateParams {
   quantity?: number
   price?: number
   // Add more fields as needed in the future
@@ -146,7 +146,7 @@ export const updateMultipleRozetkaProducts = async (
   options: { isIgnoreCheck?: boolean } = {}
 ) => {
   try {
-    const accessToken = await fetchRozetkaAccessToken()
+    const accessToken = await rozetkaTokenManager.getValidToken()
     const baseUrl = 'https://api-seller.rozetka.com.ua/items/mass-update'
     const headers = {
       Authorization: `Bearer ${accessToken}`,
