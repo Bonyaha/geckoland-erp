@@ -89,6 +89,7 @@ interface RozetkaProductUpdate {
   // Add more fields as needed
 }
 
+// Function to update a single Rozetka product
 export const updateRozetkaProduct = async (
   productId: string,
   updates: RozetkaUpdateParams,

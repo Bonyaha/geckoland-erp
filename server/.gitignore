@@ -5,3 +5,4 @@ node_modules
 /generated/prisma
 # Token cache files
 .rozetka-token-cache.json
+.google-credentials.json

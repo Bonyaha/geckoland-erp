@@ -16,15 +16,20 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google-cloud/pubsub": "^5.2.0",
     "@prisma/client": "^6.8.2",
     "axios": "^1.9.0",
     "body-parser": "^2.2.0",
+    "cheerio": "^1.0.0",
     "concurrently": "^9.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "googleapis": "^155.0.1",
     "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "node-cron": "^3.0.3",
     "prisma": "^6.8.2",
     "rimraf": "^6.0.1"
   },
@@ -33,6 +38,7 @@
     "@types/express": "^5.0.2",
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.15.21",
+    "ngrok": "^5.0.0-beta.2",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"

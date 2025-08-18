@@ -5,6 +5,8 @@ import { rozetkaTokenManager } from './rozetkaTokenCache'
 
 dotenv.config()
 
+// Function to fetch Rozetka access token
+//Now I use a token manager to handle caching and expiration
 async function fetchRozetkaAccessToken(): Promise<string> {
   const tokenUrl = 'https://api-seller.rozetka.com.ua/sites'
   const credentials = {

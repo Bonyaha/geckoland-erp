@@ -9,6 +9,8 @@ import dashboardRoutes from "./routes/dashboardRoutes";
 import productRoutes from "./routes/productRoutes";
 import userRoutes from "./routes/userRoutes";
 import expenseRoutes from "./routes/expenseRoutes";
+import notificationRoutes from './routes/notificationRoutes'
+import authRoutes from './routes/authRoutes'
 
 /* CONFIGURATIONS */
 dotenv.config();
@@ -26,6 +28,8 @@ app.use(cors());
 app.use("/products", productRoutes); // http://localhost:8001/products
 app.use("/users", userRoutes); // http://localhost:8001/users
 app.use("/expenses", expenseRoutes); // http://localhost:8001/expenses
+app.use('/notifications', notificationRoutes) // http://localhost:8001/notifications/gmail
+app.use("/auth", authRoutes); // http://localhost:8001/auth/gmail/auth
 app.get("/hello", (req, res) => {
   res.send("Welcome to the ERP server!");
 });
