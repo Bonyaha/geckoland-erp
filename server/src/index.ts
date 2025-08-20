@@ -4,6 +4,8 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import cron from 'node-cron';
+import { restartGmailWatch } from './services/gmailService' 
 /* ROUTE IMPORTS */
 import dashboardRoutes from "./routes/dashboardRoutes";
 import productRoutes from "./routes/productRoutes";
@@ -33,8 +35,23 @@ app.use("/auth", authRoutes); // http://localhost:8001/auth/gmail/auth
 app.get("/hello", (req, res) => {
   res.send("Welcome to the ERP server!");
 });
+
+/* GMAIL WATCH RENEWAL SCHEDULER */
+// This schedule runs at 2:00 AM every day.
+cron.schedule('0 2 * * *', () => {
+  console.log('🤖 Running scheduled job to restart Gmail watch...');
+  restartGmailWatch().catch(error => {
+    console.error('🤖 Failed to restart Gmail watch automatically:', error);
+  });
+});
+
 /* SERVER */
 const port = Number(process.env.PORT) || 3001;
 app.listen(port, "0.0.0.0", () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`Server running on port ${port}`)
+  // Also trigger a restart on server startup
+  console.log('Attempting to start/restart Gmail watch on server startup...')
+  restartGmailWatch().catch((err) =>
+    console.error('Could not start initial watch:', err.message)
+  )
 });

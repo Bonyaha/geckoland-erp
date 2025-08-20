@@ -9,6 +9,8 @@ const body_parser_1 = __importDefault(require("body-parser"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const morgan_1 = __importDefault(require("morgan"));
+const node_cron_1 = __importDefault(require("node-cron"));
+const gmailService_1 = require("./services/gmailService");
 /* ROUTE IMPORTS */
 const dashboardRoutes_1 = __importDefault(require("./routes/dashboardRoutes"));
 const productRoutes_1 = __importDefault(require("./routes/productRoutes"));
@@ -36,8 +38,19 @@ app.use("/auth", authRoutes_1.default); // http://localhost:8001/auth/gmail/auth
 app.get("/hello", (req, res) => {
     res.send("Welcome to the ERP server!");
 });
+/* GMAIL WATCH RENEWAL SCHEDULER */
+// This schedule runs at 2:00 AM every day.
+node_cron_1.default.schedule('0 2 * * *', () => {
+    console.log('🤖 Running scheduled job to restart Gmail watch...');
+    (0, gmailService_1.restartGmailWatch)().catch(error => {
+        console.error('🤖 Failed to restart Gmail watch automatically:', error);
+    });
+});
 /* SERVER */
 const port = Number(process.env.PORT) || 3001;
 app.listen(port, "0.0.0.0", () => {
     console.log(`Server running on port ${port}`);
+    // Also trigger a restart on server startup
+    console.log('Attempting to start/restart Gmail watch on server startup...');
+    (0, gmailService_1.restartGmailWatch)().catch((err) => console.error('Could not start initial watch:', err.message));
 });

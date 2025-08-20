@@ -1,9 +1,10 @@
-// server/src/routes/authRoutes.ts
 import { Router, Request, Response } from 'express'
 import {
   getAuthUrl,
   saveToken,
   startGmailWatch,
+  stopGmailWatch,
+  restartGmailWatch,
 } from '../services/gmailService'
 
 const router = Router()
@@ -45,6 +46,36 @@ router.post(
   }
 )
 
+// Stop Gmail watch
+router.post(
+  '/gmail/stop-watch',
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      await stopGmailWatch()
+      res.json({ message: 'Gmail watch stopped successfully' })
+    } catch (error) {
+      console.error('Error stopping Gmail watch:', error)
+      res.status(500).json({ error: 'Failed to stop Gmail watch' })
+    }
+  }
+)
+
+// Restart Gmail watch
+router.post(
+  '/gmail/restart-watch',
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const watchData = await restartGmailWatch()
+      res.json({
+        message: 'Gmail watch restarted successfully',
+        data: watchData,
+      })
+    } catch (error) {
+      console.error('Error restarting Gmail watch:', error)
+      res.status(500).json({ error: 'Failed to restart Gmail watch' })
+    }
+  }
+)
 // Step 3: Start Gmail watch (call this after authorization is complete)
 router.post(
   '/gmail/start-watch',
