@@ -1,3 +1,5 @@
+// src/routes/authRoutes.ts
+
 import { Router, Request, Response } from 'express'
 import {
   getAuthUrl,

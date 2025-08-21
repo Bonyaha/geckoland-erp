@@ -1,3 +1,4 @@
+// server/src/index.ts
 import express from "express";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
@@ -40,9 +41,16 @@ app.get("/hello", (req, res) => {
 // This schedule runs at 2:00 AM every day.
 cron.schedule('0 2 * * *', () => {
   console.log('🤖 Running scheduled job to restart Gmail watch...');
-  restartGmailWatch().catch(error => {
-    console.error('🤖 Failed to restart Gmail watch automatically:', error);
-  });
+  restartGmailWatch()
+    .then((result) => {
+      console.log(
+        '✅ Gmail watch renewed successfully:',
+        new Date(parseInt(result.expiration || '0'))
+      )
+    })
+    .catch((error) => {
+      console.error('🤖 Failed to restart Gmail watch automatically:', error)
+    })
 });
 
 /* SERVER */

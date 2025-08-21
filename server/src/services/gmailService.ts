@@ -1,3 +1,4 @@
+//server\src\services\gmailService.ts
 //Gmail OAuth2 Authentication Helper
 /* This module handles the entire authentication flow for accessing the Gmail API from a server-side Node.js app using Google's OAuth2. */
 import { promises as fs } from 'fs'
@@ -10,7 +11,10 @@ const CREDENTIALS_PATH = path.join(
   'prisma/google-credentials.json'
 )
 const TOKEN_PATH = path.join(process.cwd(), 'prisma/gmail-token.json')
-const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+const SCOPES = [
+  'https://www.googleapis.com/auth/gmail.modify',
+  'https://www.googleapis.com/auth/gmail.readonly',
+]
 
 // Load saved credentials, if they exist
 async function loadSavedCredentialsIfExist(): Promise<OAuth2Client | null> {
@@ -29,6 +33,24 @@ async function loadSavedCredentialsIfExist(): Promise<OAuth2Client | null> {
     return client
   } catch (err) {
     return null
+  }
+}
+
+// Test if the token is still valid
+async function isTokenValid(client: OAuth2Client): Promise<boolean> {
+  try {
+    const gmail = google.gmail({ version: 'v1', auth: client })
+    await gmail.users.getProfile({ userId: 'me' })
+    return true
+  } catch (error: any) {
+    if (error.message?.includes('invalid_grant') || 
+        error.message?.includes('invalid_token') ||
+        error.response?.status === 401) {
+      console.log('Token is invalid or expired')
+      return false
+    }
+    // Other errors might be network issues, so we'll consider the token valid
+    return true
   }
 }
 
@@ -70,11 +92,28 @@ export async function saveToken(code: string): Promise<OAuth2Client> {
   return oAuth2Client
 }
 
+// Clear invalid token
+async function clearInvalidToken(): Promise<void> {
+  try {
+    await fs.unlink(TOKEN_PATH)
+    console.log('Invalid token file deleted')
+  } catch (error) {
+    // File might not exist, which is fine
+  }
+}
+
 // Main function to get an authorized client
 export async function authorize(): Promise<OAuth2Client> {
   let client = await loadSavedCredentialsIfExist()
   if (client) {
-    return client
+    // Test if the token is still valid
+    const isValid = await isTokenValid(client)
+    if (isValid) {
+      return client
+    } else {
+      // Token is invalid, clear it
+      await clearInvalidToken()
+    }
   }
   // If no token, you need to run the auth flow.
   // For a server app, you'd typically do this once via a dedicated route.
@@ -126,13 +165,27 @@ export async function stopGmailWatch() {
 export async function restartGmailWatch() {
   console.log('Restarting Gmail watch...')
   try {
-    await stopGmailWatch()
-    console.log('Waiting 2 seconds before starting watch again...')
-    await new Promise((resolve) => setTimeout(resolve, 2000)) // Wait 2 seconds
+    try {
+      await stopGmailWatch()
+      console.log('Waiting 2 seconds before starting watch again...')
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+    } catch (stopError) {
+      console.log(
+        'Could not stop existing watch (this is OK if none was running)'
+      )
+    }
+
     const result = await startGmailWatch()
     console.log('Gmail watch restarted successfully')
     return result
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message?.includes('No valid token found')) {
+      console.error(
+        '❌ Gmail watch could not be started: Token expired or invalid'
+      )
+      console.log('🔄 Please re-authorize by calling GET /auth/gmail/auth')
+      throw new Error('Gmail authorization required. Please re-authorize.')
+    }
     console.error('Failed to restart Gmail watch:', error)
     throw error
   }
@@ -148,14 +201,7 @@ export async function startGmailWatch() {
     // Get label IDs for Prom and Rozetka
     // Replace these with your actual label names
     const labelNames = ['Prom', 'Rozetka', 'Personal']
-    const labelIds = await getLabelIds(labelNames)
-
-    if (labelIds.length === 0) {
-      console.warn(
-        '⚠️ No valid labels found! Watching INBOX instead to avoid missing emails.'
-      )
-      labelIds.push('INBOX')
-    }
+    const labelIds = await getLabelIds(labelNames)   
 
     // Watch specific labels only
     const watchLabels = [...labelIds]

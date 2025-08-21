@@ -1,0 +1,14 @@
+{
+	"watch": [
+		"src/**/*"
+	],
+	"ignore": [
+		"prisma/gmail-history.json",
+		"prisma/gmail-token.json",
+		"prisma/rozetka-token-cache.json",
+		"node_modules/**/*",
+		"dist/**/*"
+	],
+	"ext": "ts,js,json",
+	"exec": "ts-node src/index.ts"
+}

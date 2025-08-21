@@ -1,9 +1,9 @@
 import { Router } from 'express'
-import { handleGmailPush } from '../controllers/notificationController'
+import { handleGmailNotification } from '../controllers/notificationController'
 
 const router = Router()
 
 // This is the endpoint URL you gave to your Pub/Sub subscription
-router.post('/gmail', handleGmailPush)
+router.post('/gmail', handleGmailNotification)
 
 export default router

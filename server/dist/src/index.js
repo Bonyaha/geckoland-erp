@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+// server/src/index.ts
 const express_1 = __importDefault(require("express"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const body_parser_1 = __importDefault(require("body-parser"));
@@ -42,7 +43,11 @@ app.get("/hello", (req, res) => {
 // This schedule runs at 2:00 AM every day.
 node_cron_1.default.schedule('0 2 * * *', () => {
     console.log('🤖 Running scheduled job to restart Gmail watch...');
-    (0, gmailService_1.restartGmailWatch)().catch(error => {
+    (0, gmailService_1.restartGmailWatch)()
+        .then((result) => {
+        console.log('✅ Gmail watch renewed successfully:', new Date(parseInt(result.expiration || '0')));
+    })
+        .catch((error) => {
         console.error('🤖 Failed to restart Gmail watch automatically:', error);
     });
 });

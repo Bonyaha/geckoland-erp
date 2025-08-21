@@ -1,302 +1,217 @@
+// server/src/controllers/notificationController.ts
 // This is the webhook that Google Pub/Sub will call.
 import { Request, Response } from 'express'
 import { google } from 'googleapis'
 import { authorize } from '../services/gmailService'
+import type { gmail_v1 } from 'googleapis'
+import { promises as fs } from 'fs'
+import path from 'path'
 
-// Store processed history IDs to avoid duplicates
-const processedHistoryIds = new Set<string>()
-// Store processed message IDs to avoid duplicates
-const processedMessageIds = new Set<string>()
-// Store the last processed historyId to track progress
-let lastProcessedHistoryId: string | null = null
+// --- NEW: Path to store the last processed history ID ---
+const HISTORY_PATH = path.join(process.cwd(), 'prisma/gmail-history.json')
 
-export const handleGmailPush = async (req: Request, res: Response) => {
-  // 1. Acknowledge the request immediately to prevent Pub/Sub from retrying
-  res.status(204).send()
+// A cache for label IDs to avoid fetching them on every single notification.
+let labelIdMap: Map<string, string> | null = null
+
+/**
+ * --- NEW: Load the last known history ID from a file ---
+ */
+async function loadLastHistoryId(): Promise<string | null> {
+  try {
+    const content = await fs.readFile(HISTORY_PATH)
+    const data = JSON.parse(content.toString())
+    return data.historyId
+  } catch (error: unknown) {
+    // Narrow the unknown to an object that may have a `code` property
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as any).code === 'ENOENT'
+    ) {
+      return null
+    }
+    throw error
+  }
+}
+
+/**
+ * --- NEW: Save the latest history ID to a file ---
+ */
+async function saveLastHistoryId(historyId: string): Promise<void> {
+  await fs.writeFile(HISTORY_PATH, JSON.stringify({ historyId }))
+}
+
+/**
+ * Fetches and caches the mapping of label names to label IDs.
+ */
+async function initializeLabelCache() {
+  if (labelIdMap) return
+
+  console.log('Initializing label cache...')
+  const labelNames = ['Prom', 'Rozetka', 'Personal']
+  const auth = await authorize()
+  const gmail = google.gmail({ version: 'v1', auth })
+  const response = await gmail.users.labels.list({ userId: 'me' })
+  const labels = response.data.labels || []
+
+  labelIdMap = new Map()
+  for (const labelName of labelNames) {
+    const foundLabel = labels.find(
+      (l) => l.name?.toLowerCase() === labelName.toLowerCase()
+    )
+    if (foundLabel && foundLabel.id) {
+      labelIdMap.set(foundLabel.id, labelName) // Store ID -> Name mapping
+    }
+  }
+  console.log('Label cache initialized:', labelIdMap)
+}
+
+/**
+ * Decodes the body of a Gmail message part.
+ * @param part A Gmail message part.
+ * @returns The decoded string content of the part.
+ */
+function getPartText(part: gmail_v1.Schema$MessagePart): string {
+  if (part.body && part.body.data) {
+    return Buffer.from(part.body.data, 'base64').toString('utf-8')
+  }
+
+  if (part.parts) {
+    for (const subPart of part.parts) {
+      if (subPart.mimeType === 'text/plain') {
+        return getPartText(subPart)
+      }
+    }
+    return getPartText(part.parts[0])
+  }
+  return ''
+}
+
+/**
+ * Main controller to handle incoming Pub/Sub notifications from Gmail.
+ */
+export const handleGmailNotification = async (req: Request, res: Response) => {
+  res.status(204).send() // Acknowledge immediately
 
   try {
-    // 2. The actual message is base64 encoded in the body
+    await initializeLabelCache()
+    if (!labelIdMap) throw new Error('Label cache is not initialized.')
+
     const pubSubMessage = req.body.message
-    if (!pubSubMessage) {
-      console.log('Received non-pub/sub message, ignoring.')
+    if (!pubSubMessage || !pubSubMessage.data) {
+      console.log('Received an invalid Pub/Sub message.')
       return
     }
 
-    const data = JSON.parse(
+    const decodedData = JSON.parse(
       Buffer.from(pubSubMessage.data, 'base64').toString('utf-8')
     )
-    const { emailAddress, historyId } = data
+    const newHistoryId = decodedData.historyId
 
-    // Check if we've already processed this historyId
-    if (processedHistoryIds.has(historyId)) {
+    // --- MODIFIED LOGIC ---
+    const lastHistoryId = await loadLastHistoryId()
+
+    // If this is the first ever notification, we don't have a previous history ID to compare against.
+    // So, we save the current ID and wait for the *next* notification.
+    if (!lastHistoryId) {
+      await saveLastHistoryId(newHistoryId)
       console.log(
-        `⏭️ Skipping duplicate notification for historyId: ${historyId}`
+        'First run: Stored initial history ID. Will process new messages on the next notification.'
       )
       return
     }
 
-    console.log(
-      `🔔 Gmail notification for ${emailAddress} with historyId: ${historyId}`
-    )
-
-    // 3. Use the historyId to get only new messages
     const auth = await authorize()
     const gmail = google.gmail({ version: 'v1', auth })
 
-    try {
-      let processedMessages = 0
-      let foundNewMessages = false
+    // Fetch the history of changes since the LAST notification.
+    const historyResponse = await gmail.users.history.list({
+      userId: 'me',
+      startHistoryId: lastHistoryId, // <-- Use the last known ID
+      historyTypes: ['messageAdded'],
+    })
 
-      // Try the history API first, but use a more reliable approach
-      if (lastProcessedHistoryId && lastProcessedHistoryId < historyId) {
-        console.log(
-          `📊 Checking history from ${lastProcessedHistoryId} to ${historyId}`
-        )
+    const historyRecords = historyResponse.data.history
+    if (!historyRecords || historyRecords.length === 0) {
+      console.log('No new messages found in history since last check.')
+      // IMPORTANT: Still save the new history ID to keep our state up-to-date
+      await saveLastHistoryId(newHistoryId)
+      return
+    }
 
-        try {
-          const historyResponse = await gmail.users.history.list({
-            userId: 'me',
-            startHistoryId: lastProcessedHistoryId,
-            historyTypes: ['messageAdded'],
-            maxResults: 50,
-          })
+    for (const record of historyRecords) {
+      if (!record.messagesAdded) continue
 
-          console.log(
-            `📋 History API response:`,
-            JSON.stringify(historyResponse.data, null, 2)
-          )
+      for (const messageAdded of record.messagesAdded) {
+        if (!messageAdded.message || !messageAdded.message.id) continue
 
-          if (
-            historyResponse.data.history &&
-            historyResponse.data.history.length > 0
-          ) {
-            console.log(
-              `📬 Found ${historyResponse.data.history.length} history records`
-            )
+        const messageId = messageAdded.message.id
 
-            for (const record of historyResponse.data.history) {
-              if (record.messagesAdded && record.messagesAdded.length > 0) {
-                console.log(
-                  `📥 Found ${record.messagesAdded.length} new messages in this record`
-                )
-                foundNewMessages = true
-
-                for (const msg of record.messagesAdded) {
-                  if (
-                    msg.message?.id &&
-                    !processedMessageIds.has(msg.message.id)
-                  ) {
-                    console.log(`📧 Processing message ID: ${msg.message.id}`)
-                    await logMessageDetails(gmail, msg.message.id)
-                    processedMessages++
-                    processedMessageIds.add(msg.message.id)
-                  }
-                }
-              }
-            }
-          }
-        } catch (historyError: any) {
-          console.log(`⚠️ History API failed: ${historyError.message}`)
-          // Don't throw, fall back to checking recent messages
-        }
-      }
-
-      // If no messages found via history API or this is the first run, check recent messages
-      if (!foundNewMessages) {
-        console.log(
-          '🔍 No messages found via history API, checking recent messages...'
-        )
-
-        const messagesResponse = await gmail.users.messages.list({
+        const messageDetails = await gmail.users.messages.get({
           userId: 'me',
-          labelIds: ['INBOX'],
-          maxResults: 5, // Check last 5 messages
+          id: messageId,
+          format: 'full',
         })
 
-        if (
-          messagesResponse.data.messages &&
-          messagesResponse.data.messages.length > 0
-        ) {
-          // Check each recent message to see if it's new
-          for (const message of messagesResponse.data.messages) {
-            if (message.id && !processedMessageIds.has(message.id)) {
-              // Check if this message is actually new (within last 10 minutes)
-              const isNew = await isMessageNew(gmail, message.id)
-              if (isNew) {
-                console.log(`📧 Processing new message: ${message.id}`)
-                await logMessageDetails(gmail, message.id)
-                processedMessages++
-                processedMessageIds.add(message.id)
-                foundNewMessages = true
-              }
-            }
+        const { payload, labelIds } = messageDetails.data
+        if (!payload || !labelIds) continue
+
+        // Check if the message has one of our target labels.
+        const relevantLabelId = labelIds.find((id) => labelIdMap!.has(id))
+        if (!relevantLabelId) {
+          console.log(
+            `Message ${messageId} does not have a relevant label. Skipping.`
+          )
+          continue
+        }
+
+        const labelName = labelIdMap.get(relevantLabelId)
+        console.log(`Processing new email with label: "${labelName}"`)
+
+        const headers = payload.headers || []
+        const subject =
+          headers.find((h) => h.name === 'Subject')?.value || 'No Subject'
+        const body = getPartText(payload)
+
+        console.log('--- New Email Received ---')
+        console.log('Subject:', subject)
+        console.log('Body Snippet:', body.substring(0, 200) + '...')
+        console.log('--------------------------')
+
+        if (labelName === 'Prom') {
+          if (
+            subject.includes('У вас нове замовлення...') &&
+            body.includes('У вас нове замовлення...')
+          ) {
+            console.log(
+              'New order on Prom has arrived, I am calling createOrder route...'
+            )
+          }
+        } else if (labelName === 'Rozetka') {
+          if (
+            subject.includes('Надійшло замовлення №...') &&
+            body.includes('Вам надійшло нове замовлення!')
+          ) {
+            console.log(
+              'New order on Rozetka has arrived, I am calling createOrder route...'
+            )
           }
         }
-      }
 
-      // Update tracking
-      if (foundNewMessages || processedMessages > 0) {
-        processedHistoryIds.add(historyId)
-        lastProcessedHistoryId = historyId
-        console.log(`✅ Processed ${processedMessages} new messages`)
-      } else {
-        // Still mark as processed to avoid reprocessing, but don't update lastProcessedHistoryId
-        processedHistoryIds.add(historyId)
-        console.log('📭 No new messages found')
+        await gmail.users.messages.modify({
+          userId: 'me',
+          id: messageId,
+          requestBody: { removeLabelIds: ['UNREAD'] },
+        })
+        console.log(`Message ${messageId} marked as read.`)
       }
-
-      // Clean up old IDs to prevent memory leak
-      cleanupProcessedIds()
-    } catch (error) {
-      console.error('Error processing Gmail notification:', error)
     }
+
+    // --- IMPORTANT: Save the new history ID after processing ---
+    await saveLastHistoryId(newHistoryId)
+    console.log(`Successfully processed history up to ID: ${newHistoryId}`)
   } catch (error) {
-    console.error('Error parsing Gmail notification:', error)
-  }
-}
-
-// Helper function to check if a message is new (within last 10 minutes)
-async function isMessageNew(gmail: any, messageId: string): Promise<boolean> {
-  try {
-    const messageDetails = await gmail.users.messages.get({
-      userId: 'me',
-      id: messageId,
-      format: 'metadata',
-      metadataHeaders: ['Date'],
-    })
-
-    const headers = messageDetails.data.payload?.headers || []
-    const dateHeader = headers.find((h: any) => h.name === 'Date')
-
-    if (!dateHeader?.value) {
-      console.log(`⚠️ No date header found for message ${messageId}`)
-      return false
-    }
-
-    const messageDate = new Date(dateHeader.value)
-    const now = new Date()
-    const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000)
-
-    const isNew = messageDate > tenMinutesAgo
-    console.log(
-      `📅 Message ${messageId} date: ${messageDate.toISOString()}, isNew: ${isNew}`
-    )
-
-    return isNew
-  } catch (error) {
-    console.error('Error checking message date:', error)
-    return false
-  }
-}
-
-// Helper function to clean up processed IDs
-function cleanupProcessedIds() {
-  if (processedHistoryIds.size > 100) {
-    const historyEntries = Array.from(processedHistoryIds)
-    processedHistoryIds.clear()
-    historyEntries.slice(-50).forEach((id) => processedHistoryIds.add(id))
-  }
-
-  if (processedMessageIds.size > 200) {
-    const messageEntries = Array.from(processedMessageIds)
-    processedMessageIds.clear()
-    messageEntries.slice(-100).forEach((id) => processedMessageIds.add(id))
-  }
-}
-
-// Helper function to extract email body text
-function extractEmailBody(payload: any): string {
-  let body = ''
-
-  // Function to decode base64url
-  const decodeBase64Url = (str: string): string => {
-    try {
-      // Replace URL-safe characters and add padding if needed
-      let base64 = str.replace(/-/g, '+').replace(/_/g, '/')
-      while (base64.length % 4) {
-        base64 += '='
-      }
-      return Buffer.from(base64, 'base64').toString('utf-8')
-    } catch (error) {
-      console.error('Error decoding base64:', error)
-      return ''
-    }
-  }
-
-  // Recursive function to extract body from parts
-  const extractFromParts = (parts: any[]): string => {
-    for (const part of parts) {
-      if (part.parts) {
-        // If this part has sub-parts, recurse
-        const subBody = extractFromParts(part.parts)
-        if (subBody) return subBody
-      } else if (part.body?.data) {
-        // If this part has body data
-        if (part.mimeType === 'text/plain') {
-          return decodeBase64Url(part.body.data)
-        } else if (part.mimeType === 'text/html' && !body) {
-          // Use HTML as fallback if no plain text found
-          return decodeBase64Url(part.body.data)
-        }
-      }
-    }
-    return ''
-  }
-
-  // Check if payload has parts (multipart message)
-  if (payload.parts) {
-    body = extractFromParts(payload.parts)
-  } else if (payload.body?.data) {
-    // Simple message with direct body
-    body = decodeBase64Url(payload.body.data)
-  }
-
-  return body || 'No readable body content found'
-}
-
-// Helper function to log message details with full body
-async function logMessageDetails(gmail: any, messageId: string) {
-  try {
-    const messageDetails = await gmail.users.messages.get({
-      userId: 'me',
-      id: messageId,
-      format: 'full', // Get full message including body
-    })
-
-    const headers = messageDetails.data.payload?.headers || []
-
-    const subjectHeader = headers.find((h: any) => h.name === 'Subject')
-    const fromHeader = headers.find((h: any) => h.name === 'From')
-    const toHeader = headers.find((h: any) => h.name === 'To')
-    const dateHeader = headers.find((h: any) => h.name === 'Date')
-
-    const subject = subjectHeader?.value || 'No Subject'
-    const from = fromHeader?.value || 'No Sender'
-    const to = toHeader?.value || 'No Recipient'
-    const date = dateHeader?.value || 'No Date'
-
-    // Extract the email body
-    const emailBody = extractEmailBody(messageDetails.data.payload)
-
-    console.log(`\n📧 ===== NEW EMAIL NOTIFICATION =====`)
-    console.log(`   From: ${from}`)
-    console.log(`   To: ${to}`)
-    console.log(`   Subject: ${subject}`)
-    console.log(`   Date: ${date}`)
-    console.log(`   Message ID: ${messageId}`)
-    console.log(
-      `   Body Preview: ${emailBody.substring(0, 200)}${
-        emailBody.length > 200 ? '...' : ''
-      }`
-    )
-    console.log(`=====================================\n`)
-
-    // TODO: Add your logic here!
-    // - Parse the subject/sender to identify Prom/Rozetka orders
-    // - Process the full email body
-    // - Create an order in your database
-    // - You now have access to the full email body in the 'emailBody' variable
-  } catch (error) {
-    console.error('Error fetching message details:', error)
+    console.error('Error handling Gmail notification:', error)
   }
 }
