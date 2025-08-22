@@ -5,4 +5,4 @@ server/dist/
 client/.env/
 server/.env/
 client/.next/
-server/prisma/gmail-history.json
+prisma/gmail-history.json
