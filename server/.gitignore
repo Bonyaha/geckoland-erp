@@ -7,3 +7,4 @@ node_modules
 .rozetka-token-cache.json
 google-credentials.json
 gmail-history.json
+processed-messages.json
