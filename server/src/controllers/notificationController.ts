@@ -1,5 +1,5 @@
 // server/src/controllers/notificationController.ts
-// Enhanced version with deduplication and better concurrency handling
+// This is the webhook that Google Pub/Sub will call.
 import { Request, Response } from 'express'
 import { google } from 'googleapis'
 import { authorize } from '../services/gmailService'
@@ -396,21 +396,3 @@ export const handleGmailNotification = async (req: Request, res: Response) => {
     }
   }
 }
-
-
-
-
-/* [1] 127.0.0.1 - - [21/Aug/2025:12:28:31 +0000] "POST /notifications/gmail HTTP/1.1" 204 -
-[1] Found 1 unique messages to process
-[1] Processing new email with label: "Personal"
-[1] --- New Email Received ---
-[1] Subject: Test #14
-[1] Body Snippet: You are the best😘
-[1] ...
-[1] --------------------------
-[1] Message 198cc9a277790a9b marked as read.
-[1] Successfully processed 1 new messages. History ID updated to: 102266 
-[1] ✅ Notification processed successfully in 1380ms
-[1] 127.0.0.1 - - [21/Aug/2025:12:28:33 +0000] "POST /notifications/gmail HTTP/1.1" 204 -
-[1] No new messages found in history since last check.
-[1] ✅ Notification processed successfully in 523ms */
