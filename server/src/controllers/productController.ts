@@ -111,7 +111,7 @@ interface ProductUpdateParams {
   // Add more fields as needed
 }
 
-//Function to update prfoduct in the app and immediately sync with marketplaces
+//Function to update product in the app and immediately sync with marketplaces
 export const updateProduct = async (req: Request, res: Response) => {
   const { productId } = req.params
   const updates: ProductUpdateParams = {}

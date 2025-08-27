@@ -1,0 +1,3 @@
+-- This migration was created to resolve schema drift
+-- The database already has the correct timestamp with time zone types
+-- No actual changes needed

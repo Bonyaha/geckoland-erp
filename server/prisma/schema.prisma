@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -20,47 +14,166 @@ model Users {
 }
 
 model Products {
-  productId         String      @id
-  sku               String? // Computed key for duplicate detection (e.g., SKU)
-  name              String
-  price             Float
-  stockQuantity     Int // Master/total quantity across all channels
-  
-  // Independent marketplace quantities
-  promQuantity      Int? // Current quantity on Prom marketplace
-  rozetkaQuantity   Int? // Current quantity on Rozetka marketplace
-  
-  // Last sync timestamps per marketplace
-  lastPromSync      DateTime?
-  lastRozetkaSync   DateTime?
-  
-  source            Source      @default(prom)
-  externalIds       Json // Marketplace-specific IDs (e.g., { prom: "id", rozetka: "rz_item_id" })
-  description       String?
-  mainImage         String?
-  images            String[]
-  inStock           Int // Changed to Int? to store the stock count
-  available         Boolean // Changed to Boolean? to indicate availability
-  priceOld          Float?
-  pricePromo        Float?
-  updatedPrice      Float?
-  currency          String?
-  sellingType       String?
-  presence          String?
-  dateModified      DateTime?
-  lastSynced        DateTime? // General last sync timestamp
-  needsSync         Boolean     @default(false)
-  
-  // Sync flags per marketplace
-  needsPromSync     Boolean     @default(false)
-  needsRozetkaSync  Boolean     @default(false)
-  
-  multilangData     Json?
-  categoryData      Json?
-  measureUnit       String?
-  status            String?
-  Sales             Sales[]
-  Purchases         Purchases[]
+  productId        String       @id
+  sku              String?
+  name             String
+  price            Float
+  stockQuantity    Int
+  source           Source       @default(prom)
+  externalIds      Json
+  description      String?
+  mainImage        String?
+  images           String[]
+  inStock          Int
+  available        Boolean
+  priceOld         Float?
+  pricePromo       Float?
+  updatedPrice     Float?
+  currency         String?
+  sellingType      String?
+  presence         String?
+  dateModified     DateTime?    @db.Timestamptz(6)
+  lastSynced       DateTime?    @db.Timestamptz(6)
+  needsSync        Boolean      @default(false)
+  multilangData    Json?
+  categoryData     Json?
+  measureUnit      String?
+  status           String?
+  lastPromSync     DateTime?    @db.Timestamptz(6)
+  lastRozetkaSync  DateTime?    @db.Timestamptz(6)
+  needsPromSync    Boolean      @default(false)
+  needsRozetkaSync Boolean      @default(false)
+  promQuantity     Int?
+  rozetkaQuantity  Int?
+  Purchases        Purchases[]
+  Sales            Sales[]
+  OrderItems       OrderItems[]
+}
+
+model Orders {
+  orderId String @id
+
+  // External marketplace data
+  externalOrderId String // Prom: "id", Rozetka: "id"
+  source          Source // prom or rozetka
+  orderNumber     String? // For display purposes
+
+  // Timestamps
+  createdAt    DateTime @db.Timestamptz(6) // Prom: "date_created", Rozetka: "created"
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+  lastModified DateTime? @db.Timestamptz(6) // Prom: "date_modified", Rozetka: "changed"
+
+  // Customer information - main client
+  clientId         String? // Prom: "client_id"
+  clientFirstName  String // Prom: "client_first_name", Rozetka: "user_title.first_name"
+  clientLastName   String // Prom: "client_last_name", Rozetka: "user_title.last_name"
+  clientSecondName String? // Prom: "client_second_name", Rozetka: "user_title.second_name"
+  clientPhone      String // Prom: "phone", Rozetka: "user_phone"
+  clientEmail      String? // Prom: "email"
+  clientFullName   String? // Computed or from Rozetka: "user_title.full_name"
+
+  // Delivery recipient (can be different from client)
+  recipientFirstName  String? // Prom: "delivery_recipient.first_name", Rozetka: "recipient_title.first_name"
+  recipientLastName   String? // Prom: "delivery_recipient.last_name", Rozetka: "recipient_title.last_name"
+  recipientSecondName String? // Prom: "delivery_recipient.second_name", Rozetka: "recipient_title.second_name"
+  recipientPhone      String? // Prom: "delivery_recipient.phone", Rozetka: "recipient_phone"
+  recipientFullName   String? // Rozetka: "recipient_title.full_name"
+
+  // Delivery information
+  deliveryOptionId   Int? // Prom: "delivery_option.id", Rozetka: "delivery.delivery_service_id"
+  deliveryOptionName String? // Prom: "delivery_option.name", Rozetka: "delivery.delivery_service_name"
+  deliveryAddress    String? // Prom: "delivery_address"
+  deliveryCity       String? // From delivery provider data
+  trackingNumber     String? // Prom: "delivery_provider_data.declaration_number", Rozetka: "ttn"
+  deliveryCost       Float? // Prom: "delivery_cost", Rozetka: "delivery.cost"
+
+  // Delivery provider specific data (stored as JSON for flexibility)
+  deliveryProviderData Json? // Prom: "delivery_provider_data", Rozetka: "delivery"
+
+  // Payment information
+  paymentOptionId   Int? // Prom: "payment_option.id"
+  paymentOptionName String? // Prom: "payment_option.name"
+  paymentData       Json? // Prom: "payment_data"
+  paymentStatus     String? // From payment_data.status
+
+  // Financial information
+  totalAmount             Float // Prom: price (parsed), Rozetka: "cost"
+  totalAmountWithDiscount Float? // Rozetka: "cost_with_discount"
+  fullPrice               String? // Prom: "full_price" (original string)
+  currency                String  @default("UAH")
+
+  // Order details
+  totalQuantity Int? // Rozetka: "total_quantity"
+  itemCount     Int // Count of different products
+
+  // Status information
+  status      String // Prom: "status", Rozetka: "status" (number)
+  statusName  String? // Prom: "status_name"
+  statusGroup Int? // Rozetka: "status_group"
+
+  // Commission and fees
+  cpaCommission        Float? // Prom: "cpa_commission.amount"
+  prosaleCommission    Float? // Prom: "prosale_commission.value"
+  isCommissionRefunded Boolean @default(false) // Prom: "cpa_commission.is_refunded"
+
+  // Additional information
+  clientNotes    String? // Prom: "client_notes", Rozetka: "comment"
+  sellerComment  String? // Rozetka: "current_seller_comment"
+  sellerComments Json? // Rozetka: "seller_comment" array
+
+  // Marketing data
+  utmData     Json? // Prom: "utm"
+  orderSource String? // Prom: "source"
+
+  // Flags and additional data
+  dontCallCustomer Boolean @default(false) // Prom: "dont_call_customer_back"
+  isViewed         Boolean @default(false) // Rozetka: "is_viewed"
+  isFulfillment    Boolean @default(false) // Rozetka: "is_fulfillment"
+  canCopy          Boolean @default(false) // Rozetka: "can_copy"
+
+  // Special offers and promotions
+  specialOfferData Json? // Prom: special offer related fields
+
+  // Raw data backup (for debugging and missing fields)
+  rawOrderData Json? // Store original API response
+
+  // Relations
+  orderItems OrderItems[]
+}
+
+model OrderItems {
+  orderItemId String @id @default(cuid())
+  orderId     String
+
+  // Product identification
+  externalProductId String // Prom: "id", Rozetka: purchase item id
+  productId         String? // Link to our Products table (if exists)
+  sku               String? // Prom: "sku"
+
+  // Product details
+  productName          String // Prom: "name", Rozetka: item name
+  productNameMultilang Json? // Prom: "name_multilang"
+  productImage         String? // Prom: "image"
+  productUrl           String? // Prom: "url"
+
+  // Quantities and pricing
+  quantity    Int // Prom: "quantity"
+  unitPrice   Float // Prom: "price" (parsed)
+  totalPrice  Float // Prom: "total_price" (parsed)
+  measureUnit String? // Prom: "measure_unit"
+
+  // Commission
+  cpaCommission Float? // Prom: "cpa_commission.amount"
+
+  // Raw item data
+  rawItemData Json? // Store original item data
+
+  // Relations
+  order   Orders    @relation(fields: [orderId], references: [orderId], onDelete: Cascade)
+  product Products? @relation(fields: [productId], references: [productId])
+
+  @@index([externalProductId])
+  @@index([sku])
 }
 
 model Sales {
@@ -123,4 +236,26 @@ model ExpenseByCategory {
 enum Source {
   prom
   rozetka
+}
+
+enum OrderStatus {
+  // Universal statuses
+  NEW
+  PROCESSING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RETURNED
+  REFUNDED
+
+  // Prom specific
+  PENDING_PAYMENT
+  PAID
+
+  // Rozetka specific (based on status numbers)
+  ROZETKA_STATUS_1
+  ROZETKA_STATUS_2
+  ROZETKA_STATUS_3
+  ROZETKA_STATUS_4
 }

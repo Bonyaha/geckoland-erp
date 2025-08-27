@@ -11,7 +11,7 @@ import { updateMultipleRozetkaProducts,RozetkaUpdateParams } from './services/ma
 
 const prisma = new PrismaClient()
 
-// Updating quntities for all products in app database
+// Updating quantities for all products in app's database
 
 /* const updateAllMarketplaceQuantitiesOld = async () => {
   console.log('Updating all marketplace quantities for all products...')
@@ -252,7 +252,7 @@ const updateAllMarketplaceQuantities = async () => {
   console.log('✅ All marketplace quantities update completed')
 }
 
-//Function for updating products in app database. It updates externalIds.rozetka fields
+//Function for updating products in app's database. It updates externalIds.rozetka fields
 async function syncRozetkaProductIds() {
   try {
     const allRozetkaProducts = await fetchRozetkaProducts()
