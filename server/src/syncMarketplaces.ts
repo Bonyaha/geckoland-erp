@@ -142,39 +142,41 @@ const updateAllMarketplaceQuantities = async () => {
   // First, fetch and sync Prom products as main source
   console.log('🔄 Fetching Prom products data...')
   const promProducts = await fetchPromProductsWithTransformation()
+  const promProductIds = new Set(promProducts.map((p) => p.productId))
 
-  // After Prom sync, clean up orphaned products and their related records
-  const promProductIds = promProducts.map((p) => p.productId)
-
-  // First, delete related Sales records
-  await prisma.sales.deleteMany({
-    where: {
-      productId: {
-        notIn: promProductIds,
-      },
-    },
+  // Find products in our DB that are NOT in the latest Prom fetch.
+  const productsInDb = await prisma.products.findMany({
+    where: { source: 'prom' },
+    select: { productId: true },
   })
 
-  // Then delete related Purchases records
-  await prisma.purchases.deleteMany({
-    where: {
-      productId: {
-        notIn: promProductIds,
-      },
-    },
-  })
+  const orphanedProductIds = productsInDb
+    .filter((p) => !promProductIds.has(p.productId))
+    .map((p) => p.productId)
 
-  // Finally, delete the orphaned products
-  const orphanedProducts = await prisma.products.deleteMany({
-    where: {
-      productId: {
-        notIn: promProductIds,
+  if (orphanedProductIds.length > 0) {
+    console.log(
+      `Found ${orphanedProductIds.length} orphaned products. Setting their stock to 0 instead of deleting.`
+    )
+    // Set their quantities to 0 to make them inactive.
+    await prisma.products.updateMany({
+      where: {
+        productId: {
+          in: orphanedProductIds,
+        },
       },
-      source: 'prom',
-    },
-  })
+      data: {
+        stockQuantity: 0,
+        promQuantity: 0,        
+        rozetkaQuantity: 0,
+        available: false,
+      },
+    })
+    console.log(
+      `🗑️ Marked ${orphanedProductIds.length} orphaned products as out of stock.`
+    )
+  }
 
-  console.log(`🗑️ Removed ${orphanedProducts.count} orphaned products`)
   // Create a map for quick lookup
   //const promProductsMap = new Map(promProducts.map((p) => [p.id.toString(), p]))
 
