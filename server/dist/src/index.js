@@ -40,7 +40,7 @@ app.get("/hello", (req, res) => {
     res.send("Welcome to the ERP server!");
 });
 /* GMAIL WATCH RENEWAL SCHEDULER */
-// This schedule runs at 2:00 AM every day.
+// This schedule runs at 2:00 AM every day. This doesn't handle authentication - it only renews the Gmail watch subscription (which expires every 7 days).
 node_cron_1.default.schedule('0 2 * * *', () => {
     console.log('🤖 Running scheduled job to restart Gmail watch...');
     (0, gmailService_1.restartGmailWatch)()

@@ -30,28 +30,70 @@ async function loadSavedCredentialsIfExist(): Promise<OAuth2Client | null> {
       redirect_uris[0]
     )
     client.setCredentials(credentials)
+
+    // Set up automatic token refresh and save
+    client.on('tokens', async (tokens) => {
+      console.log('🔄 Refreshing Gmail tokens...')
+      if (tokens.refresh_token) {
+        // Only update refresh_token if we got a new one
+        credentials.refresh_token = tokens.refresh_token
+      }
+      if (tokens.access_token) {
+        credentials.access_token = tokens.access_token
+      }
+      if (tokens.expiry_date) {
+        credentials.expiry_date = tokens.expiry_date
+      }
+
+      try {
+        await fs.writeFile(TOKEN_PATH, JSON.stringify(credentials))
+        console.log('✅ Gmail tokens refreshed and saved')
+      } catch (error) {
+        console.error('❌ Failed to save refreshed tokens:', error)
+      }
+    })
+
     return client
   } catch (err) {
     return null
   }
 }
 
-// Test if the token is still valid
+// Test if the token is still valid or can be refreshed
 async function isTokenValid(client: OAuth2Client): Promise<boolean> {
+  const gmail = google.gmail({ version: 'v1', auth: client })
   try {
-    const gmail = google.gmail({ version: 'v1', auth: client })
     await gmail.users.getProfile({ userId: 'me' })
     return true
   } catch (error: any) {
+    // Check if it's an auth error
     if (
+      error.response?.status === 401 ||
       error.message?.includes('invalid_grant') ||
-      error.message?.includes('invalid_token') ||
-      error.response?.status === 401
+      error.message?.includes('invalid_token')
     ) {
-      console.log('Token is invalid or expired')
-      return false
+      console.log('🔄 Access token expired, attempting to refresh...')
+
+      try {
+        // Try to refresh the token
+        const { credentials } = await client.refreshAccessToken()
+        client.setCredentials(credentials)
+
+        // Test again after refresh
+        await gmail.users.getProfile({ userId: 'me' })
+        console.log('✅ Token refreshed successfully')
+        return true
+      } catch (refreshError: any) {
+        console.log('❌ Token refresh failed:', refreshError.message)
+        return false
+      }
     }
-    // Other errors might be network issues, so we'll consider the token valid
+
+    // Other errors might be network issues
+    console.warn(
+      '⚠️ Network or other error (assuming token is valid):',
+      error.message
+    )
     return true
   }
 }
@@ -72,8 +114,8 @@ export async function getAuthUrl(): Promise<string> {
     redirect_uris[0]
   )
   return oAuth2Client.generateAuthUrl({
-    access_type: 'offline',
-    prompt: 'consent', // Important to get a refresh token
+    access_type: 'offline', // This ensures we get a refresh token
+    prompt: 'consent', // Forces consent screen to ensure refresh token
     scope: SCOPES,
   })
 }
@@ -89,8 +131,18 @@ export async function saveToken(code: string): Promise<OAuth2Client> {
   )
   const { tokens } = await oAuth2Client.getToken(code)
   oAuth2Client.setCredentials(tokens)
-  await fs.writeFile(TOKEN_PATH, JSON.stringify(tokens))
-  console.log('Token stored to', TOKEN_PATH)
+  // Ensure we save all token data
+  const tokenData = {
+    access_token: tokens.access_token,
+    refresh_token: tokens.refresh_token,
+    scope: tokens.scope,
+    token_type: tokens.token_type,
+    expiry_date: tokens.expiry_date,
+  }
+
+  await fs.writeFile(TOKEN_PATH, JSON.stringify(tokenData))
+  console.log('✅ Token stored to', TOKEN_PATH)
+
   return oAuth2Client
 }
 
@@ -171,7 +223,7 @@ export async function stopGmailWatch() {
   }
 }
 
-// NEW: Safe restart function that checks for token first
+// Safe restart function that checks for token first
 export async function restartGmailWatch() {
   console.log('Restarting Gmail watch...')
 
@@ -180,7 +232,7 @@ export async function restartGmailWatch() {
   if (!hasToken) {
     console.log('❌ No valid Gmail token found. Skipping Gmail watch restart.')
     console.log(
-      '🔄 To enable Gmail notifications, please authorize by visiting: GET /auth/gmail/auth'
+      '🔗 To enable Gmail notifications, please authorize by visiting: GET /auth/gmail/auth'
     )
     return null
   }
@@ -208,7 +260,7 @@ export async function restartGmailWatch() {
       console.error(
         '❌ Gmail watch could not be started: Token expired or invalid'
       )
-      console.log('🔄 Please re-authorize by calling GET /auth/gmail/auth')
+      console.log('🔗 Please re-authorize by calling GET /auth/gmail/auth')
       throw new Error('Gmail authorization required. Please re-authorize.')
     }
     console.error('Failed to restart Gmail watch:', error)
@@ -246,13 +298,12 @@ export async function startGmailWatch() {
     console.log('Gmail watch started successfully:', res.data)
     // The watch is active for 7 days. You'll need to re-run this periodically.
     // The response includes an 'expiration' timestamp.
-    console.log(
-      'Watch will expire at:',
-      new Date(parseInt(res.data.expiration || '0'))
-    )
+    const expirationDate = new Date(parseInt(res.data.expiration || '0'))
+    console.log('⏰ Watch expires:', expirationDate.toLocaleString())
+
     return res.data
   } catch (error) {
-    console.error('Failed to start Gmail watch:', error)
+    console.error('❌ Failed to start Gmail watch:', error)
     throw error
   }
 }
