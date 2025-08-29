@@ -43,13 +43,20 @@ cron.schedule('0 2 * * *', () => {
   console.log('🤖 Running scheduled job to restart Gmail watch...');
   restartGmailWatch()
     .then((result) => {
-      console.log(
-        '✅ Gmail watch renewed successfully:',
-        new Date(parseInt(result.expiration || '0'))
-      )
+      if (result) {
+        console.log(
+          '✅ Gmail watch renewed successfully. Expires:',
+          new Date(parseInt(result.expiration || '0'))
+        )
+      } else {
+        console.log('⏭️  Gmail watch not started - no valid token available')
+      }
     })
     .catch((error) => {
-      console.error('🤖 Failed to restart Gmail watch automatically:', error)
+      console.error(
+        '🤖 Failed to restart Gmail watch automatically:',
+        error.message
+      )
     })
 });
 
@@ -57,9 +64,18 @@ cron.schedule('0 2 * * *', () => {
 const port = Number(process.env.PORT) || 3001;
 app.listen(port, "0.0.0.0", () => {
   console.log(`Server running on port ${port}`)
+
   // Also trigger a restart on server startup
   console.log('Attempting to start/restart Gmail watch on server startup...')
-  restartGmailWatch().catch((err) =>
-    console.error('Could not start initial watch:', err.message)
-  )
+  restartGmailWatch()
+    .then((result) => {
+      if (result) {
+        console.log('✅ Initial Gmail watch started successfully')
+      } else {
+        console.log('⏭️  Gmail watch not started - authorization needed first')
+      }
+    })
+    .catch((err) => {
+      console.log('⏭️  Could not start initial watch:', err.message)
+    })
 });

@@ -43,9 +43,11 @@ async function isTokenValid(client: OAuth2Client): Promise<boolean> {
     await gmail.users.getProfile({ userId: 'me' })
     return true
   } catch (error: any) {
-    if (error.message?.includes('invalid_grant') || 
-        error.message?.includes('invalid_token') ||
-        error.response?.status === 401) {
+    if (
+      error.message?.includes('invalid_grant') ||
+      error.message?.includes('invalid_token') ||
+      error.response?.status === 401
+    ) {
       console.log('Token is invalid or expired')
       return false
     }
@@ -100,6 +102,13 @@ async function clearInvalidToken(): Promise<void> {
   } catch (error) {
     // File might not exist, which is fine
   }
+}
+
+// Check if token exists
+export async function hasValidToken(): Promise<boolean> {
+  const client = await loadSavedCredentialsIfExist()
+  if (!client) return false
+  return await isTokenValid(client)
 }
 
 // Main function to get an authorized client
@@ -162,9 +171,22 @@ export async function stopGmailWatch() {
   }
 }
 
+// NEW: Safe restart function that checks for token first
 export async function restartGmailWatch() {
   console.log('Restarting Gmail watch...')
+
+  // Check if we have a valid token first
+  const hasToken = await hasValidToken()
+  if (!hasToken) {
+    console.log('❌ No valid Gmail token found. Skipping Gmail watch restart.')
+    console.log(
+      '🔄 To enable Gmail notifications, please authorize by visiting: GET /auth/gmail/auth'
+    )
+    return null
+  }
+
   try {
+    // Try to stop existing watch (ignore errors if no watch exists)
     try {
       await stopGmailWatch()
       console.log('Waiting 2 seconds before starting watch again...')
@@ -176,10 +198,13 @@ export async function restartGmailWatch() {
     }
 
     const result = await startGmailWatch()
-    console.log('Gmail watch restarted successfully')
+    console.log('✅ Gmail watch restarted successfully')
     return result
   } catch (error: any) {
-    if (error.message?.includes('No valid token found')) {
+    if (
+      error.message?.includes('No valid token found') ||
+      error.message?.includes('No token found')
+    ) {
       console.error(
         '❌ Gmail watch could not be started: Token expired or invalid'
       )
@@ -201,7 +226,7 @@ export async function startGmailWatch() {
     // Get label IDs for Prom and Rozetka
     // Replace these with your actual label names
     const labelNames = ['Prom', 'Rozetka', 'Personal']
-    const labelIds = await getLabelIds(labelNames)   
+    const labelIds = await getLabelIds(labelNames)
 
     // Watch specific labels only
     const watchLabels = [...labelIds]
