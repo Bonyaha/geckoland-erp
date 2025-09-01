@@ -269,12 +269,17 @@ async function processNotification(req: Request): Promise<void> {
     console.log(
       'First run: Stored initial history ID. Will process new messages on the next notification.'
     )
+    // No emails are processed or logged in this case, ensuring non-labeled emails are ignored
     return
   }
 
-  // If we've already processed this history ID, skip
-  if (newHistoryId === lastHistoryId) {
-    console.log(`History ID ${newHistoryId} already processed. Skipping.`)
+  // Strict check for non-newer historyId (handles out-of-order or duplicates)
+  const lastNum = parseInt(lastHistoryId, 10)
+  const newNum = parseInt(newHistoryId, 10)
+  if (isNaN(lastNum) || isNaN(newNum) || newNum <= lastNum) {
+    console.log(
+      `History ID ${newHistoryId} is not newer than last ${lastHistoryId}. Skipping.`
+    )
     return
   }
 
@@ -303,10 +308,22 @@ async function processNotification(req: Request): Promise<void> {
     if (!record.messagesAdded) continue
 
     for (const messageAdded of record.messagesAdded) {
-      if (messageAdded.message?.id) {
-        uniqueMessageIds.add(messageAdded.message.id)
+      const message = messageAdded.message
+      if (!message?.id || !message.labelIds) continue
+
+      // Check if the message has a relevant label before adding to process
+      const hasRelevantLabel = message.labelIds.some((id) =>
+        labelIdMap!.has(id)
+      )
+      if (hasRelevantLabel) {
+        uniqueMessageIds.add(message.id)
       }
     }
+  }
+  if (uniqueMessageIds.size === 0) {
+    // Suppress logging for no relevant messages
+    await saveLastHistoryId(newHistoryId)
+    return
   }
 
   console.log(`Found ${uniqueMessageIds.size} unique messages to process`)
@@ -322,8 +339,14 @@ async function processNotification(req: Request): Promise<void> {
       if (wasProcessed) {
         processedCount++
       }
-    } catch (error) {
-      console.error(`Error processing message ${messageId}:`, error)
+    } catch (error: any) {
+      if (error.code === 404) {
+        console.log(
+          `Message ${messageId} not found (possibly deleted). Skipping.`
+        )
+      } else {
+        console.error(`Error processing message ${messageId}:`, error)
+      }
       // Continue processing other messages even if one fails
     }
   }
@@ -332,9 +355,11 @@ async function processNotification(req: Request): Promise<void> {
   await saveProcessedMessages(processedMessages)
   await saveLastHistoryId(newHistoryId)
 
-  console.log(
-    `Successfully processed ${processedCount} new messages. History ID updated to: ${newHistoryId}`
-  )
+  if (processedCount > 0) {
+    console.log(
+      `Successfully processed ${processedCount} new messages. History ID updated to: ${newHistoryId}`
+    )
+  }
 }
 
 /**
