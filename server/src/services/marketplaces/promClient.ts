@@ -1,18 +1,36 @@
+//server\src\services\marketplaces\promClient.ts
 import axios from 'axios'
 import * as dotenv from 'dotenv'
 dotenv.config()
 
-const apiKey = process.env.PROM_API_KEY
+/**
+ * ============ CONFIG ===============
+ */
 
-const baseUrl = 'https://my.prom.ua/api/v1/products'
-const getHeaders = () => {
-  if (!apiKey) throw new Error('PROM_API_KEY is not defined in .env')
-  return { Authorization: `Bearer ${apiKey}` }
+
+const PROM_API_BASE_URL = process.env.PROM_API_BASE_URL || 'https://my.prom.ua/api/v1'
+const PROM_API_KEY = process.env.PROM_API_KEY
+
+if (!PROM_API_KEY) {
+  throw new Error('PROM_API_KEY (or PROM_API_TOKEN) environment variable is required')
 }
+
+//const baseUrl = 'https://my.prom.ua/api/v1/products'
+const getHeaders = () => ({
+  Accept: 'application/json',
+  'X-LANGUAGE': 'uk',
+  Authorization: `Bearer ${PROM_API_KEY}`,
+})
+
+/**
+ * ============ PRODUCT LOGIC ===============
+ */
+
+const productBaseUrl = `${PROM_API_BASE_URL}/products`
 
 export const getProductQuantity = async (productId: string) => {
   const headers = getHeaders()
-  const response = await axios.get(`${baseUrl}/${productId}`, {
+  const response = await axios.get(`${productBaseUrl}/${productId}`, {
     headers,
   })
   return response.data.quantity // Adjust based on Prom’s actual response structure
@@ -45,7 +63,7 @@ export const updatePromProduct = async (
   }
 
   const headers = getHeaders()
-  const url = `${baseUrl}/edit`
+  const url = `${productBaseUrl}/edit`
 
   // Convert string ID to number for the API
   const productUpdate: PromProductUpdate = {
@@ -135,7 +153,7 @@ export const updateMultiplePromProducts = async (
   products: Array<{ productId: string; updates: PromUpdateParams }>
 ) => {
   const headers = getHeaders()
-  const url = `${baseUrl}/edit`
+  const url = `${productBaseUrl}/edit`
 
   const payload = products.map(({ productId, updates }) => {
     // Validate and convert productId to number
@@ -226,6 +244,142 @@ export const updateMultiplePromProducts = async (
     }
   }
 }
+
+/**
+ * ============ ORDERS LOGIC ===============
+ */
+
+interface PromOrdersResponse {
+  orders: PromOrder[]
+}
+
+interface PromOrder {
+  id: number
+  date_created: string
+  date_modified?: string
+  client_id?: string
+  client_first_name: string
+  client_last_name: string
+  client_second_name?: string
+  phone: string
+  email?: string
+  delivery_recipient?: {
+    first_name?: string
+    last_name?: string
+    second_name?: string
+    phone?: string
+  }
+  delivery_option?: {
+    id: number
+    name: string
+  }
+  delivery_address?: string
+  delivery_cost?: number
+  delivery_provider_data?: any
+  payment_option?: {
+    id: number
+    name: string
+  }
+  payment_data?: any
+  price: string // comes as string from API
+  full_price?: string
+  status: string
+  status_name?: string
+  client_notes?: string
+  cpa_commission?: {
+    amount: string
+    is_refunded: boolean
+  }
+  prosale_commission?: {
+    value: number
+  }
+  utm?: any
+  source?: string
+  dont_call_customer_back?: boolean
+  products: PromOrderItem[]
+}
+
+interface PromOrderItem {
+  id: number
+  sku?: string
+  name: string
+  name_multilang?: any
+  image?: string
+  url?: string
+  quantity: number
+  price: string // comes as string from API
+  total_price: string // comes as string from API
+  measure_unit?: string
+  cpa_commission?: {
+    amount: string
+  }
+}
+
+export class PromClient {
+  private baseUrl: string
+  constructor() {
+    this.baseUrl = PROM_API_BASE_URL
+  }
+
+  private async makeRequest<T>(
+    endpoint: string,
+    params: Record<string, any> = {}
+  ): Promise<T> {
+    try {
+      const response = await axios.get(`${this.baseUrl}${endpoint}`, {
+        headers: getHeaders(),
+        params,
+      })
+      return response.data as T
+    } catch (error: any) {
+      handleAxiosError(error, `GET ${endpoint}`)
+    }
+  }
+
+  async getOrders(
+    params: {
+      status?: string
+      date_from?: string
+      date_to?: string
+      last_modified_from?: string
+      last_modified_to?: string
+      limit?: number
+      sort_dir?: string
+      last_id?: number
+    } = {}
+  ): Promise<PromOrdersResponse> {
+    return this.makeRequest<PromOrdersResponse>('/orders/list', params)
+  }
+
+  async getNewOrders(): Promise<PromOrder[]> {
+    const response = await this.getOrders({ status: 'delivered', limit: 1 })
+    return response.orders || []
+  }
+}
+
+/**
+ * ============ ERROR HANDLER ===============
+ */
+function handleAxiosError(error: any, context: string): never {
+  if (error.response) {
+    console.error(`❌ HTTP error ${context}:`, {
+      status: error.response.status,
+      data: error.response.data,
+    })
+    throw new Error(
+      `HTTP ${error.response.status}: ${JSON.stringify(error.response.data)}`
+    )
+  } else if (error.message) {
+    console.error(`❌ Error ${context}:`, error.message)
+    throw error
+  } else {
+    console.error(`❌ Unknown error ${context}:`, error)
+    throw new Error('Unknown error occurred')
+  }
+}
+
+export type { PromOrder, PromOrderItem }
+
 
 // Backward compatibility functions (optional - can be removed later)
 

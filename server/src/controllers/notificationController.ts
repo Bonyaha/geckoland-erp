@@ -7,6 +7,10 @@ import type { gmail_v1 } from 'googleapis'
 import { promises as fs } from 'fs'
 import path from 'path'
 import crypto from 'crypto'
+import OrderService from '../services/orderService'
+
+// Initialize order service
+const orderService = new OrderService()
 
 // --- ENHANCED: Paths and data structures ---
 const HISTORY_PATH = path.join(process.cwd(), 'prisma/gmail-history.json')
@@ -144,6 +148,36 @@ function createMessageFingerprint(
 }
 
 /**
+ * Handle new order creation from different marketplaces
+ */
+async function handleNewOrder(marketplace: string): Promise<void> {
+  try {
+    console.log(`Processing new order from ${marketplace}...`)
+    
+    if (marketplace === 'Prom') {
+      const result = await orderService.fetchAndCreateNewPromOrders()
+      console.log(`Prom order processing result:`, result)
+      
+      if (result.created > 0) {
+        console.log(`Successfully created ${result.created} new orders from Prom`)
+      } else if (result.skipped > 0) {
+        console.log(`All ${result.skipped} orders from Prom were already processed`)
+      }
+      
+      if (result.errors > 0) {
+        console.warn(`${result.errors} errors occurred while processing Prom orders`)
+      }
+    } else if (marketplace === 'Rozetka') {
+      console.log('Rozetka order processing not yet implemented')
+      // TODO: Implement Rozetka order processing
+    }
+  } catch (error) {
+    console.error(`Error processing new order from ${marketplace}:`, error)
+    throw error
+  }
+}
+
+/**
  * Process a single message (extracted for reusability)
  */
 async function processMessage(
@@ -207,20 +241,26 @@ async function processMessage(
       subject.includes('У вас нове замовлення') &&
       body.includes('У вас нове замовлення')
     ) {
-      console.log(
-        'New order on Prom has arrived, I am calling createOrder route...'
-      )
-      // Add your createOrder logic here
+      console.log('New order detected on Prom! Processing...')
+      try {
+        await handleNewOrder('Prom')
+      } catch (error) {
+        console.error('Failed to process new Prom order:', error)
+        // Don't throw error to continue processing other messages
+      }
     }
   } else if (labelName === 'Rozetka') {
     if (
       subject.includes('Надійшло замовлення №') &&
       body.includes('Вам надійшло нове замовлення!')
     ) {
-      console.log(
-        'New order on Rozetka has arrived, I am calling createOrder route...'
-      )
-      // Add your createOrder logic here
+      console.log('New order detected on Rozetka! Processing...')
+      try {
+        await handleNewOrder('Rozetka')
+      } catch (error) {
+        console.error('Failed to process new Rozetka order:', error)
+        // Don't throw error to continue processing other messages
+      }
     }
   }
 
