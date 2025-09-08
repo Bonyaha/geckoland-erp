@@ -7,7 +7,6 @@ dotenv.config()
  * ============ CONFIG ===============
  */
 
-
 const PROM_API_BASE_URL = process.env.PROM_API_BASE_URL || 'https://my.prom.ua/api/v1'
 const PROM_API_KEY = process.env.PROM_API_KEY
 
