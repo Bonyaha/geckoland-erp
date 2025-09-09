@@ -2,6 +2,7 @@
 import { PrismaClient, Prisma, Source } from '@prisma/client'
 import { PromClient, type PromOrder } from './marketplaces/promClient'
 import { nanoid } from 'nanoid'
+import {syncAfterOrder} from '../syncMarketplaces'
 
 const prisma = new PrismaClient()
 
@@ -142,6 +143,24 @@ class OrderService {
       console.log(
         `Created order ${orderId} with ${order.orderItems.length} items`
       )
+
+      // Prepare orderedProducts for sync
+      const orderedProducts = order.orderItems.map((item) => ({
+        productId: item.sku || item.externalProductId,
+        orderedQuantity: item.quantity,
+      }))
+
+      try {
+        await syncAfterOrder(orderedProducts, 'prom')
+        console.log(`✅ Synced inventory after Prom order ${orderId}`)
+      } catch (syncError) {
+        console.error(
+          `❌ Failed to sync inventory for order ${orderId}:`,
+          syncError
+        )
+      }
+
+
       return orderId
     } catch (error) {
       console.error(`Error creating order from Prom data:`, error)

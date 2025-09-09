@@ -1132,7 +1132,7 @@ const syncMarketplacesVersion2 = async () => {
  * @param sourceMarketplace 'prom' | 'rozetka' - where the order came from
  */
 
-const syncAfterOrder = async (
+export const syncAfterOrder = async (
   orderedProducts: Array<{
     productId: string // App's internal product ID
     orderedQuantity: number // How many were ordered
