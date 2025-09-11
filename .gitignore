@@ -5,3 +5,6 @@ server/dist/
 client/.env/
 server/.env/
 client/.next/
+
+# Python virtual environment
+server/venv/

@@ -9,3 +9,4 @@ google-credentials.json
 gmail-history.json
 processed-messages.json
 gmail-token.json
+/venv
