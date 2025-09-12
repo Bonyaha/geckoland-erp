@@ -461,3 +461,39 @@ export const handleGmailNotification = async (req: Request, res: Response) => {
     }
   }
 }
+
+/**
+ * Webhook that Telethon will POST to for every GmailBot message
+ * Expects header: X-FORWARD-SECRET
+ */
+export const handleTelegramForward = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  // The Python script sends a JSON object like: {"message": "..."}
+  // We access it through req.body
+  const { message } = req.body
+
+  // 1. Validate that we received a message
+  if (!message || typeof message !== 'string') {
+    console.error('Received invalid data from forwarder:', req.body)
+    // Send a "Bad Request" response if the data is missing or wrong type
+    res.status(400).json({
+      success: false,
+      error:
+        'Invalid payload. "message" field is required and must be a string.',
+    })
+    return
+  }
+
+  // 2. Log the message to the console
+  // In a real application, you would process this message here
+  // (e.g., parse it, save it to a database, etc.)
+  console.log('--- Received message from Telegram via Python ---')
+  console.log(message)
+  console.log('-------------------------------------------------')
+
+  // 3. Send a success response back to the Python script
+  // This is good practice to confirm receipt.
+  res.status(200).json({ success: true, message: 'Message received' })
+}

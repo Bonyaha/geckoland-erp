@@ -1501,7 +1501,7 @@ export const syncAfterOrder = async (
 // Add to end of index.ts
 //console.log('Synchronization scheduled')
 //initializeMarketplaceQuantitiesOptimized()
-syncMarketplacesVersion2()
+//syncMarketplacesVersion2()
 //syncRozetkaProductIds()
 //updateAllMarketplaceQuantities()
 /* ;(async () => {
