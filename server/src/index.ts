@@ -41,7 +41,7 @@ app.get("/hello", (req, res) => {
 
 /* GMAIL WATCH RENEWAL SCHEDULER */
 // This schedule runs at 2:00 AM every day. This doesn't handle authentication - it only renews the Gmail watch subscription (which expires every 7 days).
-cron.schedule('0 2 * * *', () => {
+/* cron.schedule('0 2 * * *', () => {
   console.log('🤖 Running scheduled job to restart Gmail watch...');
   restartGmailWatch()
     .then((result) => {
@@ -60,7 +60,7 @@ cron.schedule('0 2 * * *', () => {
         error.message
       )
     })
-});
+}); */
 
 /* SERVER */
 const port = Number(process.env.PORT) || 3001;
@@ -68,8 +68,8 @@ app.listen(port, "0.0.0.0", () => {
   console.log(`Server running on port ${port}`)
 
   // Also trigger a restart on server startup
-  console.log('Attempting to start/restart Gmail watch on server startup...')
-  restartGmailWatch()
+  //console.log('Attempting to start/restart Gmail watch on server startup...')
+  /* restartGmailWatch()
     .then((result) => {
       if (result) {
         console.log('✅ Initial Gmail watch started successfully')
@@ -79,5 +79,5 @@ app.listen(port, "0.0.0.0", () => {
     })
     .catch((err) => {
       console.log('⏭️  Could not start initial watch:', err.message)
-    })
+    }) */
 });

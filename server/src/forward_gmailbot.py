@@ -2,13 +2,18 @@
 
 from telethon import TelegramClient, events
 import requests
+import os
+from dotenv import load_dotenv
 
-# === CONFIGURATION ===
-API_ID = 20377359
-API_HASH = "30faa790f8b055d5668472bf7b71a91e"
+# Load .env file
+load_dotenv()
+
+# === CONFIGURATION(from .env) ===
+API_ID = int(os.getenv("TELEGRAM_API_ID"))
+API_HASH = os.getenv("TELEGRAM_API_HASH")
 SESSION_NAME = "gmailbot_forwarder"  # session file name (will be created once after login)
 BOT_USERNAME = "GmailBot"  # official Gmail bot username
-FORWARD_URL = "http://localhost:8001/notifications/telegram"  # my app's endpoint
+FORWARD_URL = os.getenv("TELEGRAM_FORWARD_URL") # my app's endpoint
 
 
 # === TELEGRAM CLIENT ===

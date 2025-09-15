@@ -9,8 +9,7 @@
     "migrate-products": "ts-node prisma/migrate-products.ts",
     "build": "rimraf dist && npx tsc",
     "start": "npm run build && node dist/index.js",
-    "start:python": "venv/Scripts/python src/forward_gmailbot.py",
-    "dev": "npm run build && concurrently \"npx tsc -w\" \"nodemon --exec ts-node src/index.ts\" \"npm:start:python\""
+    "dev": "npm run build && concurrently --names \"TSC,SERVER,PYTHON\" -c \"auto\" \"npx tsc -w\" \"nodemon --exec ts-node src/index.ts\" \"cross-env PYTHONUTF8=1 venv\\Scripts\\python.exe -u src/forward_gmailbot.py\""
   },
   "keywords": [],
   "author": "Roman",
@@ -41,6 +40,7 @@
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.15.21",
     "@types/node-cron": "^3.0.11",
+    "cross-env": "^10.0.0",
     "ngrok": "^5.0.0-beta.2",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
