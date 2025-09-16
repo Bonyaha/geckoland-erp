@@ -4,6 +4,7 @@ from telethon import TelegramClient, events
 import requests
 import os
 from dotenv import load_dotenv
+import re
 
 # Load .env file
 load_dotenv()
@@ -21,8 +22,18 @@ client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
 
 @client.on(events.NewMessage(from_users=BOT_USERNAME))
 async def handler(event):
+    # print(event)
     msg = event.message.message
-    print(f"📩 New Gmail message:\n{msg}")
+    # Get the first line of the message
+    first_line = msg.splitlines()[0]
+
+    # Extract name before "<"
+    if "<" in first_line:
+        sender_name = first_line.split("<")[0].replace("✉️", "").strip()
+    else:
+        sender_name = first_line.strip()
+        
+    print(f"📩 New Gmail message from:{sender_name}")
 
     try:
         response = requests.post(FORWARD_URL, json={"message": msg})

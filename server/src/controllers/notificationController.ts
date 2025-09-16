@@ -466,18 +466,15 @@ export const handleGmailNotification = async (req: Request, res: Response) => {
  * Webhook that Telethon will POST to for every GmailBot message
  * Expects header: X-FORWARD-SECRET
  */
+
 export const handleTelegramForward = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  // The Python script sends a JSON object like: {"message": "..."}
-  // We access it through req.body
   const { message } = req.body
 
-  // 1. Validate that we received a message
   if (!message || typeof message !== 'string') {
     console.error('Received invalid data from forwarder:', req.body)
-    // Send a "Bad Request" response if the data is missing or wrong type
     res.status(400).json({
       success: false,
       error:
@@ -486,14 +483,31 @@ export const handleTelegramForward = async (
     return
   }
 
-  // 2. Log the message to the console
-  // In a real application, you would process this message here
-  // (e.g., parse it, save it to a database, etc.)
   console.log('--- Received message from Telegram via Python ---')
   console.log(message)
   console.log('-------------------------------------------------')
 
-  // 3. Send a success response back to the Python script
-  // This is good practice to confirm receipt.
-  res.status(200).json({ success: true, message: 'Message received' })
+  try {
+    // Detect marketplace from message text
+    if (
+      message.includes('У вас нове замовлення') && // Prom subject/body
+      message.includes('Опрацюйте його в особистому кабінеті')
+    ) {
+      console.log('🛒 Detected new Prom order from Telegram message')
+      await handleNewOrder('Prom')
+    } else if (
+      message.includes('Надійшло замовлення №') && // Rozetka subject
+      message.includes('Вам надійшло нове замовлення!')
+    ) {
+      console.log('🛒 Detected new Rozetka order from Telegram message')
+      await handleNewOrder('Rozetka')
+    } else {
+      console.log('ℹ️ Telegram message does not match any known marketplace')
+    }
+
+    res.status(200).json({ success: true, message: 'Message processed' })
+  } catch (error) {
+    console.error('❌ Failed to process Telegram message:', error)
+    res.status(500).json({ success: false, error: 'Processing failed' })
+  }
 }
