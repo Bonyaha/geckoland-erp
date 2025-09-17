@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 's3-geckoerp.s3.eu-central-1.amazonaws.com',
+        hostname: 'images.prom.ua',
         port: '',
         pathname: '/**',
       },

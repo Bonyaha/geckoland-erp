@@ -88,7 +88,7 @@ const Sidebar = () => {
       >
         <div className='text-gray-700 dark:text-gray-300'>
           <Image
-            src='https://s3-geckoerp.s3.eu-central-1.amazonaws.com/logo.png'
+            src='/logo.png'
             alt='warehouse logo'
             width={27}
             height={27}
