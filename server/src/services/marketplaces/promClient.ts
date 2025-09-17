@@ -351,7 +351,7 @@ export class PromClient {
   }
 
   async getNewOrders(): Promise<PromOrder[]> {
-    const response = await this.getOrders({ status: 'delivered', limit: 1 })
+    const response = await this.getOrders({ status: 'pending' })
     return response.orders || []
   }
 }

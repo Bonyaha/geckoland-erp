@@ -151,7 +151,7 @@ class OrderService {
       }))
 
       try {
-       // await syncAfterOrder(orderedProducts, 'prom')
+       await syncAfterOrder(orderedProducts, 'prom')
         console.log(`✅ Synced inventory after Prom order ${orderId}`)
       } catch (syncError) {
         console.error(

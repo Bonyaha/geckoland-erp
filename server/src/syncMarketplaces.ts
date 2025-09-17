@@ -1375,7 +1375,13 @@ export const syncAfterOrder = async (
     `Found ${productsNeedingSync.length} products needing marketplace sync`
   )
 
-  if (productsNeedingSync.length === 0) {
+
+/******************************************************************** */
+/* For now I disabled updating marketplaces until I am not sure everything works correctly */
+/********************************************************************* */
+
+
+  /*if (productsNeedingSync.length === 0) {
     console.log('No marketplace sync needed')
     return
   }
@@ -1466,7 +1472,7 @@ export const syncAfterOrder = async (
       console.error('❌ Some order-based sync updates failed:', error)
       throw error
     }
-  }
+  } */
 
   // Clear sync flags for products that were processed
   const productIds = productsNeedingSync.map((update) => update.productId)
