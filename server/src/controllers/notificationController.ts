@@ -157,19 +157,28 @@ async function handleNewOrder(marketplace: string): Promise<void> {
     if (marketplace === 'Prom') {
       const result = await orderService.fetchAndCreateNewPromOrders()
       console.log(`Prom order processing result:`, result)
-      
+
       if (result.created > 0) {
-        console.log(`Successfully created ${result.created} new orders from Prom`)
+        console.log(
+          `Successfully created ${result.created} new orders from Prom`
+        )
       } else if (result.skipped > 0) {
-        console.log(`All ${result.skipped} orders from Prom were already processed`)
+        console.log(
+          `All ${result.skipped} orders from Prom were already processed`
+        )
       }
-      
+
       if (result.errors > 0) {
-        console.warn(`${result.errors} errors occurred while processing Prom orders`)
+        console.warn(
+          `${result.errors} errors occurred while processing Prom orders`
+        )
       }
     } else if (marketplace === 'Rozetka') {
       console.log('Rozetka order processing not yet implemented')
       // TODO: Implement Rozetka order processing
+    } else if (marketplace === 'Website') {
+      console.log('Website order processing not yet implemented')
+      // TODO: Implement Website order processing
     }
   } catch (error) {
     console.error(`Error processing new order from ${marketplace}:`, error)
@@ -501,6 +510,12 @@ export const handleTelegramForward = async (
     ) {
       console.log('🛒 Detected new Rozetka order from Telegram message')
       await handleNewOrder('Rozetka')
+    } else if (
+      message.includes('southgeckoland.com.ua') && // Your website
+      message.includes('Нове замовлення на сайті')
+    ) {
+      console.log('🛒 Detected new Website order from Telegram message')
+      await handleNewOrder('Website')
     } else {
       console.log('ℹ️ Telegram message does not match any known marketplace')
     }

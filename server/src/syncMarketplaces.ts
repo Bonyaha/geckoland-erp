@@ -1124,8 +1124,6 @@ const syncMarketplacesVersion2 = async () => {
   console.log('Marketplace synchronization completed')
 }
 
-
-
 /**
  * Update product quantities in DB and sync to marketplaces after new order.
  * @param orderedProducts Array of items from the order, with productId and orderedProducts
@@ -1220,7 +1218,7 @@ export const syncAfterOrder = async (
     }
 
     // Apply the order delta to the source marketplace
-    if (sourceMarketplace === 'prom') {      
+    if (sourceMarketplace === 'prom') {
       update.newPromQuantity = Math.max(0, currentPromQuantity + quantityDelta)
 
       console.log(
@@ -1233,7 +1231,7 @@ export const syncAfterOrder = async (
         update.newRozetkaQuantity = newMasterQuantity
       }
     } else {
-        update.newRozetkaQuantity = Math.max(
+      update.newRozetkaQuantity = Math.max(
         0,
         currentRozetkaQuantity + quantityDelta
       )
@@ -1362,7 +1360,7 @@ export const syncAfterOrder = async (
 
     console.log(`Updating product ${productId}:`, updateData)
 
-      await prisma.products.update({
+    await prisma.products.update({
       where: { productId: productId },
       data: updateData,
     })
