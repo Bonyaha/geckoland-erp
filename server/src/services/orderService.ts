@@ -2,7 +2,7 @@
 import { PrismaClient, Prisma, Source } from '@prisma/client'
 import { PromClient, type PromOrder } from './marketplaces/promClient'
 import { nanoid } from 'nanoid'
-import {syncAfterOrder} from '../syncMarketplaces'
+import { syncAfterOrder } from '../syncMarketplaces'
 
 const prisma = new PrismaClient()
 
@@ -151,7 +151,7 @@ class OrderService {
       }))
 
       try {
-       await syncAfterOrder(orderedProducts, 'prom')
+        await syncAfterOrder(orderedProducts, 'prom')
         console.log(`✅ Synced inventory after Prom order ${orderId}`)
       } catch (syncError) {
         console.error(
@@ -159,7 +159,6 @@ class OrderService {
           syncError
         )
       }
-
 
       return orderId
     } catch (error) {

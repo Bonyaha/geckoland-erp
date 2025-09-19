@@ -379,26 +379,7 @@ function handleAxiosError(error: any, context: string): never {
 
 export type { PromOrder, PromOrderItem }
 
-
-// Backward compatibility functions (optional - can be removed later)
-
-/* export const updatePromQuantity = async (
-  productId: string,
-  quantity: number
-) => {
-  const headers = getHeaders()
-  const url = `${baseUrl}/edit`
-  const payload = [
-    {
-      id: productId,
-      quantity_in_stock: quantity,
-    },
-  ]
-  const response = await axios.post(url, payload, { headers })
-  console.log('response', response.data)
-  // Return the response data, which includes processed_ids and errors
-  return response.data
-} */
+// ============ TESTS / USAGE EXAMPLES ===============
 
 //updatePromQuantity('2121361183',  2 )
 
