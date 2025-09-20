@@ -174,8 +174,24 @@ async function handleNewOrder(marketplace: string): Promise<void> {
         )
       }
     } else if (marketplace === 'Rozetka') {
-      console.log('Rozetka order processing not yet implemented')
-      // TODO: Implement Rozetka order processing
+     const result = await orderService.fetchAndCreateNewRozetkaOrders()
+     console.log(`Rozetka order processing result:`, result)
+
+     if (result.created > 0) {
+       console.log(
+         `Successfully created ${result.created} new orders from Rozetka`
+       )
+     } else if (result.skipped > 0) {
+       console.log(
+         `All ${result.skipped} orders from Rozetka were already processed`
+       )
+     }
+
+     if (result.errors > 0) {
+       console.warn(
+         `${result.errors} errors occurred while processing Rozetka orders`
+       )
+     }
     } else if (marketplace === 'Website') {
       console.log('Website order processing not yet implemented')
       // TODO: Implement Website order processing
@@ -482,8 +498,10 @@ export const handleTelegramForward = async (
 ): Promise<void> => {
   const { message } = req.body
 
+  // 1. Validate that we received a message
   if (!message || typeof message !== 'string') {
     console.error('Received invalid data from forwarder:', req.body)
+    // Send a "Bad Request" response if the data is missing or wrong type
     res.status(400).json({
       success: false,
       error:
