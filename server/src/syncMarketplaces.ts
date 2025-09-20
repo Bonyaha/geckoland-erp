@@ -1377,7 +1377,7 @@ export const syncAfterOrder = async (
 
 
 /******************************************************************** */
-/* For now I disabled updating marketplaces until I am not sure everything works correctly */
+/* For now I disabled updating marketplaces until I am 100% sure everything works correctly */
 /********************************************************************* */
 
 

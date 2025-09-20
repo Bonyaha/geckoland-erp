@@ -293,14 +293,14 @@ class OrderService {
       )
 
       // Mark the order as viewed in Rozetka system
-      try {
+      /* try {
         await this.rozetkaClient.markOrderAsViewed(rozetkaOrder.id)
       } catch (error) {
         console.warn(
           `Could not mark order ${rozetkaOrder.id} as viewed:`,
           error
         )
-      }
+      } */
 
       // Prepare orderedProducts for sync
       const orderedProducts = order.orderItems.map((item) => ({
@@ -394,10 +394,10 @@ class OrderService {
       let newOrders = await this.rozetkaClient.getNewOrders()
 
       // If no new orders found, try unviewed orders as fallback
-      if (newOrders.length === 0) {
+     /*  if (newOrders.length === 0) {
         console.log('No new orders found, checking unviewed orders...')
         newOrders = await this.rozetkaClient.getUnviewedOrders()
-      }
+      } */
 
       console.log(`Found ${newOrders.length} orders from Rozetka to process`)
 

@@ -493,7 +493,7 @@ export class RozetkaClient {
   /**
    * Get unviewed orders as an alternative to new orders
    */
-  async getUnviewedOrders(): Promise<RozetkaOrder[]> {
+  /* async getUnviewedOrders(): Promise<RozetkaOrder[]> {
     try {
       console.log('🔍 Fetching unviewed orders from Rozetka...')
       
@@ -516,12 +516,12 @@ export class RozetkaClient {
       console.error('❌ Error fetching unviewed orders from Rozetka:', error.message)
       throw error
     }
-  }
+  } */
 
   /**
    * Mark an order as viewed
    */
-  async markOrderAsViewed(orderId: number): Promise<void> {
+  /* async markOrderAsViewed(orderId: number): Promise<void> {
     try {
       const accessToken = await rozetkaTokenManager.getValidToken()
       
@@ -541,7 +541,7 @@ export class RozetkaClient {
       console.error(`❌ Error marking order ${orderId} as viewed:`, error.message)
       // Don't throw error as this is not critical for order processing
     }
-  }
+  } */
 }
 
 /**
