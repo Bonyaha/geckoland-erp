@@ -390,14 +390,9 @@ class OrderService {
     console.log('Fetching new orders from Rozetka...')
 
     try {
-      // Try to get new orders first, fallback to unviewed if no new orders
+      // Try to get new orders from Rozetka
       let newOrders = await this.rozetkaClient.getNewOrders()
-
-      // If no new orders found, try unviewed orders as fallback
-     /*  if (newOrders.length === 0) {
-        console.log('No new orders found, checking unviewed orders...')
-        newOrders = await this.rozetkaClient.getUnviewedOrders()
-      } */
+      
 
       console.log(`Found ${newOrders.length} orders from Rozetka to process`)
 

@@ -462,7 +462,7 @@ export class RozetkaClient {
 
   /**
    * Get new/unprocessed orders from Rozetka
-   * Using type=4 for new orders or is_viewed=false for unviewed orders
+   * Using type=4 for new orders
    */
   async getNewOrders(): Promise<RozetkaOrder[]> {
     try {
@@ -490,58 +490,6 @@ export class RozetkaClient {
     }
   }
 
-  /**
-   * Get unviewed orders as an alternative to new orders
-   */
-  /* async getUnviewedOrders(): Promise<RozetkaOrder[]> {
-    try {
-      console.log('🔍 Fetching unviewed orders from Rozetka...')
-      
-      const response = await this.getOrders({ 
-        is_viewed: false,
-        expand: 'purchases,delivery,user,status_available',
-        sort: '-created'
-      })
-
-      if (!response.success || !response.content?.orders) {
-        console.log('⚠️ No unviewed orders found or API response error')
-        return []
-      }
-
-      const unviewedOrders = response.content.orders
-      console.log(`📦 Found ${unviewedOrders.length} unviewed orders from Rozetka`)
-      
-      return unviewedOrders
-    } catch (error: any) {
-      console.error('❌ Error fetching unviewed orders from Rozetka:', error.message)
-      throw error
-    }
-  } */
-
-  /**
-   * Mark an order as viewed
-   */
-  /* async markOrderAsViewed(orderId: number): Promise<void> {
-    try {
-      const accessToken = await rozetkaTokenManager.getValidToken()
-      
-      await axios.post(
-        `${this.baseUrl}/orders/${orderId}/viewed`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-      
-      console.log(`✅ Order ${orderId} marked as viewed`)
-    } catch (error: any) {
-      console.error(`❌ Error marking order ${orderId} as viewed:`, error.message)
-      // Don't throw error as this is not critical for order processing
-    }
-  } */
 }
 
 /**
