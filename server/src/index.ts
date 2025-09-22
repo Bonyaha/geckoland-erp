@@ -32,7 +32,7 @@ app.use(cors());
 app.use("/products", productRoutes); // http://localhost:8001/products
 app.use("/users", userRoutes); // http://localhost:8001/users
 app.use("/expenses", expenseRoutes); // http://localhost:8001/expenses
-app.use('/notifications', notificationRoutes) // http://localhost:8001/notifications/telegram
+app.use('/notifications', notificationRoutes) // http://localhost:8001/notifications/gmail
 app.use("/auth", authRoutes); // http://localhost:8001/auth/gmail/auth
 app.use('/api/orders', orderRoutes) // http://localhost:8001/api/orders
 app.get("/hello", (req, res) => {
