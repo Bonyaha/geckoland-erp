@@ -391,8 +391,7 @@ class OrderService {
 
     try {
       // Try to get new orders from Rozetka
-      let newOrders = await this.rozetkaClient.getNewOrders()
-      
+      let newOrders = await this.rozetkaClient.getNewOrders()      
 
       console.log(`Found ${newOrders.length} orders from Rozetka to process`)
 
