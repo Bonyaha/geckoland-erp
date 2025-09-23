@@ -486,3 +486,34 @@ export const handleGmailNotification = async (req: Request, res: Response) => {
     }
   }
 }
+
+/**
+ * Manually triggers a check for new orders from all marketplaces.
+ * This can be called from a frontend button.
+ */
+export const manualCheckForNewOrders = async () => {
+  console.log('Manual check for new orders initiated...')
+  try {
+    const [promResult, rozetkaResult] = await Promise.all([
+      orderService.fetchAndCreateNewPromOrders(),
+      orderService.fetchAndCreateNewRozetkaOrders(),
+    ])
+
+    const summary = {
+      prom: promResult,
+      rozetka: rozetkaResult,
+      totals: {
+        created: promResult.created + rozetkaResult.created,
+        skipped: promResult.skipped + rozetkaResult.skipped,
+        errors: promResult.errors + rozetkaResult.errors,
+      },
+    }
+
+    console.log('Manual order check completed:', summary.totals)
+
+   
+  } catch (error) {
+    console.error('Error during manual order check:', error)
+    
+  }
+}

@@ -6,6 +6,7 @@ import {
   getOrderById,
   syncOrders,
 } from '../controllers/orderController'
+import { manualCheckForNewOrders } from '../controllers/notificationController'
 
 const router = Router()
 
@@ -20,5 +21,8 @@ router.post('/fetch/prom', fetchNewPromOrders)
 
 // POST /orders/sync - Manual sync orders from marketplaces
 router.post('/sync', syncOrders)
+
+// POST /orders/manual-check - Manual check for new orders
+router.post('/manual-check', manualCheckForNewOrders)
 
 export default router
