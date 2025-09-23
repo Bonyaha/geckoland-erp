@@ -1,6 +1,7 @@
 //server\src\services\gmailService.ts
 //Gmail OAuth2 Authentication Helper
 /* This module handles the entire authentication flow for accessing the Gmail API from a server-side Node.js app using Google's OAuth2. */
+//Authorization was at 22.09
 import { promises as fs } from 'fs'
 import path from 'path'
 import { google } from 'googleapis'
