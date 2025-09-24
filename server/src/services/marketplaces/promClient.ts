@@ -351,8 +351,15 @@ export class PromClient {
   }
 
   async getNewOrders(): Promise<PromOrder[]> {
-    const response = await this.getOrders({ status: 'pending' })
-    return response.orders || []
+    const [pendingOrdersResponse, paidOrdersResponse] = await Promise.all([
+      this.getOrders({ status: 'pending' }),
+      this.getOrders({ status: 'paid' }),
+    ])
+
+    const pendingOrders = pendingOrdersResponse.orders || []
+    const paidOrders = paidOrdersResponse.orders || []
+
+    return [...pendingOrders, ...paidOrders]
   }
 }
 
