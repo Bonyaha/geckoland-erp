@@ -282,7 +282,7 @@ interface RozetkaOrder {
   created_type?: number
   callback_off?: number
   duplicate_order_id?: number
-  
+
   // Expanded fields (when using expand parameter)
   user?: {
     id: number
@@ -290,7 +290,7 @@ interface RozetkaOrder {
     contact_fio: string // Full name: "Василенко Василь"
     email: string | boolean // Can be "true" or actual email
   }
-  
+
   delivery?: {
     delivery_service_id: number
     delivery_service_name: string
@@ -315,9 +315,9 @@ interface RozetkaOrder {
     name_logo?: string
     email?: string | null
   }
-  
+
   purchases: RozetkaOrderItem[]
-  
+
   status_data?: {
     id: number
     name: string
@@ -327,12 +327,21 @@ interface RozetkaOrder {
     status: number
     color: string
   }
-  
+
+  payment?: {
+    payment_method_id: number
+    payment_method_name: string
+    payment_type: string
+    payment_type_title: string
+    payment_status: any
+    credit: any
+  }
+
   payment_method_id?: number
   payment_type?: string // "cash"
   payment_type_title?: string // "Готівкова"
   payment_type_name?: string // "Оплата під час отримання товару"
-  
+
   // Additional optional fields
   items_photos?: Array<{
     id: number
@@ -340,7 +349,7 @@ interface RozetkaOrder {
     item_url: string
     item_name: string
   }>
-  
+
   chatUser?: any
   chatMessages?: any[]
   order_status_history?: any[]
@@ -362,12 +371,12 @@ interface RozetkaOrderItem {
   id: number // Purchase ID
   cost: string // String format: "640.00"
   cost_with_discount?: string
-  price: string // String format: "640.00" 
+  price: string // String format: "640.00"
   price_with_discount?: string
   quantity: number
   item_id: number // Product ID
   item_name: string
-  
+
   item?: {
     id: number
     name: string
@@ -391,7 +400,7 @@ interface RozetkaOrderItem {
     uploader_offer_id?: string
     uploader_status?: any
   }
-  
+
   kit_id?: number
   conf_details?: any
   ttn?: string | null
@@ -403,7 +412,7 @@ interface RozetkaOrderItem {
 
 export class RozetkaClient {
   private baseUrl: string
-  
+
   constructor() {
     this.baseUrl = 'https://api-seller.rozetka.com.ua'
   }
@@ -414,7 +423,7 @@ export class RozetkaClient {
   ): Promise<T> {
     try {
       const accessToken = await rozetkaTokenManager.getValidToken()
-      
+
       const response = await axios.get(`${this.baseUrl}${endpoint}`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -468,11 +477,11 @@ export class RozetkaClient {
     try {
       // First try to get new orders (types=4)
       console.log('🔍 Fetching new orders from Rozetka...')
-      
-      const response = await this.getOrders({ 
+
+      const response = await this.getOrders({
         types: 4, // New orders
-        expand: 'purchases,delivery,user,status_available',
-        sort: '-created'
+        expand: 'purchases,delivery,payment,user,status_available',
+        sort: '-created',
       })
 
       if (!response.success || !response.content?.orders) {
@@ -482,14 +491,13 @@ export class RozetkaClient {
 
       const newOrders = response.content.orders
       console.log(`📦 Found ${newOrders.length} new orders from Rozetka`)
-      
+
       return newOrders
     } catch (error: any) {
       console.error('❌ Error fetching new orders from Rozetka:', error.message)
       throw error
     }
   }
-
 }
 
 /**
@@ -514,7 +522,6 @@ function handleAxiosError(error: any, context: string): never {
 }
 
 export type { RozetkaOrder, RozetkaOrderItem }
-
 
 /* updateRozetkaProduct('110365589', {
   price: 4340,

@@ -9,7 +9,7 @@
     "migrate-products": "ts-node prisma/migrate-products.ts",
     "build": "rimraf dist && npx tsc",
     "start": "npm run build && node dist/index.js",
-    "dev": "npm run build && concurrently --names \"TSC,SERVER\" -c \"auto\" \"npx tsc -w\" \"nodemon --exec ts-node src/index.ts\""
+    "dev": "npm run build && concurrently --names \"TSC,SERVER,NGROK\" -c \"auto\" \"npx tsc -w\" \"nodemon --exec ts-node src/index.ts\" \"npx ngrok http --url=complete-pelican-endlessly.ngrok-free.app 8001\""
   },
   "keywords": [],
   "author": "Roman",

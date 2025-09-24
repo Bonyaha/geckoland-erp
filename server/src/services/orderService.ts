@@ -154,7 +154,7 @@ class OrderService {
       }))
 
       try {
-        await syncAfterOrder(orderedProducts, 'prom')
+        //await syncAfterOrder(orderedProducts, 'prom')  for now disable automatic sync
         console.log(`✅ Synced inventory after Prom order ${orderId}`)
       } catch (syncError) {
         console.error(
@@ -234,8 +234,8 @@ class OrderService {
             rozetkaOrder.delivery as unknown as Prisma.InputJsonValue,
 
           // Payment information
-          paymentOptionId: rozetkaOrder.payment_method_id,
-          paymentOptionName: rozetkaOrder.payment_type_name,
+          paymentOptionId: rozetkaOrder.payment?.payment_method_id,
+          paymentOptionName: rozetkaOrder.payment?.payment_method_name,
 
           // Financial information
           totalAmount,
@@ -292,16 +292,6 @@ class OrderService {
         `Created Rozetka order ${orderId} with ${order.orderItems.length} items`
       )
 
-      // Mark the order as viewed in Rozetka system
-      /* try {
-        await this.rozetkaClient.markOrderAsViewed(rozetkaOrder.id)
-      } catch (error) {
-        console.warn(
-          `Could not mark order ${rozetkaOrder.id} as viewed:`,
-          error
-        )
-      } */
-
       // Prepare orderedProducts for sync
       const orderedProducts = order.orderItems.map((item) => ({
         productId: item.sku || item.externalProductId,
@@ -309,7 +299,7 @@ class OrderService {
       }))
 
       try {
-        await syncAfterOrder(orderedProducts, 'rozetka')
+        //await syncAfterOrder(orderedProducts, 'rozetka')
         console.log(`✅ Synced inventory after Rozetka order ${orderId}`)
       } catch (syncError) {
         console.error(
@@ -391,9 +381,10 @@ class OrderService {
 
     try {
       // Try to get new orders from Rozetka
-      let newOrders = await this.rozetkaClient.getNewOrders()      
+      let newOrders = await this.rozetkaClient.getNewOrders()
 
       console.log(`Found ${newOrders.length} orders from Rozetka to process`)
+      console.log(newOrders)
 
       let created = 0
       let skipped = 0
@@ -437,7 +428,6 @@ class OrderService {
       throw error
     }
   }
-
 
   /**
    * Get order by ID
