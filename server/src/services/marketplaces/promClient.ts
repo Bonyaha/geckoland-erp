@@ -351,15 +351,17 @@ export class PromClient {
   }
 
   async getNewOrders(): Promise<PromOrder[]> {
-    const [pendingOrdersResponse, paidOrdersResponse] = await Promise.all([
+    const [pendingOrdersResponse, paidOrdersResponse,receivedOrdersResponse] = await Promise.all([
       this.getOrders({ status: 'pending' }),
       this.getOrders({ status: 'paid' }),
+      this.getOrders({ status: 'received', limit: 1 }),
     ])
 
     const pendingOrders = pendingOrdersResponse.orders || []
     const paidOrders = paidOrdersResponse.orders || []
+const receivedOrders = receivedOrdersResponse.orders || []
 
-    return [...pendingOrders, ...paidOrders]
+    return [...pendingOrders, ...paidOrders, ...receivedOrders]
   }
 }
 

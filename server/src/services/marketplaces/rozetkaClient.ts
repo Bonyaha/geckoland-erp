@@ -295,6 +295,10 @@ interface RozetkaOrder {
     delivery_service_id: number
     delivery_service_name: string
     recipient_title?: string
+    recipient_first_name?: string
+    recipient_last_name?: string
+    recipient_second_name?: string
+    recipient_phone?: string
     place_id?: number
     place_street?: string
     place_number?: string
@@ -479,8 +483,8 @@ export class RozetkaClient {
       console.log('🔍 Fetching new orders from Rozetka...')
 
       const response = await this.getOrders({
-        types: 4, // New orders
-        expand: 'purchases,delivery,payment,user,status_available',
+        types: 5, // New orders
+        expand: 'purchases,delivery,payment,user,status_data',
         sort: '-created',
       })
 
