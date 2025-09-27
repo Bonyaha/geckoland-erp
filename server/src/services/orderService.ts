@@ -1,5 +1,6 @@
 // server/src/services/orderService.ts
 import { PrismaClient, Prisma, Source } from '@prisma/client'
+import { Decimal } from '@prisma/client/runtime/library'
 import { PromClient, type PromOrder } from './marketplaces/promClient'
 import { RozetkaClient, type RozetkaOrder } from './marketplaces/rozetkaClient'
 import { nanoid } from 'nanoid'
@@ -19,21 +20,20 @@ class OrderService {
   /**
    * Parse price string to float (handles formats like "1,234.56" or "1234.56")
    */
-  private parsePrice(priceStr: string | undefined): number {
-    if (!priceStr) return 0
-    // Remove any non-numeric characters except dots and commas
+  private parsePrice(priceStr: string | undefined): Decimal {
+    if (!priceStr) return new Decimal(0)
     const cleanPrice = priceStr.replace(/[^\d.,]/g, '')
-    // Handle comma as decimal separator or thousand separator
     const lastCommaIndex = cleanPrice.lastIndexOf(',')
     const lastDotIndex = cleanPrice.lastIndexOf('.')
 
+    let normalized: string
     if (lastCommaIndex > lastDotIndex) {
-      // Comma is likely decimal separator
-      return parseFloat(cleanPrice.replace(/\./g, '').replace(',', '.'))
+      normalized = cleanPrice.replace(/\./g, '').replace(',', '.')
     } else {
-      // Dot is decimal separator, remove commas
-      return parseFloat(cleanPrice.replace(/,/g, ''))
+      normalized = cleanPrice.replace(/,/g, '')
     }
+
+    return new Decimal(normalized)
   }
 
   /**
@@ -152,7 +152,8 @@ class OrderService {
         deliveryOptionId: promOrder.delivery_option?.id,
         deliveryOptionName: promOrder.delivery_option?.name,
         deliveryAddress: promOrder.delivery_address,
-        deliveryCity: promOrder.delivery_provider_data?.recipient_address.city_name,
+        deliveryCity:
+          promOrder.delivery_provider_data?.recipient_address.city_name,
         deliveryCost,
         deliveryProviderData: promOrder.delivery_provider_data,
         trackingNumber: promOrder.delivery_provider_data?.declaration_number,
@@ -165,7 +166,9 @@ class OrderService {
 
         // Financial information
         totalAmount,
-        fullPrice: promOrder.full_price,
+        fullPrice: promOrder.full_price
+          ? this.parsePrice(promOrder.full_price)
+          : null,
         currency: 'UAH',
 
         // Order details

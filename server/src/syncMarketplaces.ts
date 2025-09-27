@@ -705,14 +705,14 @@ const syncMarketplacesVersion1 = async () => {
 
     // Otherwise, use individual updates (you might want to batch these too)
     for (const { productId, quantity } of promUpdates) {
-      syncPromises.push(updatePromProduct(productId, { quantity }))
+      //syncPromises.push(updatePromProduct(productId, { quantity }))
     }
   }
 
   // Batch update Rozetka products
   if (rozetkaUpdates.length > 0) {
     console.log(`🚀 Batch updating ${rozetkaUpdates.length} Rozetka products`)
-    syncPromises.push(updateMultipleRozetkaProducts(rozetkaUpdates))
+    //syncPromises.push(updateMultipleRozetkaProducts(rozetkaUpdates))
   }
 
   // Execute all updates
@@ -1089,18 +1089,18 @@ const syncMarketplacesVersion2 = async () => {
     // syncPromises.push(updateMultiplePromProducts(promUpdates))
     // otherwise call per-item:
     for (const { productId, quantity } of promUpdates) {
-      syncPromises.push(updatePromProduct(productId, { quantity }))
+      //syncPromises.push(updatePromProduct(productId, { quantity }))
     }
   }
 
   if (rozetkaUpdates.length > 0) {
     console.log(`🚀 Batch updating ${rozetkaUpdates.length} Rozetka products`)
-    syncPromises.push(updateMultipleRozetkaProducts(rozetkaUpdates))
+    //syncPromises.push(updateMultipleRozetkaProducts(rozetkaUpdates))
   }
 
   if (syncPromises.length > 0) {
     try {
-      await Promise.all(syncPromises)
+      //await Promise.all(syncPromises)
       console.log('✅ All batch updates completed successfully')
     } catch (error) {
       console.error('❌ Some batch updates failed:', error)
@@ -1505,7 +1505,7 @@ export const syncAfterOrder = async (
 // Add to end of index.ts
 //console.log('Synchronization scheduled')
 //initializeMarketplaceQuantitiesOptimized()
-//syncMarketplacesVersion2()
+  //syncMarketplacesVersion2()
 //syncRozetkaProductIds()
 //updateAllMarketplaceQuantities()
 /* ;(async () => {
@@ -1514,3 +1514,4 @@ export const syncAfterOrder = async (
     'prom'
   )
 })() */
+

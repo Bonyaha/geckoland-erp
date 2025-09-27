@@ -1,3 +1,4 @@
+//server\prisma\schema.prisma.current
 generator client {
   provider = "prisma-client-js"
 }
@@ -17,7 +18,7 @@ model Products {
   productId        String       @id
   sku              String?
   name             String
-  price            Decimal      @db.Decimal(10, 2)
+  price            Decimal @db.Decimal(10, 2)
   stockQuantity    Int
   source           Source       @default(prom)
   externalIds      Json
@@ -26,9 +27,9 @@ model Products {
   images           String[]
   inStock          Int
   available        Boolean
-  priceOld         Decimal?     @db.Decimal(10, 2)
-  pricePromo       Decimal?     @db.Decimal(10, 2)
-  updatedPrice     Decimal?     @db.Decimal(10, 2)
+  priceOld         Decimal? @db.Decimal(10, 2)
+  pricePromo       Decimal? @db.Decimal(10, 2)
+  updatedPrice     Decimal? @db.Decimal(10, 2)
   currency         String?
   sellingType      String?
   presence         String?
@@ -59,7 +60,7 @@ model Orders {
   orderNumber     String? // For display purposes
 
   // Timestamps
-  createdAt    DateTime  @db.Timestamptz(6) // Prom: "date_created", Rozetka: "created"
+  createdAt    DateTime @db.Timestamptz(6) // Prom: "date_created", Rozetka: "created"
   updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
   lastModified DateTime? @db.Timestamptz(6) // Prom: "date_modified", Rozetka: "changed"
 
@@ -97,10 +98,10 @@ model Orders {
   paymentStatus     String? // From payment_data.status
 
   // Financial information
-  totalAmount             Decimal  @db.Decimal(10, 2) // Prom: price (parsed), Rozetka: "cost"
+  totalAmount             Decimal @db.Decimal(10, 2) // Prom: price (parsed), Rozetka: "cost"
   totalAmountWithDiscount Decimal? @db.Decimal(10, 2) // Rozetka: "cost_with_discount"
   fullPrice               Decimal? @db.Decimal(10, 2) // Prom: "full_price" (original string)
-  currency                String   @default("UAH")
+  currency                String  @default("UAH")
 
   // Order details
   totalQuantity Int? // Rozetka: "total_quantity"
@@ -114,7 +115,7 @@ model Orders {
   // Commission and fees
   cpaCommission        Decimal? @db.Decimal(10, 2) // Prom: "cpa_commission.amount"
   prosaleCommission    Decimal? @db.Decimal(10, 2) // Prom: "prosale_commission.value"
-  isCommissionRefunded Boolean  @default(false) // Prom: "cpa_commission.is_refunded"
+  isCommissionRefunded Boolean @default(false) // Prom: "cpa_commission.is_refunded"
 
   // Additional information
   clientNotes    String? // Prom: "client_notes", Rozetka: "comment"
@@ -181,8 +182,8 @@ model Sales {
   productId   String
   timestamp   DateTime
   quantity    Int
-  unitPrice   Decimal  @db.Decimal(10, 2)
-  totalAmount Decimal  @db.Decimal(10, 2)
+  unitPrice   Decimal @db.Decimal(10, 2)
+  totalAmount Decimal @db.Decimal(10, 2)
   product     Products @relation(fields: [productId], references: [productId])
 }
 
@@ -191,35 +192,35 @@ model Purchases {
   productId  String
   timestamp  DateTime
   quantity   Int
-  unitCost   Decimal  @db.Decimal(10, 2)
-  totalCost  Decimal  @db.Decimal(10, 2)
+  unitCost   Decimal @db.Decimal(10, 2)
+  totalCost  Decimal @db.Decimal(10, 2)
   product    Products @relation(fields: [productId], references: [productId])
 }
 
 model Expenses {
   expenseId String   @id
   category  String
-  amount    Decimal  @db.Decimal(10, 2)
+  amount    Decimal @db.Decimal(10, 2)
   timestamp DateTime
 }
 
 model SalesSummary {
   salesSummaryId   String   @id
-  totalValue       Decimal  @db.Decimal(10, 2)
+  totalValue       Decimal @db.Decimal(10, 2)
   changePercentage Float?
   date             DateTime
 }
 
 model PurchaseSummary {
   purchaseSummaryId String   @id
-  totalPurchased    Decimal  @db.Decimal(10, 2)
+  totalPurchased    Decimal @db.Decimal(10, 2)
   changePercentage  Float?
   date              DateTime
 }
 
 model ExpenseSummary {
   expenseSummaryId  String              @id
-  totalExpenses     Decimal             @db.Decimal(10, 2)
+  totalExpenses     Decimal @db.Decimal(10, 2)
   date              DateTime
   ExpenseByCategory ExpenseByCategory[]
 }
@@ -228,7 +229,7 @@ model ExpenseByCategory {
   expenseByCategoryId String         @id
   expenseSummaryId    String
   category            String
-  amount              Decimal        @db.Decimal(10, 2)
+  amount              Decimal @db.Decimal(10, 2)
   date                DateTime
   expenseSummary      ExpenseSummary @relation(fields: [expenseSummaryId], references: [expenseSummaryId])
 }

@@ -483,7 +483,7 @@ export class RozetkaClient {
       console.log('🔍 Fetching new orders from Rozetka...')
 
       const response = await this.getOrders({
-        types: 5, // New orders
+        types: 1, // New orders
         expand: 'purchases,delivery,payment,user,status_data',
         sort: '-created',
       })
