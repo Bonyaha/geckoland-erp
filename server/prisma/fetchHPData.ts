@@ -23,7 +23,7 @@ export async function fetchCRMProducts() {
 
     allProducts.push(...products)
 
-    // Transform products to match database structure
+    // Transform products to match database structure. It neesds to be modified according to the new schema
     /* const transformedProducts = allProducts.map((product: any) => {
       const stockInfo = product.stock?.[0] || {}
 
