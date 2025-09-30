@@ -83,7 +83,7 @@ export async function fetchPromProducts() {
     }
   }
 
-  //console.log(`\nFinished! Total products fetched: ${allProducts.length}`)
+  console.log(`\nFinished! Total products fetched: ${allProducts.length}`)
   /* console.log(
     'Product with id 1919700674:',
     allProducts.find((product) => product.id === 1919700674) ||
@@ -226,4 +226,4 @@ export async function fetchPromProductsWithTransformation() {
 }
 
 
-//fetchPromProducts()
+fetchPromProducts()
