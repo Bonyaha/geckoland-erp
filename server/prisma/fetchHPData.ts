@@ -24,7 +24,7 @@ export async function fetchCRMProducts() {
     allProducts.push(...products)
 
     // Transform products to match database structure
-    const transformedProducts = allProducts.map((product: any) => {
+    /* const transformedProducts = allProducts.map((product: any) => {
       const stockInfo = product.stock?.[0] || {}
 
       return {
@@ -64,8 +64,8 @@ export async function fetchCRMProducts() {
         promQuantity: parseInt(stockInfo.quantity || 0, 10),
         rozetkaQuantity: parseInt(stockInfo.quantity || 0, 10),
       }
-    })
-
+    }) */
+    console.log(`\nFinished! Total products fetched: ${allProducts.length}`)
     /* await fs.writeFile(
       'prisma/data/crmProducts.json',
       JSON.stringify(transformedProducts, null, 2)
@@ -74,12 +74,12 @@ export async function fetchCRMProducts() {
     console.log(`\nFinished! Total products fetched: ${allProducts.length}`)
     console.log(
       `Transformed products saved to prisma/realData/crmProducts.json`
-    ) */
-    return transformedProducts
+    ) 
+    return transformedProducts*/
   } catch (error) {
     console.error('Error fetching products from HugeProfit API:', error)
     throw error
   }
 }
 
-//fetchCRMProducts()
+fetchCRMProducts()
