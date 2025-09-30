@@ -59,10 +59,7 @@ async function populateProductsFromCSV() {
         costPrice: parseFloat(data['Собівр.']) || null,
         stockQuantity: quantity,
         source: 'prom', // Default source, adjust as needed
-        externalIds: {
-          csv_id: data.ID,
-          sku: sku,
-        },
+        externalIds: { prom: null, rozetka: null },
         description: data['Опис'] || null,
         mainImage: mainImage,
         images: imageUrls,
