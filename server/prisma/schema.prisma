@@ -18,6 +18,7 @@ model Products {
   sku              String?
   name             String
   price            Decimal      @db.Decimal(10, 2)
+  costPrice        Decimal?     @db.Decimal(10, 2)
   stockQuantity    Int
   source           Source       @default(prom)
   externalIds      Json
@@ -30,8 +31,6 @@ model Products {
   pricePromo       Decimal?     @db.Decimal(10, 2)
   updatedPrice     Decimal?     @db.Decimal(10, 2)
   currency         String?
-  sellingType      String?
-  presence         String?
   dateModified     DateTime?    @db.Timestamptz(6)
   lastSynced       DateTime?    @db.Timestamptz(6)
   needsSync        Boolean      @default(false)

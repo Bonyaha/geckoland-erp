@@ -15,13 +15,15 @@ import {
 
 const prisma = new PrismaClient()
 
-// Updating quantities for all products in app's database
+// Update quantities for all products in app's database
 const updateAllMarketplaceQuantities = async () => {
   console.log('Updating all marketplace quantities for all products...')
 
   // First, fetch and sync Prom products as main source
   console.log('🔄 Fetching Prom products data...')
   const promProducts = await fetchPromProductsWithTransformation()
+console.log(`Fetched ${promProducts.length} Prom products`);
+
   const promProductIds = new Set(promProducts.map((p) => p.productId))
 
   // Find products in our DB that are NOT in the latest Prom fetch.
@@ -1507,7 +1509,7 @@ export const syncAfterOrder = async (
 //initializeMarketplaceQuantitiesOptimized()
   //syncMarketplacesVersion2()
 //syncRozetkaProductIds()
-//updateAllMarketplaceQuantities()
+updateAllMarketplaceQuantities()
 /* ;(async () => {
   await syncAfterOrder(
     [{ productId: '2737880255', orderedQuantity: 2 }],

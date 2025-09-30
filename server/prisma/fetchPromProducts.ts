@@ -14,7 +14,7 @@ export async function fetchPromProducts() {
   const headers = { Authorization: `Bearer ${apiKey}` }
 
   let allProducts = []
-  let limit = 100 // Number of products per request
+  let limit = 20 // Number of products per request
   let lastId = null // For cursor-based pagination
   let hasMoreProducts = true
 
@@ -29,9 +29,9 @@ export async function fetchPromProducts() {
       // Add last_id parameter if we have it (for subsequent requests)
       if (lastId !== null) {
         params.last_id = lastId
-        /*  console.log(
+         console.log(
           `Fetching products with last_id: ${lastId}, limit: ${limit}`
-        ) */
+        )
       } else {
         //console.log(`Fetching first batch with limit: ${limit}`)
       }
@@ -45,9 +45,9 @@ export async function fetchPromProducts() {
 
       if (products && products.length > 0) {
         allProducts.push(...products)
-        /*   console.log(
+          console.log(
           `Fetched ${products.length} products. Total so far: ${allProducts.length}`
-        ) */
+        )
 
         // Get the ID of the last product for the next request
         // Assuming each product has an 'id' field
@@ -57,9 +57,9 @@ export async function fetchPromProducts() {
         //console.log(`Last product ID in this batch: ${newLastId}`)
 
         // If we got fewer products than the limit, we've reached the end
-        if (products.length < limit) {
+        if (products.length === 0) {
           hasMoreProducts = false
-          // console.log('Reached the end - got fewer products than limit')
+          console.log('Reached the end - got fewer products than limit')
         } else if (newLastId === lastId) {
           // Safety check: if last_id hasn't changed, break to avoid infinite loop
           hasMoreProducts = false
@@ -82,13 +82,25 @@ export async function fetchPromProducts() {
       throw error
     }
   }
+ /* const params: { limit: number; last_id?: number | string | null } = {
+        limit,
+      }
+const response = await axios.get(baseUrl, {
+        headers,
+        params,
+      })
 
-  //console.log(`\nFinished! Total products fetched: ${allProducts.length}`)
-  /* console.log(
-    'Product with id 1919700674:',
-    allProducts.find((product) => product.id === 1919700674) ||
-      'Product not found'
-  ) */
+      const { products } = response.data
+
+      if (products && products.length > 0) {
+        allProducts.push(...products)
+          console.log(
+          `Fetched ${products.length} products. Total so far: ${allProducts.length}`
+        )
+      } */
+
+  console.log(`\nFinished! Total products fetched: ${allProducts.length}`)
+ 
   return allProducts
 }
 
@@ -101,7 +113,7 @@ export async function fetchPromProductsWithTransformation() {
   const headers = { Authorization: `Bearer ${apiKey}` }
 
   let allProducts = []
-  let limit = 100 // Number of products per request
+  let limit = 20 // Number of products per request
   let lastId = null // For cursor-based pagination
   let hasMoreProducts = true
 
@@ -132,9 +144,9 @@ export async function fetchPromProductsWithTransformation() {
 
       if (products && products.length > 0) {
         allProducts.push(...products)
-        /* console.log(
+        console.log(
           `Fetched ${products.length} products. Total so far: ${allProducts.length}`
-        ) */
+        )
 
         // Get the ID of the last product for the next request
         // Assuming each product has an 'id' field
@@ -227,3 +239,4 @@ export async function fetchPromProductsWithTransformation() {
 
 
 //fetchPromProducts()
+fetchPromProductsWithTransformation()
