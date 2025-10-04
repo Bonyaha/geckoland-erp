@@ -3,6 +3,8 @@ import * as fs from 'fs'
 import * as path from 'path'
 import csv from 'csv-parser'
 import { nanoid } from 'nanoid'
+import { enrichWithPromIds } from './helper/mapExternalIdsProm'
+import { enrichWithRozetkaIds } from './helper/mapExternalIdsRozetka'
 
 const prisma = new PrismaClient()
 
@@ -39,7 +41,7 @@ async function populateProductsFromCSV() {
       const sku = data['Артикул'] || ''
 
       // Determine availability based on quantity
-      const available = quantity > 0      
+      const available = quantity > 0
 
       // Parse images - split by comma if multiple URLs
       const imageUrls = data['Зображення']
@@ -52,7 +54,7 @@ async function populateProductsFromCSV() {
       const mainImage = imageUrls.length > 0 ? imageUrls[0] : null
 
       const product = {
-        productId: `csv_${data.ID}_${nanoid(6)}`, // Generate unique ID
+        productId: `${data.ID}_${nanoid(6)}`, // Generate unique ID
         sku: sku || null,
         name: data['Назва'] || 'Unnamed Product',
         price: price,
@@ -82,10 +84,10 @@ async function populateProductsFromCSV() {
         status: 'active',
         lastPromSync: null,
         lastRozetkaSync: null,
-        needsPromSync: true, // Set to true to sync with Prom later
+        needsPromSync: false,
         needsRozetkaSync: false,
-        promQuantity: null,
-        rozetkaQuantity: null,
+        promQuantity: quantity,
+        rozetkaQuantity: quantity,
       }
 
       products.push(product)
@@ -95,6 +97,11 @@ async function populateProductsFromCSV() {
         console.log(`Found ${products.length} products in the CSV file.`)
 
         if (products.length > 0) {
+          console.log('Enriching products with Prom IDs...')
+          let enrichedProducts = await enrichWithPromIds(products)
+
+          console.log('Enriching products with Rozetka IDs...')
+          enrichedProducts = await enrichWithRozetkaIds(enrichedProducts)
           console.log('Clearing the Products table...')
           await prisma.products.deleteMany({})
 
@@ -102,7 +109,7 @@ async function populateProductsFromCSV() {
 
           // Insert products one by one to handle Decimal types properly
           let successCount = 0
-          for (const product of products) {
+          for (const product of enrichedProducts) {
             try {
               await prisma.products.create({
                 data: product,
