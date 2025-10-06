@@ -235,6 +235,7 @@ model ExpenseByCategory {
 enum Source {
   prom
   rozetka
+  crm
 }
 
 enum OrderStatus {

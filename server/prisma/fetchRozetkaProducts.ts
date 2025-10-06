@@ -197,4 +197,4 @@ export async function fetchRozetkaProductsWithTransformation() {
 
 //fetchAllRozetkaProducts()
 //fetchRozetkaProducts()
-fetchRozetkaProductsWithTransformation()
+//fetchRozetkaProductsWithTransformation()

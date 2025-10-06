@@ -1,7 +1,7 @@
 //server\src\syncMarketplaces.ts
 //import cron from 'node-cron'
 import { PrismaClient } from '@prisma/client'
-import { fetchCRMProducts } from '../prisma/fetchHPData'
+import { fetchCRMProducts } from '../prisma/fetchCRMProducts'
 import {
   fetchPromProductsWithTransformation,
   fetchPromProducts,

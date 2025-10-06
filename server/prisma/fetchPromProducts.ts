@@ -185,4 +185,4 @@ console.log("I am on main");
 main().catch((error) => {
   console.error('An error occurred:', error)
 }) */
-fetchPromProductsWithTransformation()
+//fetchPromProductsWithTransformation()
