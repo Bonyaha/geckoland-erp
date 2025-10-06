@@ -413,6 +413,150 @@ class OrderService {
   }
 
   /**
+   * Function for creating new order in database from data, passed from frontend
+   * This can be used for manual order creation or from other sources
+   */
+  async createOrderFromCRM(frontendOrderData: any): Promise<string> {
+    const orderId = `crm_${nanoid(8)}`
+
+    try {
+      // Extract and validate key data
+      const {
+        clientFirstName,
+        clientLastName,
+        clientSecondName,
+        clientPhone,
+        clientEmail,
+        recipientFirstName,
+        recipientLastName,
+        recipientSecondName,
+        recipientPhone,
+        deliveryAddress,
+        deliveryCity,
+        deliveryOptionName,
+        paymentOptionName,
+        items,
+        totalAmount,
+        deliveryCost,
+        notes,
+        status = 'NEW',
+        currency = 'UAH',
+      } = frontendOrderData
+
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        throw new Error('Order must contain at least one item')
+      }
+
+      // 1. Build the order data
+      const orderData: Prisma.OrdersCreateInput = {
+        orderId,
+        externalOrderId: orderId,
+        source: Source.crm,
+        orderNumber: orderId,
+
+        createdAt: new Date(),
+        lastModified: new Date(),
+
+        // Customer information
+        clientFirstName,
+        clientLastName,
+        clientSecondName,
+        clientPhone,
+        clientEmail,
+        clientFullName: `${clientLastName || ''} ${clientFirstName || ''} ${
+          clientSecondName || ''
+        }`.trim(),
+
+        // Delivery
+        recipientFirstName,
+        recipientLastName,
+        recipientSecondName,
+        recipientPhone,
+        recipientFullName: `${recipientLastName || ''} ${
+          recipientFirstName || ''
+        } ${recipientSecondName || ''}`.trim(),
+        deliveryAddress,
+        deliveryCity,
+        deliveryOptionName,
+        deliveryCost: deliveryCost ? new Decimal(deliveryCost) : new Decimal(0),
+
+        // Payment
+        paymentOptionName,
+        currency,
+
+        // Order details
+        itemCount: items.length,
+        totalQuantity: items.reduce(
+          (sum: number, item: any) => sum + (item.quantity || 0),
+          0
+        ),
+
+        // Financial info
+        totalAmount: new Decimal(totalAmount),
+        fullPrice: new Decimal(totalAmount),
+
+        // Status
+        status,
+        statusName: status,
+
+        // Additional info
+        clientNotes: notes || null,
+        rawOrderData: frontendOrderData as Prisma.InputJsonValue,
+
+        // Relations
+        orderItems: {
+          create: items.map((item: any) => ({
+            orderItemId: `item_${nanoid(6)}`,
+            externalProductId: item.productId || item.sku || nanoid(6),
+            productId: item.productId || null,
+            sku: item.sku || null,
+            productName: item.productName,
+            quantity: item.quantity,
+            unitPrice: new Decimal(item.unitPrice || 0),
+            totalPrice: new Decimal(
+              item.totalPrice || item.unitPrice * item.quantity || 0
+            ),
+            measureUnit: item.measureUnit || null,
+            rawItemData: item as Prisma.InputJsonValue,
+          })),
+        },
+      }
+
+      // 2. Normalize and save
+      const normalizedOrderData = this.normalizeOrderData(orderData)
+
+      const order = await prisma.orders.create({
+        data: normalizedOrderData,
+        include: { orderItems: true },
+      })
+
+      console.log(
+        `Created CRM order ${orderId} with ${order.orderItems.length} items`
+      )
+      // Prepare orderedProducts for sync
+      const orderedProducts = order.orderItems.map((item) => ({
+        productId: item.sku || item.externalProductId,
+        orderedQuantity: item.quantity,
+      }))
+
+      try {
+        //await syncAfterOrder(orderedProducts, 'сrm')
+        console.log(`✅ Synced inventory after Rozetka order ${orderId}`)
+      } catch (syncError) {
+        console.error(
+          `❌ Failed to sync inventory for order ${orderId}:`,
+          syncError
+        )
+      }
+
+      return orderId
+    } catch (error) {
+      console.error('Error creating CRM order:', error)
+      throw error
+    }
+  }
+
+  /**
    * Fetch new orders from Prom and create them in database
    */
   async fetchAndCreateNewPromOrders(): Promise<{
