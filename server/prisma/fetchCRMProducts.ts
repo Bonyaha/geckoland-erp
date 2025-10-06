@@ -89,7 +89,7 @@ export async function fetchCRMProducts() {
 
 /* 
   ------------------------------------------------------------------------------- 
-      Function to fetch all products from the my database and save to a JSON file
+      Function to fetch all products from my database and save to a JSON file
   --------------------------------------------------------------------------
 */
 

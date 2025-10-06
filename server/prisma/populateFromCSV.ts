@@ -8,6 +8,14 @@ import { enrichWithRozetkaIds } from './helper/mapExternalIdsRozetka'
 
 const prisma = new PrismaClient()
 
+/* 
+  This file provides a generic way to populate the Products table in database from CSV files. It can read two types of CSVs:
+  1. products.csv from HugeProfit CRM export
+  2. productsFromDB.csv exported from the existing database
+
+  It uses mapper functions to transform each CSV row into the format expected by Prisma and the database.
+ */
+
 // --- INTERFACES FOR EACH CSV STRUCTURE ---
 
 interface ProductFromHPCSV {

@@ -82,7 +82,7 @@ It's used when fetching Prom products directly from their API is not feasible
  */
 async function exportPromProductsToJSON() {
   const csvFilePath = path.join(__dirname, 'data', 'promProducts.csv')
-  const outputFilePath = path.join(__dirname, 'data', 'promProductsNew.json')
+  const outputFilePath = path.join(__dirname, 'data', 'promProducts.json')
   const products: PromProduct[] = []
 
   if (!fs.existsSync(csvFilePath)) {
