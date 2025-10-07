@@ -209,7 +209,7 @@ async function exportPromProductsToJSON() {
 }
 
 // Execute the export
-exportPromProductsToJSON()
+//exportPromProductsToJSON()
 /* .then(() => {
     console.log('Export completed successfully!')
     process.exit(0)

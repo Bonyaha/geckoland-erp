@@ -1,0 +1,31 @@
+{
+	"clientFirstName": "Іван",
+	"clientLastName": "Петренко",
+	"clientSecondName": "Олександрович",
+	"clientPhone": "+380501234567",
+	"clientEmail": "ivan.petrenko@example.com",
+	"recipientFirstName": "Марія",
+	"recipientLastName": "Петренко",
+	"recipientSecondName": "Іванівна",
+	"recipientPhone": "+380507654321",
+	"deliveryAddress": "вул. Хрещатик, 1, кв. 10",
+	"deliveryCity": "Київ",
+	"deliveryOptionName": "Нова Пошта",
+	"paymentOptionName": "Готівка при отриманні",
+	"deliveryCost": 75,
+	"totalAmount": 1250.50,
+	"currency": "UAH",
+	"status": "Нове замовлення",
+	"notes": "Передзвонити перед доставкою",
+	"items": [
+		{
+			"productId": "4654076_T0qMas",
+			"sku": "1200W-VJ-100",
+			"productName": "Термометр із батарейками з виносним датчиком 1м",
+			"quantity": 2,
+			"unitPrice": 141,
+			"totalPrice": 282,
+			"measureUnit": "шт"
+		}
+	]
+}

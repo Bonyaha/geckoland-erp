@@ -66,13 +66,12 @@ interface ProductFromDbCSV {
 
 // --- MAPPER FUNCTIONS FOR EACH CSV ---
 
-
 /**
  * Mapper for the 'products.csv' file from HugeProfit.
  */
 function mapHPCsvToProduct(row: ProductFromHPCSV): any {
   const quantity = parseInt(row['Кількість'], 10) || 0
-  
+
   const price = String(parseFloat(row['Ціна']) || '0.00')
   const costPrice = row['Собівр.'] ? String(parseFloat(row['Собівр.'])) : null
 
@@ -82,7 +81,7 @@ function mapHPCsvToProduct(row: ProductFromHPCSV): any {
         .map((url) => url.trim())
         .filter((url) => url)
     : []
-const mainImage = imageUrls.length > 0 ? imageUrls[0] : null
+  const mainImage = imageUrls.length > 0 ? imageUrls[0] : null
 
   return {
     productId: `${row.ID}_${nanoid(6)}`,
@@ -104,9 +103,10 @@ const mainImage = imageUrls.length > 0 ? imageUrls[0] : null
     categoryData: row['Категорія'] ? { name: row['Категорія'] } : null,
     measureUnit: row['Од.вим.'] || 'шт',
     status: 'active',
-    promQuantity: quantity,
-    rozetkaQuantity: quantity,
+
     // Set defaults for fields not present in this CSV
+    promQuantity: null,
+    rozetkaQuantity: null,
     priceOld: null,
     pricePromo: null,
     updatedPrice: null,
@@ -140,7 +140,7 @@ function mapDbCsvToProduct(row: ProductFromDbCSV): any {
     price: String(row.price || '0.00'),
     costPrice: row.costPrice ? String(row.costPrice) : null,
     stockQuantity: parseInt(row.stockQuantity, 10) || 0,
-    source: row.source as Source || Source.crm,
+    source: (row.source as Source) || Source.crm,
     externalIds: safeJsonParse(row.externalIds),
     description: row.description || null,
     mainImage: row.mainImage || null,
@@ -163,20 +163,17 @@ function mapDbCsvToProduct(row: ProductFromDbCSV): any {
     lastRozetkaSync: row.lastRozetkaSync ? new Date(row.lastRozetkaSync) : null,
     needsPromSync: row.needsPromSync === 'true',
     needsRozetkaSync: row.needsRozetkaSync === 'true',
-    promQuantity: parseInt(row.promQuantity, 10) || 0,
-    rozetkaQuantity: parseInt(row.rozetkaQuantity, 10) || 0,
+    promQuantity: null,
+    rozetkaQuantity: null,
   }
 }
 
-
 // --- MAIN GENERIC FUNCTION ---
-
 
 async function populateProductsFromCSV(
   filePath: string,
   mapper: (row: any) => any
 ) {
-  
   const products: any[] = []
 
   if (!fs.existsSync(filePath)) {
@@ -206,6 +203,17 @@ async function populateProductsFromCSV(
 
           console.log('Enriching products with Rozetka IDs...')
           enrichedProducts = await enrichWithRozetkaIds(enrichedProducts)
+
+          console.log('Setting marketplace quantities...')
+          enrichedProducts = enrichedProducts.map((product) => ({
+            ...product,
+            promQuantity: product.externalIds?.prom
+              ? product.stockQuantity
+              : null,
+            rozetkaQuantity: product.externalIds?.rozetka
+              ? product.stockQuantity
+              : null,
+          }))
 
           console.log('Clearing the Products table...')
           await prisma.products.deleteMany({})
@@ -252,7 +260,7 @@ async function main() {
   }
 }
 
-main().catch(e => {
+main().catch((e) => {
   console.error(e)
   process.exit(1)
 })

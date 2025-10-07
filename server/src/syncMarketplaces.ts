@@ -1509,7 +1509,7 @@ export const syncAfterOrder = async (
 //initializeMarketplaceQuantitiesOptimized()
   //syncMarketplacesVersion2()
 //syncRozetkaProductIds()
-updateAllMarketplaceQuantities()
+//updateAllMarketplaceQuantities()
 /* ;(async () => {
   await syncAfterOrder(
     [{ productId: '2737880255', orderedQuantity: 2 }],

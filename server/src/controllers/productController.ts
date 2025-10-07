@@ -88,8 +88,6 @@ export const createProduct = async (
         pricePromo,
         updatedPrice,
         currency,
-        sellingType,
-        presence,
         dateModified,
         lastSynced,
         needsSync,
@@ -231,3 +229,6 @@ export const updateProduct = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Failed to update product' })
   }
 }
+
+
+

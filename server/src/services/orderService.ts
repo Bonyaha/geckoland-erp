@@ -243,8 +243,8 @@ class OrderService {
       }))
 
       try {
-        //await syncAfterOrder(orderedProducts, 'prom')  for now disable automatic sync
-        console.log(`✅ Synced inventory after Prom order ${orderId}`)
+        /* await syncAfterOrder(orderedProducts, 'prom')  //for now disable automatic sync
+        console.log(`✅ Synced inventory after Prom order ${orderId}`) */
       } catch (syncError) {
         console.error(
           `❌ Failed to sync inventory for order ${orderId}:`,
@@ -396,8 +396,8 @@ class OrderService {
       }))
 
       try {
-        //await syncAfterOrder(orderedProducts, 'rozetka')
-        console.log(`✅ Synced inventory after Rozetka order ${orderId}`)
+      /*   await syncAfterOrder(orderedProducts, 'rozetka')
+        console.log(`✅ Synced inventory after Rozetka order ${orderId}`) */
       } catch (syncError) {
         console.error(
           `❌ Failed to sync inventory for order ${orderId}:`,
@@ -411,7 +411,7 @@ class OrderService {
       throw error
     }
   }
-
+ 
   /**
    * Function for creating new order in database from data, passed from frontend
    * This can be used for manual order creation or from other sources
@@ -540,8 +540,8 @@ class OrderService {
       }))
 
       try {
-        //await syncAfterOrder(orderedProducts, 'сrm')
-        console.log(`✅ Synced inventory after Rozetka order ${orderId}`)
+       /*  await syncAfterOrder(orderedProducts, 'сrm')
+        console.log(`✅ Synced inventory after Rozetka order ${orderId}`) */
       } catch (syncError) {
         console.error(
           `❌ Failed to sync inventory for order ${orderId}:`,

@@ -518,4 +518,4 @@ export const manualCheckForNewOrders = async () => {
   }
 }
 
-//manualCheckForNewOrders()
+manualCheckForNewOrders()
