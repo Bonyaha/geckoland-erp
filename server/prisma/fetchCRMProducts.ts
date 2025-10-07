@@ -1,9 +1,18 @@
 import axios from 'axios'
 import * as fs from 'fs/promises'
 import * as dotenv from 'dotenv'
+import { PrismaClient, Source } from '@prisma/client'; // Import PrismaClient
 
 dotenv.config()
 
+// 1. Initialize Prisma Client outside the functions
+const prisma = new PrismaClient();
+
+/* 
+  ------------------------------------------------------------------ 
+      Function to fetch products from HugeProfit CRM API 
+  ------------------------------------------------------------------
+*/
 export async function fetchCRMProducts() {
   const apiKey = process.env.HUGEPROFIT_API_KEY
   if (!apiKey) throw new Error('HUGEPROFIT_API_KEY is not defined in .env')
@@ -22,18 +31,20 @@ export async function fetchCRMProducts() {
     console.log(`Fetched ${products.length} products.`)
 
     allProducts.push(...products)
-
-    // Transform products to match database structure
+    
     const transformedProducts = allProducts.map((product: any) => {
       const stockInfo = product.stock?.[0] || {}
+      const salePrice = stockInfo.sale_price;
+      const regularPrice = stockInfo.price;
+      const promoPrice = salePrice && salePrice !== regularPrice ? salePrice : null;
 
       return {
         productId: String(product.id),
         sku: product.sku || null,
-        name: product.name || null,
-        price: parseFloat(stockInfo.price || 0),
+        name: product.name || "Unnamed Product",
+        price: String(regularPrice || '0.00'),
         stockQuantity: parseInt(stockInfo.quantity || 0, 10),
-
+        source: Source.prom,
         externalIds: { prom: null, rozetka: null },
         description:
           product.description === 'None' ? null : product.description,
@@ -43,19 +54,14 @@ export async function fetchCRMProducts() {
         available: Boolean(stockInfo.instock > 0),
         priceOld: null,
         pricePromo:
-          parseFloat(stockInfo.sale_price || 0) !==
-          parseFloat(stockInfo.price || 0)
-            ? parseFloat(stockInfo.sale_price || 0)
-            : null,
-        updatedPrice: parseFloat(stockInfo.price || 0),
-        currency: 'UAH', // Assuming Ukrainian Hryvnia based on your location
-        sellingType: product.type_product === 1 ? 'regular' : 'other',
-        presence: stockInfo.instock > 0 ? 'available' : 'out_of_stock',
+          promoPrice ? String(promoPrice) : null,
+        updatedPrice: String(regularPrice || '0.00'),
+        currency: 'UAH',
         dateModified: new Date(),
         lastSynced: new Date(),
         needsSync: false,        
-        categoryData: product.category || [],
-        measureUnit: product.unit || 'units',
+        categoryData: { rawData: product.category || null },
+        measureUnit: product.unit || 'шт.',
         status: 'active',
         lastPromSync: null,
         lastRozetkaSync: null,
@@ -65,20 +71,52 @@ export async function fetchCRMProducts() {
         rozetkaQuantity: parseInt(stockInfo.quantity || 0, 10),
       }
     })
-
-    /* await fs.writeFile(
-      'prisma/data/crmProducts.json',
+    
+    await fs.writeFile(
+      'prisma/data/products.json',
       JSON.stringify(transformedProducts, null, 2)
     )
 
     console.log(`\nFinished! Total products fetched: ${allProducts.length}`)
-    console.log(
-      `Transformed products saved to prisma/realData/crmProducts.json`
-    ) */
+    
     return transformedProducts
   } catch (error) {
     console.error('Error fetching products from HugeProfit API:', error)
     throw error
+  }
+}
+
+
+/* 
+  ------------------------------------------------------------------------------- 
+      Function to fetch all products from my database and save to a JSON file
+  --------------------------------------------------------------------------
+*/
+
+export async function fetchAllProductsFromDb() {
+  console.log('🚀 Starting to fetch all products from the database...');
+  try {    
+    const allDbProducts = await prisma.products.findMany();
+
+    console.log(`✅ Found ${allDbProducts.length} products in the database.`);
+   
+    await fs.writeFile(
+      'prisma/data/products.json',
+      JSON.stringify(allDbProducts, null, 2)
+    );
+
+    console.log(
+      '🎉 Success! Database products saved to prisma/data/products.json'
+    );
+
+    return allDbProducts;
+  } catch (error) {
+    console.error('❌ Error fetching products from the database:', error);
+    throw error;
+  } finally {
+    // IMPORTANT: Always disconnect from the database when the script is done.
+    await prisma.$disconnect();
+    console.log('🔌 Database connection closed.');
   }
 }
 

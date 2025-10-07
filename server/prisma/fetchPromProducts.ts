@@ -1,9 +1,11 @@
 import axios from 'axios'
 import * as fs from 'fs/promises'
 import * as dotenv from 'dotenv'
+import { all } from 'axios'
+import { solar } from 'googleapis/build/src/apis/solar'
+import { Source } from '@prisma/client'
 
 dotenv.config()
-
 
 //Function to fetch Prom products without transformation
 export async function fetchPromProducts() {
@@ -22,16 +24,19 @@ export async function fetchPromProducts() {
 
   while (hasMoreProducts) {
     try {
-      const params: { limit: number; last_id?: number | string | null } = {
+      const params: {
+        limit: number
+        last_id?: number | string | null
+      } = {
         limit,
       }
 
       // Add last_id parameter if we have it (for subsequent requests)
       if (lastId !== null) {
         params.last_id = lastId
-        /*  console.log(
+        console.log(
           `Fetching products with last_id: ${lastId}, limit: ${limit}`
-        ) */
+        )
       } else {
         //console.log(`Fetching first batch with limit: ${limit}`)
       }
@@ -45,7 +50,7 @@ export async function fetchPromProducts() {
 
       if (products && products.length > 0) {
         allProducts.push(...products)
-        /*   console.log(
+        console.log(
           `Fetched ${products.length} products. Total so far: ${allProducts.length}`
         ) */
 
@@ -83,7 +88,7 @@ export async function fetchPromProducts() {
     }
   }
 
-  console.log(`\nFinished! Total products fetched: ${allProducts.length}`)
+  //console.log(`\nFinished! Total products fetched: ${allProducts.length}`)
   /* console.log(
     'Product with id 1919700674:',
     allProducts.find((product) => product.id === 1919700674) ||
@@ -144,10 +149,7 @@ export async function fetchPromProductsWithTransformation() {
         //console.log(`Last product ID in this batch: ${newLastId}`)
 
         // If we got fewer products than the limit, we've reached the end
-        if (products.length < limit) {
-          hasMoreProducts = false
-          console.log('Reached the end - got fewer products than limit')
-        } else if (newLastId === lastId) {
+        if (newLastId === lastId) {
           // Safety check: if last_id hasn't changed, break to avoid infinite loop
           hasMoreProducts = false
           console.log('Stopping - last_id unchanged')
@@ -171,18 +173,54 @@ export async function fetchPromProductsWithTransformation() {
   }
 
   console.log(`\nFinished! Total products fetched: ${allProducts.length}`)
-  //console.log('Example product data:', allProducts[0] || 'No products found')
+  //console.log(allProducts[allProducts.length - 1])
+  checkForDuplicates(allProducts)
+  return allProducts
+}
+
+/**
+ * Checks for duplicate products in an array based on their 'id'.
+ * @param products - The array of products to check.
+ * @returns An array of duplicate products found.
+ */
+function checkForDuplicates(products: any[]) {
+  const seenIds = new Set()
+  const duplicates = []
+
+  console.log('Checking for duplicates...')
+
+  for (const product of products) {
+    if (seenIds.has(product.id)) {
+      duplicates.push(product)
+    } else {
+      seenIds.add(product.id)
+    }
+  }
+
+  if (duplicates.length > 0) {
+    console.log(`Found ${duplicates.length} duplicate product(s):`)
+    duplicates.forEach((p) => console.log(`  - ID: ${p.id}, Name: "${p.name}"`))
+  } else {
+    console.log('No duplicates found in the product list.')
+  }
+
+  return duplicates
+}
+
+//Function to fetch Prom products and transform them to match the database structure
+export async function fetchPromProductsWithTransformation() {
+  const allProducts = await fetchPromProducts()
 
   const transformedProducts = allProducts.map((product: any) => ({
     productId: String(product.id),
     sku: product.sku || null,
     externalIds: { prom: String(product.id), rozetka: null },
     name: product.name || '',
-    price: product.price || 0,
+    price: String(product.price || '0.00'),
     priceOld: null,
     pricePromo: null,
-    updatedPrice: parseFloat(product.price || 0),
-    stockQuantity: product.quantity_in_stock,
+    updatedPrice: product.price ? String(product.price) : null,
+    stockQuantity: product.quantity_in_stock || 0,
     promQuantity: product.quantity_in_stock,
     inStock: product.quantity_in_stock || 0,
     available: product.in_stock || false,
@@ -190,8 +228,6 @@ export async function fetchPromProductsWithTransformation() {
     mainImage: product.main_image || null,
     images: product.images ? product.images.map((img: any) => img.url) : [],
     currency: product.currency || 'UAH',
-    sellingType: product.selling_type || null,
-    presence: product.presence || null,
     dateModified: product.date_modified
       ? new Date(product.date_modified)
       : new Date(),
@@ -215,15 +251,16 @@ export async function fetchPromProductsWithTransformation() {
     status: product.status || 'active',
     rozetkaQuantity: null,
     lastRozetkaSync: null,
+    source: Source.prom,
   }))
 
-  /* await fs.writeFile(
+  await fs.writeFile(
     'prisma/data/promProducts.json',
     JSON.stringify(transformedProducts, null, 2)
   )
-  console.log('Prom products data saved to prisma/realData/promProducts.json') */
+  console.log('Prom products data saved to prisma/realData/promProducts.json')
   return transformedProducts
 }
 
 
-fetchPromProducts()
+//fetchPromProducts()

@@ -1,7 +1,7 @@
 //server\src\syncMarketplaces.ts
 //import cron from 'node-cron'
 import { PrismaClient } from '@prisma/client'
-import { fetchCRMProducts } from '../prisma/fetchHPData'
+import { fetchCRMProducts } from '../prisma/fetchCRMProducts'
 import {
   fetchPromProductsWithTransformation,
   fetchPromProducts,
@@ -15,13 +15,15 @@ import {
 
 const prisma = new PrismaClient()
 
-// Updating quantities for all products in app's database
+// Update quantities for all products in app's database
 const updateAllMarketplaceQuantities = async () => {
   console.log('Updating all marketplace quantities for all products...')
 
   // First, fetch and sync Prom products as main source
   console.log('🔄 Fetching Prom products data...')
   const promProducts = await fetchPromProductsWithTransformation()
+console.log(`Fetched ${promProducts.length} Prom products`);
+
   const promProductIds = new Set(promProducts.map((p) => p.productId))
 
   // Find products in our DB that are NOT in the latest Prom fetch.
@@ -705,14 +707,14 @@ const syncMarketplacesVersion1 = async () => {
 
     // Otherwise, use individual updates (you might want to batch these too)
     for (const { productId, quantity } of promUpdates) {
-      syncPromises.push(updatePromProduct(productId, { quantity }))
+      //syncPromises.push(updatePromProduct(productId, { quantity }))
     }
   }
 
   // Batch update Rozetka products
   if (rozetkaUpdates.length > 0) {
     console.log(`🚀 Batch updating ${rozetkaUpdates.length} Rozetka products`)
-    syncPromises.push(updateMultipleRozetkaProducts(rozetkaUpdates))
+    //syncPromises.push(updateMultipleRozetkaProducts(rozetkaUpdates))
   }
 
   // Execute all updates
@@ -1089,18 +1091,18 @@ const syncMarketplacesVersion2 = async () => {
     // syncPromises.push(updateMultiplePromProducts(promUpdates))
     // otherwise call per-item:
     for (const { productId, quantity } of promUpdates) {
-      syncPromises.push(updatePromProduct(productId, { quantity }))
+      //syncPromises.push(updatePromProduct(productId, { quantity }))
     }
   }
 
   if (rozetkaUpdates.length > 0) {
     console.log(`🚀 Batch updating ${rozetkaUpdates.length} Rozetka products`)
-    syncPromises.push(updateMultipleRozetkaProducts(rozetkaUpdates))
+    //syncPromises.push(updateMultipleRozetkaProducts(rozetkaUpdates))
   }
 
   if (syncPromises.length > 0) {
     try {
-      await Promise.all(syncPromises)
+      //await Promise.all(syncPromises)
       console.log('✅ All batch updates completed successfully')
     } catch (error) {
       console.error('❌ Some batch updates failed:', error)
@@ -1505,7 +1507,7 @@ export const syncAfterOrder = async (
 // Add to end of index.ts
 //console.log('Synchronization scheduled')
 //initializeMarketplaceQuantitiesOptimized()
-//syncMarketplacesVersion2()
+  //syncMarketplacesVersion2()
 //syncRozetkaProductIds()
 //updateAllMarketplaceQuantities()
 /* ;(async () => {
@@ -1514,3 +1516,4 @@ export const syncAfterOrder = async (
     'prom'
   )
 })() */
+

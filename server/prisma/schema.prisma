@@ -17,7 +17,8 @@ model Products {
   productId        String       @id
   sku              String?
   name             String
-  price            Float
+  price            Decimal      @db.Decimal(10, 2)
+  costPrice        Decimal?     @db.Decimal(10, 2)
   stockQuantity    Int
   source           Source       @default(prom)
   externalIds      Json
@@ -26,12 +27,10 @@ model Products {
   images           String[]
   inStock          Int
   available        Boolean
-  priceOld         Float?
-  pricePromo       Float?
-  updatedPrice     Float?
+  priceOld         Decimal?     @db.Decimal(10, 2)
+  pricePromo       Decimal?     @db.Decimal(10, 2)
+  updatedPrice     Decimal?     @db.Decimal(10, 2)
   currency         String?
-  sellingType      String?
-  presence         String?
   dateModified     DateTime?    @db.Timestamptz(6)
   lastSynced       DateTime?    @db.Timestamptz(6)
   needsSync        Boolean      @default(false)
@@ -59,7 +58,7 @@ model Orders {
   orderNumber     String? // For display purposes
 
   // Timestamps
-  createdAt    DateTime @db.Timestamptz(6) // Prom: "date_created", Rozetka: "created"
+  createdAt    DateTime  @db.Timestamptz(6) // Prom: "date_created", Rozetka: "created"
   updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
   lastModified DateTime? @db.Timestamptz(6) // Prom: "date_modified", Rozetka: "changed"
 
@@ -85,7 +84,7 @@ model Orders {
   deliveryAddress    String? // Prom: "delivery_address"
   deliveryCity       String? // From delivery provider data
   trackingNumber     String? // Prom: "delivery_provider_data.declaration_number", Rozetka: "ttn"
-  deliveryCost       Float? // Prom: "delivery_cost", Rozetka: "delivery.cost"
+  deliveryCost       Decimal? @db.Decimal(10, 2) // Prom: "delivery_cost", Rozetka: "delivery.cost"
 
   // Delivery provider specific data (stored as JSON for flexibility)
   deliveryProviderData Json? // Prom: "delivery_provider_data", Rozetka: "delivery"
@@ -97,10 +96,10 @@ model Orders {
   paymentStatus     String? // From payment_data.status
 
   // Financial information
-  totalAmount             Float // Prom: price (parsed), Rozetka: "cost"
-  totalAmountWithDiscount Float? // Rozetka: "cost_with_discount"
-  fullPrice               String? // Prom: "full_price" (original string)
-  currency                String  @default("UAH")
+  totalAmount             Decimal  @db.Decimal(10, 2) // Prom: price (parsed), Rozetka: "cost"
+  totalAmountWithDiscount Decimal? @db.Decimal(10, 2) // Rozetka: "cost_with_discount"
+  fullPrice               Decimal? @db.Decimal(10, 2) // Prom: "full_price" (original string)
+  currency                String   @default("UAH")
 
   // Order details
   totalQuantity Int? // Rozetka: "total_quantity"
@@ -112,9 +111,9 @@ model Orders {
   statusGroup Int? // Rozetka: "status_group"
 
   // Commission and fees
-  cpaCommission        Float? // Prom: "cpa_commission.amount"
-  prosaleCommission    Float? // Prom: "prosale_commission.value"
-  isCommissionRefunded Boolean @default(false) // Prom: "cpa_commission.is_refunded"
+  cpaCommission        Decimal? @db.Decimal(10, 2) // Prom: "cpa_commission.amount"
+  prosaleCommission    Decimal? @db.Decimal(10, 2) // Prom: "prosale_commission.value"
+  isCommissionRefunded Boolean  @default(false) // Prom: "cpa_commission.is_refunded"
 
   // Additional information
   clientNotes    String? // Prom: "client_notes", Rozetka: "comment"
@@ -158,12 +157,12 @@ model OrderItems {
 
   // Quantities and pricing
   quantity    Int // Prom: "quantity"
-  unitPrice   Float // Prom: "price" (parsed)
-  totalPrice  Float // Prom: "total_price" (parsed)
+  unitPrice   Decimal @db.Decimal(10, 2) // Prom: "price" (parsed)
+  totalPrice  Decimal @db.Decimal(10, 2) // Prom: "total_price" (parsed)
   measureUnit String? // Prom: "measure_unit"
 
   // Commission
-  cpaCommission Float? // Prom: "cpa_commission.amount"
+  cpaCommission Decimal? @db.Decimal(10, 2) // Prom: "cpa_commission.amount"
 
   // Raw item data
   rawItemData Json? // Store original item data
@@ -181,8 +180,8 @@ model Sales {
   productId   String
   timestamp   DateTime
   quantity    Int
-  unitPrice   Float
-  totalAmount Float
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  totalAmount Decimal  @db.Decimal(10, 2)
   product     Products @relation(fields: [productId], references: [productId])
 }
 
@@ -191,35 +190,35 @@ model Purchases {
   productId  String
   timestamp  DateTime
   quantity   Int
-  unitCost   Float
-  totalCost  Float
+  unitCost   Decimal  @db.Decimal(10, 2)
+  totalCost  Decimal  @db.Decimal(10, 2)
   product    Products @relation(fields: [productId], references: [productId])
 }
 
 model Expenses {
   expenseId String   @id
   category  String
-  amount    Float
+  amount    Decimal  @db.Decimal(10, 2)
   timestamp DateTime
 }
 
 model SalesSummary {
   salesSummaryId   String   @id
-  totalValue       Float
+  totalValue       Decimal  @db.Decimal(10, 2)
   changePercentage Float?
   date             DateTime
 }
 
 model PurchaseSummary {
   purchaseSummaryId String   @id
-  totalPurchased    Float
+  totalPurchased    Decimal  @db.Decimal(10, 2)
   changePercentage  Float?
   date              DateTime
 }
 
 model ExpenseSummary {
   expenseSummaryId  String              @id
-  totalExpenses     Float
+  totalExpenses     Decimal             @db.Decimal(10, 2)
   date              DateTime
   ExpenseByCategory ExpenseByCategory[]
 }
@@ -228,7 +227,7 @@ model ExpenseByCategory {
   expenseByCategoryId String         @id
   expenseSummaryId    String
   category            String
-  amount              BigInt
+  amount              Decimal        @db.Decimal(10, 2)
   date                DateTime
   expenseSummary      ExpenseSummary @relation(fields: [expenseSummaryId], references: [expenseSummaryId])
 }
@@ -236,6 +235,7 @@ model ExpenseByCategory {
 enum Source {
   prom
   rozetka
+  crm
 }
 
 enum OrderStatus {

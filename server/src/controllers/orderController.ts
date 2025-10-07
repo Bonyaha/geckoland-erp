@@ -35,6 +35,35 @@ export const fetchNewPromOrders = async (req: Request, res: Response) => {
   }
 }
 
+
+/**
+ * Create new manual order from frontend (CRM)
+ * @route POST /api/orders/create-crm
+ */
+export const createCRMOrder = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const orderData = req.body
+    if (!orderData || Object.keys(orderData).length === 0) {
+      res.status(400).json({ error: 'Order data is required' })
+      return
+    }
+
+    const orderId = await orderService.createOrderFromCRM(orderData)
+
+    res.status(201).json({
+      message: 'CRM order created successfully',
+      orderId,
+    })
+  } catch (error: any) {
+    console.error('❌ Error creating CRM order:', error)
+    res.status(500).json({
+      error: 'Failed to create CRM order',
+      details: error.message,
+    })
+  }
+}
+
+
 /**
  * Get orders with filtering and pagination
  */

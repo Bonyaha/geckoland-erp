@@ -2,6 +2,7 @@ import axios from 'axios'
 import * as fs from 'fs/promises'
 import * as dotenv from 'dotenv'
 import { rozetkaTokenManager } from './rozetkaTokenCache'
+import { Source } from '@prisma/client'
 
 dotenv.config()
 
@@ -151,25 +152,30 @@ export async function fetchRozetkaProductsWithTransformation() {
     // Step 3: Save products to file
     const transformedProducts = allProducts.map((item: any) => ({
       productId: String(item.rz_item_id),
-      uniqueProductKey: item.article || `${item.name}-${item.price}`,
+      sku: item.article || null,
       externalIds: { prom: null, rozetka: String(item.item_id) },
       name: item.name,
-      price: item.price,
-      stockQuantity: item.stock_quantity,
-      available: item.available,
-      priceOld: item.price_old,
-      pricePromo: item.price_promo,
-      updatedPrice: item.updated_price,
-      mainImage: item.photo_preview?.[0],
-      images: item.photo,
+      price: String(item.price || '0.00'),
+      stockQuantity: item.stock_quantity || 0,
+      available: item.available || false,
+      priceOld: item.price_old ? String(item.price_old) : null,
+      pricePromo: item.price_promo ? String(item.price_promo) : null,
+      updatedPrice: item.updated_price ? String(item.updated_price) : null,
+      mainImage: item.photo_preview?.[0] || null,
+      images: item.photo || [],
       dateModified: item.created_at ? new Date(item.created_at) : null,
-      multilangData: { ru: item.name_ru, ua: item.name_ua },
-      categoryData: {
-        id: item.rz_category?.id,
-        title: item.rz_category?.title_ua,
+      multilangData: {
+        ru: item.name_ru || null,
+        uk: item.name_ua || null, // Assuming 'ua' should map to 'uk'
+        description_ru: null, // Add other expected keys as null
+        description_uk: null,
       },
-      status: item.rz_status?.toString(),
-      source: 'rozetka',
+      categoryData: {
+        id: item.rz_category?.id || null,
+        title: item.rz_category?.title_ua || null,
+      },
+      status: item.rz_status?.toString() || null,
+      source: Source.rozetka,
     }))
 
     await fs.writeFile(
@@ -179,11 +185,7 @@ export async function fetchRozetkaProductsWithTransformation() {
     console.log(
       'Rozetka products data saved to prisma/realData/rozetkaProducts.json'
     )
-    console.log(
-      'allProducts',
-      allProducts.find((item: any) => item.article === '920D-KF-030')
-    )
-
+    
     // return allProducts
   } catch (error: any) {
     console.error('❌ Main process failed:', error.message)
@@ -195,5 +197,4 @@ export async function fetchRozetkaProductsWithTransformation() {
 
 //fetchAllRozetkaProducts()
 //fetchRozetkaProducts()
-
-//fetchChangedRozetkaProducts()
+//fetchRozetkaProductsWithTransformation()

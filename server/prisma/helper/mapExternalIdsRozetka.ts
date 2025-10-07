@@ -68,4 +68,49 @@ async function updateProductsExternalIds() {
 	}
 }
 
-updateProductsExternalIds()
+
+/* 
+//Function similar to the one above, but it takes an array of products instead of reading from a file and returns the enriched array, not writing to a file
+*/
+
+
+export async function enrichWithRozetkaIds(products: any[]) {
+console.log('I am in enrichWithRozetkaIds');
+
+  const rozetkaProductsData = await fs.readFile(
+    'prisma/data/rozetkaProducts.json',
+    'utf-8'
+  )
+  const rozetkaProducts = JSON.parse(rozetkaProductsData)
+//console.log('Rozetka products data loaded:', rozetkaProducts);
+
+  const rozetkaProductsMap = new Map()
+  rozetkaProducts.forEach((rozetkaProduct: any) => {
+    rozetkaProductsMap.set(
+      rozetkaProduct.sku,
+      rozetkaProduct.productId
+    )
+  })
+//console.log('Rozetka products map:', rozetkaProductsMap);
+
+  const enrichedProducts = products.map((product) => {
+    const matchingRozetkaProductId = rozetkaProductsMap.get(product.sku)
+
+    if (matchingRozetkaProductId) {
+//console.log('Found matching rozetka ID for product SKU:', product.sku);
+
+      return {
+        ...product,
+        externalIds: {
+          ...product.externalIds,
+          rozetka: matchingRozetkaProductId,
+        },
+      }
+    }
+    return product
+  })
+
+  return enrichedProducts
+}
+
+//updateProductsExternalIds()

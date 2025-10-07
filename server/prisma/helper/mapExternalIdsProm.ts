@@ -11,7 +11,7 @@ async function updateProductsExternalIds() {
 
     // Read promProducts.json
     const promProductsData = await fs.readFile(
-      'prisma/data/promProducts.json',
+      'prisma/data/promProductsNew.json',
       'utf-8'
     )
     const promProducts = JSON.parse(promProductsData)
@@ -19,7 +19,7 @@ async function updateProductsExternalIds() {
     // Create a map for quick lookup: uniqueProductKey -> productId
     const promProductsMap = new Map()
     promProducts.forEach((promProduct: any) => {
-      promProductsMap.set(promProduct.uniqueProductKey, promProduct.productId)
+      promProductsMap.set(promProduct.sku, promProduct.promId)
     })
 
     let updatedCount = 0
@@ -62,4 +62,49 @@ async function updateProductsExternalIds() {
   }
 }
 
-updateProductsExternalIds()
+/* 
+//Function similar to the one above, but it takes an array of products instead of reading from a file and returns the enriched array, not writing to a file 
+*/
+
+export async function enrichWithPromIds(products: any[]) {
+  const promProductsData = await fs.readFile(
+    'prisma/data/promProducts.json',
+    'utf-8'
+  )
+  const promProducts = JSON.parse(promProductsData)
+
+  const promProductsMap = new Map()
+  promProducts.forEach((promProduct: any) => {
+    promProductsMap.set(promProduct.sku, promProduct.productId)
+  })
+
+  let updatedCount = 0
+  let notFoundCount = 0
+
+  const enrichedProducts = products.map((product) => {
+    const matchingPromProductId = promProductsMap.get(product.sku)
+
+    if (matchingPromProductId) {
+      updatedCount++
+      return {
+        ...product,
+        externalIds: {
+          ...product.externalIds,
+          prom: matchingPromProductId,
+        },
+      }
+    } else {
+      notFoundCount++
+      return product
+    }
+  })
+
+  console.log(`Products updated with prom ID: ${updatedCount}`)
+  console.log(`Products without matching prom ID: ${notFoundCount}`)
+
+  return enrichedProducts
+}
+
+
+
+//updateProductsExternalIds()
