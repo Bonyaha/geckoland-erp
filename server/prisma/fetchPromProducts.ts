@@ -52,94 +52,7 @@ export async function fetchPromProducts() {
         allProducts.push(...products)
         console.log(
           `Fetched ${products.length} products. Total so far: ${allProducts.length}`
-        ) */
-
-        // Get the ID of the last product for the next request
-        // Assuming each product has an 'id' field
-        const lastProduct = products[products.length - 1]
-        const newLastId = lastProduct.id
-
-        //console.log(`Last product ID in this batch: ${newLastId}`)
-
-        // If we got fewer products than the limit, we've reached the end
-        if (products.length < limit) {
-          hasMoreProducts = false
-          // console.log('Reached the end - got fewer products than limit')
-        } else if (newLastId === lastId) {
-          // Safety check: if last_id hasn't changed, break to avoid infinite loop
-          hasMoreProducts = false
-          //console.log('Stopping - last_id unchanged')
-        } else {
-          lastId = newLastId
-        }
-      } else {
-        hasMoreProducts = false
-        console.log('No more products returned')
-      }
-
-      // Small delay to be respectful to the API
-      await new Promise((resolve) => setTimeout(resolve, 200))
-    } catch (error: any) {
-      console.error(
-        'Error fetching products:',
-        error.response?.data || error.message
-      )
-      throw error
-    }
-  }
-
-  //console.log(`\nFinished! Total products fetched: ${allProducts.length}`)
-  /* console.log(
-    'Product with id 1919700674:',
-    allProducts.find((product) => product.id === 1919700674) ||
-      'Product not found'
-  ) */
-  return allProducts
-}
-
-//Function to fetch Prom products and transform them to match the database structure
-export async function fetchPromProductsWithTransformation() {
-  const apiKey = process.env.PROM_API_KEY
-  if (!apiKey) throw new Error('PROM_API_KEY is not defined in .env')
-
-  const baseUrl = 'https://my.prom.ua/api/v1/products/list'
-  const headers = { Authorization: `Bearer ${apiKey}` }
-
-  let allProducts = []
-  let limit = 100 // Number of products per request
-  let lastId = null // For cursor-based pagination
-  let hasMoreProducts = true
-
-  console.log('Starting to fetch all products using last_id pagination...')
-
-  while (hasMoreProducts) {
-    try {
-      const params: { limit: number; last_id?: number | string | null } = {
-        limit,
-      }
-
-      // Add last_id parameter if we have it (for subsequent requests)
-      if (lastId !== null) {
-        params.last_id = lastId
-        /* console.log(
-          `Fetching products with last_id: ${lastId}, limit: ${limit}`
-        ) */
-      } else {
-        console.log(`Fetching first batch with limit: ${limit}`)
-      }
-
-      const response = await axios.get(baseUrl, {
-        headers,
-        params,
-      })
-
-      const { products } = response.data
-
-      if (products && products.length > 0) {
-        allProducts.push(...products)
-        /* console.log(
-          `Fetched ${products.length} products. Total so far: ${allProducts.length}`
-        ) */
+        )
 
         // Get the ID of the last product for the next request
         // Assuming each product has an 'id' field
@@ -262,5 +175,14 @@ export async function fetchPromProductsWithTransformation() {
   return transformedProducts
 }
 
+/* async function main() {
+console.log("I am on main");
 
-//fetchPromProducts()
+  const allProducts = await fetchPromProducts()
+  // You can do something with allProducts here if needed
+}
+
+main().catch((error) => {
+  console.error('An error occurred:', error)
+}) */
+//fetchPromProductsWithTransformation()
