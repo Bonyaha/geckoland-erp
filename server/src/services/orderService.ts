@@ -396,7 +396,7 @@ class OrderService {
       }))
 
       try {
-      /*   await syncAfterOrder(orderedProducts, 'rozetka')
+        /*   await syncAfterOrder(orderedProducts, 'rozetka')
         console.log(`✅ Synced inventory after Rozetka order ${orderId}`) */
       } catch (syncError) {
         console.error(
@@ -411,7 +411,7 @@ class OrderService {
       throw error
     }
   }
- 
+
   /**
    * Function for creating new order in database from data, passed from frontend
    * This can be used for manual order creation or from other sources
@@ -540,7 +540,7 @@ class OrderService {
       }))
 
       try {
-       /*  await syncAfterOrder(orderedProducts, 'сrm')
+        /*  await syncAfterOrder(orderedProducts, 'сrm')
         console.log(`✅ Synced inventory after Rozetka order ${orderId}`) */
       } catch (syncError) {
         console.error(
@@ -719,6 +719,20 @@ class OrderService {
       },
     }
   }
+
+  /** Update order in database by ID
+   */
+
+  async updateOrder(orderId: string, updates: Prisma.OrdersUpdateInput) {
+    return prisma.orders.update({
+      where: { orderId },
+      data: updates,
+      include: { orderItems: true },
+    })
+  }
 }
+
+
+
 
 export default OrderService

@@ -130,9 +130,13 @@ export const updateProduct = async (req: Request, res: Response) => {
       lastSynced: new Date(),
     }
 
-    if (updates.quantity !== undefined)
+    if (updates.quantity !== undefined) {
       dbUpdateData.stockQuantity = updates.quantity
-    if (updates.price !== undefined) dbUpdateData.price = updates.price
+    }
+
+    if (updates.price !== undefined) {
+      dbUpdateData.price = updates.price
+    }
 
     console.log(`Updating product ${productId} with data:`, dbUpdateData)
 
@@ -229,6 +233,3 @@ export const updateProduct = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Failed to update product' })
   }
 }
-
-
-

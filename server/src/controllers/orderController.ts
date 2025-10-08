@@ -63,6 +63,29 @@ export const createCRMOrder = async (req: Request, res: Response): Promise<void>
   }
 }
 
+/** Update order by ID
+ */
+
+export const updateOrder = async (req: Request, res: Response) => {
+  try {
+    const { orderId } = req.params
+    const updates = req.body
+
+    const updatedOrder = await orderService.updateOrder(orderId, updates)
+
+    res.status(200).json({
+      success: true,
+      data: updatedOrder,
+    })
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update order',
+      error: error.message,
+    })
+  }
+}
+
 
 /**
  * Get orders with filtering and pagination

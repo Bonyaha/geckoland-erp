@@ -6,6 +6,7 @@ import {
   getOrderById,
   syncOrders,
   createCRMOrder,
+  updateOrder,
 } from '../controllers/orderController'
 import { manualCheckForNewOrders } from '../controllers/notificationController'
 
@@ -28,6 +29,9 @@ router.post('/manual-check', manualCheckForNewOrders)
 
 // POST /api/orders/create-crm - Create manual order from frontend
 router.post('/create-crm', createCRMOrder)
+
+// PATCH /orders/:orderId - Update an existing order
+router.patch('/:orderId', updateOrder)
 
 
 export default router
