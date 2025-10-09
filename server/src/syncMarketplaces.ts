@@ -7,7 +7,10 @@ import {
   fetchPromProducts,
 } from '../prisma/fetchPromProducts'
 import { fetchRozetkaProducts } from '../prisma/fetchRozetkaProducts'
-import { updatePromProduct } from './services/marketplaces/promClient'
+import {
+  updatePromProduct,
+  PromUpdateParams,
+} from './services/marketplaces/promClient'
 import {
   updateMultipleRozetkaProducts,
   RozetkaUpdateParams,
@@ -749,6 +752,7 @@ const syncMarketplacesVersion1 = async () => {
   console.log('Marketplace synchronization completed')
 }
 
+
 const syncMarketplacesVersion2 = async () => {
   // Fetch external products
   const promProducts = await fetchPromProducts()
@@ -939,7 +943,8 @@ const syncMarketplacesVersion2 = async () => {
   //
   // 3) Finalize newMaster/newMarketplace quantities, update DB and prepare external sync payloads (single pass)
   //
-  const promUpdates: Array<{ productId: string; quantity: number }> = []
+  const promUpdates: Array<{ productId: string; updates: PromUpdateParams }> =
+    []
   const rozetkaUpdates: Array<{
     productId: string
     updates: RozetkaUpdateParams
@@ -1053,7 +1058,7 @@ const syncMarketplacesVersion2 = async () => {
     ) {
       promUpdates.push({
         productId: entry.externalIds.prom,
-        quantity: entry.newPromQuantity,
+        updates: { quantity: entry.newPromQuantity },
       })
     }
 
@@ -1090,9 +1095,9 @@ const syncMarketplacesVersion2 = async () => {
     // If you have a batch API use it:
     // syncPromises.push(updateMultiplePromProducts(promUpdates))
     // otherwise call per-item:
-    for (const { productId, quantity } of promUpdates) {
+    /* for (const { productId, quantity } of promUpdates) {
       //syncPromises.push(updatePromProduct(productId, { quantity }))
-    }
+    } */
   }
 
   if (rozetkaUpdates.length > 0) {

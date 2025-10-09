@@ -35,7 +35,7 @@ export const getProductQuantity = async (productId: string) => {
   return response.data.quantity // Adjust based on Prom’s actual response structure
 }
 
-interface PromUpdateParams {
+export interface PromUpdateParams {
   quantity?: number
   price?: number
   // Add more fields as needed in the future
