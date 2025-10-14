@@ -75,38 +75,43 @@ async function updateProductsExternalIds() {
 
 
 export async function enrichWithRozetkaIds(products: any[]) {
-console.log('I am in enrichWithRozetkaIds');
+  //console.log('I am in enrichWithRozetkaIds');
 
   const rozetkaProductsData = await fs.readFile(
     'prisma/data/rozetkaProducts.json',
     'utf-8'
   )
   const rozetkaProducts = JSON.parse(rozetkaProductsData)
-//console.log('Rozetka products data loaded:', rozetkaProducts);
+  //console.log('Rozetka products data loaded:', rozetkaProducts);
 
+  // Create a map for quick lookup: uniqueProductKey -> productId
   const rozetkaProductsMap = new Map()
   rozetkaProducts.forEach((rozetkaProduct: any) => {
-    rozetkaProductsMap.set(
-      rozetkaProduct.sku,
-      rozetkaProduct.productId
-    )
+    rozetkaProductsMap.set(rozetkaProduct.sku, {
+      rz_item_id: rozetkaProduct.productId,
+      item_id: rozetkaProduct.externalIds.rozetka,
+    })
   })
-//console.log('Rozetka products map:', rozetkaProductsMap);
+  //console.log('Rozetka products map:', rozetkaProductsMap);
 
   const enrichedProducts = products.map((product) => {
-    const matchingRozetkaProductId = rozetkaProductsMap.get(product.sku)
+    const matchingRozetkaData = rozetkaProductsMap.get(product.sku)
 
-    if (matchingRozetkaProductId) {
-//console.log('Found matching rozetka ID for product SKU:', product.sku);
+    if (matchingRozetkaData) {
+      //console.log('Found matching rozetka ID for product SKU:', product.sku);
 
       return {
         ...product,
         externalIds: {
           ...product.externalIds,
-          rozetka: matchingRozetkaProductId,
+          rozetka: {
+            rz_item_id: matchingRozetkaData.rz_item_id,
+            item_id: matchingRozetkaData.item_id,
+          },
         },
       }
     }
+    // Keep the product as is if no match found
     return product
   })
 

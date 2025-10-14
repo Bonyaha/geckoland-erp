@@ -8,7 +8,7 @@ import {
 } from '../prisma/fetchPromProducts'
 import { fetchRozetkaProducts } from '../prisma/fetchRozetkaProducts'
 import {
-  updatePromProduct,
+  updateMultiplePromProducts,
   PromUpdateParams,
 } from './services/marketplaces/promClient'
 import {
@@ -25,7 +25,7 @@ const updateAllMarketplaceQuantities = async () => {
   // First, fetch and sync Prom products as main source
   console.log('🔄 Fetching Prom products data...')
   const promProducts = await fetchPromProductsWithTransformation()
-console.log(`Fetched ${promProducts.length} Prom products`);
+  console.log(`Fetched ${promProducts.length} Prom products`)
 
   const promProductIds = new Set(promProducts.map((p) => p.productId))
 
@@ -752,7 +752,6 @@ const syncMarketplacesVersion1 = async () => {
   console.log('Marketplace synchronization completed')
 }
 
-
 const syncMarketplacesVersion2 = async () => {
   // Fetch external products
   const promProducts = await fetchPromProducts()
@@ -949,6 +948,7 @@ const syncMarketplacesVersion2 = async () => {
     productId: string
     updates: RozetkaUpdateParams
   }> = []
+
   const dbUpdatePromises: Promise<any>[] = []
   const productIdsToClearFlags: string[] = []
 
@@ -1382,11 +1382,9 @@ export const syncAfterOrder = async (
     `Found ${productsNeedingSync.length} products needing marketplace sync`
   )
 
-
-/******************************************************************** */
-/* For now I disabled updating marketplaces until I am 100% sure everything works correctly */
-/********************************************************************* */
-
+  /******************************************************************** */
+  /* For now I disabled updating marketplaces until I am 100% sure everything works correctly */
+  /********************************************************************* */
 
   /*if (productsNeedingSync.length === 0) {
     console.log('No marketplace sync needed')
@@ -1512,7 +1510,7 @@ export const syncAfterOrder = async (
 // Add to end of index.ts
 //console.log('Synchronization scheduled')
 //initializeMarketplaceQuantitiesOptimized()
-  //syncMarketplacesVersion2()
+//syncMarketplacesVersion2()
 //syncRozetkaProductIds()
 //updateAllMarketplaceQuantities()
 /* ;(async () => {
@@ -1521,4 +1519,3 @@ export const syncAfterOrder = async (
     'prom'
   )
 })() */
-
