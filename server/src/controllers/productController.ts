@@ -272,7 +272,7 @@ export const updateProduct: RequestHandler = async (req, res) => {
   const isBatchUpdate = productId === 'batch' && req.body.products
 
   if (isBatchUpdate) {
-    await handleBatchUpdate(req, res)
+    await handleBatchUpdate2(req, res)
   } else {
     await handleSingleUpdate2(req, res, productId)
   }
@@ -837,5 +837,248 @@ async function handleSingleUpdate2(
   } catch (error) {
     console.error('Product update error:', error)
     res.status(500).json({ message: 'Failed to update product' })
+  }
+}
+
+
+async function handleBatchUpdate2(req: Request, res: Response) {
+  const {
+    products,
+    targetMarketplace,
+  }: {
+    products: BatchProductUpdate[]
+    targetMarketplace?: 'prom' | 'rozetka' | 'all'
+  } = req.body
+
+  if (!Array.isArray(products) || products.length === 0) {
+    res.status(400).json({
+      message: 'products array is required and must not be empty',
+    })
+    return
+  }
+
+  // Validate each product update
+  for (const item of products) {
+    if (
+      !item.productId ||
+      !item.updates ||
+      Object.keys(item.updates).length === 0
+    ) {
+      res.status(400).json({
+        message:
+          'Each product must have productId and at least one update field',
+      })
+      return
+    }
+  }
+
+  try {
+    console.log(`Starting batch update for ${products.length} products`)
+
+    // Fetch all products first for warehouse validation
+    const productIds = products.map((p) => p.productId)
+    const dbProducts = await prisma.products.findMany({
+      where: { productId: { in: productIds } },
+      select: {
+        productId: true,
+        stockQuantity: true,
+        externalIds: true,
+      },
+    })
+const test = dbProducts.map((p) => [p.productId, p])
+console.log('test', test);
+
+    const dbMap = new Map(dbProducts.map((p) => [p.productId, p]))
+
+    // 🚫 Warehouse validation if only one marketplace is targeted
+    if (targetMarketplace && targetMarketplace !== 'all') {
+      for (const { productId, updates } of products) {
+        if (updates.quantity !== undefined) {
+          const dbProduct = dbMap.get(productId)
+          if (!dbProduct) continue
+          if (updates.quantity > dbProduct.stockQuantity) {
+            res.status(400).json({
+              message: `Product ${productId}: You cannot change quantity bigger than there is in warehouse!`,
+            })
+            return
+          }
+        }
+      }
+    }
+
+    // 🧩 Case 1: Update DB first (if updating everywhere)
+    let dbResults: PromiseSettledResult<any>[] = []
+
+    if (!targetMarketplace || targetMarketplace === 'all') {
+      const dbUpdatePromises = products.map((item) =>
+        prisma.products.update({
+          where: { productId: item.productId },
+          data: {
+            needsSync: true,
+            lastSynced: new Date(),
+            ...(item.updates.quantity !== undefined && {
+              stockQuantity: item.updates.quantity,
+            }),
+            ...(item.updates.price !== undefined && {
+              price: item.updates.price,
+            }),
+          },
+        })
+      )
+      dbResults = await Promise.allSettled(dbUpdatePromises)
+    } else {
+      // Skip DB updates for marketplace-only operations
+      dbResults = products.map((item) => ({
+        status: 'fulfilled',
+        value: dbMap.get(item.productId),
+      })) as PromiseFulfilledResult<any>[]
+    }
+console.log('dbResults', dbResults);
+
+    // Track DB update results
+    const successfulUpdates: string[] = []
+    const failedUpdates: Array<{ productId: string; error: string }> = []
+    dbResults.forEach((result, index) =>
+      result.status === 'fulfilled'
+        ? successfulUpdates.push(products[index].productId)
+        : failedUpdates.push({
+            productId: products[index].productId,
+            error: result.reason?.message || 'Unknown error',
+          })
+    )
+
+    console.log(
+      `Database updates: ${successfulUpdates.length} successful, ${failedUpdates.length} failed`
+    )
+
+    // 2️⃣ Collect marketplace updates
+    const promUpdates: Array<{ productId: string; updates: PromUpdateParams }> =
+      []
+    const rozetkaUpdates: Array<{ productId: string; updates: any }> = []
+
+    for (const result of dbResults) {
+      if (result.status !== 'fulfilled') continue
+
+      const product = result.value
+      const original = products.find((p) => p.productId === product.productId)
+      if (!original) continue
+
+      const externalIds = product.externalIds as Record<string, any> | null
+
+      // Collect Prom updates
+      if (
+        (!targetMarketplace ||
+          targetMarketplace === 'all' ||
+          targetMarketplace === 'prom') &&
+        externalIds?.prom
+      ) {
+        const promParams: PromUpdateParams = {}
+        if (original.updates.quantity !== undefined)
+          promParams.quantity = original.updates.quantity
+        if (original.updates.price !== undefined)
+          promParams.price = original.updates.price
+
+        promUpdates.push({
+          productId: externalIds.prom,
+          updates: promParams,
+        })
+      }
+
+      // Collect Rozetka updates
+      if (
+        (!targetMarketplace ||
+          targetMarketplace === 'all' ||
+          targetMarketplace === 'rozetka') &&
+        externalIds?.rozetka?.item_id
+      ) {
+        const rozetkaParams: RozetkaUpdateParams = {}
+        if (original.updates.quantity !== undefined)
+          rozetkaParams.quantity = original.updates.quantity
+        if (original.updates.price !== undefined)
+          rozetkaParams.price = original.updates.price
+
+        rozetkaUpdates.push({
+          productId: externalIds.rozetka.item_id,
+          updates: rozetkaParams,
+        })
+      }
+    }
+
+    // 3️⃣ Sync to marketplaces
+    const syncResults: string[] = []
+    const syncErrors: Array<{ marketplace: string; error: string }> = []
+    const syncStatus = createMarketplaceSyncStatus()
+    const syncPromises: Promise<void>[] = []
+
+    // Batch update Prom products
+    if (promUpdates.length > 0) {
+      syncPromises.push(
+        createMarketplaceUpdatePromise({
+          marketplaceName: 'Prom',
+          count: promUpdates.length,
+          updateFunction: () => updateMultiplePromProducts(promUpdates),
+          onSuccess: () => (syncStatus.promSynced = true),
+          resultsArray: syncResults,
+          errorsArray: syncErrors,
+          isBatch: true,
+        })
+      )
+    }
+
+    // Batch update Rozetka products
+    if (rozetkaUpdates.length > 0) {
+      syncPromises.push(
+        createMarketplaceUpdatePromise({
+          marketplaceName: 'Rozetka',
+          count: rozetkaUpdates.length,
+          updateFunction: () => updateMultipleRozetkaProducts(rozetkaUpdates),
+          onSuccess: () => (syncStatus.rozetkaSynced = true),
+          resultsArray: syncResults,
+          errorsArray: syncErrors,
+          isBatch: true,
+        })
+      )
+    }
+
+    await Promise.allSettled(syncPromises)
+
+    // 4️⃣ Mark DB as synced
+    const syncTime = new Date()
+    const markSyncedPromises = successfulUpdates.map((productId) => {
+      const data: any = { needsSync: false }
+      if (syncStatus.promSynced) {
+        data.lastPromSync = syncTime
+      }
+      if (syncStatus.rozetkaSynced) {
+        data.lastRozetkaSync = syncTime
+      }
+      return prisma.products.update({ where: { productId }, data })
+    })
+    await Promise.allSettled(markSyncedPromises)
+
+    // 5️⃣ Respond
+    res.json({
+      message: `Batch update completed${
+        targetMarketplace ? ' for ' + targetMarketplace : ''
+      }`,
+      summary: {
+        totalRequested: products.length,
+        successfulDatabaseUpdates: successfulUpdates.length,
+        failedDatabaseUpdates: failedUpdates.length,
+        marketplacesSynced: syncResults,
+        marketplaceErrors: syncErrors.length ? syncErrors : undefined,
+      },
+      details: {
+        successfulProducts: successfulUpdates,
+        failedProducts: failedUpdates.length > 0 ? failedUpdates : undefined,
+      },
+    })
+
+    console.log(
+      `✅ Batch update completed: ${successfulUpdates.length}/${products.length} products updated`
+    )
+  } catch (error) {
+    console.error('Batch update error:', error)
+    res.status(500).json({ message: 'Failed to complete batch update' })
   }
 }

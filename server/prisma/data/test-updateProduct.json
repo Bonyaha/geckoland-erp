@@ -1,4 +1,12 @@
 {
-	"price": 57,
-	"targetMarketplace": "rozetka"
+	"targetMarketplace": "rozetka",
+	"products": [
+		{
+			"productId": "4654138_wg4jkU",
+			"updates": {
+				"quantity": 5,
+				"price": 149
+			}
+		}
+	]
 }

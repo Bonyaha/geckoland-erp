@@ -45,16 +45,12 @@ export default router
  * {
  *   "products": [
  *     {
- *       "productId": "product_123",
- *       "updates": { "quantity": 10, "price": 299 }
+ *       "productId": "4654307_JtxCWn",
+ *       "updates": { "quantity": 7, "price": 50 }
  *     },
  *     {
- *       "productId": "product_456",
- *       "updates": { "quantity": 5 }
- *     },
- *     {
- *       "productId": "product_789",
- *       "updates": { "price": 149.99 }
+ *       "productId": "4654138_wg4jkU",
+ *       "updates": { "quantity": 3 }
  *     }
  *   ]
  * }
