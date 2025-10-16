@@ -1,5 +1,5 @@
 //server\src\controllers\productController.ts
-import { Request, Response } from 'express'
+import { Request, Response, RequestHandler } from 'express'
 import { PrismaClient } from '@prisma/client'
 import {
   updateRozetkaProduct,
@@ -129,6 +129,8 @@ interface BatchProductUpdate {
 
 //Function to update product in the app and immediately sync with marketplaces
 /* export const updateProduct = async (req: Request, res: Response) => {
+console.log('I am in old updating funcion');
+
   const { productId } = req.params
   const updates: ProductUpdateParams = {}
 
@@ -263,19 +265,18 @@ interface BatchProductUpdate {
  * PUT /products/batch
  * Body: { products: [{ productId: string, updates: { quantity?: number, price?: number } }] }
  */
-export const updateProduct = async (req: Request, res: Response) => {
+export const updateProduct: RequestHandler = async (req, res) => {
   const { productId } = req.params
 
   // Check if this is a batch update
   const isBatchUpdate = productId === 'batch' && req.body.products
 
   if (isBatchUpdate) {
-    return handleBatchUpdate(req, res)
+    await handleBatchUpdate(req, res)
   } else {
-    return handleSingleUpdate(req, res, productId)
+    await handleSingleUpdate2(req, res, productId)
   }
 }
-
 
 async function handleSingleUpdate(
   req: Request,
@@ -290,17 +291,21 @@ async function handleSingleUpdate(
   if (req.body.quantity !== undefined) updates.quantity = req.body.quantity
   if (req.body.price !== undefined) updates.price = req.body.price
 
-   if (Object.keys(updates).length === 0) {
-     res.status(400).json({ message: 'No valid update parameters provided' })
-     return
-   }
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ message: 'No valid update parameters provided' })
+    return
+  }
 
   try {
     // First, get the current product to save old price
     const currentProduct = await prisma.products.findUnique({
       where: { productId },
-      select: { price: true },
+      select: { price: true, stockQuantity: true, externalIds: true },
     })
+    if (!currentProduct) {
+      res.status(404).json({ message: 'Product not found' })
+      return
+    }
 
     const now = new Date()
 
@@ -392,16 +397,22 @@ async function handleSingleUpdate(
     const finalUpdateData: any = { needsSync: false }
     const syncTime = new Date()
 
-    // Update Prom-specific fields only if Prom was successfully synced
-    if (syncStatus.promSynced && updates.quantity !== undefined) {
-      finalUpdateData.promQuantity = updates.quantity
-      finalUpdateData.lastPromSync = syncTime
+    // Update Prom-specific fields if Prom was successfully synced
+    if (syncStatus.promSynced) {
+      finalUpdateData.lastPromSync = syncTime // Always update sync time on success
+      if (updates.quantity !== undefined) {
+        // Only update quantity if it was provided
+        finalUpdateData.promQuantity = updates.quantity
+      }
     }
 
-    // Update Rozetka-specific fields only if Rozetka was successfully synced
-    if (syncStatus.rozetkaSynced && updates.quantity !== undefined) {
-      finalUpdateData.rozetkaQuantity = updates.quantity
-      finalUpdateData.lastRozetkaSync = syncTime
+    // Update Rozetka-specific fields if Rozetka was successfully synced
+    if (syncStatus.rozetkaSynced) {
+      finalUpdateData.lastRozetkaSync = syncTime // Always update sync time on success
+      if (updates.quantity !== undefined) {
+        // Only update quantity if it was provided
+        finalUpdateData.rozetkaQuantity = updates.quantity
+      }
     }
 
     await prisma.products.update({
@@ -423,15 +434,18 @@ async function handleSingleUpdate(
   }
 }
 
-async function handleBatchUpdate(req: Request, res: Response) {
+async function handleBatchUpdate(
+  req: Request,
+  res: Response
+) {
   const { products }: { products: BatchProductUpdate[] } = req.body
 
- if (!Array.isArray(products) || products.length === 0) {
-   res.status(400).json({
-     message: 'products array is required and must not be empty',
-   })
-   return
- }
+  if (!Array.isArray(products) || products.length === 0) {
+    res.status(400).json({
+      message: 'products array is required and must not be empty',
+    })
+    return
+  }
 
   // Validate each product update
   for (const item of products) {
@@ -439,7 +453,7 @@ async function handleBatchUpdate(req: Request, res: Response) {
       !item.productId ||
       !item.updates ||
       Object.keys(item.updates).length === 0
-    ){
+    ) {
       res.status(400).json({
         message:
           'Each product must have productId and at least one update field',
@@ -518,18 +532,18 @@ async function handleBatchUpdate(req: Request, res: Response) {
 
       // Collect Rozetka updates
       if (externalIds?.rozetka?.item_id) {
-       const rozetkaParams: RozetkaUpdateParams = {}
-       if (original.updates.quantity !== undefined) {
-         rozetkaParams.quantity = original.updates.quantity
-       }
-       if (original.updates.price !== undefined) {
-         rozetkaParams.price = original.updates.price
-       }
+        const rozetkaParams: RozetkaUpdateParams = {}
+        if (original.updates.quantity !== undefined) {
+          rozetkaParams.quantity = original.updates.quantity
+        }
+        if (original.updates.price !== undefined) {
+          rozetkaParams.price = original.updates.price
+        }
 
-       rozetkaUpdates.push({
-         productId: externalIds.rozetka.item_id,
-         updates: rozetkaParams,
-       })
+        rozetkaUpdates.push({
+          productId: externalIds.rozetka.item_id,
+          updates: rozetkaParams,
+        })
       }
     }
 
@@ -605,5 +619,223 @@ async function handleBatchUpdate(req: Request, res: Response) {
   } catch (error) {
     console.error('Batch update error:', error)
     res.status(500).json({ message: 'Failed to complete batch update' })
+  }
+}
+
+/* NEW */
+async function handleSingleUpdate2(
+  req: Request,
+  res: Response,
+  productId: string
+) {
+  console.log('productId is:', productId)
+
+  const {
+    targetMarketplace,
+  }: { targetMarketplace?: 'prom' | 'rozetka' | 'all' } = req.body
+  const updates: ProductUpdateParams = {}
+
+  if (req.body.quantity !== undefined) updates.quantity = req.body.quantity
+  if (req.body.price !== undefined) updates.price = req.body.price
+
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ message: 'No valid update parameters provided' })
+    return
+  }
+
+  try {
+    // First, get the current product to save old price
+    const currentProduct = await prisma.products.findUnique({
+      where: { productId },
+      select: { price: true, stockQuantity: true, externalIds: true },
+    })
+
+    if (!currentProduct) {
+      res.status(404).json({ message: 'Product not found' })
+      return
+    }
+
+    const now = new Date()
+    const dbUpdateData: any = {
+      needsSync: true,
+      lastSynced: now,
+      dateModified: now,
+    }
+
+    // 🧩 If updating all sides (default)
+    if (!targetMarketplace || targetMarketplace === 'all') {
+      if (updates.quantity !== undefined) {
+        dbUpdateData.stockQuantity = updates.quantity
+        dbUpdateData.inStock = updates.quantity
+      }
+      if (updates.price !== undefined) {
+        if (
+          currentProduct.price !== null &&
+          currentProduct.price !== undefined
+        ) {
+          dbUpdateData.priceOld = currentProduct.price
+        }
+        dbUpdateData.price = updates.price
+        dbUpdateData.updatedPrice = updates.price
+      }
+
+      console.log(`Updating product ${productId} in DB with:`, dbUpdateData)
+
+      await prisma.products.update({
+        where: { productId },
+        data: dbUpdateData,
+      })
+    } else {
+      // 🧩 If updating only one marketplace, ensure quantity <= warehouse
+      if (
+        updates.quantity !== undefined &&
+        updates.quantity > currentProduct.stockQuantity
+      ) {
+        res.status(400).json({
+          message:
+            'You cannot change quantity bigger than there is in warehouse!',
+        })
+        return
+      }
+    }
+
+    // Marketplace sync setup
+    const syncResults: string[] = []
+    const syncErrors: Array<{ marketplace: string; error: string }> = []
+    const syncPromises: Promise<any>[] = []
+
+    // Track which marketplaces were successfully synced
+    const syncStatus = createMarketplaceSyncStatus()
+
+    const externalIds = currentProduct.externalIds as Record<string, any> | null
+
+    // Prom update
+    if (
+      (!targetMarketplace ||
+        targetMarketplace === 'all' ||
+        targetMarketplace === 'prom') &&
+      externalIds?.prom
+    ) {
+      console.log('target is Prom')
+
+      const promUpdates: any = {}
+      if (updates.quantity !== undefined)
+        promUpdates.quantity = updates.quantity
+      if (updates.price !== undefined) promUpdates.price = updates.price
+
+      syncPromises.push(
+        createMarketplaceUpdatePromise({
+          marketplaceName: 'Prom',
+          productId,
+          updateFunction: () =>
+            updatePromProduct(externalIds.prom, promUpdates),
+          onSuccess: () => (syncStatus.promSynced = true),
+          resultsArray: syncResults,
+          errorsArray: syncErrors,
+        })
+      )
+    }
+
+    // Rozetka update
+    if (
+      (!targetMarketplace ||
+        targetMarketplace === 'all' ||
+        targetMarketplace === 'rozetka') &&
+      externalIds?.rozetka?.item_id
+    ) {
+      const rozetkaUpdates: any = {}
+      if (updates.quantity !== undefined)
+        rozetkaUpdates.quantity = updates.quantity
+      if (updates.price !== undefined) rozetkaUpdates.price = updates.price
+
+      syncPromises.push(
+        createMarketplaceUpdatePromise({
+          marketplaceName: 'Rozetka',
+          productId,
+          updateFunction: () =>
+            updateRozetkaProduct(externalIds.rozetka.item_id, rozetkaUpdates),
+          onSuccess: () => (syncStatus.rozetkaSynced = true),
+          resultsArray: syncResults,
+          errorsArray: syncErrors,
+        })
+      )
+    }
+
+    // Execute parallel updates
+    if (syncPromises.length > 0) {
+      await Promise.allSettled(syncPromises)
+    }
+
+    // Mark sync complete and update marketplace-specific fields
+    // 1. Finalize DB update with sync status
+    const finalUpdateData: any = {}
+    const syncTime = new Date()
+
+    console.log(`syncStatus.promSynced`, syncStatus.promSynced)
+
+    // Update Prom-specific fields if Prom was successfully synced
+    if (syncStatus.promSynced) {
+      finalUpdateData.lastPromSync = syncTime
+      if (updates.quantity !== undefined) {
+        // Only update quantity if it was provided
+        finalUpdateData.promQuantity = updates.quantity
+      }
+    }
+
+    // Update Rozetka-specific fields if Rozetka was successfully synced
+    if (syncStatus.rozetkaSynced) {
+      finalUpdateData.lastRozetkaSync = syncTime
+      if (updates.quantity !== undefined) {
+        // Only update quantity if it was provided
+        finalUpdateData.rozetkaQuantity = updates.quantity
+      }
+    }
+
+    if (syncErrors.length === 0) {
+      finalUpdateData.needsSync = false
+    }
+    console.log(`finalUpdateData`, finalUpdateData)
+
+    if (Object.keys(finalUpdateData).length > 0) {
+      await prisma.products.update({
+        where: { productId },
+        data: finalUpdateData,
+      })
+    }
+
+    // 2. Send response based on outcome
+    if (syncErrors.length > 0) {
+      // PARTIAL OR TOTAL FAILURE
+      const message = `Product update processed${
+        targetMarketplace ? ' for ' + targetMarketplace : ''
+      }, but with sync errors.`
+
+      return res.status(207).json({
+        // HTTP 207 Multi-Status
+        message,
+        productId,
+        updates,
+        syncedMarketplaces: syncResults,
+        errors: syncErrors,
+      })
+    } else {
+      // FULL SUCCESS
+      const message = `Product updated${
+        targetMarketplace
+          ? ' for ' + targetMarketplace
+          : ' and synced everywhere'
+      } successfully.`
+
+      return res.json({
+        message,
+        productId,
+        updates,
+        syncedMarketplaces: syncResults,
+        errors: undefined,
+      })
+    }
+  } catch (error) {
+    console.error('Product update error:', error)
+    res.status(500).json({ message: 'Failed to update product' })
   }
 }

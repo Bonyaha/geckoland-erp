@@ -81,6 +81,9 @@ export const updatePromProduct = async (
     } else {
       productUpdate.presence = 'not_available'
     }
+  } else {
+    // If quantity is NOT being updated, default presence to 'available'
+    productUpdate.presence = 'available'
   }
 
   const payload = [productUpdate]
@@ -174,6 +177,9 @@ export const updateMultiplePromProducts = async (
       } else {
         productUpdate.presence = 'not_available'
       }
+    } else {
+      // If quantity is NOT being updated, default presence to 'available'
+      productUpdate.presence = 'available'
     }
 
     if (updates.price !== undefined) {

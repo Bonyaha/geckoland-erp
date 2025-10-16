@@ -1,17 +1,4 @@
 {
-	"products": [
-		{
-			"productId": "4654084_9vbgxa",
-			"updates": {
-				"quantity": 1,
-				"price": 57
-			}
-		},
-		{
-			"productId": "4654304_hDY5zX",
-			"updates": {
-				"quantity": 1
-			}
-		}
-	]
+	"price": 57,
+	"targetMarketplace": "rozetka"
 }
