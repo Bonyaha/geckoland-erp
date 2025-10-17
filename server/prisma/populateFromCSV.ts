@@ -3,8 +3,10 @@ import * as fs from 'fs'
 import * as path from 'path'
 import csv from 'csv-parser'
 import { nanoid } from 'nanoid'
-import { enrichWithPromIds } from './helper/mapExternalIdsProm'
-import { enrichWithRozetkaIds } from './helper/mapExternalIdsRozetka'
+import { enrichWithPromIds } from '../src/utils/helper/mapExternalIdsProm'
+import { enrichWithRozetkaIds } from '../src/utils/helper/mapExternalIdsRozetka'
+import { enrichWithPromCategories } from '../src/utils/helper/enrichWithPromCategories'
+import { enrichWithRozetkaCategories } from '../src/utils/helper/enrichWithRozetkaCategories'
 
 const prisma = new PrismaClient()
 
@@ -198,11 +200,13 @@ async function populateProductsFromCSV(
         console.log(`Found ${products.length} products in the CSV file.`)
 
         if (products.length > 0) {
-          console.log('Enriching products with Prom IDs...')
+          console.log('Enriching products with Prom IDs and categories...')
           let enrichedProducts = await enrichWithPromIds(products)
+          enrichedProducts = await enrichWithPromCategories(enrichedProducts)
 
-          console.log('Enriching products with Rozetka IDs...')
+          console.log('Enriching products with Rozetka IDs and categories...')
           enrichedProducts = await enrichWithRozetkaIds(enrichedProducts)
+          enrichedProducts = await enrichWithRozetkaCategories(enrichedProducts)
 
           console.log('Setting marketplace quantities...')
           enrichedProducts = enrichedProducts.map((product) => ({

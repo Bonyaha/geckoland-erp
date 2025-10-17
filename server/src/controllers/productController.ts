@@ -6,15 +6,17 @@ import {
   updateMultipleRozetkaProducts,
   RozetkaUpdateParams,
 } from '../services/marketplaces/rozetkaClient'
+import { fetchRozetkaProductsWithTransformation } from '../../prisma/fetchRozetkaProducts'
 import {
   updatePromProduct,
   updateMultiplePromProducts,
   type PromUpdateParams,
 } from '../services/marketplaces/promClient'
+import { fetchPromProductsWithTransformation } from '../../prisma/fetchPromProducts'
 import {
   createMarketplaceUpdatePromise,
   createMarketplaceSyncStatus,
-} from '../utils/marketplaceSyncHelper'
+} from '../utils/marketplaceSyncHelpers'
 
 const prisma = new PrismaClient()
 
@@ -128,6 +130,8 @@ interface BatchProductUpdate {
 }
 
 //Function to update product in the app and immediately sync with marketplaces
+//updating quantity and price in marketplaces through app (app db → Prom/Rozetka)
+
 /* export const updateProduct = async (req: Request, res: Response) => {
 console.log('I am in old updating funcion');
 
@@ -277,7 +281,6 @@ export const updateProduct: RequestHandler = async (req, res) => {
     await handleSingleUpdate(req, res, productId)
   }
 }
-
 
 async function handleSingleUpdate(
   req: Request,
@@ -496,7 +499,6 @@ async function handleSingleUpdate(
   }
 }
 
-
 async function handleBatchUpdate(req: Request, res: Response) {
   const {
     products,
@@ -541,8 +543,8 @@ async function handleBatchUpdate(req: Request, res: Response) {
         externalIds: true,
       },
     })
-const test = dbProducts.map((p) => [p.productId, p])
-console.log('test', test);
+    const test = dbProducts.map((p) => [p.productId, p])
+    console.log('test', test)
 
     const dbMap = new Map(dbProducts.map((p) => [p.productId, p]))
 
@@ -589,7 +591,7 @@ console.log('test', test);
         value: dbMap.get(item.productId),
       })) as PromiseFulfilledResult<any>[]
     }
-console.log('dbResults', dbResults);
+    console.log('dbResults', dbResults)
 
     // Track DB update results
     const successfulUpdates: string[] = []
@@ -736,5 +738,177 @@ console.log('dbResults', dbResults);
   } catch (error) {
     console.error('Batch update error:', error)
     res.status(500).json({ message: 'Failed to complete batch update' })
+  }
+}
+
+/*
+ * Sync new products from marketplaces to database
+ * Only creates products that don't exist in database
+ */
+
+interface SyncResult {
+  success: boolean
+  productsCreatedFromProm: number
+  productsCreatedFromRozetka: number
+  totalCreated: number
+  errors: string[]
+}
+
+/**
+ * Normalize quantity values (handle null, undefined, negative)
+ */
+function normalizeQuantity(quantity: any): number {
+  const num = parseInt(quantity, 10)
+  return isNaN(num) || num < 0 ? 0 : num
+}
+
+/**
+ * Create a product in database from Prom data
+ */
+async function createProductFromProm(promProduct: any): Promise<void> {
+  await prisma.products.create({
+    data: {
+      ...promProduct,
+      stockQuantity: normalizeQuantity(promProduct.stockQuantity),
+      promQuantity: normalizeQuantity(promProduct.stockQuantity),
+      lastPromSync: new Date(),
+    },
+  })
+}
+
+/**
+ * Create a product in database from Rozetka data
+ */
+async function createProductFromRozetka(rozetkaProduct: any): Promise<void> {
+  // Map Rozetka product structure to your Products model
+  await prisma.products.create({
+    data: {
+      ...rozetkaProduct,
+      stockQuantity: normalizeQuantity(rozetkaProduct.stockQuantity),
+      promQuantity: normalizeQuantity(rozetkaProduct.stockQuantity),
+      lastRozetkaSync: new Date(),
+    },
+  })
+}
+
+/**
+ * Sync new products from marketplaces to database
+ * Only creates products that don't exist in database
+ */
+export async function syncNewProductsFromMarketplaces(): Promise<SyncResult> {
+  const result: SyncResult = {
+    success: true,
+    productsCreatedFromProm: 0,
+    productsCreatedFromRozetka: 0,
+    totalCreated: 0,
+    errors: [],
+  }
+
+  try {
+    console.log('🔄 Starting sync for new products from marketplaces...')
+
+    // Step 1: Get all existing product IDs from database
+    const existingProducts = await prisma.products.findMany({
+      select: { productId: true },
+    })
+    const existingProductIds = new Set(existingProducts.map((p) => p.productId))
+    console.log(
+      `📦 Found ${existingProductIds.size} existing products in database`
+    )
+
+    // Step 2: Fetch products from Prom
+    console.log('📥 Fetching products from Prom...')
+    try {
+      const promProducts = await fetchPromProductsWithTransformation()
+      console.log(`✅ Fetched ${promProducts.length} products from Prom`)
+
+      // Find new products that don't exist in database
+      const newPromProducts = promProducts.filter(
+        (p) => !existingProductIds.has(p.productId)
+      )
+      console.log(`🆕 Found ${newPromProducts.length} new products on Prom`)
+
+      // Create new products from Prom
+      for (const promProduct of newPromProducts) {
+        try {
+          console.log(`➕ Creating product from Prom: ${promProduct.productId}`)
+          await createProductFromProm(promProduct)
+          result.productsCreatedFromProm++
+          existingProductIds.add(promProduct.productId) // Add to set to avoid duplicates
+        } catch (error: any) {
+          console.error(
+            `❌ Error creating product ${promProduct.productId} from Prom:`,
+            error.message
+          )
+          result.errors.push(
+            `Prom product ${promProduct.productId}: ${error.message}`
+          )
+        }
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching Prom products:', error.message)
+      result.errors.push(`Prom fetch error: ${error.message}`)
+    }
+
+    // Step 3: Fetch products from Rozetka
+    console.log('📥 Fetching products from Rozetka...')
+    try {
+      const rozetkaProducts = await fetchRozetkaProductsWithTransformation()
+      console.log(`✅ Fetched ${rozetkaProducts.length} products from Rozetka`)
+
+      // Find new products that don't exist in database
+      const newRozetkaProducts = rozetkaProducts.filter(
+        (p) => !existingProductIds.has(p.productId.toString())
+      )
+      console.log(
+        `🆕 Found ${newRozetkaProducts.length} new products on Rozetka`
+      )
+
+      // Create new products from Rozetka
+      for (const rozetkaProduct of newRozetkaProducts) {
+        try {
+          console.log(
+            `➕ Creating product from Rozetka: ${rozetkaProduct.productId}`
+          )
+          await createProductFromRozetka(rozetkaProduct)
+          result.productsCreatedFromRozetka++
+          existingProductIds.add(rozetkaProduct.productId.toString())
+        } catch (error: any) {
+          console.error(
+            `❌ Error creating product ${rozetkaProduct.productId} from Rozetka:`,
+            error.message
+          )
+          result.errors.push(
+            `Rozetka product ${rozetkaProduct.productId}: ${error.message}`
+          )
+        }
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching Rozetka products:', error.message)
+      result.errors.push(`Rozetka fetch error: ${error.message}`)
+    }
+
+    // Calculate totals
+    result.totalCreated =
+      result.productsCreatedFromProm + result.productsCreatedFromRozetka
+
+    console.log('✅ Sync completed')
+    console.log('📊 Summary:', {
+      createdFromProm: result.productsCreatedFromProm,
+      createdFromRozetka: result.productsCreatedFromRozetka,
+      totalCreated: result.totalCreated,
+      errors: result.errors.length,
+    })
+
+    if (result.errors.length > 0) {
+      result.success = false
+    }
+
+    return result
+  } catch (error: any) {
+    console.error('❌ Critical error in marketplace sync:', error)
+    result.success = false
+    result.errors.push(`Critical error: ${error.message}`)
+    return result
   }
 }

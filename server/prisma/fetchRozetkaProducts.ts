@@ -185,8 +185,8 @@ export async function fetchRozetkaProductsWithTransformation() {
     console.log(
       'Rozetka products data saved to prisma/realData/rozetkaProducts.json'
     )
-    
-    // return allProducts
+
+    return transformedProducts
   } catch (error: any) {
     console.error('❌ Main process failed:', error.message)
     throw error
