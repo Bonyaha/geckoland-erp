@@ -5,7 +5,7 @@ import csv from 'csv-parser'
 import { nanoid } from 'nanoid'
 import { enrichWithPromIds } from '../src/utils/helper/mapExternalIdsProm'
 import { enrichWithRozetkaIds } from '../src/utils/helper/mapExternalIdsRozetka'
-import { enrichWithPromCategories } from '../src/utils/helper/enrichWithPromCategories'
+import { enrichWithPromCategoriesAndDescription } from '../src/utils/helper/enrichWithPromCategories'
 import { enrichWithRozetkaCategories } from '../src/utils/helper/enrichWithRozetkaCategories'
 
 const prisma = new PrismaClient()
@@ -43,8 +43,7 @@ interface ProductFromDbCSV {
   externalIds: string // Comes as a JSON string
   description: string
   mainImage: string
-  images: string // Comes as a comma-separated or JSON string
-  inStock: string
+  images: string // Comes as a comma-separated or JSON string  
   available: string // Comes as 'true' or 'false'
   priceOld: string
   pricePromo: string
@@ -52,11 +51,9 @@ interface ProductFromDbCSV {
   currency: string
   dateModified: string
   lastSynced: string
-  needsSync: string
-  multilangData: string // JSON string
+  needsSync: string 
   categoryData: string // JSON string
-  measureUnit: string
-  status: string
+  measureUnit: string  
   lastPromSync: string
   lastRozetkaSync: string
   needsPromSync: string
@@ -96,24 +93,20 @@ function mapHPCsvToProduct(row: ProductFromHPCSV): any {
     externalIds: { prom: null, rozetka: null },
     description: row['Опис'] || null,
     mainImage: imageUrls[0] || null,
-    images: imageUrls,
-    inStock: quantity,
+    images: imageUrls,    
     available: quantity > 0,
     currency: 'UAH',
     lastSynced: new Date(),
     needsSync: false,
     categoryData: row['Категорія'] ? { name: row['Категорія'] } : null,
-    measureUnit: row['Од.вим.'] || 'шт',
-    status: 'active',
-
+    measureUnit: row['Од.вим.'] || 'шт',    
     // Set defaults for fields not present in this CSV
     promQuantity: null,
     rozetkaQuantity: null,
     priceOld: null,
     pricePromo: null,
     updatedPrice: null,
-    dateModified: null,
-    multilangData: null,
+    dateModified: null,    
     lastPromSync: null,
     lastRozetkaSync: null,
     needsPromSync: false,
@@ -147,8 +140,7 @@ function mapDbCsvToProduct(row: ProductFromDbCSV): any {
     description: row.description || null,
     mainImage: row.mainImage || null,
     // Assuming 'images' is a JSON array string like '["url1", "url2"]'
-    images: safeJsonParse(row.images) || [],
-    inStock: parseInt(row.inStock, 10) || 0,
+    images: safeJsonParse(row.images) || [],    
     available: row.available === 'true',
     priceOld: row.priceOld ? String(row.priceOld) : null,
     pricePromo: row.pricePromo ? String(row.pricePromo) : null,
@@ -156,11 +148,9 @@ function mapDbCsvToProduct(row: ProductFromDbCSV): any {
     currency: row.currency || 'UAH',
     dateModified: row.dateModified ? new Date(row.dateModified) : null,
     lastSynced: row.lastSynced ? new Date(row.lastSynced) : new Date(),
-    needsSync: row.needsSync === 'true',
-    multilangData: safeJsonParse(row.multilangData),
+    needsSync: row.needsSync === 'true',    
     categoryData: safeJsonParse(row.categoryData),
-    measureUnit: row.measureUnit || 'шт',
-    status: row.status || 'active',
+    measureUnit: row.measureUnit || 'шт',    
     lastPromSync: row.lastPromSync ? new Date(row.lastPromSync) : null,
     lastRozetkaSync: row.lastRozetkaSync ? new Date(row.lastRozetkaSync) : null,
     needsPromSync: row.needsPromSync === 'true',
@@ -202,7 +192,9 @@ async function populateProductsFromCSV(
         if (products.length > 0) {
           console.log('Enriching products with Prom IDs and categories...')
           let enrichedProducts = await enrichWithPromIds(products)
-          enrichedProducts = await enrichWithPromCategories(enrichedProducts)
+          enrichedProducts = await enrichWithPromCategoriesAndDescription(
+            enrichedProducts
+          )
 
           console.log('Enriching products with Rozetka IDs and categories...')
           enrichedProducts = await enrichWithRozetkaIds(enrichedProducts)

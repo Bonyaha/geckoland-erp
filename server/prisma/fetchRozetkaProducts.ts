@@ -116,7 +116,27 @@ export async function fetchRozetkaProducts() {
 
     // Step 2: Fetch all products using the token
     const allProducts = await fetchAllRozetkaProducts(accessToken)
-    //console.log('allProducts', allProducts[0])
+    console.log('allProducts', allProducts[0])
+
+console.log('Searching for products with description or description_ua...')
+
+// Filter the array to get only products that match
+const productsWithDescriptions = allProducts.filter(
+  (product) => product.description != null || product.description_ua != null
+)
+
+if (productsWithDescriptions.length > 0) {
+  console.log(
+    `Found ${productsWithDescriptions.length} products with descriptions:`
+  )
+
+  // Log each matching product
+  productsWithDescriptions.forEach((product) => {
+    console.log(product)
+  })
+} else {
+  console.log('No products were found with a description or description_ua.')
+}
 
      return allProducts
   } catch (error: any) {
@@ -196,5 +216,5 @@ export async function fetchRozetkaProductsWithTransformation() {
 
 
 //fetchAllRozetkaProducts()
-//fetchRozetkaProducts()
+fetchRozetkaProducts()
 //fetchRozetkaProductsWithTransformation()

@@ -96,8 +96,7 @@ export const createProduct = async (
         externalIds,
         description,
         mainImage,
-        images,
-        inStock,
+        images,        
         available,
         priceOld,
         pricePromo,
@@ -105,11 +104,9 @@ export const createProduct = async (
         currency,
         dateModified,
         lastSynced,
-        needsSync,
-        multilangData,
+        needsSync,        
         categoryData,
-        measureUnit,
-        status,
+        measureUnit        
       },
     })
     res.status(201).json(product)
@@ -741,18 +738,6 @@ async function handleBatchUpdate(req: Request, res: Response) {
   }
 }
 
-/*
- * Sync new products from marketplaces to database
- * Only creates products that don't exist in database
- */
-
-interface SyncResult {
-  success: boolean
-  productsCreatedFromProm: number
-  productsCreatedFromRozetka: number
-  totalCreated: number
-  errors: string[]
-}
 
 /**
  * Normalize quantity values (handle null, undefined, negative)
@@ -795,6 +780,15 @@ async function createProductFromRozetka(rozetkaProduct: any): Promise<void> {
  * Sync new products from marketplaces to database
  * Only creates products that don't exist in database
  */
+
+interface SyncResult {
+  success: boolean
+  productsCreatedFromProm: number
+  productsCreatedFromRozetka: number
+  totalCreated: number
+  errors: string[]
+}
+
 export async function syncNewProductsFromMarketplaces(): Promise<SyncResult> {
   const result: SyncResult = {
     success: true,
@@ -809,12 +803,34 @@ export async function syncNewProductsFromMarketplaces(): Promise<SyncResult> {
 
     // Step 1: Get all existing product IDs from database
     const existingProducts = await prisma.products.findMany({
-      select: { productId: true },
+      select: {
+        productId: true,
+        externalIds: true,
+      },
     })
-    const existingProductIds = new Set(existingProducts.map((p) => p.productId))
+    // Build sets of existing external IDs for quick lookup
+    const existingPromIds = new Set<string>()
+    const existingRozetkaItemIds = new Set<string>()
+
+    existingProducts.forEach((product) => {
+      const externalIds = product.externalIds as any
+
+      // Extract Prom ID
+      if (externalIds?.prom) {
+        existingPromIds.add(externalIds.prom.toString())
+      }
+
+      // Extract Rozetka item_id
+      if (externalIds?.rozetka?.rz_item_id) {
+        existingRozetkaItemIds.add(externalIds.rozetka.rz_item_id.toString())
+      }
+    })
+
     console.log(
-      `📦 Found ${existingProductIds.size} existing products in database`
+      `📦 Found ${existingProducts.length} existing products in database`
     )
+    console.log(`   - ${existingPromIds.size} with Prom IDs`)
+    console.log(`   - ${existingRozetkaItemIds.size} with Rozetka IDs`)
 
     // Step 2: Fetch products from Prom
     console.log('📥 Fetching products from Prom...')
@@ -823,18 +839,21 @@ export async function syncNewProductsFromMarketplaces(): Promise<SyncResult> {
       console.log(`✅ Fetched ${promProducts.length} products from Prom`)
 
       // Find new products that don't exist in database
-      const newPromProducts = promProducts.filter(
-        (p) => !existingProductIds.has(p.productId)
-      )
+      const newPromProducts = promProducts.filter((p) => {
+        const promId = p.productId.toString()
+        return !existingPromIds.has(promId)
+      })
+
       console.log(`🆕 Found ${newPromProducts.length} new products on Prom`)
 
       // Create new products from Prom
       for (const promProduct of newPromProducts) {
         try {
+          const promId = promProduct.productId.toString()
           console.log(`➕ Creating product from Prom: ${promProduct.productId}`)
           await createProductFromProm(promProduct)
           result.productsCreatedFromProm++
-          existingProductIds.add(promProduct.productId) // Add to set to avoid duplicates
+          existingPromIds.add(promId) // Add to set to avoid duplicates
         } catch (error: any) {
           console.error(
             `❌ Error creating product ${promProduct.productId} from Prom:`,
@@ -857,9 +876,11 @@ export async function syncNewProductsFromMarketplaces(): Promise<SyncResult> {
       console.log(`✅ Fetched ${rozetkaProducts.length} products from Rozetka`)
 
       // Find new products that don't exist in database
-      const newRozetkaProducts = rozetkaProducts.filter(
-        (p) => !existingProductIds.has(p.productId.toString())
-      )
+      const newRozetkaProducts = rozetkaProducts.filter((p) => {
+        // Rozetka product's item_id should be compared with externalIds.rozetka.item_id from database
+        const itemId = p.productId?.toString()
+        return itemId && !existingRozetkaItemIds.has(itemId)
+      })
       console.log(
         `🆕 Found ${newRozetkaProducts.length} new products on Rozetka`
       )
@@ -867,12 +888,15 @@ export async function syncNewProductsFromMarketplaces(): Promise<SyncResult> {
       // Create new products from Rozetka
       for (const rozetkaProduct of newRozetkaProducts) {
         try {
+          const itemId = rozetkaProduct.productId?.toString()
           console.log(
             `➕ Creating product from Rozetka: ${rozetkaProduct.productId}`
           )
           await createProductFromRozetka(rozetkaProduct)
           result.productsCreatedFromRozetka++
-          existingProductIds.add(rozetkaProduct.productId.toString())
+          if (itemId) {
+            existingRozetkaItemIds.add(itemId)
+          }
         } catch (error: any) {
           console.error(
             `❌ Error creating product ${rozetkaProduct.productId} from Rozetka:`,
@@ -912,3 +936,5 @@ export async function syncNewProductsFromMarketplaces(): Promise<SyncResult> {
     return result
   }
 }
+
+syncNewProductsFromMarketplaces()
