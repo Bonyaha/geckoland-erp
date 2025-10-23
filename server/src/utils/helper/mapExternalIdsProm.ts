@@ -3,15 +3,12 @@ import * as fs from 'fs/promises'
 async function updateProductsExternalIds() {
   try {
     // Read products.json
-    const productsData = await fs.readFile(
-      'prisma/data/products.json',
-      'utf-8'
-    )
+    const productsData = await fs.readFile('prisma/data/products.json', 'utf-8')
     let products = JSON.parse(productsData)
 
     // Read promProducts.json
     const promProductsData = await fs.readFile(
-      'prisma/data/promProductsNew.json',
+      'prisma/data/promProducts.json',
       'utf-8'
     )
     const promProducts = JSON.parse(promProductsData)
@@ -19,7 +16,7 @@ async function updateProductsExternalIds() {
     // Create a map for quick lookup: uniqueProductKey -> productId
     const promProductsMap = new Map()
     promProducts.forEach((promProduct: any) => {
-      promProductsMap.set(promProduct.sku, promProduct.promId)
+      promProductsMap.set(promProduct.sku, promProduct.productId)
     })
 
     let updatedCount = 0
@@ -73,27 +70,53 @@ export async function enrichWithPromIds(products: any[]) {
   )
   const promProducts = JSON.parse(promProductsData)
 
-  const promProductsMap = new Map()
+  const promProductsMap = new Map<string, string[]>()
+
   promProducts.forEach((promProduct: any) => {
-    promProductsMap.set(promProduct.sku, promProduct.productId)
+    const sku = promProduct.sku
+    const productId = promProduct.productId
+
+    /* we need to handle multiple products with the same SKU
+so we store an array of productIds for each SKU */
+    const productIds = promProductsMap.get(sku) || []
+    productIds.push(productId)
+
+    promProductsMap.set(sku, productIds)
   })
+
+  let example = products.filter((p) => p.sku === '520D-ZX-050')
+
+  console.log('520D-ZX-050 in input products:')
+  console.log(example)
+
+  console.log('520D-ZX-050 in promProductsMap:')
+  console.log(promProductsMap.get('520D-ZX-050')) //[ '1940765428', '1729613222' ]
 
   let updatedCount = 0
   let notFoundCount = 0
 
   const enrichedProducts = products.map((product) => {
-    const matchingPromProductId = promProductsMap.get(product.sku)
+    // This gets the array, e.g., ["1939682231", "1729610009"]
+    const matchingPromProductIds = promProductsMap.get(product.sku)
 
-    if (matchingPromProductId) {
-      updatedCount++
+    // Check if we found any IDs
+    if (matchingPromProductIds && matchingPromProductIds.length > 0) {
+      updatedCount++ // Count this "group" of updates once
+
+      // .shift() takes the *first* ID from the array AND removes it.
+      // 1st product with this SKU gets the 1st ID.
+      // 2nd product with this SKU gets the 2nd ID.
+      const promId = matchingPromProductIds.shift()
+
       return {
         ...product,
         externalIds: {
           ...product.externalIds,
-          prom: matchingPromProductId,
+          prom: promId, // Assign the *individual* promId
         },
       }
     } else {
+      // No match found, just return the original product
       notFoundCount++
       return product
     }
@@ -104,7 +127,5 @@ export async function enrichWithPromIds(products: any[]) {
 
   return enrichedProducts
 }
-
-
 
 //updateProductsExternalIds()

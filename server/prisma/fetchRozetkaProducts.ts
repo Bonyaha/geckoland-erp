@@ -57,7 +57,7 @@ async function fetchAllRozetkaProducts(accessToken: string): Promise<any[]> {
 
   try {
     while (currentPage <= totalPages) {
-    /*   console.log(
+      /*   console.log(
         `Fetching page ${currentPage}/${totalPages} (${pageSize} items per page)`
       ) */
 
@@ -85,7 +85,7 @@ async function fetchAllRozetkaProducts(accessToken: string): Promise<any[]> {
 
       if (items && items.length > 0) {
         allProducts.push(...items)
-       /*  console.log(
+        /*  console.log(
           `✅ Fetched ${items.length} products from page ${currentPage}. Total so far: ${allProducts.length}`
         ) */
       } else {
@@ -97,8 +97,14 @@ async function fetchAllRozetkaProducts(accessToken: string): Promise<any[]> {
       await new Promise((resolve) => setTimeout(resolve, 200))
     }
 
-    //console.log(`🎉 Finished! Total products fetched: ${allProducts.length}`)
-    return allProducts
+    console.log(`🎉 Finished! Total products fetched: ${allProducts.length}`)
+    // Filter products with status 'on_display'
+    const filteredProducts = allProducts.filter(
+      (product) => product.available !== 2
+    )   
+console.log('Total filteredProducts: ', filteredProducts.length);
+
+    return filteredProducts
   } catch (error: any) {
     console.error(
       '❌ Error fetching products:',
@@ -116,7 +122,7 @@ export async function fetchRozetkaProducts() {
 
     // Step 2: Fetch all products using the token
     const allProducts = await fetchAllRozetkaProducts(accessToken)
-    console.log('allProducts', allProducts[0])
+    //console.log('allProducts', allProducts[0])
 
      return allProducts
   } catch (error: any) {
@@ -157,24 +163,17 @@ export async function fetchRozetkaProductsWithTransformation() {
       name: item.name,
       price: String(item.price || '0.00'),
       stockQuantity: item.stock_quantity || 0,
-      available: item.available || false,
+      available: item.available === 1,
       priceOld: item.price_old ? String(item.price_old) : null,
       pricePromo: item.price_promo ? String(item.price_promo) : null,
       updatedPrice: item.updated_price ? String(item.updated_price) : null,
       mainImage: item.photo_preview?.[0] || null,
       images: item.photo || [],
-      dateModified: item.created_at ? new Date(item.created_at) : null,
-      multilangData: {
-        ru: item.name_ru || null,
-        uk: item.name_ua || null, // Assuming 'ua' should map to 'uk'
-        description_ru: null, // Add other expected keys as null
-        description_uk: null,
-      },
+      dateModified: item.created_at ? new Date(item.created_at) : null,      
       categoryData: {
         id: item.rz_category?.id || null,
         title: item.rz_category?.title_ua || null,
       },
-      status: item.rz_status?.toString() || null,
       source: Source.rozetka,
     }))
 
@@ -196,5 +195,5 @@ export async function fetchRozetkaProductsWithTransformation() {
 
 
 //fetchAllRozetkaProducts()
-fetchRozetkaProducts()
+//fetchRozetkaProducts()
 //fetchRozetkaProductsWithTransformation()

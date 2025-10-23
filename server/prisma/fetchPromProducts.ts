@@ -88,7 +88,16 @@ export async function fetchPromProducts() {
   console.log(`\nFinished! Total products fetched: ${allProducts.length}`)
   //console.log(allProducts[allProducts.length - 1])
   checkForDuplicates(allProducts)
-  return allProducts
+
+  // Filter products with status 'on_display'
+  const filteredProducts = allProducts.filter(
+    (product) => product.status === 'on_display'
+  )
+console.log('example of filtered product');
+
+//console.log(filteredProducts[0]);
+
+  return filteredProducts
 }
 
 /**
@@ -135,9 +144,8 @@ export async function fetchPromProductsWithTransformation() {
     updatedPrice: product.price ? String(product.price) : null,
     stockQuantity: product.quantity_in_stock || 0,
     promQuantity: product.quantity_in_stock,
-    inStock: product.quantity_in_stock || 0,
     available: product.in_stock || false,
-    description: product.description || null,
+    description: product.description_multilang.uk || null,
     mainImage: product.main_image || null,
     images: product.images ? product.images.map((img: any) => img.url) : [],
     currency: product.currency || 'UAH',
@@ -149,19 +157,12 @@ export async function fetchPromProductsWithTransformation() {
     needsSync: false,
     needsPromSync: false,
     needsRozetkaSync: false,
-    multilangData: {
-      ru: product.name_multilang?.ru || null,
-      uk: product.name_multilang?.uk || null,
-      description_ru: product.description_multilang?.ru || null,
-      description_uk: product.description_multilang?.uk || null,
-    },
     categoryData: {
       id: product.category?.id || null,
       caption: product.category?.caption || null,
       group: product.group || null,
     },
     measureUnit: product.measure_unit || 'шт.',
-    status: product.status || 'active',
     rozetkaQuantity: null,
     lastRozetkaSync: null,
     source: Source.prom,
@@ -172,6 +173,8 @@ export async function fetchPromProductsWithTransformation() {
     JSON.stringify(transformedProducts, null, 2)
   )
   console.log('Prom products data saved to prisma/realData/promProducts.json')
+console.log('Total saved products: ', transformedProducts.length);
+
   return transformedProducts
 }
 
@@ -185,4 +188,4 @@ console.log("I am on main");
 main().catch((error) => {
   console.error('An error occurred:', error)
 }) */
-//fetchPromProductsWithTransformation()
+fetchPromProductsWithTransformation()

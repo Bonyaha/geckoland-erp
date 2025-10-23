@@ -54,8 +54,7 @@ export const createProduct = async (
       externalIds = {}, // Default for Json field
       description,
       mainImage,
-      images = [], // Default for String[] field
-      inStock,
+      images = [], // Default for String[] field      
       available,
       priceOld,
       pricePromo,
@@ -322,7 +321,6 @@ async function handleSingleUpdate(
     if (!targetMarketplace || targetMarketplace === 'all') {
       if (updates.quantity !== undefined) {
         dbUpdateData.stockQuantity = updates.quantity
-        dbUpdateData.inStock = updates.quantity
       }
       if (updates.price !== undefined) {
         if (
@@ -937,4 +935,4 @@ export async function syncNewProductsFromMarketplaces(): Promise<SyncResult> {
   }
 }
 
-syncNewProductsFromMarketplaces()
+//syncNewProductsFromMarketplaces()

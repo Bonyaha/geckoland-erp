@@ -15,45 +15,74 @@ export async function enrichWithPromCategoriesAndDescription(products: any[]) {
   const promProducts = JSON.parse(promProductsData)
 
   // Map Prom products by SKU for quick lookup
-  const promMapCategory = new Map()
-  const promMapDescription = new Map()
+ const promProductDetailsMap = new Map<string, any>()
+
   promProducts.forEach((p: any) => {
-    promMapCategory.set(p.sku, {
+    const promId = p.productId
+
+    const category = {
+      id: p.categoryData?.group?.id || null,
+      // Use fallback to 'name' if 'uk' name isn't present
+      name:
+        p.categoryData?.group?.name_multilang?.uk ||
+        p.categoryData?.group?.name ||
+        null,
+    }
+
+    const description = p.description || null
+
+    promProductDetailsMap.set(promId, { category, description })
+  })
+ /*    promMapCategory.set(p.sku, {
       id: p.categoryData?.group?.id || null,
       name: p.categoryData?.group?.name_multilang?.uk || null      
     })
     promMapDescription.set(p.sku, {
       description: p.multilangData?.description_uk || null,
     })
-  })
+  }) */
 
   let updatedCount = 0
   let notFoundCount = 0
 
   const enrichedProducts = products.map((product) => {
-    const category = promMapCategory.get(product.sku)
-    const descriptionData = promMapDescription.get(product.sku)
+    // Get the unique prom ID that was assigned in the previous step
+    const promId = product.externalIds?.prom
 
-    if (category && category.id && category.name) {
+    // If this product doesn't have a promId, we can't look it up.
+    if (!promId) {
+      notFoundCount++
+      return product
+    }
+
+    // Find the details using the unique promId
+    const details = promProductDetailsMap.get(promId)
+
+    // Check if we found details AND the category data is valid
+    if (details && details.category && details.category.id && details.category.name) {
       updatedCount++
       return {
         ...product,
-        description: descriptionData?.description || product.description,
+        // Use the specific description for this promId
+        description: details.description || product.description,
+        // Merge with existing categoryData (to keep CSV or Rozetka data)
         categoryData: {
-          prom: {
-            id: category.id,
-            name: category.name,
-          }
-        }
+          ...product.categoryData, // Keep existing data
+          prom: { // Add the new prom-specific data
+            id: details.category.id,
+            name: details.category.name,
+          },
+        },
       }
     } else {
+      // Had a promId, but no matching category was found in the JSON
       notFoundCount++
       return product
     }
   })
 
-  console.log(`✅ Prom categories enriched: ${updatedCount}`)
-  console.log(`⚠️ Prom categories missing: ${notFoundCount}`)
+  console.log(`✅ Prom categories/descriptions enriched: ${updatedCount}`)
+  console.log(`⚠️ Prom categories/descriptions missing: ${notFoundCount}`)
 
   return enrichedProducts
 }
