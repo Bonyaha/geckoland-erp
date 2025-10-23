@@ -9,7 +9,18 @@ const prisma = new PrismaClient()
 // This ensures that null or undefined quantities are treated as 0
 // It prevents issues when a product has null or undefined stock
 // quantities, which could lead to incorrect updates or comparisons
-export const normalizeQuantity = (qty: number | null | undefined): number => qty ?? 0
+export const normalizeQuantity = (
+  quantity: number | string | null | undefined
+): number => {
+  if (typeof quantity === 'string') {
+    const parsed = parseInt(quantity, 10)
+    return isNaN(parsed) || parsed < 0 ? 0 : parsed
+  }
+  if (typeof quantity === 'number') {
+    return quantity < 0 ? 0 : quantity
+  }
+  return 0
+}
 
 
 // Utility function to replace null in promQuantity and rozetkaQuantity with numbers

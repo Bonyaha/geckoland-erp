@@ -16,6 +16,7 @@ import { fetchPromProductsWithTransformation } from '../../prisma/fetchPromProdu
 import {
   createMarketplaceUpdatePromise,
   createMarketplaceSyncStatus,
+normalizeQuantity
 } from '../utils/marketplaceSyncHelpers'
 
 const prisma = new PrismaClient()
@@ -738,14 +739,6 @@ async function handleBatchUpdate(req: Request, res: Response) {
 
 
 /**
- * Normalize quantity values (handle null, undefined, negative)
- */
-function normalizeQuantity(quantity: any): number {
-  const num = parseInt(quantity, 10)
-  return isNaN(num) || num < 0 ? 0 : num
-}
-
-/**
  * Create a product in database from Prom data
  */
 async function createProductFromProm(promProduct: any): Promise<void> {
@@ -935,4 +928,4 @@ export async function syncNewProductsFromMarketplaces(): Promise<SyncResult> {
   }
 }
 
-//syncNewProductsFromMarketplaces()
+syncNewProductsFromMarketplaces()

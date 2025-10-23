@@ -32,15 +32,7 @@ export async function enrichWithPromCategoriesAndDescription(products: any[]) {
     const description = p.description || null
 
     promProductDetailsMap.set(promId, { category, description })
-  })
- /*    promMapCategory.set(p.sku, {
-      id: p.categoryData?.group?.id || null,
-      name: p.categoryData?.group?.name_multilang?.uk || null      
-    })
-    promMapDescription.set(p.sku, {
-      description: p.multilangData?.description_uk || null,
-    })
-  }) */
+  }) 
 
   let updatedCount = 0
   let notFoundCount = 0
@@ -67,7 +59,6 @@ export async function enrichWithPromCategoriesAndDescription(products: any[]) {
         description: details.description || product.description,
         // Merge with existing categoryData (to keep CSV or Rozetka data)
         categoryData: {
-          ...product.categoryData, // Keep existing data
           prom: { // Add the new prom-specific data
             id: details.category.id,
             name: details.category.name,
