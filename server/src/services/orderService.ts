@@ -730,6 +730,36 @@ class OrderService {
       include: { orderItems: true },
     })
   }
+
+/**
+ * Manually triggers a check for new orders from all marketplaces.
+ * This can be called from a frontend button.
+ */
+  async manualCheckForNewOrders() {
+    console.log('Manual check for new orders initiated...')
+    try {
+      const [promResult, rozetkaResult] = await Promise.all([
+        this.fetchAndCreateNewPromOrders(),
+        this.fetchAndCreateNewRozetkaOrders(),
+      ])
+
+      const summary = {
+        prom: promResult,
+        rozetka: rozetkaResult,
+        totals: {
+          created: promResult.created + rozetkaResult.created,
+          skipped: promResult.skipped + rozetkaResult.skipped,
+          errors: promResult.errors + rozetkaResult.errors,
+        },
+      }
+
+      console.log('Manual order check completed:', summary.totals)
+      return summary
+    } catch (error) {
+      console.error('Error during manual order check:', error)
+      throw error
+    }
+  }
 }
 
 

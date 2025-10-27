@@ -14,27 +14,27 @@ model Users {
 }
 
 model Products {
-  productId     String   @id
-  sku           String?
-  name          String
-  price         Decimal  @db.Decimal(10, 2)
-  costPrice     Decimal? @db.Decimal(10, 2)
-  stockQuantity Int
-  source        Source   @default(prom)
-  externalIds   Json
-  description   String?
-  mainImage     String?
-  images        String[]
-  available    Boolean
-  priceOld     Decimal?  @db.Decimal(10, 2)
-  pricePromo   Decimal?  @db.Decimal(10, 2)
-  updatedPrice Decimal?  @db.Decimal(10, 2)
-  currency     String?
-  dateModified DateTime? @db.Timestamptz(6)
-  lastSynced   DateTime? @db.Timestamptz(6)
-  needsSync    Boolean   @default(false)
-  categoryData Json?
-  measureUnit  String?
+  productId        String       @id
+  sku              String?
+  name             String
+  price            Decimal      @db.Decimal(10, 2)
+  costPrice        Decimal?     @db.Decimal(10, 2)
+  stockQuantity    Int
+  source           Source       @default(prom)
+  externalIds      Json
+  description      String?
+  mainImage        String?
+  images           String[]
+  available        Boolean
+  priceOld         Decimal?     @db.Decimal(10, 2)
+  pricePromo       Decimal?     @db.Decimal(10, 2)
+  updatedPrice     Decimal?     @db.Decimal(10, 2)
+  currency         String?
+  dateModified     DateTime?    @db.Timestamptz(6)
+  lastSynced       DateTime?    @db.Timestamptz(6)
+  needsSync        Boolean      @default(false)
+  categoryData     Json?
+  measureUnit      String?
   lastPromSync     DateTime?    @db.Timestamptz(6)
   lastRozetkaSync  DateTime?    @db.Timestamptz(6)
   needsPromSync    Boolean      @default(false)
@@ -103,7 +103,8 @@ model Orders {
   itemCount     Int // Count of different products
 
   // Status information
-  status      String // Prom: "status", Rozetka: "status" (number)
+  oldStatus      String // Prom: "status", Rozetka: "status" (number)
+  newStatus   OrderStatus? @default(RECEIVED)
   statusName  String? // Prom: "status_name"
   statusGroup Int? // Rozetka: "status_group"
 
@@ -236,23 +237,11 @@ enum Source {
 }
 
 enum OrderStatus {
-  // Universal statuses
-  NEW
-  PROCESSING
-  CONFIRMED
+  RECEIVED
+  PREPARED
   SHIPPED
+  AWAITING_PICKUP
   DELIVERED
-  CANCELLED
-  RETURNED
-  REFUNDED
-
-  // Prom specific
-  PENDING_PAYMENT
-  PAID
-
-  // Rozetka specific (based on status numbers)
-  ROZETKA_STATUS_1
-  ROZETKA_STATUS_2
-  ROZETKA_STATUS_3
-  ROZETKA_STATUS_4
+  CANCELED
+  RETURN
 }

@@ -488,8 +488,7 @@ export const handleGmailNotification = async (req: Request, res: Response) => {
 }
 
 /**
- * Manually triggers a check for new orders from all marketplaces.
- * This can be called from a frontend button.
+ * This needs to be removed from here(we replaced it to orderService). * 
  */
 export const manualCheckForNewOrders = async () => {
   console.log('Manual check for new orders initiated...')

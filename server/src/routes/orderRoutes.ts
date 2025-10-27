@@ -7,6 +7,7 @@ import {
   syncOrders,
   createCRMOrder,
   updateOrder,
+  checkForNewOrders
 } from '../controllers/orderController'
 import { manualCheckForNewOrders } from '../controllers/notificationController'
 
@@ -33,5 +34,6 @@ router.post('/create-crm', createCRMOrder)
 // PATCH /orders/:orderId - Update an existing order
 router.patch('/:orderId', updateOrder)
 
+router.post('/check-new', checkForNewOrders)
 
 export default router

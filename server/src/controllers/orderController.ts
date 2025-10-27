@@ -191,3 +191,13 @@ export const syncOrders = async (
     })
   }
 }
+
+export const checkForNewOrders = async (req: Request, res: Response) => {
+  try {
+    const summary = await orderService.manualCheckForNewOrders()
+    res.json(summary)
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to check for new orders' })
+  }
+}
+
