@@ -1,8 +1,5 @@
 -- CreateEnum
-CREATE TYPE "Source" AS ENUM ('prom', 'rozetka');
-
--- CreateEnum
-CREATE TYPE "OrderStatus" AS ENUM ('NEW', 'PROCESSING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURNED', 'REFUNDED', 'PENDING_PAYMENT', 'PAID', 'ROZETKA_STATUS_1', 'ROZETKA_STATUS_2', 'ROZETKA_STATUS_3', 'ROZETKA_STATUS_4');
+CREATE TYPE "Source" AS ENUM ('prom', 'rozetka', 'crm');
 
 -- CreateTable
 CREATE TABLE "Users" (
@@ -25,27 +22,23 @@ CREATE TABLE "Products" (
     "description" TEXT,
     "mainImage" TEXT,
     "images" TEXT[],
-    "inStock" INTEGER NOT NULL,
     "available" BOOLEAN NOT NULL,
     "priceOld" DECIMAL(10,2),
     "pricePromo" DECIMAL(10,2),
     "updatedPrice" DECIMAL(10,2),
     "currency" TEXT,
-    "sellingType" TEXT,
-    "presence" TEXT,
     "dateModified" TIMESTAMPTZ(6),
     "lastSynced" TIMESTAMPTZ(6),
     "needsSync" BOOLEAN NOT NULL DEFAULT false,
-    "multilangData" JSONB,
     "categoryData" JSONB,
     "measureUnit" TEXT,
-    "status" TEXT,
     "lastPromSync" TIMESTAMPTZ(6),
     "lastRozetkaSync" TIMESTAMPTZ(6),
     "needsPromSync" BOOLEAN NOT NULL DEFAULT false,
     "needsRozetkaSync" BOOLEAN NOT NULL DEFAULT false,
     "promQuantity" INTEGER,
     "rozetkaQuantity" INTEGER,
+    "costPrice" DECIMAL(10,2),
 
     CONSTRAINT "Products_pkey" PRIMARY KEY ("productId")
 );
@@ -224,3 +217,4 @@ ALTER TABLE "Purchases" ADD CONSTRAINT "Purchases_productId_fkey" FOREIGN KEY ("
 
 -- AddForeignKey
 ALTER TABLE "ExpenseByCategory" ADD CONSTRAINT "ExpenseByCategory_expenseSummaryId_fkey" FOREIGN KEY ("expenseSummaryId") REFERENCES "ExpenseSummary"("expenseSummaryId") ON DELETE RESTRICT ON UPDATE CASCADE;
+
