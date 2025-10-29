@@ -3,7 +3,12 @@ import fs from "fs";
 import path from "path";
 const prisma = new PrismaClient();
 
-async function deleteAllData(orderedFileNames: string[]) {
+const dataDirectory = path.join(__dirname, 'data')
+const filePath = path.join(dataDirectory, 'backup.json')
+const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+
+/* Old code from tutorial */
+/* async function deleteAllData(orderedFileNames: string[]) {
   const modelNames = orderedFileNames.map((fileName) => {
     const modelName = path.basename(fileName, path.extname(fileName));
     return modelName.charAt(0).toUpperCase() + modelName.slice(1);
@@ -66,4 +71,21 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
-  });
+  }); */
+
+/* New code */
+
+async function main() {
+
+  // order matters because of FKs
+  await prisma.products.createMany({
+    data: data.products,
+    skipDuplicates: true,
+  })
+  await prisma.orders.createMany({ data: data.orders, skipDuplicates: true })
+  await prisma.orderItems.createMany({
+    data: data.orderItems,
+    skipDuplicates: true,
+  })
+}
+main().finally(() => prisma.$disconnect())

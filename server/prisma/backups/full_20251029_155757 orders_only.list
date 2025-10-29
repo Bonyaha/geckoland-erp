@@ -1,0 +1,10 @@
+5; 2615 33391 SCHEMA - public postgres
+4998; 0 0 COMMENT - SCHEMA public postgres
+4999; 0 0 ACL - SCHEMA public postgres
+
+857; 1247 33407 TYPE public Source postgres
+896; 1247 42324 TYPE public OrderStatus postgres
+
+219; 1259 33459 TABLE public Orders postgres
+4982; 0 33459 TABLE DATA public Orders postgres
+4809; 2606 33471 CONSTRAINT public Orders Orders_pkey postgres
