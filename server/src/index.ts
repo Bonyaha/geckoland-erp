@@ -15,6 +15,7 @@ import expenseRoutes from "./routes/expenseRoutes";
 import notificationRoutes from './routes/notificationRoutes'
 import authRoutes from './routes/authRoutes'
 import orderRoutes from './routes/orderRoutes'
+import trackingRoutes from './routes/trackingRoutes'
 
 /* CONFIGURATIONS */
 dotenv.config();
@@ -35,6 +36,7 @@ app.use("/expenses", expenseRoutes); // http://localhost:8001/expenses
 app.use('/notifications', notificationRoutes) // http://localhost:8001/notifications/gmail
 app.use("/auth", authRoutes); // http://localhost:8001/auth/gmail/auth
 app.use('/api/orders', orderRoutes) // http://localhost:8001/api/orders
+app.use('/api/tracking', trackingRoutes) // http://localhost:8001/api/tracking
 app.get("/hello", (req, res) => {
   res.send("Welcome to the ERP server!");
 });

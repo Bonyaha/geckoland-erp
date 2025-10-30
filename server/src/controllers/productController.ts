@@ -928,4 +928,4 @@ export async function syncNewProductsFromMarketplaces(): Promise<SyncResult> {
   }
 }
 
-syncNewProductsFromMarketplaces()
+//syncNewProductsFromMarketplaces()
