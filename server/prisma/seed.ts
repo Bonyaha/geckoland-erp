@@ -76,7 +76,6 @@ main()
 /* New code */
 
 async function main() {
-
   // order matters because of FKs
   await prisma.products.createMany({
     data: data.products,
