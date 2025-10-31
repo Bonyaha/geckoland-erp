@@ -105,7 +105,7 @@ class OrderService {
       sellerComment: this.normalizeStringOrNull(data.sellerComment),
       sellerComments: this.normalizeSellerComments(data.sellerComments),
 
-      status: data.status || 'UNKNOWN',
+      status: data.status || 'RECEIVED',
       statusName: this.normalizeStringOrNull(data.statusName),
     }
   }
@@ -178,7 +178,7 @@ class OrderService {
           : 0,
 
         // Status information
-        status: promOrder.status,
+        status: 'RECEIVED', // Initial status
         statusName: promOrder.status_name,
 
         // Commission and fees
@@ -339,7 +339,7 @@ class OrderService {
         itemCount: rozetkaOrder.purchases?.length || 0,
 
         // Status information
-        status: rozetkaOrder.status.toString(),
+        status: 'RECEIVED', // Initial status
         statusName:
           rozetkaOrder.status_data?.name_uk || rozetkaOrder.status_data?.name,
         statusGroup: rozetkaOrder.status_group,

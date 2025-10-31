@@ -5,6 +5,90 @@ import { OrderStatus } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
+/**
+ * Map Nova Poshta status to our OrderStatus enum
+ */
+function mapNovaPoshtaStatusToOrderStatus(
+  novaPoshtaStatus: string,
+  statusCode: string
+): OrderStatus {
+  const status = novaPoshtaStatus.toLowerCase()
+
+  // Delivered statuses
+  if (
+    status.includes('одержано') ||
+    status.includes('отримано') ||
+    status.includes('delivered') ||
+    status.includes('получено') ||
+    statusCode === '9'
+  ) {
+    return OrderStatus.DELIVERED
+  }
+
+  // Shipped/In transit statuses
+  if (
+    status.includes('прямує') ||
+    status.includes('відправлено') ||
+    status.includes('в дорозі') ||
+    status.includes('shipped') ||
+    status.includes('в пути') ||
+    statusCode === '6' ||
+    statusCode === '7'
+  ) {
+    return OrderStatus.SHIPPED
+  }
+
+  // Awaiting pickup at warehouse
+  if (
+    status.includes('прибув') ||
+    status.includes('очікує') ||
+    status.includes('готове до видачі') ||
+    status.includes('awaiting') ||
+    status.includes('arrived') ||
+    statusCode === '8'
+  ) {
+    return OrderStatus.AWAITING_PICKUP
+  }
+
+  // Canceled/Refused
+  if (
+    status.includes('відмова') ||
+    status.includes('скасовано') ||
+    status.includes('refused') ||
+    status.includes('canceled') ||
+    statusCode === '102' ||
+    statusCode === '103'
+  ) {
+    return OrderStatus.CANCELED
+  }
+
+  // Return
+  if (
+    status.includes('повернення') ||
+    status.includes('return') ||
+    statusCode === '10'
+  ) {
+    return OrderStatus.RETURN
+  }
+
+  // Prepared (order created, preparing for shipment)
+  if (
+    status.includes('оброблено') ||
+    status.includes('створено') ||
+    status.includes('зареєстровано') ||
+    status.includes('created') ||
+    status.includes('registered') ||
+    statusCode === '1' ||
+    statusCode === '2' ||
+    statusCode === '3'
+  ) {
+    return OrderStatus.PREPARED
+  }
+
+  // Default to RECEIVED for unknown statuses
+  return OrderStatus.RECEIVED
+}
+
 //This controller has to be revised and modified according to my shema (tracking numbers and statuses are the main point here)
 
 export const updateOrderTrackingStatuses = async (
@@ -21,17 +105,22 @@ export const updateOrderTrackingStatuses = async (
           // Has a tracking number
           {
             trackingNumber: {
-              not: null,
+              not: {
+                equals: null,
+              },
+            },
+          },
+          {
+            trackingNumber: {
+              not: {
+                equals: '',
+              },
             },
           },
           // Not in final status
           {
             status: {
-              notIn: [
-                OrderStatus.DELIVERED,
-                OrderStatus.CANCELED,
-                OrderStatus.RETURN,
-              ],
+              notIn: ['DELIVERED', 'CANCELED', 'RETURN'],
             },
           },
         ],
@@ -81,10 +170,13 @@ export const updateOrderTrackingStatuses = async (
       return
     }
 
+    console.log('trackingData is: ', trackingData)
+
     // Get updated statuses from Nova Poshta
     const updatedStatuses = await novaPoshtaService.getTrackingStatuses(
       trackingData
     )
+    console.log('updatedStatuses is: ', updatedStatuses)
 
     // Update orders in database
     let updatedCount = 0
@@ -98,30 +190,49 @@ export const updateOrderTrackingStatuses = async (
       if (!orderData) continue
 
       try {
-        // Update order status and tracking details
-        await prisma.orders.update({
-          where: { orderId: orderData.orderId },
-          data: {
-            status: status.status
-              ? OrderStatus[status.status as keyof typeof OrderStatus]
-              : orderData.currentStatus,
-            trackingNumber: status.trackingNumber,
-            lastModified: new Date(),
-          },
-        })
-
-        updatedCount++
-        updateResults.push({
-          orderId: orderData.orderId,
-          orderNumber: orderData.orderNumber,
-          trackingNumber: status.trackingNumber,
-          status: status.status,
-          updated: true,
-        })
-
-        console.log(
-          `✅ Updated order ${orderData.orderNumber}: ${status.status}`
+        // Map Nova Poshta status to our OrderStatus enum
+        const mappedStatus = mapNovaPoshtaStatusToOrderStatus(
+          status.status,
+          status.statusCode
         )
+
+        // Update order status and tracking details
+        if (mappedStatus !== orderData.currentStatus) {
+          await prisma.orders.update({
+            where: { orderId: orderData.orderId },
+            data: {
+              status: mappedStatus,
+              trackingNumber: status.trackingNumber,
+              lastModified: new Date(),
+            },
+          })
+
+          updatedCount++
+          updateResults.push({
+            orderId: orderData.orderId,
+            orderNumber: orderData.orderNumber,
+            trackingNumber: status.trackingNumber,
+            status: mappedStatus,
+            updated: true,
+          })
+
+          console.log(
+            `✅ Updated order ${orderData.orderNumber}: ${mappedStatus}`
+          )
+        } else {
+          console.log(
+            `ℹ️ Order ${orderData.orderNumber}: Status unchanged (${mappedStatus})`
+          )
+          updateResults.push({
+            orderId: orderData.orderId,
+            orderNumber: orderData.orderNumber,
+            trackingNumber: status.trackingNumber,
+            status: mappedStatus,
+            novaPoshtaStatus: status.status,
+            updated: false,
+            reason: 'Status unchanged',
+          })
+        }
       } catch (error: any) {
         console.error(
           `❌ Failed to update order ${orderData.orderId}:`,
