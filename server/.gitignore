@@ -10,6 +10,9 @@ gmail-history.json
 processed-messages.json
 gmail-token.json
 
+# Runtime cache and token storage
+src/storage/
+
 # Python virtual environment
 /venv
 

@@ -2,12 +2,12 @@
 // This is the webhook that Google Pub/Sub will call.
 import { Request, Response } from 'express'
 import { google } from 'googleapis'
-import { authorize } from '../services/gmailService'
+import { authorize } from '../../services/auth/gmailService'
 import type { gmail_v1 } from 'googleapis'
 import { promises as fs } from 'fs'
 import path from 'path'
 import crypto from 'crypto'
-import OrderService from '../services/orderService'
+import OrderService from '../../services/orders/orderService'
 
 // Initialize order service
 const orderService = new OrderService()
@@ -153,7 +153,7 @@ function createMessageFingerprint(
 async function handleNewOrder(marketplace: string): Promise<void> {
   try {
     console.log(`Processing new order from ${marketplace}...`)
-    
+
     if (marketplace === 'Prom') {
       const result = await orderService.fetchAndCreateNewPromOrders()
       console.log(`Prom order processing result:`, result)
@@ -174,24 +174,24 @@ async function handleNewOrder(marketplace: string): Promise<void> {
         )
       }
     } else if (marketplace === 'Rozetka') {
-     const result = await orderService.fetchAndCreateNewRozetkaOrders()
-     console.log(`Rozetka order processing result:`, result)
+      const result = await orderService.fetchAndCreateNewRozetkaOrders()
+      console.log(`Rozetka order processing result:`, result)
 
-     if (result.created > 0) {
-       console.log(
-         `Successfully created ${result.created} new orders from Rozetka`
-       )
-     } else if (result.skipped > 0) {
-       console.log(
-         `All ${result.skipped} orders from Rozetka were already processed`
-       )
-     }
+      if (result.created > 0) {
+        console.log(
+          `Successfully created ${result.created} new orders from Rozetka`
+        )
+      } else if (result.skipped > 0) {
+        console.log(
+          `All ${result.skipped} orders from Rozetka were already processed`
+        )
+      }
 
-     if (result.errors > 0) {
-       console.warn(
-         `${result.errors} errors occurred while processing Rozetka orders`
-       )
-     }
+      if (result.errors > 0) {
+        console.warn(
+          `${result.errors} errors occurred while processing Rozetka orders`
+        )
+      }
     } else if (marketplace === 'Website') {
       console.log('Website order processing not yet implemented')
       // TODO: Implement Website order processing
@@ -488,7 +488,7 @@ export const handleGmailNotification = async (req: Request, res: Response) => {
 }
 
 /**
- * This needs to be removed from here(we replaced it to orderService). * 
+ * This needs to be removed from here(we replaced it to orderService). *
  */
 export const manualCheckForNewOrders = async () => {
   console.log('Manual check for new orders initiated...')
@@ -509,11 +509,8 @@ export const manualCheckForNewOrders = async () => {
     }
 
     console.log('Manual order check completed:', summary.totals)
-
-   
   } catch (error) {
     console.error('Error during manual order check:', error)
-    
   }
 }
 

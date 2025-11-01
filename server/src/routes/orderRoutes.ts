@@ -7,9 +7,9 @@ import {
   syncOrders,
   createCRMOrder,
   updateOrder,
-  checkForNewOrders
-} from '../controllers/orderController'
-import { manualCheckForNewOrders } from '../controllers/notificationController'
+  checkForNewOrders,
+} from '../controllers/orders/orderController'
+import { manualCheckForNewOrders } from '../controllers/notifications/notificationController'
 
 const router = Router()
 

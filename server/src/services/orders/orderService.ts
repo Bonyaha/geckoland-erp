@@ -1,8 +1,8 @@
 // server/src/services/orderService.ts
 import { PrismaClient, Prisma, Source } from '@prisma/client'
 import { Decimal } from '@prisma/client/runtime/library'
-import { PromClient, type PromOrder } from './marketplaces/promClient'
-import { RozetkaClient, type RozetkaOrder } from './marketplaces/rozetkaClient'
+import { PromClient, type PromOrder } from '../marketplaces/promClient'
+import { RozetkaClient, type RozetkaOrder } from '../marketplaces/rozetkaClient'
 import { nanoid } from 'nanoid'
 import { syncAfterOrder } from '../syncMarketplaces'
 
@@ -731,10 +731,10 @@ class OrderService {
     })
   }
 
-/**
- * Manually triggers a check for new orders from all marketplaces.
- * This can be called from a frontend button.
- */
+  /**
+   * Manually triggers a check for new orders from all marketplaces.
+   * This can be called from a frontend button.
+   */
   async manualCheckForNewOrders() {
     console.log('Manual check for new orders initiated...')
     try {
@@ -761,8 +761,5 @@ class OrderService {
     }
   }
 }
-
-
-
 
 export default OrderService

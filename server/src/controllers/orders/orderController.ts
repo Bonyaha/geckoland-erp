@@ -1,6 +1,6 @@
 // server/src/controllers/orderController.ts
 import { Request, Response } from 'express'
-import OrderService from '../services/orderService'
+import OrderService from '../../services/orders/orderService'
 import { Source } from '@prisma/client'
 
 const orderService = new OrderService()

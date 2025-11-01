@@ -5,19 +5,19 @@ import {
   updateRozetkaProduct,
   updateMultipleRozetkaProducts,
   RozetkaUpdateParams,
-} from '../services/marketplaces/rozetkaClient'
-import { fetchRozetkaProductsWithTransformation } from '../../prisma/fetchRozetkaProducts'
+} from '../../services/marketplaces/rozetkaClient'
+import { fetchRozetkaProductsWithTransformation } from '../../services/data-fetchers/fetchRozetkaProducts'
 import {
   updatePromProduct,
   updateMultiplePromProducts,
   type PromUpdateParams,
-} from '../services/marketplaces/promClient'
-import { fetchPromProductsWithTransformation } from '../../prisma/fetchPromProducts'
+} from '../../services/marketplaces/promClient'
+import { fetchPromProductsWithTransformation } from '../../services/data-fetchers/fetchPromProducts'
 import {
   createMarketplaceUpdatePromise,
   createMarketplaceSyncStatus,
-normalizeQuantity
-} from '../utils/marketplaceSyncHelpers'
+  normalizeQuantity,
+} from '../../services/marketplaces/sync/marketplaceSyncHelpers'
 
 const prisma = new PrismaClient()
 
@@ -55,7 +55,7 @@ export const createProduct = async (
       externalIds = {}, // Default for Json field
       description,
       mainImage,
-      images = [], // Default for String[] field      
+      images = [], // Default for String[] field
       available,
       priceOld,
       pricePromo,
@@ -96,7 +96,7 @@ export const createProduct = async (
         externalIds,
         description,
         mainImage,
-        images,        
+        images,
         available,
         priceOld,
         pricePromo,
@@ -104,9 +104,9 @@ export const createProduct = async (
         currency,
         dateModified,
         lastSynced,
-        needsSync,        
+        needsSync,
         categoryData,
-        measureUnit        
+        measureUnit,
       },
     })
     res.status(201).json(product)
@@ -736,7 +736,6 @@ async function handleBatchUpdate(req: Request, res: Response) {
     res.status(500).json({ message: 'Failed to complete batch update' })
   }
 }
-
 
 /**
  * Create a product in database from Prom data

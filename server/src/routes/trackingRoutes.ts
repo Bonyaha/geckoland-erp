@@ -2,7 +2,7 @@ import { Router } from 'express';
 import {
   updateOrderTrackingStatuses,
   getSingleOrderTracking,
-} from '../controllers/orderTrackingController';
+} from '../controllers/orders/orderTrackingController';
 
 const router = Router();
 
