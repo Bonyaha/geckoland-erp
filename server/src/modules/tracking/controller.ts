@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import { PrismaClient } from '@prisma/client'
-import { novaPoshtaService } from '../services/delivery/novaPoshtaService'
+import { novaPoshtaService } from './service'
 import { OrderStatus } from '@prisma/client'
 
 const prisma = new PrismaClient()

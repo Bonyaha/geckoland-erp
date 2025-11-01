@@ -5,19 +5,19 @@ import {
   updateRozetkaProduct,
   updateMultipleRozetkaProducts,
   RozetkaUpdateParams,
-} from '../services/marketplaces/rozetkaClient'
-import { fetchRozetkaProductsWithTransformation } from '../../prisma/fetchRozetkaProducts'
+} from '../../services/marketplaces/rozetkaClient'
+import { fetchRozetkaProductsWithTransformation } from '../../../prisma/fetchRozetkaProducts'
 import {
   updatePromProduct,
   updateMultiplePromProducts,
   type PromUpdateParams,
-} from '../services/marketplaces/promClient'
-import { fetchPromProductsWithTransformation } from '../../prisma/fetchPromProducts'
+} from '../../services/marketplaces/promClient'
+import { fetchPromProductsWithTransformation } from '../../../prisma/fetchPromProducts'
 import {
   createMarketplaceUpdatePromise,
   createMarketplaceSyncStatus,
-normalizeQuantity
-} from '../utils/marketplaceSyncHelpers'
+  normalizeQuantity,
+} from '../../utils/marketplaceSyncHelpers'
 
 const prisma = new PrismaClient()
 

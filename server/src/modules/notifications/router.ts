@@ -1,6 +1,6 @@
 // server/src/routes/notificationRoutes.ts
 import { Router } from 'express'
-import { handleGmailNotification } from '../controllers/notificationController'
+import { handleGmailNotification } from './controller'
 
 const router = Router()
 

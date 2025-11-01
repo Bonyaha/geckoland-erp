@@ -8,8 +8,8 @@ import {
   createCRMOrder,
   updateOrder,
   checkForNewOrders
-} from '../controllers/orderController'
-import { manualCheckForNewOrders } from '../controllers/notificationController'
+} from './controller'
+import { manualCheckForNewOrders } from '../notifications'
 
 const router = Router()
 

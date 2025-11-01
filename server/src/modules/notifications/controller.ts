@@ -2,12 +2,12 @@
 // This is the webhook that Google Pub/Sub will call.
 import { Request, Response } from 'express'
 import { google } from 'googleapis'
-import { authorize } from '../services/gmailService'
+import { authorize } from '../auth'
 import type { gmail_v1 } from 'googleapis'
 import { promises as fs } from 'fs'
 import path from 'path'
 import crypto from 'crypto'
-import OrderService from '../services/orderService'
+import { OrderService } from '../orders'
 
 // Initialize order service
 const orderService = new OrderService()

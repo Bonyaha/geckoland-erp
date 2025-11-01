@@ -3,7 +3,8 @@ import { Router } from 'express'
 import {
   createProduct,
   getProducts,
-  updateProduct} from '../controllers/productController'
+  updateProduct,
+} from './controller'
 
 const router = Router()
 
