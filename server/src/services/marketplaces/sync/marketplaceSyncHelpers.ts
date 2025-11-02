@@ -1,9 +1,8 @@
-// server/src/utils/marketplaceSyncHelpers.ts
-import { PrismaClient } from '@prisma/client'
-import { fetchPromProducts } from '../../prisma/fetchPromProducts'
-import { fetchRozetkaProducts } from '../../prisma/fetchRozetkaProducts'
+//server\src\services\marketplaces\sync\marketplaceSyncHelpers.ts
+import prisma from '../../../config/database'
+import { fetchPromProducts } from '../../data-fetchers/fetchPromProducts'
+import { fetchRozetkaProducts } from '../../data-fetchers/fetchRozetkaProducts'
 
-const prisma = new PrismaClient()
 
 // Utility function to normalize quantity
 // This ensures that null or undefined quantities are treated as 0

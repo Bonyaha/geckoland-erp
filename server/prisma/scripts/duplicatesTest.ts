@@ -1,4 +1,4 @@
-import data from './data/products.json'
+import data from '../data/products.json'
 
 interface Product {
   sku: string | null

@@ -1,24 +1,23 @@
-//server\src\syncMarketplaces.ts
+//server\src\services\marketplaces\sync\syncMarketplaces.ts
 //import cron from 'node-cron'
-import { PrismaClient } from '@prisma/client'
-import { fetchCRMProducts } from '../prisma/fetchCRMProducts'
+import prisma from '../../../config/database'
+import { fetchCRMProducts } from '../../data-fetchers/fetchCRMProducts'
 import {
   fetchPromProductsWithTransformation,
   fetchPromProducts,
-} from '../prisma/fetchPromProducts'
-import { fetchRozetkaProducts } from '../prisma/fetchRozetkaProducts'
+} from '../../data-fetchers/fetchPromProducts'
+import { fetchRozetkaProducts } from '../../data-fetchers/fetchRozetkaProducts'
 import {
   updateMultiplePromProducts,
   PromUpdateParams,
-} from './services/marketplaces/promClient'
+} from '../promClient'
 import {
   updateMultipleRozetkaProducts,
   RozetkaUpdateParams,
-} from './services/marketplaces/rozetkaClient'
+} from '../rozetkaClient'
 import {
-  normalizeQuantity} from './utils/marketplaceSyncHelpers'
+  normalizeQuantity} from './marketplaceSyncHelpers'
 
-const prisma = new PrismaClient()
 
 // Update quantities for all products in app's database
 const updateAllMarketplaceQuantities = async () => {

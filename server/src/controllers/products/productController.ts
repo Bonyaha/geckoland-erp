@@ -1,6 +1,6 @@
-//server\src\controllers\productController.ts
+//server\src\controllers\products\productController.ts
 import { Request, Response, RequestHandler } from 'express'
-import { PrismaClient } from '@prisma/client'
+import prisma from '../../config/database'
 import {
   updateRozetkaProduct,
   updateMultipleRozetkaProducts,
@@ -19,7 +19,6 @@ import {
   normalizeQuantity,
 } from '../../services/marketplaces/sync/marketplaceSyncHelpers'
 
-const prisma = new PrismaClient()
 
 export const getProducts = async (
   req: Request,

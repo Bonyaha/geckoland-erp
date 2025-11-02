@@ -1,14 +1,13 @@
-import { PrismaClient, Source } from '@prisma/client'
+import prisma, { Source } from '../../src/config/database'
 import * as fs from 'fs'
 import * as path from 'path'
 import csv from 'csv-parser'
 import { nanoid } from 'nanoid'
-import { enrichWithPromIds } from '../src/utils/helper/mapExternalIdsProm'
-import { enrichWithRozetkaIds } from '../src/utils/helper/mapExternalIdsRozetka'
-import { enrichWithPromCategoriesAndDescription } from '../src/utils/helper/enrichWithPromCategories'
-import { enrichWithRozetkaCategories } from '../src/utils/helper/enrichWithRozetkaCategories'
+import { enrichWithPromIds } from '../../src/utils/helpers/mapExternalIdsProm'
+import { enrichWithRozetkaIds } from '../../src/utils/helpers/mapExternalIdsRozetka'
+import { enrichWithPromCategoriesAndDescription } from '../../src/utils/helpers/enrichWithPromCategories'
+import { enrichWithRozetkaCategories } from '../../src/utils/helpers/enrichWithRozetkaCategories'
 
-const prisma = new PrismaClient()
 
 /* 
   This file provides a generic way to populate the Products table in database from CSV files. It can read two types of CSVs:

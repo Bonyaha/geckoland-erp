@@ -1,6 +1,5 @@
-import { PrismaClient } from '@prisma/client'
+import prisma from '../../config/database'
 import { writeFileSync } from 'fs'
-const prisma = new PrismaClient()
 
 async function main() {
   const [products, orders, orderItems] = await Promise.all([

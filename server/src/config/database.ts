@@ -1,5 +1,5 @@
 // src/config/database.ts
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Source, OrderStatus, Prisma } from '@prisma/client'
 
 // Declare global type for TypeScript
 declare global {
@@ -21,4 +21,5 @@ if (process.env.NODE_ENV !== 'production') {
   global.prisma = prisma
 }
 
+export { Source, OrderStatus, Prisma }
 export default prisma

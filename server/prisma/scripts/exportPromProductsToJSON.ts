@@ -1,4 +1,4 @@
-// server/prisma/exportPromProductsToJSON.ts
+// server/prisma/sccripts/exportPromProductsToJSON.ts
 import * as fs from 'fs'
 import * as path from 'path'
 import csv from 'csv-parser'

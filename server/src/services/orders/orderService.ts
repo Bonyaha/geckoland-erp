@@ -1,12 +1,11 @@
-// server/src/services/orderService.ts
-import { PrismaClient, Prisma, Source } from '@prisma/client'
+// server\src\services\orders\orderService.ts
+import prisma, { Source,Prisma } from '../../config/database'
 import { Decimal } from '@prisma/client/runtime/library'
 import { PromClient, type PromOrder } from '../marketplaces/promClient'
 import { RozetkaClient, type RozetkaOrder } from '../marketplaces/rozetkaClient'
 import { nanoid } from 'nanoid'
-import { syncAfterOrder } from '../syncMarketplaces'
+//import { syncAfterOrder } from '../marketplaces/sync/marketplaceSyncService'
 
-const prisma = new PrismaClient()
 
 class OrderService {
   private promClient: PromClient

@@ -1,12 +1,9 @@
 import axios from 'axios'
 import * as fs from 'fs/promises'
 import * as dotenv from 'dotenv'
-import { PrismaClient, Source } from '@prisma/client'; // Import PrismaClient
+import prisma, { Source } from '../../config/database'
 
 dotenv.config()
-
-// 1. Initialize Prisma Client outside the functions
-const prisma = new PrismaClient();
 
 /* 
   ------------------------------------------------------------------ 

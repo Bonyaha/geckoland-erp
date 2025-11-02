@@ -1,9 +1,7 @@
 import { Request, Response } from 'express'
-import { PrismaClient } from '@prisma/client'
+import prisma from '../../config/database'
 import { novaPoshtaService } from '../../services/delivery/novaPoshtaService'
 import { OrderStatus } from '@prisma/client'
-
-const prisma = new PrismaClient()
 
 /**
  * Map Nova Poshta status to our OrderStatus enum

@@ -2,7 +2,7 @@ import axios from 'axios'
 import * as fs from 'fs/promises'
 import * as dotenv from 'dotenv'
 import { rozetkaTokenManager } from './rozetkaTokenCache'
-import { Source } from '@prisma/client'
+import { Source } from '../../config/database'
 
 dotenv.config()
 
