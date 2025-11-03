@@ -1,14 +1,15 @@
 import * as fs from 'fs/promises'
-
+import * as path from 'path'
 /**
  * Reads rozetkaProducts.json and enriches each product’s categoryData
  * with Rozetka category info (id + name).
  */
 export async function enrichWithRozetkaCategories(products: any[]) {
-  const rozetkaData = await fs.readFile(
-    'prisma/data/rozetkaProducts.json',
-    'utf-8'
-  )
+ const dataPath = path.join(
+   __dirname,
+   '../../../prisma/data/rozetkaProducts.json'
+ )
+  const rozetkaData = await fs.readFile(dataPath, 'utf-8')
   const rozetkaProducts = JSON.parse(rozetkaData)
 
   // Map Rozetka products by SKU for quick lookup

@@ -1,18 +1,14 @@
 import axios from 'axios'
 import * as fs from 'fs/promises'
-import * as dotenv from 'dotenv'
 import { all } from 'axios'
 import { solar } from 'googleapis/build/src/apis/solar'
-import { Source } from '@prisma/client'
-
-dotenv.config()
+import {Source} from '../../config/database'
+import { config } from '../../config/environment'
 
 //Function to fetch Prom products without transformation
 export async function fetchPromProducts() {
-  const apiKey = process.env.PROM_API_KEY
-  if (!apiKey) throw new Error('PROM_API_KEY is not defined in .env')
-
-  const baseUrl = 'https://my.prom.ua/api/v1/products/list'
+  const { apiKey, baseUrl } = config.marketplaces.prom
+  const productsUrl = `${baseUrl}/products/list`
   const headers = { Authorization: `Bearer ${apiKey}` }
 
   let allProducts = []
@@ -41,7 +37,7 @@ export async function fetchPromProducts() {
         //console.log(`Fetching first batch with limit: ${limit}`)
       }
 
-      const response = await axios.get(baseUrl, {
+      const response = await axios.get(productsUrl, {
         headers,
         params,
       })
@@ -93,9 +89,9 @@ export async function fetchPromProducts() {
   const filteredProducts = allProducts.filter(
     (product) => product.status === 'on_display'
   )
-console.log('example of filtered product');
+  console.log('example of filtered product')
 
-//console.log(filteredProducts[0]);
+  //console.log(filteredProducts[0]);
 
   return filteredProducts
 }
@@ -173,7 +169,7 @@ export async function fetchPromProductsWithTransformation() {
     JSON.stringify(transformedProducts, null, 2)
   )
   console.log('Prom products data saved to prisma/realData/promProducts.json')
-console.log('Total saved products: ', transformedProducts.length);
+  console.log('Total saved products: ', transformedProducts.length)
 
   return transformedProducts
 }

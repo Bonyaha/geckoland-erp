@@ -1,44 +1,9 @@
 import axios from 'axios'
 import * as fs from 'fs/promises'
-import * as dotenv from 'dotenv'
+import { config } from '../../config/environment'
 import { rozetkaTokenManager } from './rozetkaTokenCache'
 import { Source } from '../../config/database'
 
-dotenv.config()
-
-// Function to fetch Rozetka access token
-//Now I use a token manager to handle caching and expiration
-async function fetchRozetkaAccessToken(): Promise<string> {
-  const tokenUrl = 'https://api-seller.rozetka.com.ua/sites'
-  const credentials = {
-    username: process.env.ROZETKA_API_USERNAME,
-    password: process.env.ROZETKA_API_PASSWORD,
-  }
-  console.log('username', credentials.username)
-  console.log('password', credentials.password)
-  try {
-    console.log('🔑 Fetching Rozetka access token...')
-
-    const response = await axios.post(tokenUrl, credentials, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-
-    const {
-      content: { access_token },
-    } = response.data
-
-    console.log('✅ Rozetka access token fetched successfully')
-    return access_token
-  } catch (error: any) {
-    console.error(
-      '❌ Error fetching Rozetka access token:',
-      error.response?.data || error.message
-    )
-    throw new Error(`Failed to get access token: ${error.message}`)
-  }
-}
 
 // Function to fetch all Rozetka products with pagination. It is used internally by functions below.
 async function fetchAllRozetkaProducts(accessToken: string): Promise<any[]> {
@@ -150,7 +115,7 @@ export async function fetchRozetkaProducts() {
 export async function fetchRozetkaProductsWithTransformation() {
   try {
     // Step 1: Get access token
-    const accessToken = await fetchRozetkaAccessToken()
+    const accessToken = await rozetkaTokenManager.getValidToken()
 
     // Step 2: Fetch all products using the token
     const allProducts = await fetchAllRozetkaProducts(accessToken)

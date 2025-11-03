@@ -1,20 +1,15 @@
 //server\src\services\marketplaces\promClient.ts
 import axios from 'axios'
-import * as dotenv from 'dotenv'
-dotenv.config()
+import { config } from '../../config/environment'
 
 /**
  * ============ CONFIG ===============
  */
 
-const PROM_API_BASE_URL = process.env.PROM_API_BASE_URL || 'https://my.prom.ua/api/v1'
-const PROM_API_KEY = process.env.PROM_API_KEY
 
-if (!PROM_API_KEY) {
-  throw new Error('PROM_API_KEY (or PROM_API_TOKEN) environment variable is required')
-}
+const PROM_API_BASE_URL = config.marketplaces.prom.baseUrl
+const PROM_API_KEY = config.marketplaces.prom.apiKey
 
-//const baseUrl = 'https://my.prom.ua/api/v1/products'
 const getHeaders = () => ({
   Accept: 'application/json',
   'X-LANGUAGE': 'uk',

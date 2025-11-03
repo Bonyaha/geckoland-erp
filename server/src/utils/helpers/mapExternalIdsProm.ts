@@ -1,16 +1,22 @@
 import * as fs from 'fs/promises'
+import * as path from 'path'
 
 async function updateProductsExternalIds() {
   try {
     // Read products.json
-    const productsData = await fs.readFile('prisma/data/products.json', 'utf-8')
+    const productsDataPath = path.join(
+      __dirname,
+      '../../../prisma/data/products.json'
+    )
+    const productsData = await fs.readFile(productsDataPath, 'utf-8')
     let products = JSON.parse(productsData)
 
     // Read promProducts.json
-    const promProductsData = await fs.readFile(
-      'prisma/data/promProducts.json',
-      'utf-8'
+    const promDataPath = path.join(
+      __dirname,
+      '../../../prisma/data/promProducts.json'
     )
+    const promProductsData = await fs.readFile(promDataPath, 'utf-8')
     const promProducts = JSON.parse(promProductsData)
 
     // Create a map for quick lookup: uniqueProductKey -> productId
@@ -43,10 +49,7 @@ async function updateProductsExternalIds() {
     })
 
     // Write the updated products back to the file
-    await fs.writeFile(
-      'prisma/data/products.json',
-      JSON.stringify(products, null, 2)
-    )
+    await fs.writeFile(productsDataPath, JSON.stringify(products, null, 2))
 
     console.log('Products external IDs updated successfully!')
     console.log(`Total products processed: ${products.length}`)
@@ -64,10 +67,11 @@ async function updateProductsExternalIds() {
 */
 
 export async function enrichWithPromIds(products: any[]) {
-  const promProductsData = await fs.readFile(
-    'prisma/data/promProducts.json',
-    'utf-8'
-  )
+ const promDataPath = path.join(
+   __dirname,
+   '../../../prisma/data/promProducts.json'
+ )
+  const promProductsData = await fs.readFile(promDataPath, 'utf-8')
   const promProducts = JSON.parse(promProductsData)
 
   const promProductsMap = new Map<string, string[]>()

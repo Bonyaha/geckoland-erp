@@ -2,7 +2,7 @@ import prisma from "../../src/config/database";
 import fs from "fs";
 import path from "path";
 
-const dataDirectory = path.join(__dirname, 'data')
+const dataDirectory = path.join(__dirname, '..', 'data')
 const filePath = path.join(dataDirectory, 'backup.json')
 const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
 

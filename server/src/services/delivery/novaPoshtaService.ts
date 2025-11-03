@@ -1,10 +1,9 @@
 import axios from 'axios';
-import * as dotenv from 'dotenv';
+import { config } from '../../config/environment';
 
-dotenv.config();
 
-const NOVA_POSHTA_API_URL = 'https://api.novaposhta.ua/v2.0/json/';
-const NOVA_POSHTA_API_KEY = process.env.NOVA_POSHTA_API_KEY;
+const NOVA_POSHTA_API_URL = config.shipping.novaPoshta.baseUrl;
+const NOVA_POSHTA_API_KEY = config.shipping.novaPoshta.apiKey;
 
 if (!NOVA_POSHTA_API_KEY) {
   console.warn('⚠️ NOVA_POSHTA_API_KEY is not set in environment variables');

@@ -1,9 +1,7 @@
 import axios from 'axios'
 import * as fs from 'fs/promises'
-import * as dotenv from 'dotenv'
+import {config} from '../../config/environment'
 import prisma, { Source } from '../../config/database'
-
-dotenv.config()
 
 /* 
   ------------------------------------------------------------------ 
@@ -11,8 +9,7 @@ dotenv.config()
   ------------------------------------------------------------------
 */
 export async function fetchCRMProducts() {
-  const apiKey = process.env.HUGEPROFIT_API_KEY
-  if (!apiKey) throw new Error('HUGEPROFIT_API_KEY is not defined in .env')
+  const { apiKey } = config.marketplaces.hugeprofit
 
   const baseUrl = 'https://h-profit.com/bapi/products'
   const headers = { Authorization: `${apiKey}` }

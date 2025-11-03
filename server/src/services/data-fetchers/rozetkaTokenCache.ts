@@ -1,6 +1,7 @@
 import axios from 'axios'
 import fs from 'fs'
 import path from 'path'
+import { config } from '../../config/environment'
 
 interface TokenCache {
   token: string | null
@@ -58,10 +59,7 @@ class RozetkaTokenManager {
 
   private async fetchNewToken(): Promise<string> {
     const tokenUrl = 'https://api-seller.rozetka.com.ua/sites'
-    const credentials = {
-      username: process.env.ROZETKA_API_USERNAME,
-      password: process.env.ROZETKA_API_PASSWORD,
-    }
+    const credentials = config.marketplaces.rozetka
 
     console.log('🔑 Fetching new Rozetka access token...')
 

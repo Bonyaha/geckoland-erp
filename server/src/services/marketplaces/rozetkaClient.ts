@@ -1,42 +1,8 @@
 //server/src/services/marketplaces/rozetkaClient.ts
 import axios from 'axios'
-import * as dotenv from 'dotenv'
+import {config} from '../../config/environment'
 import { rozetkaTokenManager } from '../data-fetchers/rozetkaTokenCache'
 
-dotenv.config()
-
-async function fetchRozetkaAccessToken(): Promise<string> {
-  const tokenUrl = 'https://api-seller.rozetka.com.ua/sites'
-  const credentials = {
-    username: process.env.ROZETKA_API_USERNAME,
-    password: process.env.ROZETKA_API_PASSWORD,
-  }
-  console.log('username', credentials.username)
-  console.log('password', credentials.password)
-
-  try {
-    console.log('🔑 Fetching Rozetka access token...')
-
-    const response = await axios.post(tokenUrl, credentials, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-
-    const {
-      content: { access_token },
-    } = response.data
-
-    console.log('✅ Rozetka access token fetched successfully')
-    return access_token
-  } catch (error: any) {
-    console.error(
-      '❌ Error fetching Rozetka access token:',
-      error.response?.data || error.message
-    )
-    throw new Error(`Failed to get access token: ${error.message}`)
-  }
-}
 
 /**
  * ============ PRODUCT LOGIC ===============
@@ -221,7 +187,7 @@ export const updateRozetkaPriceAndQuantity = async (
 async function fetchRozetkaProduct() {
   try {
     // Step 1: Get access token
-    const accessToken = await fetchRozetkaAccessToken()
+    const accessToken = await rozetkaTokenManager.getValidToken()
 
     // Step 2: Fetch product using the token
     const product = await getProductQuantity('498694064', accessToken)
