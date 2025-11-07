@@ -1,7 +1,6 @@
 import { Request, Response } from 'express'
 import prisma from '../../config/database'
 
-
 export const getExpensesByCategory = async (
   req: Request,
   res: Response

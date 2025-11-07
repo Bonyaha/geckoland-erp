@@ -1,4 +1,4 @@
-//server\src\services\gmailService.ts
+//server/src/services/auth/gmailService.ts
 //Gmail OAuth2 Authentication Helper
 /* This module handles the entire authentication flow for accessing the Gmail API from a server-side Node.js app using Google's OAuth2. */
 //Authorization was at 22.09
@@ -303,8 +303,13 @@ export async function startGmailWatch() {
     console.log('⏰ Watch expires:', expirationDate.toLocaleString())
 
     return res.data
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Failed to start Gmail watch:', error)
+
+    // Transform to business error if needed
+    if (error.code === 401) {
+      throw new Error('Gmail authorization expired. Please re-authenticate.')
+    }
     throw error
   }
 }

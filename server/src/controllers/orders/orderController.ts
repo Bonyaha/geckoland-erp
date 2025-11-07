@@ -1,4 +1,4 @@
-// server/src/controllers/orderController.ts
+// server/src/controllers/orders/orderController.ts
 import { Request, Response } from 'express'
 import OrderService from '../../services/orders/orderService'
 import { Source } from '@prisma/client'
@@ -35,12 +35,14 @@ export const fetchNewPromOrders = async (req: Request, res: Response) => {
   }
 }
 
-
 /**
  * Create new manual order from frontend (CRM)
  * @route POST /api/orders/create-crm
  */
-export const createCRMOrder = async (req: Request, res: Response): Promise<void> => {
+export const createCRMOrder = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const orderData = req.body
     if (!orderData || Object.keys(orderData).length === 0) {
@@ -85,7 +87,6 @@ export const updateOrder = async (req: Request, res: Response) => {
     })
   }
 }
-
 
 /**
  * Get orders with filtering and pagination
@@ -200,4 +201,3 @@ export const checkForNewOrders = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to check for new orders' })
   }
 }
-
