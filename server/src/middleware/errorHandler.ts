@@ -1,3 +1,4 @@
+//server/src/middleware/errorHandler.ts
 import { Request, Response, NextFunction } from 'express'
 import { config } from '../config/environment'
 import { Prisma } from '../config/database'

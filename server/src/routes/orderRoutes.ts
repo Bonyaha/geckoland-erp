@@ -9,7 +9,6 @@ import {
   updateOrder,
   checkForNewOrders,
 } from '../controllers/orders/orderController'
-import { manualCheckForNewOrders } from '../controllers/notifications/notificationController'
 import { asyncHandler } from '../middleware/asyncHandler'
 
 const router = Router()
@@ -26,8 +25,8 @@ router.post('/fetch/prom', asyncHandler(fetchNewPromOrders))
 // POST /orders/sync - Manual sync orders from marketplaces
 router.post('/sync', asyncHandler(syncOrders))
 
-// POST /orders/manual-check - Manual check for new orders
-router.post('/manual-check', asyncHandler(manualCheckForNewOrders))
+// POST /orders/check-new - Manual check for new orders
+router.post('/check-new', asyncHandler(checkForNewOrders))
 
 // POST /api/orders/create-crm - Create manual order from frontend
 router.post('/create-crm', asyncHandler(createCRMOrder))
@@ -35,6 +34,5 @@ router.post('/create-crm', asyncHandler(createCRMOrder))
 // PATCH /orders/:orderId - Update an existing order
 router.patch('/:orderId', asyncHandler(updateOrder))
 
-router.post('/check-new', asyncHandler(checkForNewOrders))
 
 export default router

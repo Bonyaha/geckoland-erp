@@ -4,15 +4,26 @@ import {
   createProduct,
   getProducts,
   updateProduct,
+  syncNewProductsFromMarketplaces,
 } from '../controllers/products/productController'
+import { asyncHandler } from '../middleware/asyncHandler'
 
 const router = Router()
 
-router.get('/', getProducts)
-router.post('/', createProduct)
-router.patch('/:productId', updateProduct)
-router.put('/:productId', updateProduct)
+router.get('/', asyncHandler(getProducts))
+router.post('/', asyncHandler(createProduct))
+router.patch('/:productId', asyncHandler(updateProduct))
+router.put('/:productId', asyncHandler(updateProduct))
 
+router.post(
+  '/sync/marketplaces',
+  asyncHandler(async (req, res) => {
+    const result = await syncNewProductsFromMarketplaces()
+    // 207 if partial errors, 200 if full success
+    const statusCode = result.success ? 200 : 207
+    return res.status(statusCode).json(result)
+  })
+)
 export default router
 
 /**

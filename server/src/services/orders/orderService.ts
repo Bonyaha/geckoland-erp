@@ -1,11 +1,11 @@
 // server\src\services\orders\orderService.ts
-import prisma, { Source,Prisma } from '../../config/database'
+import prisma, { Source, Prisma } from '../../config/database'
 import { Decimal } from '@prisma/client/runtime/library'
 import { PromClient, type PromOrder } from '../marketplaces/promClient'
 import { RozetkaClient, type RozetkaOrder } from '../marketplaces/rozetkaClient'
 import { nanoid } from 'nanoid'
 //import { syncAfterOrder } from '../marketplaces/sync/marketplaceSyncService'
-
+import { ErrorFactory, AppError } from '../../middleware/errorHandler'
 
 class OrderService {
   private promClient: PromClient
@@ -21,18 +21,22 @@ class OrderService {
    */
   private parsePrice(priceStr: string | undefined): Decimal {
     if (!priceStr) return new Decimal(0)
-    const cleanPrice = priceStr.replace(/[^\d.,]/g, '')
-    const lastCommaIndex = cleanPrice.lastIndexOf(',')
-    const lastDotIndex = cleanPrice.lastIndexOf('.')
+    try {
+      const cleanPrice = priceStr.replace(/[^\d.,]/g, '')
+      const lastCommaIndex = cleanPrice.lastIndexOf(',')
+      const lastDotIndex = cleanPrice.lastIndexOf('.')
 
-    let normalized: string
-    if (lastCommaIndex > lastDotIndex) {
-      normalized = cleanPrice.replace(/\./g, '').replace(',', '.')
-    } else {
-      normalized = cleanPrice.replace(/,/g, '')
+      let normalized: string
+      if (lastCommaIndex > lastDotIndex) {
+        normalized = cleanPrice.replace(/\./g, '').replace(',', '.')
+      } else {
+        normalized = cleanPrice.replace(/,/g, '')
+      }
+
+      return new Decimal(normalized)
+    } catch (error) {
+      throw ErrorFactory.validationError(`Invalid price format: ${priceStr}`)
     }
-
-    return new Decimal(normalized)
   }
 
   /**
@@ -116,6 +120,9 @@ class OrderService {
     const orderId = `prom_${promOrder.id}_${nanoid(8)}`
 
     try {
+      if (!promOrder.id)
+        throw ErrorFactory.validationError('Missing Prom order ID')
+
       // Parse financial data
       const totalAmount = this.parsePrice(promOrder.price)
       const deliveryCost = promOrder.delivery_cost || 0
@@ -236,25 +243,27 @@ class OrderService {
       )
 
       // Prepare orderedProducts for sync
-      const orderedProducts = order.orderItems.map((item) => ({
+      /*const orderedProducts = order.orderItems.map((item) => ({
         productId: item.sku || item.externalProductId,
         orderedQuantity: item.quantity,
       }))
 
-      try {
-        /* await syncAfterOrder(orderedProducts, 'prom')  //for now disable automatic sync
-        console.log(`✅ Synced inventory after Prom order ${orderId}`) */
+      //for now disable automatic sync
+     try {
+         await syncAfterOrder(orderedProducts, 'prom')  
+        console.log(`✅ Synced inventory after Prom order ${orderId}`)
       } catch (syncError) {
         console.error(
           `❌ Failed to sync inventory for order ${orderId}:`,
           syncError
         )
-      }
+      } */
 
       return orderId
     } catch (error) {
       console.error(`Error creating order from Prom data:`, error)
-      throw error
+      if (error instanceof AppError) throw error
+      throw ErrorFactory.internal('Failed to create Prom order')
     }
   }
 
@@ -265,6 +274,9 @@ class OrderService {
     const orderId = `rozetka_${rozetkaOrder.id}_${nanoid(8)}`
 
     try {
+      if (!rozetkaOrder.id)
+        throw ErrorFactory.validationError('Missing Rozetka order ID')
+
       // Parse financial data - Rozetka returns strings
       const totalAmount = this.parsePrice(rozetkaOrder.cost)
       const totalAmountWithDiscount = rozetkaOrder.cost_with_discount
@@ -389,25 +401,26 @@ class OrderService {
       )
 
       // Prepare orderedProducts for sync
-      const orderedProducts = order.orderItems.map((item) => ({
+      /* const orderedProducts = order.orderItems.map((item) => ({
         productId: item.sku || item.externalProductId,
         orderedQuantity: item.quantity,
       }))
 
-      try {
-        /*   await syncAfterOrder(orderedProducts, 'rozetka')
-        console.log(`✅ Synced inventory after Rozetka order ${orderId}`) */
+       try {
+          await syncAfterOrder(orderedProducts, 'rozetka')
+        console.log(`✅ Synced inventory after Rozetka order ${orderId}`) 
       } catch (syncError) {
         console.error(
           `❌ Failed to sync inventory for order ${orderId}:`,
           syncError
         )
-      }
+      }*/
 
       return orderId
-    } catch (error) {
-      console.error(`Error creating order from Rozetka data:`, error)
-      throw error
+    } catch (error: any) {
+      console.error('Error creating order from Rozetka data:', error)
+      if (error instanceof AppError) throw error
+      throw ErrorFactory.internal('Failed to create Rozetka order')
     }
   }
 
@@ -443,7 +456,9 @@ class OrderService {
       } = frontendOrderData
 
       if (!items || !Array.isArray(items) || items.length === 0) {
-        throw new Error('Order must contain at least one item')
+        throw ErrorFactory.validationError(
+          'Order must contain at least one item'
+        )
       }
 
       // 1. Build the order data
@@ -533,25 +548,26 @@ class OrderService {
         `Created CRM order ${orderId} with ${order.orderItems.length} items`
       )
       // Prepare orderedProducts for sync
-      const orderedProducts = order.orderItems.map((item) => ({
+      /* const orderedProducts = order.orderItems.map((item) => ({
         productId: item.sku || item.externalProductId,
         orderedQuantity: item.quantity,
       }))
 
       try {
-        /*  await syncAfterOrder(orderedProducts, 'сrm')
-        console.log(`✅ Synced inventory after Rozetka order ${orderId}`) */
+          await syncAfterOrder(orderedProducts, 'сrm')
+        console.log(`✅ Synced inventory after Rozetka order ${orderId}`) 
       } catch (syncError) {
         console.error(
           `❌ Failed to sync inventory for order ${orderId}:`,
           syncError
         )
-      }
+      }*/
 
       return orderId
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating CRM order:', error)
-      throw error
+      if (error instanceof AppError) throw error
+      throw ErrorFactory.internal('Failed to create CRM order')
     }
   }
 
@@ -593,8 +609,16 @@ class OrderService {
 
           await this.createOrderFromProm(promOrder)
           created++
-        } catch (error) {
-          console.error(`Failed to create order ${promOrder.id}:`, error)
+        } catch (error: any) {
+          // Preserve known errors but don’t stop the loop
+          if (error instanceof AppError) {
+            console.error(
+              `⚠️ Skipped Prom order ${promOrder.id} due to AppError:`,
+              error.message
+            )
+          } else {
+            console.error(`Failed to create Prom order ${promOrder.id}:`, error)
+          }
           errors++
         }
       }
@@ -603,9 +627,10 @@ class OrderService {
         `Prom orders processing complete: ${created} created, ${skipped} skipped, ${errors} errors`
       )
       return { created, skipped, errors }
-    } catch (error) {
+    } catch (error: any) {
+      if (error instanceof AppError) throw error
       console.error('Error fetching new orders from Prom:', error)
-      throw error
+      throw ErrorFactory.internal('Failed to fetch new Prom orders')
     }
   }
 
@@ -650,11 +675,18 @@ class OrderService {
 
           await this.createOrderFromRozetka(rozetkaOrder)
           created++
-        } catch (error) {
-          console.error(
-            `Failed to create Rozetka order ${rozetkaOrder.id}:`,
-            error
-          )
+        } catch (error: any) {
+          if (error instanceof AppError) {
+            console.error(
+              `⚠️ Skipped Rozetka order ${rozetkaOrder.id} due to AppError:`,
+              error.message
+            )
+          } else {
+            console.error(
+              `❌ Failed to create Rozetka order ${rozetkaOrder.id}:`,
+              error
+            )
+          }
           errors++
         }
       }
@@ -663,9 +695,10 @@ class OrderService {
         `Rozetka orders processing complete: ${created} created, ${skipped} skipped, ${errors} errors`
       )
       return { created, skipped, errors }
-    } catch (error) {
-      console.error('Error fetching new orders from Rozetka:', error)
-      throw error
+    } catch (error: any) {
+      if (error instanceof AppError) throw error
+      console.error(' Error fetching new orders from Rozetka:', error)
+      throw ErrorFactory.internal('Failed to fetch new Rozetka orders')
     }
   }
 
@@ -673,10 +706,12 @@ class OrderService {
    * Get order by ID
    */
   async getOrderById(orderId: string) {
-    return prisma.orders.findUnique({
+    const order = await prisma.orders.findUnique({
       where: { orderId },
       include: { orderItems: true },
     })
+    if (!order) throw ErrorFactory.notFound(`Order ${orderId} not found`)
+    return order
   }
 
   /**
@@ -691,6 +726,8 @@ class OrderService {
     } = {}
   ) {
     const { page = 1, limit = 50, source, status } = params
+    if (page < 1 || limit < 1)
+      throw ErrorFactory.validationError('Invalid pagination parameters')
     const skip = (page - 1) * limit
 
     const where: any = {}
@@ -723,11 +760,17 @@ class OrderService {
    */
 
   async updateOrder(orderId: string, updates: Prisma.OrdersUpdateInput) {
-    return prisma.orders.update({
-      where: { orderId },
-      data: updates,
-      include: { orderItems: true },
-    })
+    try {
+      return await prisma.orders.update({
+        where: { orderId },
+        data: updates,
+        include: { orderItems: true },
+      })
+    } catch (error: any) {
+      if (error.code === 'P2025')
+        throw ErrorFactory.notFound(`Order ${orderId} not found`)
+      throw ErrorFactory.internal('Failed to update order')
+    }
   }
 
   /**
@@ -755,8 +798,7 @@ class OrderService {
       console.log('Manual order check completed:', summary.totals)
       return summary
     } catch (error) {
-      console.error('Error during manual order check:', error)
-      throw error
+      throw ErrorFactory.internal('Manual order check failed')
     }
   }
 }

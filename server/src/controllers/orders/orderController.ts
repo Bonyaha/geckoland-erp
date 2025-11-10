@@ -1,7 +1,8 @@
 // server/src/controllers/orders/orderController.ts
 import { Request, Response } from 'express'
 import OrderService from '../../services/orders/orderService'
-import { Source } from '@prisma/client'
+import { Source } from '../../config/database'
+import { ErrorFactory } from '../../middleware/errorHandler'
 
 const orderService = new OrderService()
 
@@ -9,30 +10,20 @@ const orderService = new OrderService()
  * Fetch new orders from Prom marketplace and create them in database
  */
 export const fetchNewPromOrders = async (req: Request, res: Response) => {
-  try {
-    console.log('Received request to fetch new Prom orders')
+  console.log('Received request to fetch new Prom orders')
 
-    const result = await orderService.fetchAndCreateNewPromOrders()
+  const result = await orderService.fetchAndCreateNewPromOrders()
 
-    // Adjust response based on errors
-    const hasErrors = result.errors > 0
+  // Adjust response based on errors
+  const hasErrors = result.errors > 0
 
-    res.status(hasErrors ? 207 : 200).json({
-      success: !hasErrors,
-      message: hasErrors
-        ? `Processed Prom orders with ${result.errors} errors`
-        : 'Successfully processed all Prom orders',
-      data: result,
-    })
-  } catch (error: any) {
-    console.error('Error in fetchNewPromOrders controller:', error)
-
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch new Prom orders',
-      error: error.message,
-    })
-  }
+  res.status(hasErrors ? 207 : 200).json({
+    success: !hasErrors,
+    message: hasErrors
+      ? `Processed Prom orders with ${result.errors} errors`
+      : 'Successfully processed all Prom orders',
+    data: result,
+  })
 }
 
 /**
@@ -43,81 +34,70 @@ export const createCRMOrder = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  try {
-    const orderData = req.body
-    if (!orderData || Object.keys(orderData).length === 0) {
-      res.status(400).json({ error: 'Order data is required' })
-      return
-    }
+  const orderData = req.body
 
-    const orderId = await orderService.createOrderFromCRM(orderData)
-
-    res.status(201).json({
-      message: 'CRM order created successfully',
-      orderId,
-    })
-  } catch (error: any) {
-    console.error('❌ Error creating CRM order:', error)
-    res.status(500).json({
-      error: 'Failed to create CRM order',
-      details: error.message,
-    })
+  if (!orderData || Object.keys(orderData).length === 0) {
+    throw ErrorFactory.badRequest('Order data is required')
   }
+
+  const orderId = await orderService.createOrderFromCRM(orderData)
+
+  if (!orderId) {
+    // preserve custom error message
+    throw ErrorFactory.internal('Failed to create CRM order')
+  }
+  res.status(201).json({
+    message: 'CRM order created successfully',
+    orderId,
+  })
 }
 
 /** Update order by ID
  */
 
 export const updateOrder = async (req: Request, res: Response) => {
-  try {
-    const { orderId } = req.params
-    const updates = req.body
+  const { orderId } = req.params
+  const updates = req.body
 
-    const updatedOrder = await orderService.updateOrder(orderId, updates)
-
-    res.status(200).json({
-      success: true,
-      data: updatedOrder,
-    })
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update order',
-      error: error.message,
-    })
+  if (!orderId) {
+    throw ErrorFactory.badRequest('Order ID is required')
   }
+
+  const updatedOrder = await orderService.updateOrder(orderId, updates)
+
+  if (!updatedOrder) {
+    throw ErrorFactory.notFound(`Order with ID ${orderId} not found`)
+  }
+
+  res.status(200).json({
+    success: true,
+    data: updatedOrder,
+  })
 }
 
 /**
  * Get orders with filtering and pagination
  */
 export const getOrders = async (req: Request, res: Response) => {
-  try {
-    const { page, limit, source, status } = req.query
+  const { page, limit, source, status } = req.query
 
-    const params: any = {}
-    if (page) params.page = parseInt(page as string)
-    if (limit) params.limit = parseInt(limit as string)
-    if (source && (source === 'prom' || source === 'rozetka')) {
-      params.source = source as Source
-    }
-    if (status) params.status = status as string
-
-    const result = await orderService.getOrders(params)
-
-    res.status(200).json({
-      success: true,
-      data: result,
-    })
-  } catch (error: any) {
-    console.error('Error in getOrders controller:', error)
-
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch orders',
-      error: error.message,
-    })
+  const params: any = {}
+  if (page) params.page = parseInt(page as string)
+  if (limit) params.limit = parseInt(limit as string)
+  if (source && (source === 'prom' || source === 'rozetka')) {
+    params.source = source as Source
   }
+  if (status) params.status = status as string
+
+  const result = await orderService.getOrders(params)
+  if (!result) {
+    throw ErrorFactory.internal('Failed to fetch orders')
+  }
+
+  res.status(200).json({
+    success: true,
+    data: result,
+  })
 }
 
 /**
@@ -127,32 +107,21 @@ export const getOrderById = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  try {
-    const { orderId } = req.params
-
-    const order = await orderService.getOrderById(orderId)
-
-    if (!order) {
-      res.status(404).json({
-        success: false,
-        message: 'Order not found',
-      })
-      return
-    }
-
-    res.status(200).json({
-      success: true,
-      data: order,
-    })
-  } catch (error: any) {
-    console.error('Error in getOrderById controller:', error)
-
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch order',
-      error: error.message,
-    })
+  const { orderId } = req.params
+  if (!orderId) {
+    throw ErrorFactory.badRequest('Order ID is required')
   }
+
+  const order = await orderService.getOrderById(orderId)
+
+  if (!order) {
+    throw ErrorFactory.notFound(`Order with ID ${orderId} not found`)
+  }
+
+  res.status(200).json({
+    success: true,
+    data: order,
+  })
 }
 
 /**
@@ -162,42 +131,30 @@ export const syncOrders = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  try {
-    const { marketplace } = req.body
-
-    let result
-
-    if (!marketplace || marketplace === 'prom') {
-      result = await orderService.fetchAndCreateNewPromOrders()
-    } else {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid marketplace. Currently only "prom" is supported.',
-      })
-      return
-    }
-
-    res.status(200).json({
-      success: true,
-      message: `Successfully synced orders from ${marketplace || 'prom'}`,
-      data: result,
-    })
-  } catch (error: any) {
-    console.error('Error in syncOrders controller:', error)
-
-    res.status(500).json({
-      success: false,
-      message: 'Failed to sync orders',
-      error: error.message,
-    })
+  const { marketplace } = req.body
+  if (marketplace && marketplace !== 'prom') {
+    throw ErrorFactory.badRequest(
+      'Invalid marketplace. Currently only "prom" is supported.'
+    )
   }
+
+  const result = await orderService.fetchAndCreateNewPromOrders()
+
+  if (!result) {
+    throw ErrorFactory.internal('Failed to sync orders')
+  }
+
+  res.status(200).json({
+    success: true,
+    message: `Successfully synced orders from ${marketplace || 'prom'}`,
+    data: result,
+  })
 }
 
 export const checkForNewOrders = async (req: Request, res: Response) => {
-  try {
-    const summary = await orderService.manualCheckForNewOrders()
-    res.json(summary)
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to check for new orders' })
+  const summary = await orderService.manualCheckForNewOrders()
+  if (!summary) {
+    throw ErrorFactory.internal('Failed to check for new orders')
   }
+  res.status(200).json(summary)
 }
