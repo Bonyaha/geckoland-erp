@@ -3,6 +3,7 @@ import { z } from 'zod'
 // Import the enum directly from the generated Prisma client
 import { Source } from '@prisma/client'
 
+// --- CREATE PRODUCT SCHEMA ---
 export const createProductSchema = z.object({
   // --- Required Fields (per Prisma schema) ---
   productId: z.string().min(1, 'productId is required'),
@@ -57,40 +58,51 @@ export const createProductSchema = z.object({
   costPrice: z.number().nonnegative().nullable().optional(),
 })
 
+export type CreateProductInput = z.infer<typeof createProductSchema>
+
+// --- GET PRODUCTS QUERY SCHEMA ---
 // This defines the *expected shape* of the req.query object
 export const getProductsQuerySchema = z.object({
   search: z.string().optional(), // 'search' must be a string, if it exists
-});
-// This exports a TypeScript type based on the schema
-export type CreateProductInput = z.infer<typeof createProductSchema>
-
-// --- Schema for Single Update ---
-
-const productUpdateParamsSchema = z.object({
-  quantity: z.number().nonnegative().optional(),
-  price: z.number().nonnegative().optional(),
 })
-.strict() // Fails if other properties (e.g., "name") are passed
-.refine(
-  data => Object.keys(data).length > 0, // Must have at least one key
-  { message: 'No valid update parameters provided' }
-);
+// This exports a TypeScript type based on the schema
+
+
+// --- UPDATE SCHEMAS ---
+
+const productUpdateParamsSchema = z
+  .object({
+    quantity: z.number().nonnegative().optional(),
+    price: z.number().nonnegative().optional(),
+  })
+  .strict() // Fails if other properties (e.g., "name") are passed
+  .refine(
+    (data) => Object.keys(data).length > 0, // Must have at least one key
+    { message: 'No valid update parameters provided' }
+  )
+
+// Single update: separate params and body schemas for clarity
+const updateProductParamsSchema = z.object({
+  productId: z.string().min(1, 'productId is required in params'),
+})
+
+const updateProductBodySchema = z
+  .object({
+    targetMarketplace: z.enum(['prom', 'rozetka', 'all']).optional(),
+  })
+  .extend(productUpdateParamsSchema.shape)
 
 export const updateSingleProductSchema = z.object({
-  params: z.object({
-    productId: z.string().min(1, 'productId is required in params'),
-  }),
-  body: z.object({
-    targetMarketplace: z.enum(['prom', 'rozetka', 'all']).optional(),
-  }).extend(productUpdateParamsSchema.shape), // Use extend with the other schema's shape
-});
+  params: updateProductParamsSchema,
+  body: updateProductBodySchema,
+})
 
 // --- Schema for Batch Update ---
 
 const batchProductUpdateSchema = z.object({
   productId: z.string().min(1, 'productId is required'),
   updates: productUpdateParamsSchema, // Re-use the update schema
-});
+})
 
 export const updateBatchProductSchema = z.object({
   body: z.object({
@@ -99,4 +111,7 @@ export const updateBatchProductSchema = z.object({
       .array(batchProductUpdateSchema)
       .min(1, 'products array is required and must not be empty'),
   }),
-});
+})
+
+// Export individual schemas for route-level validation
+export { updateProductParamsSchema, updateProductBodySchema }
