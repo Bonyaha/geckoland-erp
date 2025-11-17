@@ -215,7 +215,7 @@ export const updateProduct = async (
 }
 
 export const syncNewProductsFromMarketplaces = async (
-  _req: Request,
+  req: Request,
   res: Response
 ): Promise<void> => {
   const result = await productService.syncNewProductsFromMarketplaces()
