@@ -68,41 +68,37 @@ export const validate = <Schema extends ZodType<RequestValidation, any, any>>(
  * Common validation schemas that can be reused across routes
  */
 export const commonSchemas = {
-  /**
-   * Validates MongoDB-style IDs (24 hex characters)
-   */
+  // Validate MongoDB-style ID
   mongoId: (fieldName = 'id') =>
     z.object({
       [fieldName]: z
         .string()
         .regex(/^[a-f\d]{24}$/i, `Invalid ${fieldName} format`),
     }),
-
-  /**
-   * Validates pagination parameters
-   */
-  pagination: {
-    page: z
-      .string()
-      .optional()
-      .transform((val: string | undefined) => (val ? parseInt(val, 10) : 1))
-      .refine((val) => val > 0, 'Page must be greater than 0'),
-    limit: z
-      .string()
-      .optional()
-      .transform((val: string | undefined) => (val ? parseInt(val, 10) : 10))
-      .refine(
-        (val) => val > 0 && val <= 100,
-        'Limit must be between 1 and 100'
-      ),
-  },
-
+  // Validate UUID
+  uuid: z.object({
+    id: z.string().uuid('Invalid UUID format'),
+  }),
+  // Pagination query params
+  pagination: z.object({
+    page: z.coerce.number().int().positive().default(1),
+    limit: z.coerce.number().int().positive().max(100).default(20),
+  }),
+  // Search query params
+  search: z.object({
+    q: z.string().min(1).optional(),
+  }),
   /**
    * Validates sort parameters
    */
   sort: z.object({
     sortBy: z.string().optional(),
     sortOrder: z.enum(['asc', 'desc']).optional().default('asc'),
+  }),
+  // Date range query params
+  dateRange: z.object({
+    startDate: z.coerce.date().optional(),
+    endDate: z.coerce.date().optional(),
   }),
 }
 
