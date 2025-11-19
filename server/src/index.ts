@@ -6,7 +6,7 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 import cron from 'node-cron'
 import { config } from './config/environment'
-import { restartGmailWatch } from './services/auth/gmailService'
+import { restartGmailWatch } from './services/gmail/gmailService'
 import routes from './routes/index'
 
 /* ROUTE IMPORTS */

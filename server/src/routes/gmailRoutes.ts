@@ -7,7 +7,7 @@ import {
   startGmailWatch,
   stopGmailWatch,
   restartGmailWatch,
-} from '../services/auth/gmailService'
+} from '../services/gmail/gmailService'
 import { asyncHandler } from '../middleware/asyncHandler'
 
 const router = Router()
