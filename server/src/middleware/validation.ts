@@ -1,139 +1,69 @@
 // server/src/middleware/validation.ts
 import { Request, Response, NextFunction } from 'express'
-import { z, ZodError } from 'zod'
+import { z, ZodType, ZodError } from 'zod'
 import { ErrorFactory } from './errorHandler'
 
-/**
- * Validation targets - which part of the request to validate
- */
-type ValidationTarget = 'body' | 'query' | 'params' | 'combined'
 
-/**
- * Options for the validation middleware
- */
-interface ValidationOptions {
-  /**
-   * Which part of the request to validate
-   * - 'body': Validate req.body
-   * - 'query': Validate req.query
-   * - 'params': Validate req.params
-   * - 'combined': Validate { body, query, params } together
-   */
-  target?: ValidationTarget
-
-  /**
-   * Whether to strip unknown keys from the validated data
-   */
-  stripUnknown?: boolean
+interface RequestValidation {
+  body?: any
+  query?: any
+  params?: any
 }
-
 /**
  * Generic validation middleware that works with any Zod schema
  *
- * @param schema - The Zod schema to validate against
- * @param options - Validation options (target, stripUnknown)
- * @returns Express middleware function
+ * It validates the request against a schema that describes the expected structure of { body, query, params }.
  *
  * @example
- * // Validate request body
- * router.post('/products', validate(createProductSchema), asyncHandler(createProduct))
+ * // In my schema file:
+ * const mySchema = z.object({
+ * body: z.object({ name: z.string() }),
+ * query: z.object({ sort: z.string() })
+ * })
  *
- * @example
- * // Validate query parameters
- * router.get('/products', validate(getProductsQuerySchema, { target: 'query' }), asyncHandler(getProducts))
- *
- * @example
- * // Validate both params and body together
- * router.patch('/products/:productId', validate(updateSingleProductSchema, { target: 'combined' }), asyncHandler(updateProduct))
+ * // In a route:
+ * router.post('/', validate(mySchema), controller)
  */
-export const validate =<
-  Schema extends z.ZodType<any, any, any>
-> (
-  schema: Schema,
-  options: ValidationOptions = {}
-) => {
-  const { target = 'body', stripUnknown = true } = options
 
+// We constrain the generic: The Output (first arg) must extend RequestValidation
+export const validate = <Schema extends ZodType<RequestValidation, any, any>>(
+  schema: Schema
+) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Determine what data to validate based on target
-      let dataToValidate: any
+      // 1. Validate the entire request structure against the schema
+      // Zod will strip unknown keys (like 'query' if your schema only has 'body')
+      const parsed = await schema.parseAsync({
+        body: req.body,
+        query: req.query,
+        params: req.params,
+      })
 
-      switch (target) {
-        case 'body':
-          dataToValidate = req.body
-          break
-        case 'query':
-          dataToValidate = req.query
-          break
-        case 'params':
-          dataToValidate = req.params
-          break
-        case 'combined':
-          dataToValidate = {
-            body: req.body,
-            query: req.query,
-            params: req.params,
-          }
-          break
-        default:
-          throw new Error(`Invalid validation target: ${target}`)
-      }
+      // 2. Replace request data with the validated/transformed data
+      // We only assign back what was present in the schema result
+      if (parsed.body) req.body = parsed.body
+      if (parsed.query) req.query = parsed.query
+      if (parsed.params) req.params = parsed.params
 
-      // Validate and parse the data
-      const validatedData = await schema.parseAsync(dataToValidate)
-
-      // Replace the original data with validated data
-      switch (target) {
-        case 'body':
-          req.body = validatedData
-          break
-        case 'query':
-          req.query = validatedData as any
-          break
-        case 'params':
-          req.params = validatedData as any
-          break
-        case 'combined':
-          // For combined validation, spread the validated data back
-          const combinedData = validatedData as {
-            body?: any
-            query?: any
-            params?: any
-          }
-          req.body = combinedData.body ?? req.body
-          req.query = combinedData.query ?? req.query
-          req.params = combinedData.params ?? req.params
-          break
-      }
-
-      next()
+      return next()
     } catch (error) {
-      // Handle Zod validation errors
       if (error instanceof ZodError) {
-        // Format Zod errors into a user-friendly structure
         const formattedErrors = error.issues.map((err) => ({
           field: err.path.join('.'),
           message: err.message,
           code: err.code,
         }))
 
-        // Create a validation error with formatted details
         const validationError =
           ErrorFactory.validationError('Validation failed')
-
-        // Attach formatted errors to the error object
         ;(validationError as any).details = formattedErrors
 
-        next(validationError)
-      } else {
-        // Handle other errors
-        next(error)
+        return next(validationError)
       }
+      return next(error)
     }
   }
 }
-
 /**
  * Common validation schemas that can be reused across routes
  */

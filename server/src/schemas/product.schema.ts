@@ -1,10 +1,9 @@
 // server/src/schemas/product.schema.ts
 import { z } from 'zod'
-// Import the enum directly from the generated Prisma client
-import { Source } from '@prisma/client'
+import { Source } from '../config/database'
 
 // --- CREATE PRODUCT SCHEMA ---
-export const createProductSchema = z.object({
+export const createProductBodySchema = z.object({
   // --- Required Fields (per Prisma schema) ---
   productId: z.string().min(1, 'productId is required'),
   name: z.string().min(1, 'name is required'),
@@ -58,14 +57,21 @@ export const createProductSchema = z.object({
   costPrice: z.number().nonnegative().nullable().optional(),
 })
 
-export type CreateProductInput = z.infer<typeof createProductSchema>
+// Type for the Service (inferred from the body definition)
+export type CreateProductInput = z.infer<typeof createProductBodySchema>
+
+// Schema for the Route (wraps the body)
+export const createProductSchema = z.object({
+  body: createProductBodySchema,
+})
 
 // --- GET PRODUCTS QUERY SCHEMA ---
 // This defines the *expected shape* of the req.query object
 export const getProductsQuerySchema = z.object({
-  search: z.string().optional(), // 'search' must be a string, if it exists
+  query: z.object({
+    search: z.string().optional(), // 'search' must be a string, if it exists
+  }),
 })
-// This exports a TypeScript type based on the schema
 
 
 // --- UPDATE SCHEMAS ---

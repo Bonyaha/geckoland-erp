@@ -3,17 +3,33 @@ import { Router } from 'express'
 import {
   createProduct,
   getProducts,
-  updateProduct,
+  updateSingleProduct,
+  updateBatchProducts,
   syncNewProductsFromMarketplaces,
 } from '../controllers/products/productController'
 import { asyncHandler } from '../middleware/asyncHandler'
+import { validate } from '../middleware/validation'
+import {
+  getProductsQuerySchema,
+  createProductSchema,
+  updateSingleProductSchema,
+  updateBatchProductSchema,
+} from '../schemas/product.schema'
 
 const router = Router()
 
-router.get('/', asyncHandler(getProducts))
-router.post('/', asyncHandler(createProduct))
-router.patch('/:productId', asyncHandler(updateProduct))
-router.put('/:productId', asyncHandler(updateProduct))
+router.get('/', validate(getProductsQuerySchema), asyncHandler(getProducts))
+router.post('/', validate(createProductSchema), asyncHandler(createProduct))
+router.patch(
+  '/:productId',
+  validate(updateSingleProductSchema),
+  asyncHandler(updateSingleProduct)
+)
+router.patch(
+  '/batch',
+  validate(updateBatchProductSchema),
+  asyncHandler(updateBatchProducts)
+)
 
 router.post('/sync/marketplaces', asyncHandler(syncNewProductsFromMarketplaces))
 export default router
