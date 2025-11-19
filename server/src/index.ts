@@ -8,29 +8,36 @@ import cron from 'node-cron'
 import { config } from './config/environment'
 import { restartGmailWatch } from './services/gmail/gmailService'
 import routes from './routes/index'
+import { errorHandler, notFoundHandler, requestLogger } from './middleware'
 
-/* ROUTE IMPORTS */
-import dashboardRoutes from './routes/dashboardRoutes'
-import productRoutes from './routes/productRoutes'
-import userRoutes from './routes/userRoutes'
-import expenseRoutes from './routes/expenseRoutes'
-import notificationRoutes from './routes/notificationRoutes'
-import authRoutes from './routes/gmailRoutes'
-import orderRoutes from './routes/orderRoutes'
-import trackingRoutes from './routes/trackingRoutes'
 
 /* CONFIGURATIONS */
 const app = express()
+
+/* MIDDLEWARE */
+// Security & parsing
 app.use(express.json())
 app.use(helmet())
 app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' }))
-app.use(morgan('common'))
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(cors())
 
+
+// Logging
+app.use(morgan('common'));
+app.use(requestLogger); // Custom enhanced logging
+
 /* ROUTES */
 app.use('/', routes) // Mount all routes through central router
+
+
+/* ERROR HANDLING */
+// 404 handler (must be after all routes)
+app.use(notFoundHandler);
+
+// Global error handler (must be last)
+app.use(errorHandler);
 
 /* GMAIL WATCH RENEWAL SCHEDULER */
 // This schedule runs at 2:00 AM every day. This doesn't handle authentication - it only renews the Gmail watch subscription (which expires every 7 days).

@@ -1,5 +1,5 @@
 export { asyncHandler } from './asyncHandler'
-/* export {
+export {
   errorHandler,
   notFoundHandler,
   AppError,
@@ -12,4 +12,4 @@ export {
   authorize,
   optionalAuth,
   AuthenticatedRequest,
-} from './auth' */
+} from './auth'

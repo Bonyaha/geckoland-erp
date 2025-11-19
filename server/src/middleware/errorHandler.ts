@@ -58,7 +58,7 @@ export const errorHandler = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): void => {
   // Default to 500 server error
   let statusCode = 500
   let message = 'Internal Server Error'
@@ -120,7 +120,7 @@ export const errorHandler = (
     }
     //We send the response immediately for Zod errors because
     //Zod errors are fully self-contained and don’t need any shared logic (like logging, fallback formatting, or operational flags).
-    return res.status(statusCode).json(errorResponse)
+    res.status(statusCode).json(errorResponse)
   }
 
   // Handle custom AppError
