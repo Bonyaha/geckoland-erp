@@ -4,9 +4,11 @@ import productRoutes from './productRoutes'
 import userRoutes from './userRoutes'
 import expenseRoutes from './expenseRoutes'
 import notificationRoutes from './notificationRoutes'
+import gmailRoutes from './gmailRoutes'
 import authRoutes from './authRoutes'
 import orderRoutes from './orderRoutes'
 import trackingRoutes from './trackingRoutes'
+import { gmail } from 'googleapis/build/src/apis/gmail'
 
 const router = Router()
 
@@ -34,6 +36,7 @@ router.get('/', (req, res) => {
       users: '/api/users',
       expenses: '/api/expenses',
       notifications: '/api/notifications',
+      gmail: '/api/gmail',
       auth: '/api/auth',
       orders: '/api/orders',
       tracking: '/api/tracking',
@@ -49,10 +52,10 @@ router.use('/api/products', productRoutes)
 router.use('/api/users', userRoutes)
 router.use('/api/expenses', expenseRoutes)
 router.use('/api/notifications', notificationRoutes)
+router.use('/api/gmail', gmailRoutes)
 router.use('/api/auth', authRoutes)
 router.use('/api/orders', orderRoutes)
 router.use('/api/tracking', trackingRoutes)
-
 
 /**
  * 404 handler for undefined routes
@@ -67,6 +70,7 @@ router.use('*', (req, res) => {
       '/api/users',
       '/api/expenses',
       '/api/notifications',
+      '/api/gmail',
       '/api/auth',
       '/api/orders',
       '/api/tracking',

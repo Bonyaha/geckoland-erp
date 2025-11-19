@@ -1,71 +1,20 @@
-// src/routes/authRoutes.ts
-
-import { Router, Request, Response } from 'express'
-import {
-  getAuthUrl,
-  saveToken,
-  startGmailWatch,
-  stopGmailWatch,
-  restartGmailWatch,
-} from '../services/auth/gmailService'
+import { Router } from 'express'
 import { asyncHandler } from '../middleware/asyncHandler'
+import { validate } from '../middleware/validation'
+import { loginSchema, registerSchema } from '../schemas/auth.schema'
+import * as authController from '../controllers/auth/authController'
 
 const router = Router()
 
-// Step 1: Get the authorization URL
-router.get(
-  '/gmail/auth',
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const authUrl = await getAuthUrl()
-    res.json({ authUrl })
-  })
-)
+// POST /api/auth/login
+router.post('/login', validate(loginSchema), asyncHandler(authController.login))
 
-// Step 2: Handle the callback with the authorization code
+// POST /api/auth/register
+// (You can remove this later if you want to disable public registration)
 router.post(
-  '/gmail/callback',
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { code } = req.body
-    if (!code) {
-      res.status(400).json({ error: 'Authorization code is required' })
-      return
-    }
-
-    const client = await saveToken(code)
-    res.json({
-      message: 'Authorization successful',
-      clientId: client.credentials.access_token ? 'Set' : 'Not set',
-    })
-  })
-)
-
-// Stop Gmail watch
-router.post(
-  '/gmail/stop-watch',
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    await stopGmailWatch()
-    res.json({ message: 'Gmail watch stopped successfully' })
-  })
-)
-
-// Restart Gmail watch
-router.post(
-  '/gmail/restart-watch',
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const watchData = await restartGmailWatch()
-    res.json({
-      message: 'Gmail watch restarted successfully',
-      data: watchData,
-    })
-  })
-)
-// Step 3: Start Gmail watch (call this after authorization is complete)
-router.post(
-  '/gmail/start-watch',
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const watchData = await startGmailWatch()
-    res.json({ message: 'Gmail watch started successfully', data: watchData })
-  })
+  '/register',
+  validate(registerSchema),
+  asyncHandler(authController.register)
 )
 
 export default router

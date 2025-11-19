@@ -1,3 +1,4 @@
+// server/src/config/environment.ts
 import { config as loadEnv } from 'dotenv'
 import { z } from 'zod'
 import path from 'path'
@@ -54,6 +55,9 @@ const envSchema = z.looseObject({
   GMAIL_REDIRECT_URI: z.url({
     message: 'GMAIL_REDIRECT_URI must be a valid URL',
   }),
+
+  // JWT Configuration
+  JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),
 })
 
 const envResult = envSchema.safeParse(process.env)
@@ -100,6 +104,10 @@ export const config = {
   },
   database: {
     url: env.DATABASE_URL,
+  },
+  jwt: {
+    secret: env.JWT_SECRET,
+    expiresIn: '7d', // Optional: define a standard expiration time
   },
   marketplaces: {
     prom: {

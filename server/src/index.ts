@@ -15,7 +15,7 @@ import productRoutes from './routes/productRoutes'
 import userRoutes from './routes/userRoutes'
 import expenseRoutes from './routes/expenseRoutes'
 import notificationRoutes from './routes/notificationRoutes'
-import authRoutes from './routes/authRoutes'
+import authRoutes from './routes/gmailRoutes'
 import orderRoutes from './routes/orderRoutes'
 import trackingRoutes from './routes/trackingRoutes'
 
@@ -30,7 +30,7 @@ app.use(bodyParser.urlencoded({ extended: false }))
 app.use(cors())
 
 /* ROUTES */
-app.use('/', routes); // Mount all routes through central router
+app.use('/', routes) // Mount all routes through central router
 
 /* GMAIL WATCH RENEWAL SCHEDULER */
 // This schedule runs at 2:00 AM every day. This doesn't handle authentication - it only renews the Gmail watch subscription (which expires every 7 days).
@@ -59,7 +59,7 @@ cron.schedule('0 2 * * *', () => {
 const port = config.app.port
 app.listen(port, '0.0.0.0', () => {
   console.log(`Server running on port ${port}`)
-console.log(`📍 Environment: ${config.app.env}`)
+  console.log(`📍 Environment: ${config.app.env}`)
 
   // Also trigger a restart on server startup
   console.log('Attempting to start/restart Gmail watch on server startup...')
