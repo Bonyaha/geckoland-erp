@@ -1,7 +1,7 @@
 // server/src/controllers/products/productController.ts
 import { Request, Response } from 'express'
 import productService from '../../services/products/productService'
-
+import { BatchUpdateInput } from '../../types/marketplaces'
 
 export const getProducts = async (
   req: Request,
@@ -28,12 +28,11 @@ export const updateBatchProducts = async (
   res: Response
 ): Promise<void> => {
   // Middleware guarantees req.body matches updateBatchProductSchema
-  const { products, targetMarketplace } = req.body
+  // validation.ts ensures req.body matches the schema
+  // We cast it to our strict type for IntelliSense
+  const input = req.body as BatchUpdateInput
 
-  const result = await productService.updateBatchProducts({
-    products,
-    targetMarketplace,
-  })
+  const result = await productService.updateBatchProducts(input)
 
   const statusCode = result.success ? 200 : 207
   res.status(statusCode).json(result)

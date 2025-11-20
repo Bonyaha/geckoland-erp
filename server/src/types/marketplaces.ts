@@ -15,11 +15,7 @@
 /**
  * Supported marketplace sources
  */
-export enum MarketplaceSource {
-  PROM = 'prom',
-  ROZETKA = 'rozetka',
-  CRM = 'crm',
-}
+export type TargetMarketplace = 'prom' | 'rozetka' | 'all'
 
 /**
  * Generic update parameters for marketplace products
@@ -35,7 +31,7 @@ export interface BaseProductUpdateParams {
  * Matches 'updateBatchProductSchema' body
  */
 export interface BatchUpdateInput {
-  targetMarketplace?: MarketplaceSource
+  targetMarketplace?: TargetMarketplace
   products: Array<{
     productId: string
     updates: BaseProductUpdateParams
