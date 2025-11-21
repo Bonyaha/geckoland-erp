@@ -39,19 +39,6 @@ export interface BatchUpdateInput {
 }
 
 /**
- * Marketplace sync status tracking
- */
-export interface MarketplaceSyncStatus {
-  promSynced: boolean
-  rozetkaSynced: boolean
-}
-
-/**
- * Synchronization strategy options
- */
-export type SyncStrategy = 'same_quantity' | 'different_quantity'
-
-/**
  * Marketplace update result for error tracking
  */
 export interface MarketplaceUpdateResult {
@@ -70,7 +57,7 @@ export interface ProductExternalIds {
     rz_item_id?: string
     item_id?: string
   }
-  // Add other marketplaces here in the future (e.g., hugeprofit)
+  // Add other marketplaces here in the future
 }
 
 // ============================================
@@ -165,6 +152,14 @@ export interface PromOrderItem {
   cpa_commission?: {
     amount: string
   }
+}
+
+/**
+ * Batch product update for Prom
+ */
+export interface PromBatchUpdate {
+  productId: string
+  updates: PromUpdateParams
 }
 
 // ============================================
@@ -358,24 +353,47 @@ export interface RozetkaOrderItem {
   is_smart?: boolean
 }
 
-// ============================================
-// SYNC HELPER TYPES
-// ============================================
-
-/**
- * Batch product update for Prom
- */
-export interface PromBatchUpdate {
-  productId: string
-  updates: PromUpdateParams
-}
-
 /**
  * Batch product update for Rozetka
  */
 export interface RozetkaBatchUpdate {
   productId: string
   updates: RozetkaUpdateParams
+}
+
+// ============================================
+// SYNC ENGINE TYPES
+// ============================================
+
+/**
+ * Represents the complex state object used during 
+ * marketplace synchronization in `syncMarketplaces.ts`
+ */
+export interface ProductSyncEntry {
+  productId: string
+  
+  // Snapshot of app product fields
+  stockQuantity: number
+  promQuantity?: number | null
+  rozetkaQuantity?: number | null
+  
+  // Strictly typed external IDs
+  externalIds?: ProductExternalIds
+
+  // Deltas calculated from incoming feeds or orders
+  promQuantityDelta?: number
+  rozetkaQuantityDelta?: number
+  masterQuantityDelta: number
+
+  // Final quantities to be written to DB/API
+  newPromQuantity?: number
+  newRozetkaQuantity?: number
+  newMasterQuantity?: number
+
+  // Logic flags
+  needsPromSync: boolean
+  needsRozetkaSync: boolean
+  syncStrategy: SyncStrategy
 }
 
 /**
@@ -393,9 +411,14 @@ export interface MarketplaceUpdateOptions {
 }
 
 /**
- * Tracking data for order synchronization
+ * Marketplace sync status tracking
  */
-export interface OrderSyncTracking {
-  productId: string
-  orderedQuantity: number
+export interface MarketplaceSyncStatus {
+  promSynced: boolean
+  rozetkaSynced: boolean
 }
+
+/**
+ * Synchronization strategy options
+ */
+export type SyncStrategy = 'same_quantity' | 'different_quantity'

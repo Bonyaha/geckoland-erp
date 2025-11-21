@@ -2,7 +2,7 @@
 import axios from 'axios'
 import {config} from '../../config/environment'
 import { rozetkaTokenManager } from '../data-fetchers/rozetkaTokenCache'
-
+import type { RozetkaUpdateParams,RozetkaProductUpdate,RozetkaOrder,RozetkaOrderItem,RozetkaOrdersResponse } from '../../types/marketplaces'
 
 /**
  * ============ PRODUCT LOGIC ===============
@@ -44,20 +44,6 @@ export const getProductQuantity = async (
     )
     throw new Error(`Failed to get product quantity: ${error.message}`)
   }
-}
-
-export interface RozetkaUpdateParams {
-  quantity?: number
-  price?: number
-  // Add more fields as needed in the future
-  // isIgnoreCheck?: boolean
-}
-
-interface RozetkaProductUpdate {
-  item_id: number
-  stock_quantity?: number
-  price?: number
-  // Add more fields as needed
 }
 
 // Function to update a single Rozetka product
@@ -204,182 +190,6 @@ async function fetchRozetkaProduct() {
  * ============ ORDERS LOGIC ===============
  */
 
-interface RozetkaOrdersResponse {
-  success: boolean
-  content: {
-    orders: RozetkaOrder[] // Note: it's "orders", not "items"
-    _meta: {
-      totalCount: number
-      pageCount: number
-      currentPage: number
-      perPage: number
-    }
-    totalFields?: {
-      amount: string
-      amount_with_discount: string
-      cost: string
-      cost_with_discount: string
-    }
-  }
-}
-
-interface RozetkaOrder {
-  id: number
-  created: string // Date string format: "2019-07-25 11:49:32"
-  changed: string // Date string format: "2019-12-17 17:34:58"
-  amount: string // String format: "640.00"
-  amount_with_discount?: string // String format: "640.00"
-  cost: string // String format: "640.00"
-  cost_with_discount?: string // String format: "640.00"
-  status: number // Status ID
-  status_group: number
-  user_phone: string
-  comment?: string // User comment
-  seller_comment?: any[] // Array of seller comments
-  seller_comment_created?: string
-  current_seller_comment?: string
-  ttn?: string
-  total_quantity: number
-  is_viewed: boolean
-  is_fulfillment?: boolean
-  is_delivery_edit_available?: boolean
-  is_reserve_ending?: boolean
-  can_copy?: boolean
-  created_type?: number
-  callback_off?: number
-  duplicate_order_id?: number
-
-  // Expanded fields (when using expand parameter)
-  user?: {
-    id: number
-    has_email: boolean
-    contact_fio: string // Full name: "Василенко Василь"
-    email: string | boolean // Can be "true" or actual email
-  }
-
-  delivery?: {
-    delivery_service_id: number
-    delivery_service_name: string
-    recipient_title?: string
-    recipient_first_name?: string
-    recipient_last_name?: string
-    recipient_second_name?: string
-    recipient_phone?: string
-    place_id?: number
-    place_street?: string
-    place_number?: string
-    place_house?: string
-    place_flat?: string
-    cost?: string | null
-    reserve_date?: string
-    city?: {
-      id: number
-      name: string
-      name_ua: string
-      region_title: string
-      title: string
-      status: number
-    }
-    delivery_method_id?: number
-    ref_id?: string
-    name_logo?: string
-    email?: string | null
-  }
-
-  purchases: RozetkaOrderItem[]
-
-  status_data?: {
-    id: number
-    name: string
-    name_uk: string
-    name_en: string
-    status_group: number
-    status: number
-    color: string
-  }
-
-  payment?: {
-    payment_method_id: number
-    payment_method_name: string
-    payment_type: string
-    payment_type_title: string
-    payment_status: any
-    credit: any
-  }
-
-  payment_method_id?: number
-  payment_type?: string // "cash"
-  payment_type_title?: string // "Готівкова"
-  payment_type_name?: string // "Оплата під час отримання товару"
-
-  // Additional optional fields
-  items_photos?: Array<{
-    id: number
-    url: string
-    item_url: string
-    item_name: string
-  }>
-
-  chatUser?: any
-  chatMessages?: any[]
-  order_status_history?: any[]
-  status_available?: any[]
-  feedback?: any[]
-  feedback_count?: number
-  is_promo?: boolean
-  market_review?: any
-  last_update_status?: string
-  delivery_commission_info?: any
-  count_buyers_orders?: number
-  rz_delivery_ttn_sender?: any
-  has_kit?: boolean
-  is_smart?: boolean
-  carrier?: any
-}
-
-interface RozetkaOrderItem {
-  id: number // Purchase ID
-  cost: string // String format: "640.00"
-  cost_with_discount?: string
-  price: string // String format: "640.00"
-  price_with_discount?: string
-  quantity: number
-  item_id: number // Product ID
-  item_name: string
-
-  item?: {
-    id: number
-    name: string
-    name_ua?: string | null
-    article?: string // SKU equivalent
-    price_offer_id?: string
-    price: string
-    catalog_category?: {
-      id: number
-      name: string
-      parent_id: number
-    }
-    catalog_id?: number
-    group_id?: number | null
-    photo_preview?: string
-    photo?: string[]
-    moderation_status?: number
-    sla_id?: number
-    url?: string
-    sold?: number
-    uploader_offer_id?: string
-    uploader_status?: any
-  }
-
-  kit_id?: number
-  conf_details?: any
-  ttn?: string | null
-  order_status?: any
-  status?: number
-  is_additional_item?: boolean
-  is_smart?: boolean
-}
-
 export class RozetkaClient {
   private baseUrl: string
 
@@ -491,7 +301,7 @@ function handleAxiosError(error: any, context: string): never {
   }
 }
 
-export type { RozetkaOrder, RozetkaOrderItem }
+export type { RozetkaOrder, RozetkaOrderItem, RozetkaUpdateParams }
 
 /* updateRozetkaProduct('110365589', {
   price: 4340,

@@ -17,7 +17,7 @@ import {
 } from '../rozetkaClient'
 import {
   normalizeQuantity} from './marketplaceSyncHelpers'
-
+import type { ProductSyncEntry } from '../../../types/marketplaces'
 
 // Update quantities for all products in app's database
 const updateAllMarketplaceQuantities = async () => {
@@ -147,37 +147,9 @@ const syncMarketplaces = async () => {
   // Fetch external products
   const promProducts = await fetchPromProducts()
   console.log(`Fetched ${promProducts.length} Prom products`)
+  
 
-  // Define the correct type for the Map value
-  type ProductUpdateEntry = {
-    productId: string
-    // snapshot of app product fields to avoid re-fetching
-    stockQuantity: number
-    promQuantity?: number | null
-    rozetkaQuantity?: number | null
-    externalIds?: {
-      prom?: string
-      rozetka?: { rz_item_id?: string; item_id?: string }
-    }
-
-    // deltas from feeds (optional, kept because you rely on them)
-    promQuantityDelta?: number
-    rozetkaQuantityDelta?: number
-
-    // accumulative change to the master stock
-    masterQuantityDelta: number
-
-    // final quantities we will write
-    newPromQuantity?: number
-    newRozetkaQuantity?: number
-    newMasterQuantity?: number
-
-    needsPromSync: boolean
-    needsRozetkaSync: boolean
-    syncStrategy: 'same_quantity' | 'different_quantity'
-  }
-
-  const productsToUpdate = new Map<string, ProductUpdateEntry>()
+  const productsToUpdate = new Map<string, ProductSyncEntry>()
 
   //
   // 1) Process Prom feed -> build/augment productsToUpdate
@@ -213,7 +185,7 @@ const syncMarketplaces = async () => {
         rozetka?: { rz_item_id?: string; item_id?: string }
       } | null
 
-      const entry: ProductUpdateEntry = existing ?? {
+      const entry: ProductSyncEntry = existing ?? {
         productId: appProduct.productId,
         stockQuantity: appProduct.stockQuantity,
         promQuantity: appProduct.promQuantity ?? null,
@@ -294,7 +266,7 @@ const syncMarketplaces = async () => {
         rozetka?: { rz_item_id?: string; item_id?: string }
       } | null
 
-      const entry: ProductUpdateEntry = existing ?? {
+      const entry: ProductSyncEntry = existing ?? {
         productId: appProduct.productId,
         stockQuantity: appProduct.stockQuantity,
         promQuantity: appProduct.promQuantity ?? null,

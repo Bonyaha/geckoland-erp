@@ -2,7 +2,7 @@
 import prisma from '../../../config/database'
 import { fetchPromProducts } from '../../data-fetchers/fetchPromProducts'
 import { fetchRozetkaProducts } from '../../data-fetchers/fetchRozetkaProducts'
-
+import type { MarketplaceUpdateOptions,MarketplaceSyncStatus } from '../../../types/marketplaces'
 
 // Utility function to normalize quantity
 // This ensures that null or undefined quantities are treated as 0
@@ -205,23 +205,6 @@ export async function syncRozetkaProductIds() {
   } finally {
     await prisma.$disconnect()
   }
-}
-
-
-type MarketplaceSyncStatus = {
-  promSynced: boolean
-  rozetkaSynced: boolean
-}
-
-interface MarketplaceUpdateOptions {
-  marketplaceName: 'Prom' | 'Rozetka'
-  productId?: string
-  count?: number
-  updateFunction: () => Promise<any>
-  onSuccess?: () => void
-  resultsArray: string[]
-  errorsArray: Array<{ marketplace: string; error: string }>
-  isBatch?: boolean
 }
 
 /**

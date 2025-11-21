@@ -1,0 +1,1 @@
+//server/src/types/products.ts

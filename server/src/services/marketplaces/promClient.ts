@@ -1,6 +1,7 @@
 //server\src\services\marketplaces\promClient.ts
 import axios from 'axios'
 import { config } from '../../config/environment'
+import type {PromUpdateParams,PromProductUpdate,PromOrder,PromOrderItem,PromOrdersResponse} from '../../types/marketplaces'
 
 /**
  * ============ CONFIG ===============
@@ -30,21 +31,6 @@ export const getProductQuantity = async (productId: string) => {
   return response.data.quantity // Adjust based on Prom’s actual response structure
 }
 
-export interface PromUpdateParams {
-  quantity?: number
-  price?: number
-  // Add more fields as needed in the future
-  // name?: string
-  // description?: string
-}
-
-interface PromProductUpdate {
-  id: number // Changed from string to number
-  price?: number
-  quantity_in_stock?: number
-  presence?: 'available' | 'not_available'
-  // Add more fields as needed
-}
 
 export const updatePromProduct = async (
   productId: string,
@@ -249,72 +235,6 @@ export const updateMultiplePromProducts = async (
  * ============ ORDERS LOGIC ===============
  */
 
-interface PromOrdersResponse {
-  orders: PromOrder[]
-}
-
-interface PromOrder {
-  id: number
-  date_created: string
-  date_modified?: string
-  client_id?: string
-  client_first_name: string
-  client_last_name: string
-  client_second_name?: string
-  phone: string
-  email?: string
-  delivery_recipient?: {
-    first_name?: string
-    last_name?: string
-    second_name?: string
-    phone?: string
-  }
-  delivery_option?: {
-    id: number
-    name: string
-  }
-  delivery_address?: string
-  delivery_cost?: number
-  delivery_provider_data?: any
-  payment_option?: {
-    id: number
-    name: string
-  }
-  payment_data?: any
-  price: string // comes as string from API
-  full_price?: string
-  status: string
-  status_name?: string
-  client_notes?: string
-  cpa_commission?: {
-    amount: string
-    is_refunded: boolean
-  }
-  prosale_commission?: {
-    value: number
-  }
-  utm?: any
-  source?: string
-  dont_call_customer_back?: boolean
-  products: PromOrderItem[]
-}
-
-interface PromOrderItem {
-  id: number
-  sku?: string
-  name: string
-  name_multilang?: any
-  image?: string
-  url?: string
-  quantity: number
-  price: string // comes as string from API
-  total_price: string // comes as string from API
-  measure_unit?: string
-  cpa_commission?: {
-    amount: string
-  }
-}
-
 export class PromClient {
   private baseUrl: string
   constructor() {
@@ -387,7 +307,13 @@ function handleAxiosError(error: any, context: string): never {
   }
 }
 
-export type { PromOrder, PromOrderItem }
+export type{
+  PromOrder,
+  PromOrderItem,
+  PromUpdateParams,
+  PromProductUpdate,
+  PromOrdersResponse,
+}
 
 // ============ TESTS / USAGE EXAMPLES ===============
 

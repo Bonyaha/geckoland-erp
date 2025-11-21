@@ -19,6 +19,7 @@ import {
 } from '../marketplaces/sync/marketplaceSyncHelpers'
 import { ErrorFactory } from '../../middleware/errorHandler'
 import { CreateProductInput } from '../../schemas/product.schema'
+import type { ProductExternalIds } from '../../types/marketplaces'
 
 type TargetMarketplace = 'prom' | 'rozetka' | 'all'
 
@@ -173,7 +174,7 @@ class ProductService {
     // Track which marketplaces were successfully synced
     const syncStatus = createMarketplaceSyncStatus()
 
-    const externalIds = currentProduct.externalIds as Record<string, any> | null
+    const externalIds = currentProduct.externalIds as ProductExternalIds | null
 
     // Prom update
     if (
@@ -201,7 +202,7 @@ class ProductService {
             marketplaceName: 'Prom',
             productId,
             updateFunction: () =>
-              updatePromProduct(externalIds.prom, promUpdates),
+              updatePromProduct(externalIds.prom!, promUpdates),
             onSuccess: () => (syncStatus.promSynced = true),
             resultsArray: syncResults,
             errorsArray: syncErrors,
@@ -235,7 +236,7 @@ class ProductService {
             marketplaceName: 'Rozetka',
             productId,
             updateFunction: () =>
-              updateRozetkaProduct(externalIds.rozetka.item_id, rozetkaUpdates),
+              updateRozetkaProduct(externalIds.rozetka!.item_id!, rozetkaUpdates),
             onSuccess: () => (syncStatus.rozetkaSynced = true),
             resultsArray: syncResults,
             errorsArray: syncErrors,
@@ -397,7 +398,7 @@ class ProductService {
       if (!original) continue
 
       const dbProduct = dbMap.get(productId)
-      const externalIds = dbProduct?.externalIds as Record<string, any> | null
+      const externalIds = dbProduct?.externalIds as ProductExternalIds | null
 
       // Collect Prom updates
       if (
@@ -540,7 +541,7 @@ class ProductService {
     const existingRozetkaItemIds = new Set<string>()
 
     existingProducts.forEach((product) => {
-      const externalIds = product.externalIds as any
+      const externalIds = product.externalIds as ProductExternalIds | null
 
       if (externalIds?.prom) {
         existingPromIds.add(externalIds.prom.toString())
