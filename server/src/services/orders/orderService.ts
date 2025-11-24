@@ -6,6 +6,14 @@ import { RozetkaClient, type RozetkaOrder } from '../marketplaces/rozetkaClient'
 import { nanoid } from 'nanoid'
 //import { syncAfterOrder } from '../marketplaces/sync/marketplaceSyncService'
 import { ErrorFactory, AppError } from '../../middleware/errorHandler'
+import {
+  OrderSyncResult,
+  OrderCheckSummary,
+  OrderFilterParams,
+  OrderQueryResult,
+  CRMOrderCreateInput,
+  NameParts,
+} from '../../types/orders'
 
 class OrderService {
   private promClient: PromClient
@@ -49,12 +57,9 @@ class OrderService {
     return digits.startsWith('380') ? `+${digits}` : `+${digits}`
   }
 
-  private normalizeFullName(
-    first?: string,
-    last?: string,
-    second?: string
-  ): string {
-    return [last, first, second].filter(Boolean).join(' ').trim()
+  private normalizeFullName(parts: NameParts): string {
+    const { firstName, lastName, secondName } = parts
+    return [lastName, firstName, secondName].filter(Boolean).join(' ').trim()
   }
 
   private normalizeSellerComments(comments: any): Prisma.InputJsonValue {
@@ -85,22 +90,22 @@ class OrderService {
       clientSecondName: data.clientSecondName || '',
       clientFullName:
         data.clientFullName ||
-        this.normalizeFullName(
-          data.clientFirstName ?? undefined,
-          data.clientLastName ?? undefined,
-          data.clientSecondName ?? undefined
-        ),
+        this.normalizeFullName({
+          firstName: data.clientFirstName ?? undefined,
+          lastName: data.clientLastName ?? undefined,
+          secondName: data.clientSecondName ?? undefined,
+        }),
 
       recipientFirstName: data.recipientFirstName || '',
       recipientLastName: data.recipientLastName || '',
       recipientSecondName: data.recipientSecondName || '',
       recipientFullName:
         data.recipientFullName ||
-        this.normalizeFullName(
-          data.recipientFirstName ?? undefined,
-          data.recipientLastName ?? undefined,
-          data.recipientSecondName ?? undefined
-        ),
+        this.normalizeFullName({
+          firstName: data.recipientFirstName ?? undefined,
+          lastName: data.recipientLastName ?? undefined,
+          secondName: data.recipientSecondName ?? undefined,
+        }),
 
       deliveryAddress: this.normalizeStringOrNull(data.deliveryAddress),
       deliveryCity: this.normalizeStringOrNull(data.deliveryCity),
@@ -428,7 +433,9 @@ class OrderService {
    * Function for creating new order in database from data, passed from frontend
    * This can be used for manual order creation or from other sources
    */
-  async createOrderFromCRM(frontendOrderData: any): Promise<string> {
+  async createOrderFromCRM(
+    frontendOrderData: CRMOrderCreateInput
+  ): Promise<string> {
     const orderId = `crm_${nanoid(8)}`
 
     try {
@@ -451,7 +458,7 @@ class OrderService {
         totalAmount,
         deliveryCost,
         notes,
-        status = 'NEW',
+        status = 'RECEIVED',
         currency = 'UAH',
       } = frontendOrderData
 
@@ -472,10 +479,10 @@ class OrderService {
         lastModified: new Date(),
 
         // Customer information
-        clientFirstName,
-        clientLastName,
-        clientSecondName,
-        clientPhone,
+        clientFirstName: clientFirstName || '',
+        clientLastName: clientLastName || '',
+        clientSecondName: clientSecondName || '',
+        clientPhone: clientPhone || '',
         clientEmail,
         clientFullName: `${clientLastName || ''} ${clientFirstName || ''} ${
           clientSecondName || ''
@@ -515,7 +522,7 @@ class OrderService {
 
         // Additional info
         clientNotes: notes || null,
-        rawOrderData: frontendOrderData as Prisma.InputJsonValue,
+        rawOrderData: frontendOrderData as unknown as Prisma.InputJsonValue,
 
         // Relations
         orderItems: {
@@ -574,11 +581,7 @@ class OrderService {
   /**
    * Fetch new orders from Prom and create them in database
    */
-  async fetchAndCreateNewPromOrders(): Promise<{
-    created: number
-    skipped: number
-    errors: number
-  }> {
+  async fetchAndCreateNewPromOrders(): Promise<OrderSyncResult> {
     console.log('Fetching new orders from Prom...')
 
     try {
@@ -637,11 +640,7 @@ class OrderService {
   /**
    * Fetch new orders from Rozetka and create them in database
    */
-  async fetchAndCreateNewRozetkaOrders(): Promise<{
-    created: number
-    skipped: number
-    errors: number
-  }> {
+  async fetchAndCreateNewRozetkaOrders(): Promise<OrderSyncResult> {
     console.log('Fetching new orders from Rozetka...')
 
     try {
@@ -717,14 +716,7 @@ class OrderService {
   /**
    * Get orders with pagination
    */
-  async getOrders(
-    params: {
-      page?: number
-      limit?: number
-      source?: Source
-      status?: string
-    } = {}
-  ) {
+  async getOrders(params: OrderFilterParams = {}): Promise<OrderQueryResult> {
     const { page = 1, limit = 50, source, status } = params
     if (page < 1 || limit < 1)
       throw ErrorFactory.validationError('Invalid pagination parameters')
@@ -777,7 +769,7 @@ class OrderService {
    * Manually triggers a check for new orders from all marketplaces.
    * This can be called from a frontend button.
    */
-  async manualCheckForNewOrders() {
+  async manualCheckForNewOrders(): Promise<OrderCheckSummary> {
     console.log('Manual check for new orders initiated...')
     try {
       const [promResult, rozetkaResult] = await Promise.all([

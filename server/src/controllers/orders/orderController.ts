@@ -3,16 +3,27 @@ import { Request, Response } from 'express'
 import OrderService from '../../services/orders/orderService'
 import { Source } from '../../config/database'
 import { ErrorFactory } from '../../middleware/errorHandler'
+import {
+  OrderSyncResult,
+  CRMOrderCreateInput,
+  OrderUpdateInput,
+  OrderFilterParams,
+  OrderCheckSummary,
+} from '../../types/orders'
 
 const orderService = new OrderService()
 
 /**
  * Fetch new orders from Prom marketplace and create them in database
  */
-export const fetchNewPromOrders = async (req: Request, res: Response) => {
+export const fetchNewPromOrders = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   console.log('Received request to fetch new Prom orders')
 
-  const result = await orderService.fetchAndCreateNewPromOrders()
+  const result: OrderSyncResult =
+    await orderService.fetchAndCreateNewPromOrders()
 
   // Adjust response based on errors
   const hasErrors = result.errors > 0
@@ -34,7 +45,7 @@ export const createCRMOrder = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const orderData = req.body
+  const orderData = req.body as CRMOrderCreateInput
 
   if (!orderData || Object.keys(orderData).length === 0) {
     throw ErrorFactory.badRequest('Order data is required')
@@ -55,9 +66,12 @@ export const createCRMOrder = async (
 /** Update order by ID
  */
 
-export const updateOrder = async (req: Request, res: Response) => {
+export const updateOrder = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   const { orderId } = req.params
-  const updates = req.body
+  const updates = req.body as OrderUpdateInput
 
   if (!orderId) {
     throw ErrorFactory.badRequest('Order ID is required')
@@ -78,10 +92,10 @@ export const updateOrder = async (req: Request, res: Response) => {
 /**
  * Get orders with filtering and pagination
  */
-export const getOrders = async (req: Request, res: Response) => {
+export const getOrders = async (req: Request, res: Response): Promise<void> => {
   const { page, limit, source, status } = req.query
 
-  const params: any = {}
+  const params: OrderFilterParams = {}
   if (page) params.page = parseInt(page as string)
   if (limit) params.limit = parseInt(limit as string)
   if (source && (source === 'prom' || source === 'rozetka')) {
@@ -151,8 +165,12 @@ export const syncOrders = async (
   })
 }
 
-export const checkForNewOrders = async (req: Request, res: Response) => {
-  const summary = await orderService.manualCheckForNewOrders()
+export const checkForNewOrders = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const summary: OrderCheckSummary =
+    await orderService.manualCheckForNewOrders()
   if (!summary) {
     throw ErrorFactory.internal('Failed to check for new orders')
   }
