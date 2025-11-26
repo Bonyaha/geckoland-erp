@@ -18,6 +18,7 @@ import {
   OrderDeliveryInfo,
   OrderPaymentInfo,
   OrderFinancialInfo,
+  OrderItemInput,
 } from '../../types/orders'
 
 class OrderService {
@@ -208,6 +209,25 @@ class OrderService {
         currency: 'UAH',
       }
       // 1. Build the raw order data
+      const orderItems: OrderItemInput[] =
+        promOrder.products?.map((item) => ({
+          orderItemId: `item_${promOrder.id}_${item.id}_${nanoid(6)}`,
+          externalProductId: item.id.toString(),
+          sku: item.sku,
+          productName: item.name,
+          productNameMultilang: item.name_multilang,
+          productImage: item.image,
+          productUrl: item.url,
+          quantity: item.quantity,
+          unitPrice: this.parsePrice(item.price),
+          totalPrice: this.parsePrice(item.total_price),
+          measureUnit: item.measure_unit,
+          cpaCommission: item.cpa_commission
+            ? parseFloat(item.cpa_commission.amount)
+            : null,
+          rawItemData: item as unknown as Prisma.InputJsonValue,
+        })) || []
+
       const orderData: Prisma.OrdersCreateInput = {
         orderId,
         externalOrderId: promOrder.id.toString(),
@@ -289,24 +309,7 @@ class OrderService {
 
         // Create order items
         orderItems: {
-          create:
-            promOrder.products?.map((item) => ({
-              orderItemId: `item_${promOrder.id}_${item.id}_${nanoid(6)}`,
-              externalProductId: item.id.toString(),
-              sku: item.sku,
-              productName: item.name,
-              productNameMultilang: item.name_multilang,
-              productImage: item.image,
-              productUrl: item.url,
-              quantity: item.quantity,
-              unitPrice: this.parsePrice(item.price),
-              totalPrice: this.parsePrice(item.total_price),
-              measureUnit: item.measure_unit,
-              cpaCommission: item.cpa_commission
-                ? parseFloat(item.cpa_commission.amount)
-                : null,
-              rawItemData: item as unknown as Prisma.InputJsonValue,
-            })) || [],
+          create: orderItems,
         },
       }
       // 2. Normalize before saving
@@ -323,7 +326,7 @@ class OrderService {
       )
 
       // Prepare orderedProducts for sync
-      /*const orderedProducts = order.orderItems.map((item) => ({
+      /*const orderedProducts: OrderItemForSync[] = order.orderItems.map((item) => ({
         productId: item.sku || item.externalProductId,
         orderedQuantity: item.quantity,
       }))
@@ -481,7 +484,7 @@ class OrderService {
       )
 
       // Prepare orderedProducts for sync
-      /* const orderedProducts = order.orderItems.map((item) => ({
+      /* const orderedProducts: OrderItemForSync[] = order.orderItems.map((item) => ({
         productId: item.sku || item.externalProductId,
         orderedQuantity: item.quantity,
       }))
@@ -630,7 +633,7 @@ class OrderService {
         `Created CRM order ${orderId} with ${order.orderItems.length} items`
       )
       // Prepare orderedProducts for sync
-      /* const orderedProducts = order.orderItems.map((item) => ({
+      /* const orderedProducts: OrderItemForSync[] = order.orderItems.map((item) => ({
         productId: item.sku || item.externalProductId,
         orderedQuantity: item.quantity,
       }))
