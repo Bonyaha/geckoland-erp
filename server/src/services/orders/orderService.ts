@@ -13,6 +13,11 @@ import {
   OrderQueryResult,
   CRMOrderCreateInput,
   NameParts,
+  OrderCustomerInfo,
+  OrderRecipientInfo,
+  OrderDeliveryInfo,
+  OrderPaymentInfo,
+  OrderFinancialInfo,
 } from '../../types/orders'
 
 class OrderService {
@@ -132,6 +137,76 @@ class OrderService {
       const totalAmount = this.parsePrice(promOrder.price)
       const deliveryCost = promOrder.delivery_cost || 0
 
+      // Customer information
+
+      const customerInfo: OrderCustomerInfo = {
+        clientId: promOrder.client_id?.toString(),
+
+        clientFirstName: promOrder.client_first_name,
+
+        clientLastName: promOrder.client_last_name,
+
+        clientSecondName: promOrder.client_second_name,
+
+        clientPhone: promOrder.phone,
+
+        clientEmail: promOrder.email,
+      }
+
+      // Delivery recipient (if different from client)
+
+      const recipientInfo: OrderRecipientInfo = {
+        recipientFirstName: promOrder.delivery_recipient?.first_name,
+
+        recipientLastName: promOrder.delivery_recipient?.last_name,
+
+        recipientSecondName: promOrder.delivery_recipient?.second_name,
+
+        recipientPhone: promOrder.delivery_recipient?.phone,
+      }
+
+      // Delivery information
+
+      const deliveryInfo: OrderDeliveryInfo = {
+        deliveryOptionId: promOrder.delivery_option?.id,
+
+        deliveryOptionName: promOrder.delivery_option?.name,
+
+        deliveryAddress: promOrder.delivery_address,
+
+        deliveryCity:
+          promOrder.delivery_provider_data?.recipient_address.city_name,
+
+        deliveryCost,
+
+        deliveryProviderData: promOrder.delivery_provider_data,
+
+        trackingNumber: promOrder.delivery_provider_data?.declaration_number,
+      }
+
+      // Payment information
+
+      const paymentInfo: OrderPaymentInfo = {
+        paymentOptionId: promOrder.payment_option?.id,
+
+        paymentOptionName: promOrder.payment_option?.name,
+
+        paymentData: promOrder.payment_data,
+
+        paymentStatus: promOrder.payment_data?.payment_status,
+      }
+
+      // Financial information
+
+      const financialInfo: OrderFinancialInfo = {
+        totalAmount,
+
+        fullPrice: promOrder.full_price
+          ? this.parsePrice(promOrder.full_price)
+          : null,
+
+        currency: 'UAH',
+      }
       // 1. Build the raw order data
       const orderData: Prisma.OrdersCreateInput = {
         orderId,
