@@ -2,14 +2,12 @@
 import prisma, { Prisma } from '../../config/database'
 import {
   updateRozetkaProduct,
-  updateMultipleRozetkaProducts,
-  type RozetkaUpdateParams,
+  updateMultipleRozetkaProducts
 } from '../marketplaces/rozetkaClient'
 import { fetchRozetkaProductsWithTransformation } from '../data-fetchers/fetchRozetkaProducts'
 import {
   updatePromProduct,
-  updateMultiplePromProducts,
-  type PromUpdateParams,
+  updateMultiplePromProducts
 } from '../marketplaces/promClient'
 import { fetchPromProductsWithTransformation } from '../data-fetchers/fetchPromProducts'
 import {
@@ -19,19 +17,22 @@ import {
 } from '../marketplaces/sync/marketplaceSyncHelpers'
 import { ErrorFactory } from '../../middleware/errorHandler'
 import { CreateProductInput } from '../../schemas/product.schema'
-import type { ProductExternalIds } from '../../types/marketplaces'
-
-type TargetMarketplace = 'prom' | 'rozetka' | 'all'
+import type {
+  ProductExternalIds,
+  TargetMarketplace,
+  MarketplaceUpdateResult,
+  BaseProductUpdateParams,
+  MarketplaceSyncStatus,
+  PromBatchUpdate,
+  RozetkaBatchUpdate,
+} from '../../types/marketplaces'
 
 /**
  * Defines allowed update parameters for a product. Currently quantity and price
  * are supported, but this interface can be extended if other fields need to
  * be updated through the API.
  */
-export interface ProductUpdateParams {
-  quantity?: number
-  price?: number
-}
+export interface ProductUpdateParams extends BaseProductUpdateParams {}
 /**
  * Batch update request structure for updating multiple products at once.
  */
@@ -40,14 +41,23 @@ export interface BatchProductUpdate {
   updates: ProductUpdateParams
 }
 
+/**
+ * Result returned from single product update operations.
+ * Indicates success/failure and which marketplaces were synced.
+ */
 export interface SingleUpdateResult {
   success: boolean
   message: string
   productId: string
   updates: ProductUpdateParams
   syncedMarketplaces: string[]
-  errors?: Array<{ marketplace: string; error: string }>
+  errors?: MarketplaceUpdateResult[]
 }
+
+/**
+ * Result returned from batch product update operations.
+ * Contains summary statistics and detailed product-level results.
+ */
 export interface BatchUpdateResult {
   success: boolean
   message: string
@@ -56,7 +66,7 @@ export interface BatchUpdateResult {
     successfulDatabaseUpdates: number
     failedDatabaseUpdates: number
     marketplacesSynced: string[]
-    marketplaceErrors?: Array<{ marketplace: string; error: string }>
+    marketplaceErrors?: MarketplaceUpdateResult[]
   }
   details: {
     successfulProducts: string[]
@@ -65,8 +75,8 @@ export interface BatchUpdateResult {
 }
 
 /**
- * Sync result returned when pulling new products from marketplaces. The
- * `success` flag is true only if no errors occurred during the sync; if any
+ * Sync result returned when pulling new products from marketplaces. The `success` flag is true only if no errors
+ * occurred during the sync; if any
  * errors occur the flag will be set to false.
  */
 export interface SyncResult {
@@ -77,7 +87,24 @@ export interface SyncResult {
   errors: string[]
 }
 
+/**
+ * Service class for product-related operations.
+ * Handles CRUD operations and marketplace synchronization.
+ */
 class ProductService {
+  /**
+   * Retrieves products from the database with optional search filtering.
+   *
+   * @param search - Optional search term to filter products by name
+   * @returns Array of products matching the search criteria
+   *
+   * @example
+   * // Get all products
+   * const allProducts = await productService.getProducts()
+   *
+   * // Search for specific products
+   * const results = await productService.getProducts('laptop')
+   */
   async getProducts(search?: string) {
     // Treat undefined OR "" as "no search"
     const hasSearch = search && search.length > 0
@@ -93,6 +120,23 @@ class ProductService {
     })
   }
 
+  /**
+   * Creates a new product in the database.
+   *
+   * @param productData - Product data matching the schema validation
+   * @returns The created product record
+   *
+   * @example
+   * const product = await productService.createProduct({
+   *   productId: 'prod_123',
+   *   name: 'Sample Product',
+   *   price: 299.99,
+   *   stockQuantity: 10,
+   *   available: true,
+   *   externalIds: { prom: '123' },
+   *   images: []
+   * })
+   */
   async createProduct(productData: CreateProductInput) {
     const product = await prisma.products.create({
       data: productData,
@@ -168,11 +212,11 @@ class ProductService {
 
     // Marketplace sync setup
     const syncResults: string[] = []
-    const syncErrors: Array<{ marketplace: string; error: string }> = []
+    const syncErrors: MarketplaceUpdateResult[] = []
     const syncPromises: Promise<any>[] = []
 
     // Track which marketplaces were successfully synced
-    const syncStatus = createMarketplaceSyncStatus()
+    const syncStatus: MarketplaceSyncStatus = createMarketplaceSyncStatus()
 
     const externalIds = currentProduct.externalIds as ProductExternalIds | null
 
@@ -192,7 +236,7 @@ class ProductService {
         }
         // Otherwise (targetMarketplace='all'), just skip it silently.
       } else {
-        const promUpdates: PromUpdateParams = {}
+        const promUpdates: ProductUpdateParams = {}
         if (updates.quantity !== undefined)
           promUpdates.quantity = updates.quantity
         if (updates.price !== undefined) promUpdates.price = updates.price
@@ -226,7 +270,7 @@ class ProductService {
         }
         // If target was 'all', we just silently skip it
       } else {
-        const rozetkaUpdates: RozetkaUpdateParams = {}
+        const rozetkaUpdates: ProductUpdateParams = {}
         if (updates.quantity !== undefined)
           rozetkaUpdates.quantity = updates.quantity
         if (updates.price !== undefined) rozetkaUpdates.price = updates.price
@@ -236,7 +280,10 @@ class ProductService {
             marketplaceName: 'Rozetka',
             productId,
             updateFunction: () =>
-              updateRozetkaProduct(externalIds.rozetka!.item_id!, rozetkaUpdates),
+              updateRozetkaProduct(
+                externalIds.rozetka!.item_id!,
+                rozetkaUpdates
+              ),
             onSuccess: () => (syncStatus.rozetkaSynced = true),
             resultsArray: syncResults,
             errorsArray: syncErrors,
@@ -305,6 +352,31 @@ class ProductService {
     }
   }
 
+  /**
+   * Updates multiple products in a single batch operation.
+   * More efficient than individual updates when changing many products.
+   *
+   * @param params - Batch update parameters including products array and target marketplace
+   * @returns Result object with summary statistics and detailed results
+   * @throws {Error} If validation fails
+   *
+   * @remarks
+   * - Validates all products before starting updates
+   * - If targeting specific marketplace, validates quantities don't exceed stock
+   * - Uses Prisma transactions for database updates
+   * - Uses marketplace batch APIs when available for efficiency
+   *
+   * @example
+   * const result = await productService.updateBatchProducts({
+   *   products: [
+   *     { productId: 'prod_1', updates: { quantity: 10 } },
+   *     { productId: 'prod_2', updates: { price: 199.99 } }
+   *   ],
+   *   targetMarketplace: 'all'
+   * })
+   *
+   * console.log(`Updated ${result.summary.successfulDatabaseUpdates} products`)
+   */
   async updateBatchProducts({
     products,
     targetMarketplace,
@@ -373,6 +445,7 @@ class ProductService {
     // Track DB update results
     const successfulUpdates: string[] = []
     const failedUpdates: Array<{ productId: string; error: string }> = []
+
     dbResults.forEach((result, index) =>
       result.status === 'fulfilled'
         ? successfulUpdates.push(products[index].productId)
@@ -385,12 +458,8 @@ class ProductService {
     )
 
     //Collect marketplace updates
-    const promUpdates: Array<{ productId: string; updates: PromUpdateParams }> =
-      []
-    const rozetkaUpdates: Array<{
-      productId: string
-      updates: RozetkaUpdateParams
-    }> = []
+    const promUpdates: PromBatchUpdate[] = []
+    const rozetkaUpdates: RozetkaBatchUpdate[] = []
 
     //❗❗❗Differ from productController.ts
     for (const productId of successfulUpdates) {
@@ -407,7 +476,7 @@ class ProductService {
           targetMarketplace === 'prom') &&
         externalIds?.prom
       ) {
-        const promParams: PromUpdateParams = {}
+        const promParams: ProductUpdateParams = {}
         if (original.updates.quantity !== undefined)
           promParams.quantity = original.updates.quantity
         if (original.updates.price !== undefined)
@@ -426,7 +495,7 @@ class ProductService {
           targetMarketplace === 'rozetka') &&
         externalIds?.rozetka?.item_id
       ) {
-        const rozetkaParams: RozetkaUpdateParams = {}
+        const rozetkaParams: ProductUpdateParams = {}
         if (original.updates.quantity !== undefined)
           rozetkaParams.quantity = original.updates.quantity
         if (original.updates.price !== undefined)
@@ -441,8 +510,8 @@ class ProductService {
 
     //Sync to marketplaces
     const syncResults: string[] = []
-    const syncErrors: Array<{ marketplace: string; error: string }> = []
-    const syncStatus = createMarketplaceSyncStatus()
+    const syncErrors: MarketplaceUpdateResult[] = []
+    const syncStatus: MarketplaceSyncStatus = createMarketplaceSyncStatus()
     const syncPromises: Promise<void>[] = []
 
     // Batch update Prom products
@@ -515,8 +584,25 @@ class ProductService {
   }
 
   /**
-   * Sync new products from marketplaces to database
-   * Only creates products that don't exist in database
+   * Syncs new products from marketplaces to the database.
+   * Only creates products that don't already exist.
+   *
+   * @returns Sync result with counts and error messages
+   *
+   * @remarks
+   * - Compares external IDs to avoid duplicates
+   * - Fetches from both Prom and Rozetka simultaneously
+   * - Continues processing even if some products fail
+   * - Returns success=false if any errors occurred
+   *
+   * @example
+   * const result = await productService.syncNewProductsFromMarketplaces()
+   *
+   * if (result.success) {
+   *   console.log(`Created ${result.totalCreated} new products`)
+   * } else {
+   *   console.error(`Sync completed with ${result.errors.length} errors`)
+   * }
    */
   async syncNewProductsFromMarketplaces(): Promise<SyncResult> {
     const result: SyncResult = {
@@ -656,6 +742,9 @@ class ProductService {
     return result
   }
 
+  /**
+   * Internal helper: Creates a product from Prom data.
+   */
   private async createProductFromProm(promProduct: any): Promise<void> {
     await prisma.products.create({
       data: {
@@ -667,6 +756,9 @@ class ProductService {
     })
   }
 
+  /**
+   * Internal helper: Creates a product from Rozetka data.
+   */
   private async createProductFromRozetka(rozetkaProduct: any): Promise<void> {
     await prisma.products.create({
       data: {

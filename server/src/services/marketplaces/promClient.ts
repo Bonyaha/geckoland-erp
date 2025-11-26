@@ -1,12 +1,18 @@
 //server\src\services\marketplaces\promClient.ts
 import axios from 'axios'
 import { config } from '../../config/environment'
-import type {PromUpdateParams,PromProductUpdate,PromOrder,PromOrderItem,PromOrdersResponse} from '../../types/marketplaces'
+import type {
+  PromUpdateParams,
+  PromProductUpdate,
+  PromBatchUpdate,
+  PromOrder,
+  PromOrderItem,
+  PromOrdersResponse,
+} from '../../types/marketplaces'
 
 /**
  * ============ CONFIG ===============
  */
-
 
 const PROM_API_BASE_URL = config.marketplaces.prom.baseUrl
 const PROM_API_KEY = config.marketplaces.prom.apiKey
@@ -30,7 +36,6 @@ export const getProductQuantity = async (productId: string) => {
   })
   return response.data.quantity // Adjust based on Prom’s actual response structure
 }
-
 
 export const updatePromProduct = async (
   productId: string,
@@ -133,7 +138,7 @@ export const updatePromProduct = async (
 }
 
 export const updateMultiplePromProducts = async (
-  products: Array<{ productId: string; updates: PromUpdateParams }>
+  products: PromBatchUpdate[]
 ) => {
   const headers = getHeaders()
   const url = `${productBaseUrl}/edit`
@@ -272,15 +277,16 @@ export class PromClient {
   }
 
   async getNewOrders(): Promise<PromOrder[]> {
-    const [pendingOrdersResponse, paidOrdersResponse,receivedOrdersResponse] = await Promise.all([
-      this.getOrders({ status: 'pending' }),
-      this.getOrders({ status: 'paid' }),
-      this.getOrders({ status: 'received', limit: 1 }),
-    ])
+    const [pendingOrdersResponse, paidOrdersResponse, receivedOrdersResponse] =
+      await Promise.all([
+        this.getOrders({ status: 'pending' }),
+        this.getOrders({ status: 'paid' }),
+        this.getOrders({ status: 'received', limit: 1 }),
+      ])
 
     const pendingOrders = pendingOrdersResponse.orders || []
     const paidOrders = paidOrdersResponse.orders || []
-const receivedOrders = receivedOrdersResponse.orders || []
+    const receivedOrders = receivedOrdersResponse.orders || []
 
     return [...pendingOrders, ...paidOrders, ...receivedOrders]
   }
@@ -307,7 +313,7 @@ function handleAxiosError(error: any, context: string): never {
   }
 }
 
-export type{
+export type {
   PromOrder,
   PromOrderItem,
   PromUpdateParams,

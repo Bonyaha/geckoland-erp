@@ -2,12 +2,29 @@
 import prisma from '../../../config/database'
 import { fetchPromProducts } from '../../data-fetchers/fetchPromProducts'
 import { fetchRozetkaProducts } from '../../data-fetchers/fetchRozetkaProducts'
-import type { MarketplaceUpdateOptions,MarketplaceSyncStatus } from '../../../types/marketplaces'
+import type {
+  MarketplaceUpdateOptions,
+  MarketplaceSyncStatus,
+  MarketplaceUpdateResult,
+} from '../../../types/marketplaces'
 
-// Utility function to normalize quantity
-// This ensures that null or undefined quantities are treated as 0
-// It prevents issues when a product has null or undefined stock
-// quantities, which could lead to incorrect updates or comparisons
+/**
+Utility function to normalize quantity
+* This ensures that null or undefined quantities are treated as *0
+* It prevents issues when a product has null or undefined stock
+* quantities, which could lead to incorrect updates or comparisons
+* @param quantity - The quantity to normalize (can be number, string, null, or undefined)
+ * @returns A valid non-negative number
+ * 
+ * @example 
+ * normalizeQuantity(5)          // Returns: 5
+ * normalizeQuantity("10")       // Returns: 10
+ * normalizeQuantity(null)       // Returns: 0
+ * normalizeQuantity(undefined)  // Returns: 0
+ * normalizeQuantity(-5)         // Returns: 0
+ * normalizeQuantity("abc")      // Returns: 0
+ */
+
 export const normalizeQuantity = (
   quantity: number | string | null | undefined
 ): number => {
@@ -21,8 +38,19 @@ export const normalizeQuantity = (
   return 0
 }
 
-
-// Utility function to replace null in promQuantity and rozetkaQuantity with numbers
+/**
+ * Initializes marketplace-specific quantity fields for products that have null values.
+ * Fetches current data from Prom and Rozetka APIs and updates the database.
+ *
+ * @remarks
+ * This should be run once during initial setup or migration to populate
+ * promQuantity and rozetkaQuantity fields. It performs bulk updates using
+ * Prisma transactions for efficiency.
+ *
+ * @example
+ * // Run during application initialization or as a migration script
+ * await initializeMarketplaceQuantitiesOptimized()
+ */
 export const initializeMarketplaceQuantitiesOptimized = async () => {
   console.log('Initializing marketplace quantities for existing products...')
 
@@ -118,7 +146,20 @@ export const initializeMarketplaceQuantitiesOptimized = async () => {
   console.log('✅ Marketplace quantities initialization completed')
 }
 
-//Function for updating products in app's database. It updates externalIds.rozetka fields
+/**
+ * Updates the Rozetka product IDs in the app's database by fetching
+ * current data from Rozetka and matching by SKU.
+ *
+ * @remarks
+ * This function should be run periodically or when product mappings need
+ * to be refreshed. It updates the externalIds.rozetka field for matching products.
+ *
+ * @throws {Error} If unable to fetch Rozetka products or update database
+ *
+ * @example
+ * // Run as part of a sync job or migration
+ * await syncRozetkaProductIds()
+ */
 export async function syncRozetkaProductIds() {
   try {
     const allRozetkaProducts = await fetchRozetkaProducts()
@@ -208,7 +249,31 @@ export async function syncRozetkaProductIds() {
 }
 
 /**
- * Unified helper for both single and batch marketplace updates.
+ * Creates a promise wrapper for marketplace update operations with consistent
+ * error handling and result tracking. Supports both single and batch updates.
+ *
+ * @param options - Configuration for the marketplace update operation
+ * @returns Promise that resolves when update completes (success or failure)
+ *
+ * @remarks
+ * This function centralizes error handling for all marketplace updates.
+ * Errors are caught and logged but don't throw to allow other updates to proceed.
+ * Results are tracked in the provided arrays for later analysis.
+ *
+ * @example
+ * const syncResults: string[] = []
+ * const syncErrors: MarketplaceUpdateResult[] = []
+ * const syncStatus = createMarketplaceSyncStatus()
+ *
+ * await createMarketplaceUpdatePromise({
+ *   marketplaceName: 'Prom',
+ *   productId: 'prod_123',
+ *   updateFunction: () => updatePromProduct('123', { quantity: 10 }),
+ *   onSuccess: () => syncStatus.promSynced = true,
+ *   resultsArray: syncResults,
+ *   errorsArray: syncErrors,
+ *   isBatch: false
+ * })
  */
 export async function createMarketplaceUpdatePromise({
   marketplaceName,
@@ -231,10 +296,12 @@ export async function createMarketplaceUpdatePromise({
 
     if (onSuccess) onSuccess()
   } catch (error: any) {
-    errorsArray.push({
+    const errorResult: MarketplaceUpdateResult = {
       marketplace: marketplaceName,
+      success: false,
       error: error.message || String(error),
-    })
+    }
+    errorsArray.push(errorResult)
 
     const message = isBatch
       ? `❌ Failed to batch update ${marketplaceName} products`
@@ -243,6 +310,35 @@ export async function createMarketplaceUpdatePromise({
   }
 }
 
+/**
+ * Creates a new MarketplaceSyncStatus object with all flags set to false.
+ * Use this to initialize sync tracking before performing marketplace updates.
+ * 
+ * @returns A new sync status object with all flags set to false
+ * 
+ * @remarks
+ * This is a factory function to ensure consistent initialization.
+ * Always use this instead of manually creating the object.
+ * 
+ * @example
+ * const syncStatus = createMarketplaceSyncStatus()
+ * // syncStatus = { promSynced: false, rozetkaSynced: false }
+ * 
+ * try {
+ *   await updatePromProduct(productId, updates)
+ *   syncStatus.promSynced = true
+ * } catch (error) {
+ *   // promSynced remains false
+ * }
+ * 
+ * // Use sync status to update database
+ * if (syncStatus.promSynced) {
+ *   await prisma.products.update({
+ *     where: { productId },
+ *     data: { lastPromSync: new Date() }
+ *   })
+ * }
+ */
 export function createMarketplaceSyncStatus(): MarketplaceSyncStatus {
   return { promSynced: false, rozetkaSynced: false }
 }

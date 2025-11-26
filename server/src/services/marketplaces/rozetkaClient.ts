@@ -1,8 +1,15 @@
 //server/src/services/marketplaces/rozetkaClient.ts
 import axios from 'axios'
-import {config} from '../../config/environment'
+import { config } from '../../config/environment'
 import { rozetkaTokenManager } from '../data-fetchers/rozetkaTokenCache'
-import type { RozetkaUpdateParams,RozetkaProductUpdate,RozetkaOrder,RozetkaOrderItem,RozetkaOrdersResponse } from '../../types/marketplaces'
+import type {
+  RozetkaUpdateParams,
+  RozetkaProductUpdate,
+  RozetkaBatchUpdate,
+  RozetkaOrder,
+  RozetkaOrderItem,
+  RozetkaOrdersResponse,
+} from '../../types/marketplaces'
 
 /**
  * ============ PRODUCT LOGIC ===============
@@ -100,7 +107,7 @@ export const updateRozetkaProduct = async (
 
 // Updated function to handle multiple products at once (more efficient)
 export const updateMultipleRozetkaProducts = async (
-  products: Array<{ productId: string; updates: RozetkaUpdateParams }>,
+  products: RozetkaBatchUpdate[],
   options: { isIgnoreCheck?: boolean } = {}
 ) => {
   try {
