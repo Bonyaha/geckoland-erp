@@ -21,6 +21,8 @@ import {
   OrderItemInput,
   OrderCreationResult,
   UnifiedOrderItem,
+  NormalizedPhone,
+  NormalizedFullName,
 } from '../../types/orders'
 
 class OrderService {
@@ -56,18 +58,63 @@ class OrderService {
   }
 
   /**
-   * Normalization helpers
+   * Normalizes phone number to standard E.164 format (+380...)
+   * Returns object with raw, formatted, and validation status
    */
-  private normalizePhone(phone: string | undefined | null): string {
-    if (!phone) return ''
-    const digits = phone.replace(/\D/g, '')
-    if (!digits) return ''
-    return digits.startsWith('380') ? `+${digits}` : `+${digits}`
+  private normalizePhone(phone: string | undefined | null): NormalizedPhone {
+    const raw = phone || ''
+
+    // Remove all non-digit characters
+    const digits = raw.replace(/\D/g, '')
+
+    // Basic validation: Check if we have digits
+    if (!digits) {
+      return { raw, formatted: '', isValid: false }
+    }
+
+    let formatted = ''
+
+    // Formatting logic for Ukraine (UA)
+    if (digits.startsWith('380')) {
+      formatted = `+${digits}`
+    } else if (digits.startsWith('0') && digits.length === 10) {
+      // Handle cases like 0501234567 -> +380501234567
+      formatted = `+380${digits.substring(1)}`
+    } else {
+      // Fallback for other formats
+      formatted = `+${digits}`
+    }
+
+    // specific validation rule (UA phones are usually 12 digits)
+    const isValid = digits.length >= 10 && digits.length <= 12
+
+    return {
+      raw,
+      formatted,
+      isValid,
+    }
   }
 
-  private normalizeFullName(parts: NameParts): string {
-    const { firstName, lastName, secondName } = parts
-    return [lastName, firstName, secondName].filter(Boolean).join(' ').trim()
+  /**
+   * Normalizes name parts and generates full name string
+   */
+  private normalizeFullName(parts: NameParts): NormalizedFullName {
+    const firstName = parts.firstName?.trim() || ''
+    const lastName = parts.lastName?.trim() || ''
+    const secondName = parts.secondName?.trim() || undefined // undefined is cleaner for DB if empty
+
+    // Combine parts, filtering out empty strings
+    const fullName = [lastName, firstName, secondName]
+      .filter(Boolean)
+      .join(' ')
+      .trim()
+
+    return {
+      firstName,
+      lastName,
+      secondName,
+      fullName,
+    }
   }
 
   private normalizeSellerComments(comments: any): Prisma.InputJsonValue {
@@ -169,32 +216,42 @@ class OrderService {
   private normalizeOrderData(
     data: Prisma.OrdersCreateInput
   ): Prisma.OrdersCreateInput {
+    // 1. Process Phones
+    const clientPhoneObj = this.normalizePhone(data.clientPhone)
+    const recipientPhoneObj = this.normalizePhone(data.recipientPhone)
+
+    // 2. Process Client Name
+    // We construct the NameParts object from the input data
+    const clientNameObj = this.normalizeFullName({
+      firstName: data.clientFirstName ?? undefined,
+      lastName: data.clientLastName ?? undefined,
+      secondName: data.clientSecondName ?? undefined,
+    })
+
+    // 3. Process Recipient Name
+    const recipientNameObj = this.normalizeFullName({
+      firstName: data.recipientFirstName ?? undefined,
+      lastName: data.recipientLastName ?? undefined,
+      secondName: data.recipientSecondName ?? undefined,
+    })
     return {
       ...data,
-      clientPhone: this.normalizePhone(data.clientPhone),
-      recipientPhone: this.normalizePhone(data.recipientPhone),
+      // --- PHONES ---
+      clientPhone: clientPhoneObj.formatted,
+      recipientPhone: recipientPhoneObj.formatted,
 
-      clientFirstName: data.clientFirstName || '',
-      clientLastName: data.clientLastName || '',
-      clientSecondName: data.clientSecondName || '',
-      clientFullName:
-        data.clientFullName ||
-        this.normalizeFullName({
-          firstName: data.clientFirstName ?? undefined,
-          lastName: data.clientLastName ?? undefined,
-          secondName: data.clientSecondName ?? undefined,
-        }),
+      // --- CLIENT NAME ---
+      clientFirstName: clientNameObj.firstName,
+      clientLastName: clientNameObj.lastName,
+      clientSecondName: clientNameObj.secondName || '',
+      clientFullName: data.clientFullName || clientNameObj.fullName,
 
-      recipientFirstName: data.recipientFirstName || '',
-      recipientLastName: data.recipientLastName || '',
-      recipientSecondName: data.recipientSecondName || '',
-      recipientFullName:
-        data.recipientFullName ||
-        this.normalizeFullName({
-          firstName: data.recipientFirstName ?? undefined,
-          lastName: data.recipientLastName ?? undefined,
-          secondName: data.recipientSecondName ?? undefined,
-        }),
+      // --- RECIPIENT NAME ---
+      recipientFirstName: recipientNameObj.firstName,
+      recipientLastName: recipientNameObj.lastName,
+      recipientSecondName: recipientNameObj.secondName || '',
+      // Use the calculated full name if not explicitly provided
+      recipientFullName: data.recipientFullName || recipientNameObj.fullName,
 
       deliveryAddress: this.normalizeStringOrNull(data.deliveryAddress),
       deliveryCity: this.normalizeStringOrNull(data.deliveryCity),
