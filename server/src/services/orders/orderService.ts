@@ -19,6 +19,8 @@ import {
   OrderPaymentInfo,
   OrderFinancialInfo,
   OrderItemInput,
+  OrderCreationResult,
+  UnifiedOrderItem,
 } from '../../types/orders'
 
 class OrderService {
@@ -81,6 +83,87 @@ class OrderService {
   }
 
   /**
+   * Convert Prom order items to unified format
+   */
+  private mapPromItemToUnified(promItem: any): UnifiedOrderItem {
+    return {
+      productId: null,
+      externalProductId: promItem.id.toString(),
+      sku: promItem.sku || null,
+      name: promItem.name,
+      quantity: promItem.quantity,
+      unitPrice: parseFloat(promItem.price),
+      totalPrice: parseFloat(promItem.total_price),
+      image: promItem.image || null,
+      url: promItem.url || null,
+    }
+  }
+
+  /**
+   * Convert Rozetka order items to unified format
+   */
+  private mapRozetkaItemToUnified(rozetkaItem: any): UnifiedOrderItem {
+    return {
+      productId: null,
+      externalProductId: rozetkaItem.item_id.toString(),
+      sku: rozetkaItem.item?.article || null,
+      name: rozetkaItem.item_name,
+      quantity: rozetkaItem.quantity,
+      unitPrice: parseFloat(rozetkaItem.price),
+      totalPrice: parseFloat(rozetkaItem.cost),
+      image: rozetkaItem.item?.photo_preview || null,
+      url: rozetkaItem.item?.url || null,
+    }
+  }
+
+  /**
+   * Convert CRM/Frontend order items to unified format
+   */
+  private mapCRMItemToUnified(crmItem: any): UnifiedOrderItem {
+    // Calculate total price if not provided
+    const unitPrice = Number(crmItem.unitPrice || 0)
+    const quantity = Number(crmItem.quantity || 1)
+    const totalPrice = Number(crmItem.totalPrice || unitPrice * quantity)
+
+    return {
+      // For CRM, internal and external ID are often the same, or derived from SKU
+      productId: crmItem.productId || null,
+      externalProductId: crmItem.productId || crmItem.sku || nanoid(6),
+      sku: crmItem.sku || null,
+      name: crmItem.productName,
+      quantity: quantity,
+      unitPrice: unitPrice,
+      totalPrice: totalPrice,
+      image: crmItem.productImage || null,
+      url: null, // CRM usually doesn't have an external marketplace URL
+    }
+  }
+  /**
+   * Convert unified order item to OrderItemInput for database creation
+   */
+  private convertUnifiedToOrderItem(
+    unifiedItem: UnifiedOrderItem,
+    orderId: string,
+    rawItemData: any
+  ): OrderItemInput {
+    return {
+      orderItemId: `item_${orderId}_${unifiedItem.externalProductId}_${nanoid(
+        6
+      )}`,
+      externalProductId: unifiedItem.externalProductId,
+      productId: unifiedItem.productId,
+      sku: unifiedItem.sku,
+      productName: unifiedItem.name,
+      productImage: unifiedItem.image,
+      productUrl: unifiedItem.url,
+      quantity: unifiedItem.quantity,
+      unitPrice: new Decimal(unifiedItem.unitPrice),
+      totalPrice: new Decimal(unifiedItem.totalPrice),
+      rawItemData: rawItemData as unknown as Prisma.InputJsonValue,
+    }
+  }
+
+  /**
    * Normalize order data fields (e.g., trim strings, format phone numbers)
    */
   private normalizeOrderData(
@@ -127,7 +210,9 @@ class OrderService {
   /**
    * Create orders in database from Prom order data
    */
-  async createOrderFromProm(promOrder: PromOrder): Promise<string> {
+  async createOrderFromProm(
+    promOrder: PromOrder
+  ): Promise<OrderCreationResult> {
     const orderId = `prom_${promOrder.id}_${nanoid(8)}`
 
     try {
@@ -137,6 +222,34 @@ class OrderService {
       // Parse financial data
       const totalAmount = this.parsePrice(promOrder.price)
       const deliveryCost = promOrder.delivery_cost || 0
+
+      // Convert Prom items to unified format
+      const unifiedItems: UnifiedOrderItem[] =
+        promOrder.products?.map((item) => this.mapPromItemToUnified(item)) || []
+
+      // Convert unified items to OrderItemInput
+      const orderItems: OrderItemInput[] = unifiedItems.map((item, index) =>
+        this.convertUnifiedToOrderItem(
+          item,
+          promOrder.id.toString(),
+          promOrder.products![index]
+        )
+      )
+
+      // Add Prom-specific fields to order items
+      const orderItemsWithPromData: OrderItemInput[] = orderItems.map(
+        (item, index) => {
+          const promItem = promOrder.products![index]
+          return {
+            ...item,
+            productNameMultilang: promItem.name_multilang,
+            measureUnit: promItem.measure_unit || null,
+            cpaCommission: promItem.cpa_commission
+              ? parseFloat(promItem.cpa_commission.amount)
+              : null,
+          }
+        }
+      )
 
       // Customer information
 
@@ -208,26 +321,7 @@ class OrderService {
 
         currency: 'UAH',
       }
-      // 1. Build the raw order data
-      const orderItems: OrderItemInput[] =
-        promOrder.products?.map((item) => ({
-          orderItemId: `item_${promOrder.id}_${item.id}_${nanoid(6)}`,
-          externalProductId: item.id.toString(),
-          sku: item.sku,
-          productName: item.name,
-          productNameMultilang: item.name_multilang,
-          productImage: item.image,
-          productUrl: item.url,
-          quantity: item.quantity,
-          unitPrice: this.parsePrice(item.price),
-          totalPrice: this.parsePrice(item.total_price),
-          measureUnit: item.measure_unit,
-          cpaCommission: item.cpa_commission
-            ? parseFloat(item.cpa_commission.amount)
-            : null,
-          rawItemData: item as unknown as Prisma.InputJsonValue,
-        })) || []
-
+      // Build the raw order data
       const orderData: Prisma.OrdersCreateInput = {
         orderId,
         externalOrderId: promOrder.id.toString(),
@@ -239,50 +333,17 @@ class OrderService {
         lastModified: promOrder.date_modified
           ? new Date(promOrder.date_modified)
           : null,
-
-        // Customer information
-        clientId: promOrder.client_id?.toString(),
-        clientFirstName: promOrder.client_first_name,
-        clientLastName: promOrder.client_last_name,
-        clientSecondName: promOrder.client_second_name,
-        clientPhone: promOrder.phone,
-        clientEmail: promOrder.email,
-
-        // Delivery recipient (if different from client)
-        recipientFirstName: promOrder.delivery_recipient?.first_name,
-        recipientLastName: promOrder.delivery_recipient?.last_name,
-        recipientSecondName: promOrder.delivery_recipient?.second_name,
-        recipientPhone: promOrder.delivery_recipient?.phone,
-
-        // Delivery information
-        deliveryOptionId: promOrder.delivery_option?.id,
-        deliveryOptionName: promOrder.delivery_option?.name,
-        deliveryAddress: promOrder.delivery_address,
-        deliveryCity:
-          promOrder.delivery_provider_data?.recipient_address.city_name,
-        deliveryCost,
-        deliveryProviderData: promOrder.delivery_provider_data,
-        trackingNumber: promOrder.delivery_provider_data?.declaration_number,
-
-        // Payment information
-        paymentOptionId: promOrder.payment_option?.id,
-        paymentOptionName: promOrder.payment_option?.name,
-        paymentData: promOrder.payment_data,
-        paymentStatus: promOrder.payment_data?.payment_status,
-
-        // Financial information
-        totalAmount,
-        fullPrice: promOrder.full_price
-          ? this.parsePrice(promOrder.full_price)
-          : null,
-        currency: 'UAH',
-
+        ...customerInfo,
+        ...recipientInfo,
+        ...deliveryInfo,
+        ...paymentInfo,
+        ...financialInfo,
         // Order details
-        itemCount: promOrder.products?.length || 0,
-        totalQuantity: promOrder.products
-          ? promOrder.products.reduce((sum, item) => sum + item.quantity, 0)
-          : 0,
-
+        itemCount: orderItemsWithPromData.length,
+        totalQuantity: orderItemsWithPromData.reduce(
+          (sum, item) => sum + item.quantity,
+          0
+        ),
         // Status information
         status: 'RECEIVED', // Initial status
         statusName: promOrder.status_name,
@@ -309,7 +370,7 @@ class OrderService {
 
         // Create order items
         orderItems: {
-          create: orderItems,
+          create: orderItemsWithPromData,
         },
       }
       // 2. Normalize before saving
@@ -342,18 +403,34 @@ class OrderService {
         )
       } */
 
-      return orderId
+      return {
+        orderId,
+        success: true,
+        message: 'Order created successfully',
+      }
     } catch (error) {
       console.error(`Error creating order from Prom data:`, error)
-      if (error instanceof AppError) throw error
-      throw ErrorFactory.internal('Failed to create Prom order')
+      const message =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'string'
+          ? error
+          : String(error)
+
+      return {
+        orderId: '',
+        success: false,
+        message,
+      }
     }
   }
 
   /**
    * Create orders in database from Rozetka order data
    */
-  async createOrderFromRozetka(rozetkaOrder: RozetkaOrder): Promise<string> {
+  async createOrderFromRozetka(
+    rozetkaOrder: RozetkaOrder
+  ): Promise<OrderCreationResult> {
     const orderId = `rozetka_${rozetkaOrder.id}_${nanoid(8)}`
 
     try {
@@ -369,6 +446,21 @@ class OrderService {
         ? this.parsePrice(rozetkaOrder.delivery.cost)
         : 0
 
+      // Convert Rozetka items to unified format
+      const unifiedItems: UnifiedOrderItem[] =
+        rozetkaOrder.purchases?.map((item) =>
+          this.mapRozetkaItemToUnified(item)
+        ) || []
+
+      // Convert unified items to OrderItemInput
+      const orderItems: OrderItemInput[] = unifiedItems.map((item, index) =>
+        this.convertUnifiedToOrderItem(
+          item,
+          rozetkaOrder.id.toString(),
+          rozetkaOrder.purchases![index]
+        )
+      )
+
       // Parse user name from contact_fio (e.g., "Василенко Василь")
       const contactFio = rozetkaOrder.user?.contact_fio || ''
       const nameParts = contactFio.split(' ')
@@ -379,6 +471,57 @@ class OrderService {
       // Parse dates - Rozetka format: "2019-07-25 11:49:32"
       const createdAt = new Date(rozetkaOrder.created)
       const lastModified = new Date(rozetkaOrder.changed)
+
+      // Customer information
+      const customerInfo: OrderCustomerInfo = {
+        clientId: rozetkaOrder.user?.id?.toString(),
+        clientFirstName,
+        clientLastName,
+        clientSecondName,
+        clientPhone: rozetkaOrder.user_phone,
+        clientEmail: null, // Rozetka does not provide email
+        clientFullName: contactFio,
+      }
+
+      // Delivery recipient (if different from client)
+      const recipientInfo: OrderRecipientInfo = {
+        recipientFirstName: rozetkaOrder.delivery?.recipient_first_name || '',
+        recipientLastName: rozetkaOrder.delivery?.recipient_last_name || '',
+        recipientSecondName: rozetkaOrder.delivery?.recipient_second_name || '',
+        recipientFullName: rozetkaOrder.delivery?.recipient_title,
+        recipientPhone: rozetkaOrder.delivery?.recipient_phone,
+      }
+
+      // Delivery information
+      const deliveryInfo: OrderDeliveryInfo = {
+        deliveryOptionId: rozetkaOrder.delivery?.delivery_service_id,
+        deliveryOptionName: rozetkaOrder.delivery?.delivery_service_name,
+        deliveryCity: rozetkaOrder.delivery?.city?.name,
+        trackingNumber: rozetkaOrder.ttn,
+        deliveryCost,
+        deliveryProviderData:
+          rozetkaOrder.delivery as unknown as Prisma.InputJsonValue,
+      }
+
+      // Payment information
+
+      const paymentInfo: OrderPaymentInfo = {
+        paymentOptionId: rozetkaOrder.payment?.payment_method_id,
+        paymentOptionName: rozetkaOrder.payment?.payment_method_name,
+        paymentStatus: rozetkaOrder.payment?.payment_status.title,
+        paymentData: rozetkaOrder.payment,
+      }
+
+      // Financial information
+
+      const financialInfo: OrderFinancialInfo = {
+        totalAmount,
+        totalAmountWithDiscount,
+        fullPrice: rozetkaOrder.amount
+          ? this.parsePrice(String(rozetkaOrder.amount))
+          : null,
+        currency: 'UAH', // Rozetka operates in UAH
+      }
 
       // 1. Build the raw order data
       const orderData: Prisma.OrdersCreateInput = {
@@ -391,42 +534,11 @@ class OrderService {
         createdAt,
         lastModified,
 
-        // Customer information
-        clientId: rozetkaOrder.user?.id?.toString(),
-        clientFirstName,
-        clientLastName,
-        clientSecondName,
-        clientPhone: rozetkaOrder.user_phone,
-        clientEmail: null, // Rozetka does not provide email
-        clientFullName: contactFio,
-
-        // Delivery recipient
-        recipientFirstName: rozetkaOrder.delivery?.recipient_first_name || '',
-        recipientLastName: rozetkaOrder.delivery?.recipient_last_name || '',
-        recipientSecondName: rozetkaOrder.delivery?.recipient_second_name || '',
-        recipientFullName: rozetkaOrder.delivery?.recipient_title,
-        recipientPhone: rozetkaOrder.delivery?.recipient_phone,
-
-        // Delivery information
-        deliveryOptionId: rozetkaOrder.delivery?.delivery_service_id,
-        deliveryOptionName: rozetkaOrder.delivery?.delivery_service_name,
-        deliveryCity: rozetkaOrder.delivery?.city?.name,
-        trackingNumber: rozetkaOrder.ttn,
-        deliveryCost,
-        deliveryProviderData:
-          rozetkaOrder.delivery as unknown as Prisma.InputJsonValue,
-
-        // Payment information
-        paymentOptionId: rozetkaOrder.payment?.payment_method_id,
-        paymentOptionName: rozetkaOrder.payment?.payment_method_name,
-        paymentStatus: rozetkaOrder.payment?.payment_status.title,
-        paymentData: rozetkaOrder.payment,
-
-        // Financial information
-        totalAmount,
-        totalAmountWithDiscount,
-        fullPrice: rozetkaOrder.amount,
-        currency: 'UAH', // Rozetka operates in UAH
+        ...customerInfo,
+        ...recipientInfo,
+        ...deliveryInfo,
+        ...paymentInfo,
+        ...financialInfo,
 
         // Order details
         totalQuantity: rozetkaOrder.total_quantity,
@@ -454,21 +566,7 @@ class OrderService {
 
         // Create order items
         orderItems: {
-          create:
-            rozetkaOrder.purchases?.map((purchase) => ({
-              orderItemId: `item_${rozetkaOrder.id}_${
-                purchase.item_id
-              }_${nanoid(6)}`,
-              externalProductId: purchase.item_id.toString(),
-              sku: purchase.item?.article, // Rozetka uses "article" as SKU
-              productName: purchase.item_name,
-              productImage: purchase.item?.photo_preview,
-              productUrl: purchase.item?.url,
-              quantity: purchase.quantity,
-              unitPrice: this.parsePrice(purchase.price),
-              totalPrice: this.parsePrice(purchase.cost),
-              rawItemData: purchase as unknown as Prisma.InputJsonValue,
-            })) || [],
+          create: orderItems,
         },
       }
       // 2. Normalize before saving
@@ -499,11 +597,25 @@ class OrderService {
         )
       }*/
 
-      return orderId
+      return {
+        orderId,
+        success: true,
+        message: 'Order created successfully',
+      }
     } catch (error: any) {
       console.error('Error creating order from Rozetka data:', error)
-      if (error instanceof AppError) throw error
-      throw ErrorFactory.internal('Failed to create Rozetka order')
+      const message =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'string'
+          ? error
+          : String(error)
+
+      return {
+        orderId: '',
+        success: false,
+        message,
+      }
     }
   }
 
@@ -513,7 +625,7 @@ class OrderService {
    */
   async createOrderFromCRM(
     frontendOrderData: CRMOrderCreateInput
-  ): Promise<string> {
+  ): Promise<OrderCreationResult> {
     const orderId = `crm_${nanoid(8)}`
 
     try {
@@ -546,6 +658,70 @@ class OrderService {
         )
       }
 
+      // 1. Convert to Unified Format
+      const unifiedItems: UnifiedOrderItem[] = items.map((item) =>
+        this.mapCRMItemToUnified(item)
+      )
+
+      // 2. Convert to Database Input using the shared helper
+      const orderItems: OrderItemInput[] = unifiedItems.map((item, index) =>
+        this.convertUnifiedToOrderItem(
+          item,
+          orderId, // We pass the generated orderId
+          items[index] // Pass original raw data
+        )
+      )
+      // 3. Add measureUnit manually if CRM provides it (Unified doesn't strictly enforce it yet)
+      const orderItemsWithExtras = orderItems.map((item, index) => ({
+        ...item,
+        measureUnit: items[index].measureUnit || null,
+      }))
+      // Customer information
+
+      const customerInfo: OrderCustomerInfo = {
+        clientFirstName: clientFirstName || '',
+        clientLastName: clientLastName || '',
+        clientSecondName: clientSecondName || '',
+        clientPhone: clientPhone || '',
+        clientEmail,
+        clientFullName: `${clientLastName || ''} ${clientFirstName || ''} ${
+          clientSecondName || ''
+        }`.trim(),
+      }
+
+      // Delivery recipient (if different from client)
+
+      const recipientInfo: OrderRecipientInfo = {
+        recipientFirstName,
+        recipientLastName,
+        recipientSecondName,
+        recipientPhone,
+        recipientFullName: `${recipientLastName || ''} ${
+          recipientFirstName || ''
+        } ${recipientSecondName || ''}`.trim(),
+      }
+
+      // Delivery information
+
+      const deliveryInfo: OrderDeliveryInfo = {
+        deliveryAddress,
+        deliveryCity,
+        deliveryOptionName,
+        deliveryCost: deliveryCost ? new Decimal(deliveryCost) : new Decimal(0),
+      }
+
+      // Payment information
+
+      const paymentInfo: OrderPaymentInfo = {
+        paymentOptionName,
+      }
+      // Financial information
+
+      const financialInfo: OrderFinancialInfo = {
+        totalAmount: new Decimal(totalAmount),
+        fullPrice: new Decimal(totalAmount),
+        currency,
+      }
       // 1. Build the order data
       const orderData: Prisma.OrdersCreateInput = {
         orderId,
@@ -556,32 +732,11 @@ class OrderService {
         createdAt: new Date(),
         lastModified: new Date(),
 
-        // Customer information
-        clientFirstName: clientFirstName || '',
-        clientLastName: clientLastName || '',
-        clientSecondName: clientSecondName || '',
-        clientPhone: clientPhone || '',
-        clientEmail,
-        clientFullName: `${clientLastName || ''} ${clientFirstName || ''} ${
-          clientSecondName || ''
-        }`.trim(),
-
-        // Delivery
-        recipientFirstName,
-        recipientLastName,
-        recipientSecondName,
-        recipientPhone,
-        recipientFullName: `${recipientLastName || ''} ${
-          recipientFirstName || ''
-        } ${recipientSecondName || ''}`.trim(),
-        deliveryAddress,
-        deliveryCity,
-        deliveryOptionName,
-        deliveryCost: deliveryCost ? new Decimal(deliveryCost) : new Decimal(0),
-
-        // Payment
-        paymentOptionName,
-        currency,
+        ...customerInfo,
+        ...recipientInfo,
+        ...deliveryInfo,
+        ...paymentInfo,
+        ...financialInfo,
 
         // Order details
         itemCount: items.length,
@@ -589,11 +744,6 @@ class OrderService {
           (sum: number, item: any) => sum + (item.quantity || 0),
           0
         ),
-
-        // Financial info
-        totalAmount: new Decimal(totalAmount),
-        fullPrice: new Decimal(totalAmount),
-
         // Status
         status,
         statusName: status,
@@ -604,20 +754,7 @@ class OrderService {
 
         // Relations
         orderItems: {
-          create: items.map((item: any) => ({
-            orderItemId: `item_${nanoid(6)}`,
-            externalProductId: item.productId || item.sku || nanoid(6),
-            productId: item.productId || null,
-            sku: item.sku || null,
-            productName: item.productName,
-            quantity: item.quantity,
-            unitPrice: new Decimal(item.unitPrice || 0),
-            totalPrice: new Decimal(
-              item.totalPrice || item.unitPrice * item.quantity || 0
-            ),
-            measureUnit: item.measureUnit || null,
-            rawItemData: item as Prisma.InputJsonValue,
-          })),
+          create: orderItems,
         },
       }
 
@@ -648,11 +785,25 @@ class OrderService {
         )
       }*/
 
-      return orderId
+      return {
+        orderId,
+        success: true,
+        message: 'Order created successfully',
+      }
     } catch (error: any) {
       console.error('Error creating CRM order:', error)
-      if (error instanceof AppError) throw error
-      throw ErrorFactory.internal('Failed to create CRM order')
+      const message =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'string'
+          ? error
+          : String(error)
+
+      return {
+        orderId: '',
+        success: false,
+        message,
+      }
     }
   }
 

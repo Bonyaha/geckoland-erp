@@ -9,6 +9,9 @@ import {
   OrderUpdateInput,
   OrderFilterParams,
   OrderCheckSummary,
+  isOrderSource,
+  isOrderStatus,
+  createOrderFilterParams,
 } from '../../types/orders'
 
 const orderService = new OrderService()
@@ -95,15 +98,30 @@ export const updateOrder = async (
 export const getOrders = async (req: Request, res: Response): Promise<void> => {
   const { page, limit, source, status } = req.query
 
-  const params: OrderFilterParams = {}
-  if (page) params.page = parseInt(page as string)
-  if (limit) params.limit = parseInt(limit as string)
-  if (source && (source === 'prom' || source === 'rozetka')) {
-    params.source = source as Source
+  // Validate source using type guard
+  if (source && !isOrderSource(source as string)) {
+    throw ErrorFactory.validationError(
+      `Invalid source: ${source}. Must be one of: prom, rozetka, crm`
+    )
   }
-  if (status) params.status = status as string
 
-  const result = await orderService.getOrders(params)
+  // Validate status using type guard
+  if (status && !isOrderStatus(status as string)) {
+    throw ErrorFactory.validationError(
+      `Invalid order status: ${status}. Must be a valid order status.`
+    )
+  }
+
+  // Use the createOrderFilterParams helper for consistent filter creation
+  const filterParams = createOrderFilterParams({
+    page: page ? parseInt(page as string) : undefined,
+    limit: limit ? parseInt(limit as string) : undefined,
+    source: source as Source | undefined,
+    status: status as string | undefined,
+  })
+
+  const result = await orderService.getOrders(filterParams)
+
   if (!result) {
     throw ErrorFactory.internal('Failed to fetch orders')
   }

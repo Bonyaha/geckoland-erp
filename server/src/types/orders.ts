@@ -166,7 +166,7 @@ export interface OrderCustomerInfo {
   clientLastName: string
   clientSecondName?: string
   clientPhone: string
-  clientEmail?: string
+  clientEmail?: string | null
   clientFullName?: string
 }
 
