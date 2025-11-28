@@ -35,6 +35,7 @@ import {
   ProductSyncResult,
   PromProductData,
   RozetkaProductData,
+  BatchProductUpdateItem,
 } from '../../types/products'
 
 /**
@@ -330,7 +331,7 @@ class ProductService {
     console.log(`Starting batch update for ${products.length} products`)
 
     // Fetch all products first for warehouse validation
-    const productIds = products.map((p) => p.productId)
+    const productIds = products.map((p: BatchProductUpdateItem) => p.productId)
     const dbProducts = await prisma.products.findMany({
       where: { productId: { in: productIds } },
       select: {
@@ -344,7 +345,9 @@ class ProductService {
 
     // Warehouse validation if only one marketplace is targeted
     if (targetMarketplace && targetMarketplace !== 'all') {
-      for (const { productId, updates } of products) {
+      for (const item of products) {
+        const { productId, updates }: BatchProductUpdateItem = item
+
         if (updates.quantity !== undefined) {
           const dbProduct = dbMap.get(productId)
           if (!dbProduct) continue
@@ -361,7 +364,7 @@ class ProductService {
     let dbResults: PromiseSettledResult<any>[] = []
 
     if (!targetMarketplace || targetMarketplace === 'all') {
-      const dbUpdatePromises = products.map((item) =>
+      const dbUpdatePromises = products.map((item: BatchProductUpdateItem) =>
         prisma.products.update({
           where: { productId: item.productId },
           data: {
@@ -379,7 +382,7 @@ class ProductService {
       dbResults = await Promise.allSettled(dbUpdatePromises)
     } else {
       // Skip DB updates for marketplace-only operations
-      dbResults = products.map((item) => ({
+      dbResults = products.map((item: BatchProductUpdateItem) => ({
         status: 'fulfilled',
         value: dbMap.get(item.productId),
       })) as PromiseFulfilledResult<any>[]
@@ -406,7 +409,9 @@ class ProductService {
 
     //❗❗❗Differ from productController.ts
     for (const productId of successfulUpdates) {
-      const original = products.find((p) => p.productId === productId)
+      const original = products.find(
+        (p: BatchProductUpdateItem) => p.productId === productId
+      )
       if (!original) continue
 
       const dbProduct = dbMap.get(productId)
