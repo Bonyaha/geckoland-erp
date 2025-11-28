@@ -23,6 +23,7 @@ import {
   UnifiedOrderItem,
   NormalizedPhone,
   NormalizedFullName,
+  BaseOrderCreateInput,
 } from '../../types/orders'
 
 class OrderService {
@@ -34,8 +35,12 @@ class OrderService {
     this.rozetkaClient = new RozetkaClient()
   }
 
+  // ============================================
+  // HELPER METHODS - NORMALIZATION
+  // ============================================
+
   /**
-   * Parse price string to float (handles formats like "1,234.56" or "1234.56")
+   * Parse price string to Decimal
    */
   private parsePrice(priceStr: string | undefined): Decimal {
     if (!priceStr) return new Decimal(0)
@@ -129,6 +134,10 @@ class OrderService {
     return str.length > 0 ? str : null
   }
 
+  // ============================================
+  // HELPER METHODS - ITEM MAPPING
+  // ============================================
+
   /**
    * Convert Prom order items to unified format
    */
@@ -210,6 +219,183 @@ class OrderService {
     }
   }
 
+  // ============================================
+  // NEW HELPER METHOD - BUILD BASE ORDER DATA
+  // ============================================
+
+  /**
+   * Builds a standardized BaseOrderCreateInput structure.
+   * This is the single source of truth for order data structure.
+   *
+   * @remarks
+   * Use this helper in all order creation methods (Prom, Rozetka, CRM)
+   * to ensure consistent structure and reduce code duplication.
+   */
+  private buildBaseOrderData(params: {
+    orderId: string
+    externalOrderId: string
+    source: Source
+    orderNumber?: string
+    createdAt: Date
+    lastModified?: Date | null
+    customer: OrderCustomerInfo
+    recipient?: OrderRecipientInfo
+    delivery: OrderDeliveryInfo
+    payment: OrderPaymentInfo
+    financial: OrderFinancialInfo
+    items: OrderItemInput[]
+    status?: string
+    statusName?: string | null
+    statusGroup?: number | null
+    clientNotes?: string | null
+    sellerComment?: string | null
+    sellerComments?: any
+    utmData?: any
+    orderSource?: string | null
+    dontCallCustomer?: boolean
+    isViewed?: boolean
+    isFulfillment?: boolean
+    canCopy?: boolean
+    specialOfferData?: any
+    rawOrderData?: any
+  }): BaseOrderCreateInput {
+    return {
+      orderId: params.orderId,
+      externalOrderId: params.externalOrderId,
+      source: params.source,
+      orderNumber: params.orderNumber || params.externalOrderId,
+
+      createdAt: params.createdAt,
+      lastModified: params.lastModified,
+
+      customer: params.customer,
+      recipient: params.recipient,
+      delivery: params.delivery,
+      payment: params.payment,
+      financial: params.financial,
+
+      itemCount: params.items.length,
+      totalQuantity: params.items.reduce((sum, item) => sum + item.quantity, 0),
+
+      status: (params.status as any) || 'RECEIVED',
+      statusName: params.statusName,
+      statusGroup: params.statusGroup,
+
+      clientNotes: params.clientNotes,
+      sellerComment: params.sellerComment,
+      sellerComments: params.sellerComments,
+
+      utmData: params.utmData,
+      orderSource: params.orderSource,
+
+      dontCallCustomer: params.dontCallCustomer,
+      isViewed: params.isViewed,
+      isFulfillment: params.isFulfillment,
+      canCopy: params.canCopy,
+
+      specialOfferData: params.specialOfferData,
+      rawOrderData: params.rawOrderData,
+
+      orderItems: params.items,
+    }
+  }
+
+  /**
+   * Converts BaseOrderCreateInput to Prisma's OrdersCreateInput format.
+   * This is the final step before database insertion.
+   */
+  private convertBaseOrderToPrisma(
+    baseOrder: BaseOrderCreateInput
+  ): Prisma.OrdersCreateInput {
+    const { customer, recipient, delivery, payment, financial } = baseOrder
+
+    return {
+      orderId: baseOrder.orderId,
+      externalOrderId: baseOrder.externalOrderId,
+      source: baseOrder.source,
+      orderNumber: baseOrder.orderNumber,
+
+      createdAt: baseOrder.createdAt,
+      lastModified: baseOrder.lastModified,
+
+      // Customer info
+      clientId: customer.clientId,
+      clientFirstName: customer.clientFirstName,
+      clientLastName: customer.clientLastName,
+      clientSecondName: customer.clientSecondName,
+      clientPhone: customer.clientPhone,
+      clientEmail: customer.clientEmail,
+      clientFullName: customer.clientFullName,
+
+      // Recipient info
+      recipientFirstName: recipient?.recipientFirstName,
+      recipientLastName: recipient?.recipientLastName,
+      recipientSecondName: recipient?.recipientSecondName,
+      recipientPhone: recipient?.recipientPhone,
+      recipientFullName: recipient?.recipientFullName,
+
+      // Delivery info
+      deliveryOptionId: delivery.deliveryOptionId,
+      deliveryOptionName: delivery.deliveryOptionName,
+      deliveryAddress: delivery.deliveryAddress,
+      deliveryCity: delivery.deliveryCity,
+      trackingNumber: delivery.trackingNumber,
+      deliveryCost: delivery.deliveryCost,
+      deliveryProviderData:
+        delivery.deliveryProviderData as Prisma.InputJsonValue,
+
+      // Payment info
+      paymentOptionId: payment.paymentOptionId,
+      paymentOptionName: payment.paymentOptionName,
+      paymentData: payment.paymentData as Prisma.InputJsonValue,
+      paymentStatus: payment.paymentStatus,
+
+      // Financial info
+      totalAmount: financial.totalAmount,
+      totalAmountWithDiscount: financial.totalAmountWithDiscount,
+      fullPrice: financial.fullPrice,
+      currency: financial.currency,
+      cpaCommission: financial.cpaCommission,
+      prosaleCommission: financial.prosaleCommission,
+      isCommissionRefunded: financial.isCommissionRefunded,
+
+      // Order details
+      itemCount: baseOrder.itemCount,
+      totalQuantity: baseOrder.totalQuantity,
+
+      // Status
+      status: baseOrder.status,
+      statusName: baseOrder.statusName,
+      statusGroup: baseOrder.statusGroup,
+
+      // Additional info
+      clientNotes: baseOrder.clientNotes,
+      sellerComment: baseOrder.sellerComment,
+      sellerComments: baseOrder.sellerComments as Prisma.InputJsonValue,
+
+      // Marketing
+      utmData: baseOrder.utmData as Prisma.InputJsonValue,
+      orderSource: baseOrder.orderSource,
+
+      // Flags
+      dontCallCustomer: baseOrder.dontCallCustomer,
+      isViewed: baseOrder.isViewed,
+      isFulfillment: baseOrder.isFulfillment,
+      canCopy: baseOrder.canCopy,
+
+      // Special offers
+      specialOfferData: baseOrder.specialOfferData as Prisma.InputJsonValue,
+
+      // Raw data
+      rawOrderData: baseOrder.rawOrderData as Prisma.InputJsonValue,
+
+      // Relations
+      orderItems: {
+        create: baseOrder.orderItems,
+      },
+    }
+  }
+
   /**
    * Normalize order data fields (e.g., trim strings, format phone numbers)
    */
@@ -264,6 +450,10 @@ class OrderService {
     }
   }
 
+  // ============================================
+  // ORDER CREATION METHODS - REFACTORED
+  // ============================================
+
   /**
    * Create orders in database from Prom order data
    */
@@ -308,130 +498,89 @@ class OrderService {
         }
       )
 
-      // Customer information
+      /* Build structured components */
 
+      // Customer information
       const customerInfo: OrderCustomerInfo = {
         clientId: promOrder.client_id?.toString(),
-
         clientFirstName: promOrder.client_first_name,
-
         clientLastName: promOrder.client_last_name,
-
         clientSecondName: promOrder.client_second_name,
-
         clientPhone: promOrder.phone,
-
         clientEmail: promOrder.email,
       }
 
       // Delivery recipient (if different from client)
-
       const recipientInfo: OrderRecipientInfo = {
         recipientFirstName: promOrder.delivery_recipient?.first_name,
-
         recipientLastName: promOrder.delivery_recipient?.last_name,
-
         recipientSecondName: promOrder.delivery_recipient?.second_name,
-
         recipientPhone: promOrder.delivery_recipient?.phone,
       }
 
       // Delivery information
-
       const deliveryInfo: OrderDeliveryInfo = {
         deliveryOptionId: promOrder.delivery_option?.id,
-
         deliveryOptionName: promOrder.delivery_option?.name,
-
         deliveryAddress: promOrder.delivery_address,
-
         deliveryCity:
           promOrder.delivery_provider_data?.recipient_address.city_name,
-
         deliveryCost,
-
         deliveryProviderData: promOrder.delivery_provider_data,
-
         trackingNumber: promOrder.delivery_provider_data?.declaration_number,
       }
 
       // Payment information
-
       const paymentInfo: OrderPaymentInfo = {
         paymentOptionId: promOrder.payment_option?.id,
-
         paymentOptionName: promOrder.payment_option?.name,
-
         paymentData: promOrder.payment_data,
-
         paymentStatus: promOrder.payment_data?.payment_status,
       }
 
       // Financial information
-
       const financialInfo: OrderFinancialInfo = {
         totalAmount,
-
         fullPrice: promOrder.full_price
           ? this.parsePrice(promOrder.full_price)
           : null,
-
         currency: 'UAH',
+        cpaCommission: promOrder.cpa_commission?.amount
+          ? parseFloat(promOrder.cpa_commission.amount)
+          : undefined,
+        prosaleCommission: promOrder.prosale_commission?.value,
+        isCommissionRefunded: promOrder.cpa_commission?.is_refunded || false,
       }
-      // Build the raw order data
-      const orderData: Prisma.OrdersCreateInput = {
+
+      //Build BaseOrderCreateInput using helper
+
+      const baseOrderData = this.buildBaseOrderData({
         orderId,
         externalOrderId: promOrder.id.toString(),
         source: Source.prom,
         orderNumber: promOrder.id.toString(),
-
-        // Timestamps
         createdAt: new Date(promOrder.date_created),
         lastModified: promOrder.date_modified
           ? new Date(promOrder.date_modified)
           : null,
-        ...customerInfo,
-        ...recipientInfo,
-        ...deliveryInfo,
-        ...paymentInfo,
-        ...financialInfo,
-        // Order details
-        itemCount: orderItemsWithPromData.length,
-        totalQuantity: orderItemsWithPromData.reduce(
-          (sum, item) => sum + item.quantity,
-          0
-        ),
-        // Status information
-        status: 'RECEIVED', // Initial status
+        customer: customerInfo,
+        recipient: recipientInfo,
+        delivery: deliveryInfo,
+        payment: paymentInfo,
+        financial: financialInfo,
+        items: orderItemsWithPromData,
         statusName: promOrder.status_name,
-
-        // Commission and fees
-        cpaCommission: promOrder.cpa_commission?.amount
-          ? parseFloat(promOrder.cpa_commission.amount)
-          : null,
-        prosaleCommission: promOrder.prosale_commission?.value,
-        isCommissionRefunded: promOrder.cpa_commission?.is_refunded || false,
-
-        // Additional information
         clientNotes: promOrder.client_notes,
-
-        // Marketing data
         utmData: promOrder.utm,
         orderSource: promOrder.source,
-
-        // Flags
         dontCallCustomer: promOrder.dont_call_customer_back || false,
+        rawOrderData: promOrder,
+      })
 
-        // Raw data backup
-        rawOrderData: promOrder as unknown as Prisma.InputJsonValue,
-
-        // Create order items
-        orderItems: {
-          create: orderItemsWithPromData,
-        },
-      }
+      // 5. Convert to Prisma format
+      const prismaOrderData = this.convertBaseOrderToPrisma(baseOrderData)
       // 2. Normalize before saving
-      const normalizedOrderData = this.normalizeOrderData(orderData)
+      const normalizedOrderData = this.normalizeOrderData(prismaOrderData)
 
       // 3. Save with normalized data
       const order = await prisma.orders.create({
@@ -529,6 +678,8 @@ class OrderService {
       const createdAt = new Date(rozetkaOrder.created)
       const lastModified = new Date(rozetkaOrder.changed)
 
+      /* Build structured components */
+
       // Customer information
       const customerInfo: OrderCustomerInfo = {
         clientId: rozetkaOrder.user?.id?.toString(),
@@ -561,7 +712,6 @@ class OrderService {
       }
 
       // Payment information
-
       const paymentInfo: OrderPaymentInfo = {
         paymentOptionId: rozetkaOrder.payment?.payment_method_id,
         paymentOptionName: rozetkaOrder.payment?.payment_method_name,
@@ -570,64 +720,45 @@ class OrderService {
       }
 
       // Financial information
-
       const financialInfo: OrderFinancialInfo = {
         totalAmount,
         totalAmountWithDiscount,
         fullPrice: rozetkaOrder.amount
           ? this.parsePrice(String(rozetkaOrder.amount))
           : null,
-        currency: 'UAH', // Rozetka operates in UAH
+        currency: 'UAH',
       }
 
-      // 1. Build the raw order data
-      const orderData: Prisma.OrdersCreateInput = {
+      // Build BaseOrderCreateInput
+      const baseOrderData = this.buildBaseOrderData({
         orderId,
         externalOrderId: rozetkaOrder.id.toString(),
         source: Source.rozetka,
         orderNumber: rozetkaOrder.id.toString(),
-
-        // Timestamps
-        createdAt,
-        lastModified,
-
-        ...customerInfo,
-        ...recipientInfo,
-        ...deliveryInfo,
-        ...paymentInfo,
-        ...financialInfo,
-
-        // Order details
-        totalQuantity: rozetkaOrder.total_quantity,
-        itemCount: rozetkaOrder.purchases?.length || 0,
-
-        // Status information
-        status: 'RECEIVED', // Initial status
+        createdAt: new Date(rozetkaOrder.created),
+        lastModified: new Date(rozetkaOrder.changed),
+        customer: customerInfo,
+        recipient: recipientInfo,
+        delivery: deliveryInfo,
+        payment: paymentInfo,
+        financial: financialInfo,
+        items: orderItems,
         statusName:
           rozetkaOrder.status_data?.name_uk || rozetkaOrder.status_data?.name,
         statusGroup: rozetkaOrder.status_group,
-
-        // Additional information
         clientNotes: rozetkaOrder.comment,
         sellerComment: rozetkaOrder.current_seller_comment,
-        sellerComments:
-          rozetkaOrder.seller_comment as unknown as Prisma.InputJsonValue,
-
-        // Flags
+        sellerComments: rozetkaOrder.seller_comment,
         isViewed: rozetkaOrder.is_viewed,
         isFulfillment: rozetkaOrder.is_fulfillment || false,
         canCopy: rozetkaOrder.can_copy || false,
+        rawOrderData: rozetkaOrder,
+      })
 
-        // Raw data backup
-        rawOrderData: rozetkaOrder as unknown as Prisma.InputJsonValue,
-
-        // Create order items
-        orderItems: {
-          create: orderItems,
-        },
-      }
+      // Convert and save
+      const prismaOrderData = this.convertBaseOrderToPrisma(baseOrderData)
       // 2. Normalize before saving
-      const normalizedOrderData = this.normalizeOrderData(orderData)
+      const normalizedOrderData = this.normalizeOrderData(prismaOrderData)
       // 3. Save with normalized data
       const order = await prisma.orders.create({
         data: normalizedOrderData,
@@ -721,20 +852,21 @@ class OrderService {
       )
 
       // 2. Convert to Database Input using the shared helper
-      const orderItems: OrderItemInput[] = unifiedItems.map((item, index) =>
-        this.convertUnifiedToOrderItem(
+      const orderItems: OrderItemInput[] = unifiedItems.map((item, index) => {
+        const baseItem = this.convertUnifiedToOrderItem(
           item,
-          orderId, // We pass the generated orderId
-          items[index] // Pass original raw data
+          orderId,
+          items[index]
         )
-      )
-      // 3. Add measureUnit manually if CRM provides it (Unified doesn't strictly enforce it yet)
-      const orderItemsWithExtras = orderItems.map((item, index) => ({
-        ...item,
-        measureUnit: items[index].measureUnit || null,
-      }))
-      // Customer information
+        return {
+          ...baseItem,
+          measureUnit: items[index].measureUnit || null,
+        }
+      })
 
+      /* Build structured components */
+
+      // Customer information
       const customerInfo: OrderCustomerInfo = {
         clientFirstName: clientFirstName || '',
         clientLastName: clientLastName || '',
@@ -747,7 +879,6 @@ class OrderService {
       }
 
       // Delivery recipient (if different from client)
-
       const recipientInfo: OrderRecipientInfo = {
         recipientFirstName,
         recipientLastName,
@@ -759,7 +890,6 @@ class OrderService {
       }
 
       // Delivery information
-
       const deliveryInfo: OrderDeliveryInfo = {
         deliveryAddress,
         deliveryCity,
@@ -768,55 +898,40 @@ class OrderService {
       }
 
       // Payment information
-
       const paymentInfo: OrderPaymentInfo = {
         paymentOptionName,
       }
-      // Financial information
 
+      // Financial information
       const financialInfo: OrderFinancialInfo = {
         totalAmount: new Decimal(totalAmount),
         fullPrice: new Decimal(totalAmount),
         currency,
       }
-      // 1. Build the order data
-      const orderData: Prisma.OrdersCreateInput = {
+
+      // Build BaseOrderCreateInput
+      const baseOrderData = this.buildBaseOrderData({
         orderId,
         externalOrderId: orderId,
         source: Source.crm,
         orderNumber: orderId,
-
         createdAt: new Date(),
         lastModified: new Date(),
-
-        ...customerInfo,
-        ...recipientInfo,
-        ...deliveryInfo,
-        ...paymentInfo,
-        ...financialInfo,
-
-        // Order details
-        itemCount: items.length,
-        totalQuantity: items.reduce(
-          (sum: number, item: any) => sum + (item.quantity || 0),
-          0
-        ),
-        // Status
+        customer: customerInfo,
+        recipient: recipientInfo,
+        delivery: deliveryInfo,
+        payment: paymentInfo,
+        financial: financialInfo,
+        items: orderItems,
         status,
         statusName: status,
-
-        // Additional info
         clientNotes: notes || null,
-        rawOrderData: frontendOrderData as unknown as Prisma.InputJsonValue,
-
-        // Relations
-        orderItems: {
-          create: orderItems,
-        },
-      }
+        rawOrderData: frontendOrderData,
+      })
 
       // 2. Normalize and save
-      const normalizedOrderData = this.normalizeOrderData(orderData)
+      const prismaOrderData = this.convertBaseOrderToPrisma(baseOrderData)
+      const normalizedOrderData = this.normalizeOrderData(prismaOrderData)
 
       const order = await prisma.orders.create({
         data: normalizedOrderData,
@@ -864,6 +979,10 @@ class OrderService {
     }
   }
 
+  // ============================================
+  // MARKETPLACE SYNC METHODS
+  // ============================================
+
   /**
    * Fetch new orders from Prom and create them in database
    */
@@ -902,7 +1021,7 @@ class OrderService {
           // Preserve known errors but don’t stop the loop
           if (error instanceof AppError) {
             console.error(
-              `⚠️ Skipped Prom order ${promOrder.id} due to AppError:`,
+              `Skipped Prom order ${promOrder.id} due to AppError:`,
               error.message
             )
           } else {
@@ -963,12 +1082,12 @@ class OrderService {
         } catch (error: any) {
           if (error instanceof AppError) {
             console.error(
-              `⚠️ Skipped Rozetka order ${rozetkaOrder.id} due to AppError:`,
+              `Skipped Rozetka order ${rozetkaOrder.id} due to AppError:`,
               error.message
             )
           } else {
             console.error(
-              `❌ Failed to create Rozetka order ${rozetkaOrder.id}:`,
+              `Failed to create Rozetka order ${rozetkaOrder.id}:`,
               error
             )
           }
@@ -977,7 +1096,7 @@ class OrderService {
       }
 
       console.log(
-        `Rozetka orders processing complete: ${created} created, ${skipped} skipped, ${errors} errors`
+        `Rozetka orders: ${created} created, ${skipped} skipped, ${errors} errors`
       )
       return { created, skipped, errors }
     } catch (error: any) {
@@ -986,6 +1105,10 @@ class OrderService {
       throw ErrorFactory.internal('Failed to fetch new Rozetka orders')
     }
   }
+
+  // ============================================
+  // QUERY METHODS
+  // ============================================
 
   /**
    * Get order by ID
