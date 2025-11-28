@@ -16,7 +16,6 @@ import {
   normalizeQuantity,
 } from '../marketplaces/sync/marketplaceSyncHelpers'
 import { ErrorFactory } from '../../middleware/errorHandler'
-import { CreateProductInput } from '../../schemas/product.schema'
 import type {
   ProductExternalIds,
   TargetMarketplace,
@@ -36,6 +35,7 @@ import {
   PromProductData,
   RozetkaProductData,
   BatchProductUpdateItem,
+  ProductCreateInput,
 } from '../../types/products'
 
 /**
@@ -88,7 +88,7 @@ class ProductService {
    *   images: []
    * })
    */
-  async createProduct(productData: CreateProductInput) {
+  async createProduct(productData: ProductCreateInput) {
     const product = await prisma.products.create({
       data: productData,
     })

@@ -2,7 +2,7 @@
 
 import { Source, Prisma } from '../config/database'
 import { Decimal } from '@prisma/client/runtime/library'
-
+import { CreateProductInput } from '../schemas/product.schema'
 /**
  * ============================================
  * PRODUCT DOMAIN TYPES
@@ -293,40 +293,7 @@ export interface BatchProductUpdateResult {
  *
  * const product = await productService.createProduct(productData)
  */
-export interface ProductCreateInput {
-  // Required fields
-  productId: string
-  name: string
-  price: number
-  stockQuantity: number
-  available: boolean
-  externalIds: any // Json type
-  images: string[]
-
-  // Fields with defaults
-  source?: Source
-  needsSync?: boolean
-  needsPromSync?: boolean
-  needsRozetkaSync?: boolean
-
-  // Optional fields
-  sku?: string | null
-  description?: string | null
-  mainImage?: string | null
-  priceOld?: number | null
-  pricePromo?: number | null
-  updatedPrice?: number | null
-  currency?: string | null
-  dateModified?: Date | null
-  lastSynced?: Date | null
-  categoryData?: any | null
-  measureUnit?: string | null
-  lastPromSync?: Date | null
-  lastRozetkaSync?: Date | null
-  promQuantity?: number | null
-  rozetkaQuantity?: number | null
-  costPrice?: number | null
-}
+export type ProductCreateInput = CreateProductInput
 
 // ============================================
 // MARKETPLACE SYNC TYPES
