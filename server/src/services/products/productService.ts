@@ -2,12 +2,12 @@
 import prisma, { Prisma } from '../../config/database'
 import {
   updateRozetkaProduct,
-  updateMultipleRozetkaProducts
+  updateMultipleRozetkaProducts,
 } from '../marketplaces/rozetkaClient'
 import { fetchRozetkaProductsWithTransformation } from '../data-fetchers/fetchRozetkaProducts'
 import {
   updatePromProduct,
-  updateMultiplePromProducts
+  updateMultiplePromProducts,
 } from '../marketplaces/promClient'
 import { fetchPromProductsWithTransformation } from '../data-fetchers/fetchPromProducts'
 import {
@@ -26,66 +26,16 @@ import type {
   PromBatchUpdate,
   RozetkaBatchUpdate,
 } from '../../types/marketplaces'
-
-/**
- * Defines allowed update parameters for a product. Currently quantity and price
- * are supported, but this interface can be extended if other fields need to
- * be updated through the API.
- */
-export interface ProductUpdateParams extends BaseProductUpdateParams {}
-/**
- * Batch update request structure for updating multiple products at once.
- */
-export interface BatchProductUpdate {
-  productId: string
-  updates: ProductUpdateParams
-}
-
-/**
- * Result returned from single product update operations.
- * Indicates success/failure and which marketplaces were synced.
- */
-export interface SingleUpdateResult {
-  success: boolean
-  message: string
-  productId: string
-  updates: ProductUpdateParams
-  syncedMarketplaces: string[]
-  errors?: MarketplaceUpdateResult[]
-}
-
-/**
- * Result returned from batch product update operations.
- * Contains summary statistics and detailed product-level results.
- */
-export interface BatchUpdateResult {
-  success: boolean
-  message: string
-  summary: {
-    totalRequested: number
-    successfulDatabaseUpdates: number
-    failedDatabaseUpdates: number
-    marketplacesSynced: string[]
-    marketplaceErrors?: MarketplaceUpdateResult[]
-  }
-  details: {
-    successfulProducts: string[]
-    failedProducts?: Array<{ productId: string; error: string }>
-  }
-}
-
-/**
- * Sync result returned when pulling new products from marketplaces. The `success` flag is true only if no errors
- * occurred during the sync; if any
- * errors occur the flag will be set to false.
- */
-export interface SyncResult {
-  success: boolean
-  productsCreatedFromProm: number
-  productsCreatedFromRozetka: number
-  totalCreated: number
-  errors: string[]
-}
+import {
+  ProductUpdateParams,
+  SingleProductUpdateInput,
+  SingleProductUpdateResult,
+  BatchProductUpdateInput,
+  BatchProductUpdateResult,
+  ProductSyncResult,
+  PromProductData,
+  RozetkaProductData,
+} from '../../types/products'
 
 /**
  * Service class for product-related operations.
@@ -158,11 +108,7 @@ class ProductService {
     productId,
     updates,
     targetMarketplace,
-  }: {
-    productId: string
-    updates: ProductUpdateParams
-    targetMarketplace?: TargetMarketplace
-  }): Promise<SingleUpdateResult> {
+  }: SingleProductUpdateInput): Promise<SingleProductUpdateResult> {
     // First, get the current product to save old price
     const currentProduct = await prisma.products.findUnique({
       where: { productId },
@@ -380,10 +326,7 @@ class ProductService {
   async updateBatchProducts({
     products,
     targetMarketplace,
-  }: {
-    products: BatchProductUpdate[]
-    targetMarketplace?: TargetMarketplace
-  }): Promise<BatchUpdateResult> {
+  }: BatchProductUpdateInput): Promise<BatchProductUpdateResult> {
     console.log(`Starting batch update for ${products.length} products`)
 
     // Fetch all products first for warehouse validation
@@ -604,8 +547,8 @@ class ProductService {
    *   console.error(`Sync completed with ${result.errors.length} errors`)
    * }
    */
-  async syncNewProductsFromMarketplaces(): Promise<SyncResult> {
-    const result: SyncResult = {
+  async syncNewProductsFromMarketplaces(): Promise<ProductSyncResult> {
+    const result: ProductSyncResult = {
       success: true,
       productsCreatedFromProm: 0,
       productsCreatedFromRozetka: 0,
@@ -745,7 +688,9 @@ class ProductService {
   /**
    * Internal helper: Creates a product from Prom data.
    */
-  private async createProductFromProm(promProduct: any): Promise<void> {
+  private async createProductFromProm(
+    promProduct: PromProductData
+  ): Promise<void> {
     await prisma.products.create({
       data: {
         ...promProduct,
@@ -759,7 +704,9 @@ class ProductService {
   /**
    * Internal helper: Creates a product from Rozetka data.
    */
-  private async createProductFromRozetka(rozetkaProduct: any): Promise<void> {
+  private async createProductFromRozetka(
+    rozetkaProduct: RozetkaProductData
+  ): Promise<void> {
     await prisma.products.create({
       data: {
         ...rozetkaProduct,
