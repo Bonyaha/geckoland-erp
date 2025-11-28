@@ -474,29 +474,24 @@ class OrderService {
       const unifiedItems: UnifiedOrderItem[] =
         promOrder.products?.map((item) => this.mapPromItemToUnified(item)) || []
 
-      // Convert unified items to OrderItemInput
-      const orderItems: OrderItemInput[] = unifiedItems.map((item, index) =>
-        this.convertUnifiedToOrderItem(
+      const orderItems: OrderItemInput[] = unifiedItems.map((item, index) => {
+        const promItem = promOrder.products![index]
+        const baseItem = this.convertUnifiedToOrderItem(
           item,
           promOrder.id.toString(),
-          promOrder.products![index]
+          promItem
         )
-      )
 
-      // Add Prom-specific fields to order items
-      const orderItemsWithPromData: OrderItemInput[] = orderItems.map(
-        (item, index) => {
-          const promItem = promOrder.products![index]
-          return {
-            ...item,
-            productNameMultilang: promItem.name_multilang,
-            measureUnit: promItem.measure_unit || null,
-            cpaCommission: promItem.cpa_commission
-              ? parseFloat(promItem.cpa_commission.amount)
-              : null,
-          }
+        // Add Prom-specific fields
+        return {
+          ...baseItem,
+          productNameMultilang: promItem.name_multilang,
+          measureUnit: promItem.measure_unit || null,
+          cpaCommission: promItem.cpa_commission
+            ? parseFloat(promItem.cpa_commission.amount)
+            : null,
         }
-      )
+      })
 
       /* Build structured components */
 
@@ -568,7 +563,7 @@ class OrderService {
         delivery: deliveryInfo,
         payment: paymentInfo,
         financial: financialInfo,
-        items: orderItemsWithPromData,
+        items: orderItems,
         statusName: promOrder.status_name,
         clientNotes: promOrder.client_notes,
         utmData: promOrder.utm,
