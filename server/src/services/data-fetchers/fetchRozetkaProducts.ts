@@ -3,6 +3,7 @@ import * as fs from 'fs/promises'
 import { config } from '../../config/environment'
 import { rozetkaTokenManager } from './rozetkaTokenCache'
 import { Source } from '../../config/database'
+import { RozetkaProductData } from '../../types/products'
 
 
 // Function to fetch all Rozetka products with pagination. It is used internally by functions below.
@@ -112,7 +113,9 @@ export async function fetchRozetkaProducts() {
 }
 
 //Function to fetch Rozetka products and transform them to match the database structure
-export async function fetchRozetkaProductsWithTransformation() {
+export async function fetchRozetkaProductsWithTransformation(): Promise<
+  RozetkaProductData[]
+> {
   try {
     // Step 1: Get access token
     const accessToken = await rozetkaTokenManager.getValidToken()
@@ -134,7 +137,7 @@ export async function fetchRozetkaProductsWithTransformation() {
       updatedPrice: item.updated_price ? String(item.updated_price) : null,
       mainImage: item.photo_preview?.[0] || null,
       images: item.photo || [],
-      dateModified: item.created_at ? new Date(item.created_at) : null,      
+      dateModified: item.created_at ? new Date(item.created_at) : null,
       categoryData: {
         id: item.rz_category?.id || null,
         title: item.rz_category?.title_ua || null,

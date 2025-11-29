@@ -4,6 +4,7 @@ import { all } from 'axios'
 import { solar } from 'googleapis/build/src/apis/solar'
 import {Source} from '../../config/database'
 import { config } from '../../config/environment'
+import { PromProductData } from '../../types/products'
 
 //Function to fetch Prom products without transformation
 export async function fetchPromProducts() {
@@ -126,43 +127,47 @@ function checkForDuplicates(products: any[]) {
 }
 
 //Function to fetch Prom products and transform them to match the database structure
-export async function fetchPromProductsWithTransformation() {
+export async function fetchPromProductsWithTransformation(): Promise<
+  PromProductData[]
+> {
   const allProducts = await fetchPromProducts()
 
-  const transformedProducts = allProducts.map((product: any) => ({
-    productId: String(product.id),
-    sku: product.sku || null,
-    externalIds: { prom: String(product.id), rozetka: null },
-    name: product.name || '',
-    price: String(product.price || '0.00'),
-    priceOld: null,
-    pricePromo: null,
-    updatedPrice: product.price ? String(product.price) : null,
-    stockQuantity: product.quantity_in_stock || 0,
-    promQuantity: product.quantity_in_stock,
-    available: product.in_stock || false,
-    description: product.description_multilang.uk || null,
-    mainImage: product.main_image || null,
-    images: product.images ? product.images.map((img: any) => img.url) : [],
-    currency: product.currency || 'UAH',
-    dateModified: product.date_modified
-      ? new Date(product.date_modified)
-      : new Date(),
-    lastSynced: new Date(),
-    lastPromSync: new Date(),
-    needsSync: false,
-    needsPromSync: false,
-    needsRozetkaSync: false,
-    categoryData: {
-      id: product.category?.id || null,
-      caption: product.category?.caption || null,
-      group: product.group || null,
-    },
-    measureUnit: product.measure_unit || 'шт.',
-    rozetkaQuantity: null,
-    lastRozetkaSync: null,
-    source: Source.prom,
-  }))
+  const transformedProducts: PromProductData[] = allProducts.map(
+    (product: any) => ({
+      productId: String(product.id),
+      sku: product.sku || null,
+      externalIds: { prom: String(product.id), rozetka: null },
+      name: product.name || '',
+      price: String(product.price || '0.00'),
+      priceOld: null,
+      pricePromo: null,
+      updatedPrice: product.price ? String(product.price) : null,
+      stockQuantity: product.quantity_in_stock || 0,
+      promQuantity: product.quantity_in_stock,
+      available: product.in_stock || false,
+      description: product.description_multilang.uk || null,
+      mainImage: product.main_image || null,
+      images: product.images ? product.images.map((img: any) => img.url) : [],
+      currency: product.currency || 'UAH',
+      dateModified: product.date_modified
+        ? new Date(product.date_modified)
+        : new Date(),
+      lastSynced: new Date(),
+      lastPromSync: new Date(),
+      needsSync: false,
+      needsPromSync: false,
+      needsRozetkaSync: false,
+      categoryData: {
+        id: product.category?.id || null,
+        caption: product.category?.caption || null,
+        group: product.group || null,
+      },
+      measureUnit: product.measure_unit || 'шт.',
+      rozetkaQuantity: null,
+      lastRozetkaSync: null,
+      source: Source.prom,
+    })
+  )
 
   await fs.writeFile(
     'prisma/data/promProducts.json',
