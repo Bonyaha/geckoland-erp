@@ -1,5 +1,6 @@
 import * as fs from 'fs/promises'
 import * as path from 'path'
+import { EnrichedProductData } from '../../types/products'
 
 /**
  * Reads promProducts.json and enriches each product's categoryData
@@ -8,7 +9,9 @@ import * as path from 'path'
  * @param products - Array of products to be enriched
  * @returns Enriched array of products
  */
-export async function enrichWithPromCategoriesAndDescription(products: any[]) {
+export async function enrichWithPromCategoriesAndDescription(
+  products: EnrichedProductData[]
+): Promise<EnrichedProductData[]> {
   const dataPath = path.join(
     __dirname,
     '../../../prisma/data/promProducts.json'

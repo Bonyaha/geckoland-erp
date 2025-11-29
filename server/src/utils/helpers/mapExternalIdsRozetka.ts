@@ -1,5 +1,6 @@
 import * as fs from 'fs/promises'
 import * as path from 'path'
+import { EnrichedProductData } from '../../types/products'
 
 async function updateProductsExternalIds() {
   try {
@@ -72,12 +73,14 @@ async function updateProductsExternalIds() {
 //Function similar to the one above, but it takes an array of products instead of reading from a file and returns the enriched array, not writing to a file
 */
 
-export async function enrichWithRozetkaIds(products: any[]) {
+export async function enrichWithRozetkaIds(
+  products: EnrichedProductData[]
+): Promise<EnrichedProductData[]> {
   //console.log('I am in enrichWithRozetkaIds');
- const rozetkaDataPath = path.join(
-   __dirname,
-   '../../../prisma/data/rozetkaProducts.json'
- )
+  const rozetkaDataPath = path.join(
+    __dirname,
+    '../../../prisma/data/rozetkaProducts.json'
+  )
 
   const rozetkaProductsData = await fs.readFile(rozetkaDataPath, 'utf-8')
   const rozetkaProducts = JSON.parse(rozetkaProductsData)
@@ -94,6 +97,8 @@ export async function enrichWithRozetkaIds(products: any[]) {
   //console.log('Rozetka products map:', rozetkaProductsMap);
 
   const enrichedProducts = products.map((product) => {
+    if (!product.sku) return product
+
     const matchingRozetkaData = rozetkaProductsMap.get(product.sku)
 
     if (matchingRozetkaData) {

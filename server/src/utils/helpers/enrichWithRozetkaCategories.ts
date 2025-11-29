@@ -1,14 +1,17 @@
 import * as fs from 'fs/promises'
 import * as path from 'path'
+import { EnrichedProductData } from '../../types/products'
 /**
  * Reads rozetkaProducts.json and enriches each product’s categoryData
  * with Rozetka category info (id + name).
  */
-export async function enrichWithRozetkaCategories(products: any[]) {
- const dataPath = path.join(
-   __dirname,
-   '../../../prisma/data/rozetkaProducts.json'
- )
+export async function enrichWithRozetkaCategories(
+  products: EnrichedProductData[]
+): Promise<EnrichedProductData[]> {
+  const dataPath = path.join(
+    __dirname,
+    '../../../prisma/data/rozetkaProducts.json'
+  )
   const rozetkaData = await fs.readFile(dataPath, 'utf-8')
   const rozetkaProducts = JSON.parse(rozetkaData)
 
@@ -36,7 +39,7 @@ export async function enrichWithRozetkaCategories(products: any[]) {
           rozetka: {
             id: category.id,
             name: category.name,
-          }
+          },
         },
       }
     } else {

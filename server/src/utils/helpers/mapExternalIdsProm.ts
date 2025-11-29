@@ -1,5 +1,7 @@
+//server/src/utils/helpers/mapExternalIdsProm.ts
 import * as fs from 'fs/promises'
 import * as path from 'path'
+import { EnrichedProductData } from '../../types/products'
 
 async function updateProductsExternalIds() {
   try {
@@ -30,6 +32,10 @@ async function updateProductsExternalIds() {
 
     // Update products with matching SKUs
     products = products.map((product: any) => {
+      if (!product.sku) {
+        notFoundCount++
+        return product
+      }
       const matchingPromProductId = promProductsMap.get(product.sku)
 
       if (matchingPromProductId) {
@@ -66,11 +72,13 @@ async function updateProductsExternalIds() {
 //Function similar to the one above, but it takes an array of products instead of reading from a file and returns the enriched array, not writing to a file 
 */
 
-export async function enrichWithPromIds(products: any[]) {
- const promDataPath = path.join(
-   __dirname,
-   '../../../prisma/data/promProducts.json'
- )
+export async function enrichWithPromIds(
+  products: EnrichedProductData[]
+): Promise<EnrichedProductData[]> {
+  const promDataPath = path.join(
+    __dirname,
+    '../../../prisma/data/promProducts.json'
+  )
   const promProductsData = await fs.readFile(promDataPath, 'utf-8')
   const promProducts = JSON.parse(promProductsData)
 
@@ -81,7 +89,8 @@ export async function enrichWithPromIds(products: any[]) {
     const productId = promProduct.productId
 
     /* we need to handle multiple products with the same SKU
-so we store an array of productIds for each SKU */
+    so we store an array of productIds for each SKU 
+    */
     const productIds = promProductsMap.get(sku) || []
     productIds.push(productId)
 
@@ -100,6 +109,10 @@ so we store an array of productIds for each SKU */
   let notFoundCount = 0
 
   const enrichedProducts = products.map((product) => {
+    if (!product.sku) {
+      notFoundCount++
+      return product
+    }
     // This gets the array, e.g., ["1939682231", "1729610009"]
     const matchingPromProductIds = promProductsMap.get(product.sku)
 
