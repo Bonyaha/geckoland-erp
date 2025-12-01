@@ -2,16 +2,30 @@
 
 import { OrderStatus, Source, Prisma } from '../config/database'
 import { Decimal } from '@prisma/client/runtime/library'
-
+import { OrderCustomerInfo,OrderDeliveryInfo,OrderPaymentInfo,OrderRecipientInfo } from '../schemas/order.schema'
 /**
  * ============================================
  * ORDER DOMAIN TYPES
  * ============================================
- * Centralized type definitions for order management
+ * Types that are NOT validated by Zod (internal use only)
+ * For validated types, import from schemas/order.schema.ts
  */
 
+// Re-export validated types from schema
+export type {
+  OrderQueryParams,
+  CRMOrderCreateInput,
+  CRMOrderItem,
+  OrderUpdateInput,
+  SyncOrdersInput,
+  OrderCustomerInfo,
+  OrderRecipientInfo,
+  OrderDeliveryInfo,
+  OrderPaymentInfo,
+} from '../schemas/order.schema'
+
 // ============================================
-// QUERY AND FILTER TYPES
+// QUERY AND FILTER TYPES(Not validated - server responses)
 // ============================================
 
 /**
@@ -98,7 +112,7 @@ export interface OrderQueryResult {
 export interface OrderListResponse extends OrderQueryResult {}
 
 // ============================================
-// ORDER SYNC RESULT TYPES
+// ORDER SYNC RESULT TYPES(Not validated - server responses)
 // ============================================
 
 /**
@@ -141,105 +155,9 @@ export interface OrderCheckSummary {
 // ORDER CREATION - STRUCTURED COMPONENTS
 // ============================================
 
-/**
- * Customer/Client information for an order.
- * Contains all fields related to the person placing the order.
- * 
- * @remarks
- * Use this to structure customer data before creating orders.
- * Makes it easier to validate and normalize customer information.
- * 
- * @example
- * const customer: OrderCustomerInfo = {
- *   clientId: '12345',
- *   clientFirstName: 'Іван',
- *   clientLastName: 'Петренко',
- *   clientSecondName: 'Миколайович',
- *   clientPhone: '+380501234567',
- *   clientEmail: 'ivan@example.com',
- *   clientFullName: 'Петренко Іван Миколайович'
- * }
- */
-export interface OrderCustomerInfo {
-  clientId?: string
-  clientFirstName: string
-  clientLastName: string
-  clientSecondName?: string
-  clientPhone: string
-  clientEmail?: string | null
-  clientFullName?: string
-}
 
 /**
- * Delivery recipient information (if different from customer).
- * Used when the order is being delivered to someone other than the buyer.
- * 
- * @remarks
- * All fields are optional. If not provided, delivery goes to customer.
- * 
- * @example
- * const recipient: OrderRecipientInfo = {
- *   recipientFirstName: 'Марія',
- *   recipientLastName: 'Коваленко',
- *   recipientSecondName: 'Петрівна',
- *   recipientPhone: '+380671234567',
- *   recipientFullName: 'Коваленко Марія Петрівна'
- * }
- */
-export interface OrderRecipientInfo {
-  recipientFirstName?: string
-  recipientLastName?: string
-  recipientSecondName?: string
-  recipientPhone?: string
-  recipientFullName?: string
-}
-
-/**
- * Delivery information for an order.
- * Contains all fields related to shipping and delivery.
- * 
- * @example
- * const delivery: OrderDeliveryInfo = {
- *   deliveryOptionId: 1,
- *   deliveryOptionName: 'Nova Poshta',
- *   deliveryAddress: 'Warehouse #123',
- *   deliveryCity: 'Київ',
- *   trackingNumber: '59000123456789',
- *   deliveryCost: 50.00,
- *   deliveryProviderData: { /* raw API data *\/ }
- * }
- */
-export interface OrderDeliveryInfo {
-  deliveryOptionId?: number
-  deliveryOptionName?: string
-  deliveryAddress?: string
-  deliveryCity?: string
-  trackingNumber?: string
-  deliveryCost?: Decimal | number
-  deliveryProviderData?: any
-}
-
-/**
- * Payment information for an order.
- * Contains payment method and status details.
- * 
- * @example
- * const payment: OrderPaymentInfo = {
- *   paymentOptionId: 2,
- *   paymentOptionName: 'Cash on Delivery',
- *   paymentData: { /* raw API data *\/ },
- *   paymentStatus: 'pending'
- * }
- */
-export interface OrderPaymentInfo {
-  paymentOptionId?: number
-  paymentOptionName?: string
-  paymentData?: any
-  paymentStatus?: string
-}
-
-/**
- * Financial information for an order.
+ * Financial information for an order(internal - not from user input).
  * Contains all monetary values and commission details.
  * 
  * @remarks
@@ -269,7 +187,7 @@ export interface OrderFinancialInfo {
 }
 
 /**
- * Order item structure for creation.
+ * Order item structure for creation(internal).
  * Represents a single product in an order.
  * 
  * @remarks
@@ -394,125 +312,7 @@ export interface BaseOrderCreateInput {
 
 
 // ============================================
-// CRM ORDER CREATION TYPES
-// ============================================
-
-/**
- * Individual item in a CRM order (from frontend).
- * Simpler structure than OrderItemInput as it comes from user input.
- * 
- * @example
- * const item: CRMOrderItem = {
- *   productId: 'prod_123',
- *   sku: 'LAPTOP-001',
- *   productName: 'Gaming Laptop',
- *   quantity: 1,
- *   unitPrice: 25000,
- *   measureUnit: 'шт.'
- * }
- */
-export interface CRMOrderItem {
-  productId?: string
-  sku?: string
-  productName: string
-  quantity: number
-  unitPrice: number
-  totalPrice?: number
-  measureUnit?: string
-  // Allow for additional dynamic fields without breaking type safety completely
-  [key: string]: any
-}
-
-/**
- * CRM order creation input from frontend.
- * Used when manually creating orders through the admin interface.
- * 
- * @remarks
- * This is the structure expected from the frontend when creating manual orders.
- * All customer fields are optional to allow flexibility.
- * 
- * @example
- * const crmOrder: CRMOrderCreateInput = {
- *   clientFirstName: 'Іван',
- *   clientLastName: 'Петренко',
- *   clientPhone: '+380501234567',
- *   deliveryAddress: 'Warehouse #123',
- *   deliveryCity: 'Київ',
- *   totalAmount: 25000,
- *   currency: 'UAH',
- *   items: [
- *     { productName: 'Laptop', quantity: 1, unitPrice: 25000 }
- *   ]
- * }
- */
-export interface CRMOrderCreateInput {
-  // Client Info
-  clientFirstName?: string
-  clientLastName?: string
-  clientSecondName?: string
-  clientPhone?: string
-  clientEmail?: string
-
-  // Recipient Info
-  recipientFirstName?: string
-  recipientLastName?: string
-  recipientSecondName?: string
-  recipientPhone?: string
-
-  // Delivery Info
-  deliveryAddress?: string
-  deliveryCity?: string
-  deliveryOptionName?: string
-  deliveryCost?: number | string
-
-  // Payment & Financials
-  paymentOptionName?: string
-  totalAmount: number | string
-  currency?: string
-
-  // Order Meta
-  notes?: string
-  status?: OrderStatus
-
-  // Items
-  items: CRMOrderItem[]
-}
-
-// ============================================
-// ORDER UPDATE TYPES
-// ============================================
-
-/**
- * Allowed fields for order updates.
- * Only specific fields can be updated after order creation.
- * 
- * @remarks
- * Use this type for PATCH operations on existing orders.
- * 
- * @example
- * const updates: OrderUpdateInput = {
- *   status: 'SHIPPED',
- *   trackingNumber: '59000123456789',
- *   sellerComment: 'Package sent',
- *   isViewed: true
- * }
- * 
- * await orderService.updateOrder(orderId, updates)
- */
-export interface OrderUpdateInput {
-  status?: OrderStatus
-  statusName?: string
-  trackingNumber?: string
-  deliveryAddress?: string
-  clientNotes?: string
-  sellerComment?: string
-  isViewed?: boolean
-  lastModified?: Date
-  // Add other updatable fields as needed
-}
-
-// ============================================
-// ORDER ITEM TYPES FOR SYNC
+// ORDER ITEM TYPES FOR SYNC (Internal)
 // ============================================
 
 /**
@@ -605,38 +405,6 @@ export interface OrderCreationResult {
 }
 
 /**
- * Standardized response structure for order list queries.
- * Includes both the orders array and pagination metadata.
- * 
- * @remarks
- * Use this type for all order listing operations to maintain consistency.
- * The orders array contains Prisma Orders with their related data.
- * 
- * @example
- * async getOrders(params: OrderFilterParams): Promise<OrderQueryResult> {
- *   const orders = await prisma.orders.findMany({
- *     where: {  filters  },
- *     include: { orderItems: true }
- *   })
- *   const total = await prisma.orders.count({ where: { filters  } })
- *   
- *   return {
- *     orders,
- *     pagination: {
- *       page: params.page || 1,
- *       limit: params.limit || 50,
- *       total,
- *       pages: Math.ceil(total / (params.limit || 50))
- *     }
- *   }
- * }
- */
-export interface OrderQueryResult {
-  orders: any[] // Prisma Orders with relations
-  pagination: OrderPaginationMeta
-}
-
-/**
  * Validation error for order data.
  * Used when validating order input before creation.
  * 
@@ -670,7 +438,7 @@ export interface OrderValidationError {
 }
 
 // ============================================
-// NORMALIZATION TYPES
+// NORMALIZATION TYPES(Internal helpers)
 // ============================================
 
 /**

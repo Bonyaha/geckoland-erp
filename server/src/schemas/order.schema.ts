@@ -2,6 +2,55 @@
 import { z } from 'zod'
 import { Source, OrderStatus } from '../config/database'
 
+// ============================================
+// BASE BUILDING BLOCKS
+// ============================================
+
+// Order item schema
+const orderItemSchema = z.object({
+  productId: z.string().optional(),
+  sku: z.string().optional(),
+  productName: z.string().min(1, 'Product name is required'),
+  quantity: z.number().int().positive(),
+  unitPrice: z.number().nonnegative(),
+  totalPrice: z.number().nonnegative().optional(),
+  measureUnit: z.string().optional(),
+})
+
+// Customer info schema
+const customerInfoSchema = z.object({
+  clientFirstName: z.string().min(1, 'Client first name is required'),
+  clientLastName: z.string().min(1, 'Client last name is required'),
+  clientSecondName: z.string().optional(),
+  clientPhone: z.string().min(10, 'Valid phone number is required'),
+  clientEmail: z.string().email().optional(),
+})
+
+// Recipient info schema (optional fields)
+const recipientInfoSchema = z.object({
+  recipientFirstName: z.string().optional(),
+  recipientLastName: z.string().optional(),
+  recipientSecondName: z.string().optional(),
+  recipientPhone: z.string().optional(),
+})
+
+// Delivery info schema
+const deliveryInfoSchema = z.object({
+  deliveryAddress: z.string().optional(),
+  deliveryCity: z.string().optional(),
+  deliveryOptionName: z.string().optional(),
+  deliveryCost: z.number().nonnegative().optional(),
+})
+
+// Payment info schema
+const paymentInfoSchema = z.object({
+  paymentOptionName: z.string().optional(),
+})
+
+// ============================================
+// QUERY SCHEMAS
+// ============================================
+
 // Order query validation
 export const getOrdersQuerySchema = z.object({
   query: z.object({
@@ -21,55 +70,32 @@ export const orderIdParamSchema = z.object({
   }),
 })
 
-// CRM order creation validation
+// ============================================
+// CRM ORDER CREATION SCHEMA
+// ============================================
 export const createCRMOrderSchema = z.object({
-  body: z.object({
-    clientFirstName: z.string().min(1, 'Client first name is required'),
-    clientLastName: z.string().min(1, 'Client last name is required'),
-    clientSecondName: z.string().optional(),
-    clientPhone: z.string().min(10, 'Valid phone number is required'),
-    clientEmail: z.string().email().optional(),
-
-    recipientFirstName: z.string().optional(),
-    recipientLastName: z.string().optional(),
-    recipientSecondName: z.string().optional(),
-    recipientPhone: z.string().optional(),
-
-    deliveryAddress: z.string().optional(),
-    deliveryCity: z.string().optional(),
-    deliveryOptionName: z.string().optional(),
-    deliveryCost: z.number().nonnegative().optional(),
-
-    paymentOptionName: z.string().optional(),
-    currency: z.string().default('UAH'),
-
-    items: z
-      .array(
-        z.object({
-          productId: z.string().optional(),
-          sku: z.string().optional(),
-          productName: z.string().min(1, 'Product name is required'),
-          quantity: z.number().int().positive(),
-          unitPrice: z.number().nonnegative(),
-          totalPrice: z.number().nonnegative().optional(),
-          measureUnit: z.string().optional(),
-        })
-      )
-      .min(1, 'At least one item is required'),
-
-    totalAmount: z.number().nonnegative(),
-    notes: z.string().optional(),
-    status: z.string().optional(),
-  }),
+  body: customerInfoSchema
+    .extend(recipientInfoSchema.shape)
+    .extend(deliveryInfoSchema.shape)
+    .extend(paymentInfoSchema.shape)
+    .extend({
+      items: z.array(orderItemSchema).min(1, 'At least one item is required'),
+      totalAmount: z.number().nonnegative(),
+      currency: z.string().default('UAH'),
+      notes: z.string().optional(),
+      status: z.string().optional(),
+    }),
 })
 
-// Order update validation
+// ============================================
+// ORDER UPDATE SCHEMA
+// ============================================
 export const updateOrderSchema = z.object({
   params: z.object({
     orderId: z.string().min(1, 'Order ID is required'),
   }),
   body: z.object({
-    status: z.nativeEnum(OrderStatus).optional(),
+    status: z.enum(OrderStatus).optional(),
     statusName: z.string().optional(),
     trackingNumber: z.string().optional(),
     deliveryAddress: z.string().optional(),
@@ -79,9 +105,28 @@ export const updateOrderSchema = z.object({
   }),
 })
 
-// Sync orders validation
+// ============================================
+// SYNC ORDERS SCHEMA
+// ============================================
+
 export const syncOrdersSchema = z.object({
   body: z.object({
     marketplace: z.enum(['prom', 'rozetka']).optional(),
   }),
 })
+
+// ============================================
+// INFERRED TYPES (Single Source of Truth)
+// ============================================
+
+export type OrderQueryParams = z.infer<typeof getOrdersQuerySchema>['query']
+export type CRMOrderCreateInput = z.infer<typeof createCRMOrderSchema>['body']
+export type CRMOrderItem = z.infer<typeof orderItemSchema>
+export type OrderUpdateInput = z.infer<typeof updateOrderSchema>['body']
+export type SyncOrdersInput = z.infer<typeof syncOrdersSchema>['body']
+
+// Additional inferred types for internal use
+export type OrderCustomerInfo = z.infer<typeof customerInfoSchema>
+export type OrderRecipientInfo = z.infer<typeof recipientInfoSchema>
+export type OrderDeliveryInfo = z.infer<typeof deliveryInfoSchema>
+export type OrderPaymentInfo = z.infer<typeof paymentInfoSchema>
