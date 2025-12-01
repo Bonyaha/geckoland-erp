@@ -57,9 +57,6 @@ export const createProductBodySchema = z.object({
   costPrice: z.number().nonnegative().nullable().optional(),
 })
 
-// Type for the Service (inferred from the body definition)
-export type CreateProductInput = z.infer<typeof createProductBodySchema>
-
 // Schema for the Route (wraps the body)
 export const createProductSchema = z.object({
   body: createProductBodySchema,
@@ -76,7 +73,7 @@ export const getProductsQuerySchema = z.object({
 
 // --- UPDATE SCHEMAS ---
 
-const productUpdateParamsSchema = z
+export const productUpdateParamsSchema = z
   .object({
     quantity: z.number().nonnegative().optional(),
     price: z.number().nonnegative().optional(),
@@ -88,11 +85,11 @@ const productUpdateParamsSchema = z
   )
 
 // Single update: separate params and body schemas for clarity
-const updateProductParamsSchema = z.object({
+export const updateProductParamsSchema = z.object({
   productId: z.string().min(1, 'productId is required in params'),
 })
 
-const updateProductBodySchema = z
+export const updateProductBodySchema = z
   .object({
     targetMarketplace: z.enum(['prom', 'rozetka', 'all']).optional(),
   })
@@ -103,7 +100,7 @@ export const updateSingleProductSchema = z.object({
   body: updateProductBodySchema,
 })
 
-// --- Schema for Batch Update ---
+// --- BATCH UPDATE SCHEMAS ---
 
 const batchProductUpdateSchema = z.object({
   productId: z.string().min(1, 'productId is required'),
@@ -119,5 +116,21 @@ export const updateBatchProductSchema = z.object({
   }),
 })
 
-// Export individual schemas for route-level validation
-export { updateProductParamsSchema, updateProductBodySchema }
+// ============================================
+// INFERRED TYPES (Single Source of Truth)
+// ============================================
+
+export type ProductUpdateParams = z.infer<typeof productUpdateParamsSchema>
+export type CreateProductInput = z.infer<typeof createProductBodySchema>
+export type ProductQueryParams = z.infer<typeof getProductsQuerySchema>['query']
+export type SingleProductUpdateInput = {
+  productId: string
+  updates: ProductUpdateParams
+  targetMarketplace?: 'prom' | 'rozetka' | 'all'
+}
+export type BatchProductUpdateItem = z.infer<
+  typeof batchProductUpdateSchema
+>
+export type BatchProductUpdateInput = z.infer<
+  typeof updateBatchProductSchema
+>['body']

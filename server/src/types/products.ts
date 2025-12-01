@@ -2,143 +2,37 @@
 
 import { Source, Prisma } from '../config/database'
 import { Decimal } from '@prisma/client/runtime/library'
-import { CreateProductInput } from '../schemas/product.schema'
+import {
+  CreateProductInput,
+  ProductUpdateParams,
+  ProductQueryParams,
+} from '../schemas/product.schema'
 /**
  * ============================================
  * PRODUCT DOMAIN TYPES
  * ============================================
- * Centralized type definitions for product management
- * and marketplace synchronization
+ * Types that are NOT validated by Zod (internal use only)
+ * For validated types, import from schemas/product.schema.ts
  */
 
-// ============================================
-// QUERY AND FILTER TYPES
-// ============================================
+// Re-export validated types from schema
+export type {
+  ProductUpdateParams,
+  CreateProductInput,
+  ProductQueryParams,
+  SingleProductUpdateInput,
+  BatchProductUpdateItem,
+  BatchProductUpdateInput,
+} from '../schemas/product.schema'
 
-/**
- * Filter parameters for querying products.
- * Used when fetching products with search functionality.
- *
- * @remarks
- * Currently supports simple text search by product name.
- * Can be extended with additional filters like price range, category, etc.
- *
- * @example
- * const filters: ProductQueryParams = {
- *   search: 'laptop'
- * }
- * const products = await productService.getProducts(filters.search)
- */
-export interface ProductQueryParams {
-  search?: string
-}
 
 // ============================================
 // PRODUCT UPDATE TYPES
 // ============================================
 
-/**
- * Allowed update parameters for single or batch product updates.
- * Matches the Zod validation schema in product.schema.ts.
- *
- * @remarks
- * - quantity: Stock quantity (must be non-negative)
- * - price: Product price (must be non-negative)
- *
- * These are the only fields that can be updated through the API.
- * For other field updates, use Prisma directly or create specialized endpoints.
- *
- * @example
- * const updates: ProductUpdateParams = {
- *   quantity: 15,
- *   price: 299.99
- * }
- *
- * await productService.updateSingleProduct({
- *   productId: 'prod_123',
- *   updates,
- *   targetMarketplace: 'all'
- * })
- */
-export interface ProductUpdateParams {
-  quantity?: number
-  price?: number
-}
-
-/**
- * Input structure for single product update operations.
- * Used by the updateSingleProduct endpoint.
- *
- * @remarks
- * targetMarketplace determines where the update is applied:
- * - 'all': Update app DB and sync to all marketplaces (default)
- * - 'prom': Update only Prom marketplace
- * - 'rozetka': Update only Rozetka marketplace
- *
- * When targeting a specific marketplace (not 'all'), the system validates
- * that the new quantity doesn't exceed warehouse stock.
- *
- * @example
- * const input: SingleProductUpdateInput = {
- *   productId: 'prod_123',
- *   updates: { quantity: 5, price: 199.99 },
- *   targetMarketplace: 'prom'
- * }
- *
- * const result = await productService.updateSingleProduct(input)
- */
-export interface SingleProductUpdateInput {
-  productId: string
-  updates: ProductUpdateParams
-  targetMarketplace?: 'prom' | 'rozetka' | 'all'
-}
-
-/**
- * Individual product update in a batch operation.
- * Each item specifies which product to update and what changes to make.
- *
- * @example
- * const batchItem: BatchProductUpdateItem = {
- *   productId: 'prod_123',
- *   updates: { quantity: 10 }
- * }
- */
-export interface BatchProductUpdateItem {
-  productId: string
-  updates: ProductUpdateParams
-}
-
-/**
- * Input structure for batch product update operations.
- * Allows updating multiple products in a single request.
- *
- * @remarks
- * Batch updates are more efficient than individual updates when changing
- * multiple products at once. They use:
- * - Prisma transactions for database updates
- * - Marketplace batch APIs when available
- *
- * All products are validated before any updates begin.
- *
- * @example
- * const input: BatchProductUpdateInput = {
- *   products: [
- *     { productId: 'prod_1', updates: { quantity: 10 } },
- *     { productId: 'prod_2', updates: { price: 199.99 } },
- *     { productId: 'prod_3', updates: { quantity: 5, price: 149.99 } }
- *   ],
- *   targetMarketplace: 'all'
- * }
- *
- * const result = await productService.updateBatchProducts(input)
- */
-export interface BatchProductUpdateInput {
-  products: BatchProductUpdateItem[]
-  targetMarketplace?: 'prom' | 'rozetka' | 'all'
-}
 
 // ============================================
-// PRODUCT UPDATE RESULT TYPES
+// PRODUCT UPDATE RESULT TYPES(Not validated - server responses)
 // ============================================
 
 /**
