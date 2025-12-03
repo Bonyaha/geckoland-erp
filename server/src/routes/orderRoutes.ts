@@ -21,16 +21,6 @@ import { asyncHandler } from '../middleware/asyncHandler'
 
 const router = Router()
 
-// GET /orders - Get all orders with filtering and pagination
-router.get('/', validate(getOrdersQuerySchema), asyncHandler(getOrders))
-
-// GET /orders/:orderId - Get specific order by ID
-router.get(
-  '/:orderId',
-  validate(orderIdParamSchema),
-  asyncHandler(getOrderById)
-)
-
 // POST /orders/fetch/prom - Fetch new orders from Prom
 router.post('/fetch/prom', asyncHandler(fetchNewPromOrders))
 
@@ -45,6 +35,16 @@ router.post(
   '/create-crm',
   validate(createCRMOrderSchema),
   asyncHandler(createCRMOrder)
+)
+
+// GET /orders - Get all orders with filtering and pagination
+router.get('/', validate(getOrdersQuerySchema), asyncHandler(getOrders))
+
+// GET /orders/:orderId - Get specific order by ID
+router.get(
+  '/:orderId',
+  validate(orderIdParamSchema),
+  asyncHandler(getOrderById)
 )
 
 // PATCH /orders/:orderId - Update an existing order

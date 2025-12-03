@@ -18,20 +18,24 @@ import {
 
 const router = Router()
 
-router.get('/', validate(getProductsQuerySchema), asyncHandler(getProducts))
-router.post('/', validate(createProductSchema), asyncHandler(createProduct))
-router.patch(
-  '/:productId',
-  validate(updateSingleProductSchema),
-  asyncHandler(updateSingleProduct)
-)
+router.post('/sync/marketplaces', asyncHandler(syncNewProductsFromMarketplaces))
 router.patch(
   '/batch',
   validate(updateBatchProductSchema),
   asyncHandler(updateBatchProducts)
 )
 
-router.post('/sync/marketplaces', asyncHandler(syncNewProductsFromMarketplaces))
+router.get('/', validate(getProductsQuerySchema), asyncHandler(getProducts))
+router.post('/', validate(createProductSchema), asyncHandler(createProduct))
+
+
+router.patch(
+  '/:productId',
+  validate(updateSingleProductSchema),
+  asyncHandler(updateSingleProduct)
+)
+
+
 export default router
 
 /**

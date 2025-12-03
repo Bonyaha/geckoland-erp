@@ -60,7 +60,7 @@ router.use('/api/tracking', trackingRoutes)
 /**
  * 404 handler for undefined routes
  */
-router.use('*', (req, res) => {
+router.use((req, res) => {
   res.status(404).json({
     error: 'Not Found',
     message: `Route ${req.originalUrl} not found`,

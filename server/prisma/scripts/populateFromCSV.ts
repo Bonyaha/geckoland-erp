@@ -1,3 +1,4 @@
+// server/prisma/scripts/populateFromCSV.ts
 import prisma, { Source } from '../../src/config/database'
 import * as fs from 'fs'
 import * as path from 'path'

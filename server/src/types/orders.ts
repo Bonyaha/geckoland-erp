@@ -2,7 +2,12 @@
 
 import { OrderStatus, Source, Prisma } from '../config/database'
 import { Decimal } from '@prisma/client/runtime/library'
-import { OrderCustomerInfo,OrderDeliveryInfo,OrderPaymentInfo,OrderRecipientInfo } from '../schemas/order.schema'
+import {
+  OrderCustomerInfo,
+  OrderDeliveryInfo as OrderDeliveryInfoInput,
+  OrderPaymentInfo,
+  OrderRecipientInfo,
+} from '../schemas/order.schema'
 /**
  * ============================================
  * ORDER DOMAIN TYPES
@@ -20,7 +25,7 @@ export type {
   SyncOrdersInput,
   OrderCustomerInfo,
   OrderRecipientInfo,
-  OrderDeliveryInfo,
+  OrderDeliveryInfo as OrderDeliveryInfoInput,
   OrderPaymentInfo,
 } from '../schemas/order.schema'
 
@@ -31,10 +36,10 @@ export type {
 /**
  * Filter parameters for querying orders.
  * Used when fetching orders with pagination and filtering.
- * 
+ *
  * @remarks
  * All parameters are optional. If not provided, defaults will be used.
- * 
+ *
  * @example
  * const filters: OrderFilterParams = {
  *   page: 1,
@@ -58,7 +63,7 @@ export interface OrderFilterParams {
 /**
  * Pagination metadata returned with order list queries.
  * Provides information about the current page and total records.
- * 
+ *
  * @example
  * const meta: OrderPaginationMeta = {
  *   page: 1,
@@ -77,15 +82,15 @@ export interface OrderPaginationMeta {
 /**
  * Standardized response structure for order list queries.
  * Includes both the orders array and pagination metadata.
- * 
+ *
  * @remarks
  * Use this type for all order listing operations to maintain consistency.
- * 
+ *
  * @example
  * async getOrders(params: OrderFilterParams): Promise<OrderQueryResult> {
  *   const orders = await prisma.orders.findMany({ ... })
  *   const total = await prisma.orders.count({ ... })
- *   
+ *
  *   return {
  *     orders,
  *     pagination: {
@@ -104,7 +109,6 @@ export interface OrderQueryResult {
   pagination: OrderPaginationMeta
 }
 
-
 /**
  * @deprecated Use OrderQueryResult instead
  * Kept for backward compatibility
@@ -118,10 +122,10 @@ export interface OrderListResponse extends OrderQueryResult {}
 /**
  * Result of order synchronization operations.
  * Tracks how many orders were created, skipped, or failed.
- * 
+ *
  * @remarks
  * Used when fetching and creating orders from marketplaces.
- * 
+ *
  * @example
  * const result: OrderSyncResult = await orderService.fetchAndCreateNewPromOrders()
  * console.log(`Created: ${result.created}, Skipped: ${result.skipped}, Errors: ${result.errors}`)
@@ -135,7 +139,7 @@ export interface OrderSyncResult {
 /**
  * Summary of manual order check across all marketplaces.
  * Provides aggregated results from Prom and Rozetka.
- * 
+ *
  * @example
  * const summary: OrderCheckSummary = await orderService.manualCheckForNewOrders()
  * console.log(`Total created: ${summary.totals.created}`)
@@ -155,14 +159,13 @@ export interface OrderCheckSummary {
 // ORDER CREATION - STRUCTURED COMPONENTS
 // ============================================
 
-
 /**
  * Financial information for an order(internal - not from user input).
  * Contains all monetary values and commission details.
- * 
+ *
  * @remarks
  * All monetary values should use Decimal type for precision.
- * 
+ *
  * @example
  * const financial: OrderFinancialInfo = {
  *   totalAmount: 1500.00,
@@ -185,14 +188,18 @@ export interface OrderFinancialInfo {
   prosaleCommission?: Decimal | number
   isCommissionRefunded?: boolean
 }
-
+export interface OrderDeliveryInfo
+  extends Omit<OrderDeliveryInfoInput, 'deliveryCost'> {
+  // Now it accepts Decimal and number, allowing the service to handle conversion seamlessly
+  deliveryCost?: Decimal | number
+}
 /**
  * Order item structure for creation(internal).
  * Represents a single product in an order.
- * 
+ *
  * @remarks
  * Use this when building order items before creating an order.
- * 
+ *
  * @example
  * const item: OrderItemInput = {
  *   orderItemId: 'item_123_456_abc123',
@@ -228,11 +235,11 @@ export interface OrderItemInput {
 /**
  * Base order creation input with structured components.
  * Provides a standardized structure for creating orders from any source.
- * 
+ *
  * @remarks
  * This is the foundation for all order creation operations.
  * Compose customer, delivery, payment, and financial info into this structure.
- * 
+ *
  * @example
  * const orderInput: BaseOrderCreateInput = {
  *   orderId: 'prom_12345_abc123',
@@ -310,7 +317,6 @@ export interface BaseOrderCreateInput {
   orderItems: OrderItemInput[]
 }
 
-
 // ============================================
 // ORDER ITEM TYPES FOR SYNC (Internal)
 // ============================================
@@ -318,16 +324,16 @@ export interface BaseOrderCreateInput {
 /**
  * Simplified order item for inventory synchronization.
  * Used when syncing stock levels after order creation.
- * 
+ *
  * @remarks
  * After creating an order, pass order items in this format to syncAfterOrder().
- * 
+ *
  * @example
  * const itemsForSync: OrderItemForSync[] = order.orderItems.map(item => ({
  *   productId: item.sku || item.externalProductId,
  *   orderedQuantity: item.quantity
  * }))
- * 
+ *
  * await syncAfterOrder(itemsForSync, 'prom')
  */
 export interface OrderItemForSync {
@@ -338,10 +344,10 @@ export interface OrderItemForSync {
 /**
  * Marketplace-agnostic order item representation.
  * Used for processing items regardless of their source.
- * 
+ *
  * @remarks
  * Convert marketplace-specific items to this format for unified processing.
- * 
+ *
  * @example
  * function mapPromItemToUnified(promItem: PromOrderItem): UnifiedOrderItem {
  *   return {
@@ -376,10 +382,10 @@ export interface UnifiedOrderItem {
 /**
  * Result of order creation operations.
  * Provides detailed feedback about whether order was created successfully.
- * 
+ *
  * @remarks
  * Use this instead of returning just orderId string for better error handling.
- * 
+ *
  * @example
  * async createOrderFromProm(promOrder: PromOrder): Promise<OrderCreationResult> {
  *   try {
@@ -407,11 +413,11 @@ export interface OrderCreationResult {
 /**
  * Validation error for order data.
  * Used when validating order input before creation.
- * 
+ *
  * @example
  * function validateCRMOrder(data: CRMOrderCreateInput): OrderValidationError[] {
  *   const errors: OrderValidationError[] = []
- *   
+ *
  *   if (!data.clientPhone) {
  *     errors.push({
  *       field: 'clientPhone',
@@ -419,7 +425,7 @@ export interface OrderCreationResult {
  *       value: data.clientPhone
  *     })
  *   }
- *   
+ *
  *   if (!data.items || data.items.length === 0) {
  *     errors.push({
  *       field: 'items',
@@ -427,7 +433,7 @@ export interface OrderCreationResult {
  *       value: data.items
  *     })
  *   }
- *   
+ *
  *   return errors
  * }
  */
@@ -444,19 +450,19 @@ export interface OrderValidationError {
 /**
  * Result of phone number normalization.
  * Tracks both raw and formatted versions of phone numbers.
- * 
+ *
  * @remarks
  * Use this to validate phone numbers and track normalization status.
- * 
+ *
  * @example
  * function normalizePhone(phone: string): NormalizedPhone {
  *   if (!phone) {
  *     return { raw: '', formatted: '', isValid: false }
  *   }
- *   
+ *
  *   const digits = phone.replace(/\D/g, '')
  *   const formatted = digits.startsWith('380') ? `+${digits}` : `+380${digits}`
- *   
+ *
  *   return {
  *     raw: phone,
  *     formatted,
@@ -473,14 +479,14 @@ export interface NormalizedPhone {
 /**
  * Name parts for normalization.
  * Used when parsing and combining name components.
- * 
+ *
  * @example
  * const nameParts: NameParts = {
  *   firstName: 'Іван',
  *   lastName: 'Петренко',
  *   secondName: 'Миколайович'
  * }
- * 
+ *
  * const fullName = normalizeFullName(nameParts)
  * // Returns: "Петренко Іван Миколайович"
  */
@@ -493,7 +499,7 @@ export interface NameParts {
 /**
  * Normalized full name result.
  * Contains separated name parts and combined full name.
- * 
+ *
  * @example
  * function normalizeFullName(parts: NameParts): NormalizedFullName {
  *   return {
@@ -520,7 +526,7 @@ export interface NormalizedFullName {
 /**
  * Request structure for updating order tracking status.
  * Used when checking tracking numbers with Nova Poshta API.
- * 
+ *
  * @example
  * const trackingRequest: OrderTrackingUpdateRequest = {
  *   orderId: 'order_123',
@@ -541,7 +547,7 @@ export interface OrderTrackingUpdateRequest {
 /**
  * Result of tracking status update.
  * Contains new status and detailed tracking information.
- * 
+ *
  * @example
  * const trackingResult: OrderTrackingResult = {
  *   orderId: 'order_123',
@@ -575,13 +581,13 @@ export interface OrderTrackingResult {
 
 /**
  * Type guard to check if a value is a valid OrderStatus.
- * 
+ *
  * @param value - The value to check
  * @returns True if value is a valid OrderStatus enum value
- * 
+ *
  * @example
  * const status = req.query.status as string
- * 
+ *
  * if (isOrderStatus(status)) {
  *   // TypeScript now knows status is OrderStatus
  *   params.status = status
@@ -595,13 +601,13 @@ export function isOrderStatus(value: string): value is OrderStatus {
 
 /**
  * Type guard to check if a value is a valid Source enum value.
- * 
+ *
  * @param value - The string value to check
  * @returns True if value is a valid Source enum value (e.g., 'prom', 'rozetka', 'crm')
- * 
+ *
  * @example
  * const source = req.query.source as string
- * 
+ *
  * if (isOrderSource(source)) {
  *   // TypeScript now knows source is Source type
  *   const orders = await orderService.getOrders({ source })
@@ -616,16 +622,16 @@ export function isOrderSource(value: string): value is Source {
 /**
  * Helper function to create order filter parameters with sensible defaults.
  * Fills in missing values to create a complete filter object.
- * 
+ *
  * @param params - Partial filter parameters (all fields optional)
  * @returns Complete OrderFilterParams object with defaults applied
- * 
+ *
  * @remarks
  * Default values:
  * - page: 1
  * - limit: 50
  * - source, status, dateFrom, dateTo: undefined (no filtering)
- * 
+ *
  * @example
  * // Create filters with only some parameters
  * const filters = createOrderFilterParams({
@@ -633,7 +639,7 @@ export function isOrderSource(value: string): value is Source {
  *   status: 'RECEIVED'
  * })
  * // Returns: { page: 1, limit: 50, source: 'prom', status: 'RECEIVED', dateFrom: undefined, dateTo: undefined }
- * 
+ *
  * @example
  * // Use in API endpoint
  * router.get('/orders', (req, res) => {
@@ -642,7 +648,7 @@ export function isOrderSource(value: string): value is Source {
  *     limit: Number(req.query.limit),
  *     source: req.query.source as Source
  *   })
- *   
+ *
  *   const result = await orderService.getOrders(filters)
  *   res.json(result)
  * })

@@ -1,6 +1,7 @@
 // server/src/schemas/order.schema.ts
 import { z } from 'zod'
 import { Source, OrderStatus } from '../config/database'
+import { Decimal } from '@prisma/client/runtime/library'
 
 // ============================================
 // BASE BUILDING BLOCKS
@@ -19,11 +20,13 @@ const orderItemSchema = z.object({
 
 // Customer info schema
 const customerInfoSchema = z.object({
+  clientId: z.string().optional(),
   clientFirstName: z.string().min(1, 'Client first name is required'),
   clientLastName: z.string().min(1, 'Client last name is required'),
   clientSecondName: z.string().optional(),
+  clientFullName: z.string().optional(),
   clientPhone: z.string().min(10, 'Valid phone number is required'),
-  clientEmail: z.string().email().optional(),
+  clientEmail: z.email().optional().nullable(),
 })
 
 // Recipient info schema (optional fields)
@@ -31,6 +34,7 @@ const recipientInfoSchema = z.object({
   recipientFirstName: z.string().optional(),
   recipientLastName: z.string().optional(),
   recipientSecondName: z.string().optional(),
+  recipientFullName: z.string().optional(),
   recipientPhone: z.string().optional(),
 })
 
@@ -38,13 +42,19 @@ const recipientInfoSchema = z.object({
 const deliveryInfoSchema = z.object({
   deliveryAddress: z.string().optional(),
   deliveryCity: z.string().optional(),
+  trackingNumber: z.string().optional(),
+  deliveryOptionId: z.number().optional(),
   deliveryOptionName: z.string().optional(),
   deliveryCost: z.number().nonnegative().optional(),
+  deliveryProviderData: z.any().optional(),
 })
 
 // Payment info schema
 const paymentInfoSchema = z.object({
+  paymentOptionId: z.number().optional(),
   paymentOptionName: z.string().optional(),
+  paymentData: z.any().optional(),
+  paymentStatus: z.string().optional(),
 })
 
 // ============================================

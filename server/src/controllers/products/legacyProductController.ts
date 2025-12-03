@@ -123,135 +123,6 @@ interface BatchProductUpdate {
   updates: ProductUpdateParams
 }
 
-//Function to update product in the app and immediately sync with marketplaces
-//updating quantity and price in marketplaces through app (app db → Prom/Rozetka)
-
-/* export const updateProduct = async (req: Request, res: Response) => {
-console.log('I am in old updating funcion');
-
-  const { productId } = req.params
-  const updates: ProductUpdateParams = {}
-
-  // Extract update parameters from request body
-  if (req.body.quantity !== undefined) updates.quantity = req.body.quantity
-  if (req.body.price !== undefined) updates.price = req.body.price
-
-  if (Object.keys(updates).length === 0) {
-    res.status(400).json({ message: 'No valid update parameters provided' })
-    return
-  }
-
-  try {
-    // Prepare database update data
-    const dbUpdateData: any = {
-      needsSync: true,
-      lastSynced: new Date(),
-    }
-
-    if (updates.quantity !== undefined) {
-      dbUpdateData.stockQuantity = updates.quantity
-    }
-
-    if (updates.price !== undefined) {
-      dbUpdateData.price = updates.price
-    }
-
-    console.log(`Updating product ${productId} with data:`, dbUpdateData)
-
-    // Update app database
-    const product = await prisma.products.update({
-      where: { productId },
-      data: dbUpdateData,
-    })
-
-    // Handle external marketplace updates
-    const syncPromises: Promise<any>[] = []
-    const syncResults: string[] = []
-
-    // Helper function to handle marketplace sync with unified error handling and logging
-    const createMarketplaceUpdatePromise = async (
-      marketplaceName: string,
-      productId: string,
-      updateFunction: () => Promise<any>
-    ) => {
-      try {
-        await updateFunction()
-        syncResults.push(marketplaceName)
-        console.log(
-          `✅ ${marketplaceName} product ${productId} updated successfully`
-        )
-      } catch (error) {
-        console.error(
-          `Failed to update ${marketplaceName} product ${productId}:`,
-          error
-        )
-      }
-    }
-
-    if (
-      product.externalIds &&
-      typeof product.externalIds === 'object' &&
-      !Array.isArray(product.externalIds)
-    ) {
-      const externalIds = product.externalIds as Record<string, any>
-
-      // Update Prom if ID exists
-      if (externalIds.prom && typeof externalIds.prom === 'string') {
-        const promUpdates: any = {}
-        if (updates.quantity !== undefined)
-          promUpdates.quantity = updates.quantity
-        if (updates.price !== undefined) promUpdates.price = updates.price
-
-        syncPromises.push(
-          createMarketplaceUpdatePromise('Prom', productId, () =>
-            updatePromProduct(externalIds.prom, promUpdates)
-          )
-        )
-      }
-
-      // Update Rozetka if ID exists
-      if (
-        externalIds.rozetka &&
-        typeof externalIds.rozetka === 'object' &&
-        externalIds.rozetka.item_id &&
-        typeof externalIds.rozetka.item_id === 'string'
-      ) {
-        const rozetkaUpdates: any = {}
-        if (updates.quantity !== undefined)
-          rozetkaUpdates.quantity = updates.quantity
-        if (updates.price !== undefined) rozetkaUpdates.price = updates.price
-
-        syncPromises.push(
-          createMarketplaceUpdatePromise('Rozetka', productId, () =>
-            updateRozetkaProduct(externalIds.rozetka.item_id, rozetkaUpdates)
-          )
-        )
-      }
-    }
-
-    // Execute all marketplace updates in parallel
-    if (syncPromises.length > 0) {
-      await Promise.allSettled(syncPromises)
-    }
-
-    // Mark sync complete
-    await prisma.products.update({
-      where: { productId },
-      data: { needsSync: false },
-    })
-
-    res.json({
-      message: 'Product updated and synced successfully',
-      updates: updates,
-      syncedMarketplaces: syncResults,
-      totalMarketplaces: syncPromises.length,
-    })
-  } catch (error) {
-    console.error('Product update error:', error)
-    res.status(500).json({ message: 'Failed to update product' })
-  }
-} */
-
 /**
  * Update single or multiple products in the app and sync with marketplaces
  *
@@ -263,7 +134,7 @@ console.log('I am in old updating funcion');
  * PUT /products/batch
  * Body: { products: [{ productId: string, updates: { quantity?: number, price?: number } }] }
  */
-export const updateProduct = async (
+/* export const updateProduct = async (
   req: Request,
   res: Response
 ): Promise<void> => {
@@ -280,9 +151,9 @@ export const updateProduct = async (
   } else {
     await handleSingleUpdate(req, res, productId)
   }
-}
+} */
 
-async function handleSingleUpdate(
+/* async function handleSingleUpdate(
   req: Request,
   res: Response,
   productId: string
@@ -492,9 +363,9 @@ async function handleSingleUpdate(
       errors: undefined,
     })
   }
-}
+} */
 
-async function handleBatchUpdate(req: Request, res: Response) {
+/* async function handleBatchUpdate(req: Request, res: Response) {
   const {
     products,
     targetMarketplace,
@@ -737,7 +608,7 @@ async function handleBatchUpdate(req: Request, res: Response) {
   console.log(
     `✅ Batch update completed: ${successfulUpdates.length}/${products.length} products updated`
   )
-}
+} */
 
 /**
  * Create a product in database from Prom data

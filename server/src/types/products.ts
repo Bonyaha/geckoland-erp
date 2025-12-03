@@ -370,7 +370,8 @@ export interface EnrichedProductData {
   name: string
   price: number | string
   stockQuantity: number
-  externalIds?: {
+  available: boolean
+  externalIds: {
     prom?: string
     rozetka?: {
       rz_item_id?: string
