@@ -1,3 +1,4 @@
+// client/src/state/api.ts
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
 export interface Product {
@@ -70,7 +71,7 @@ export const api = createApi({
     }),
     getProducts: build.query<Product[], string | void>({
       query: (search) => ({
-        url: '/products',
+        url: '/api/products',
         params: search ? { search } : {},
       }),
       providesTags: ['Products'],

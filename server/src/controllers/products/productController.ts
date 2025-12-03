@@ -24,8 +24,23 @@ export const getProducts = async (
     search: req.query.search as string | undefined,
   }
   const products = await productService.getProducts(queryParams.search)
+  // Convert Decimal to number for JSON serialization
+  const formattedProducts = products.map((product) => ({
+    ...product,
+    price: parseFloat(product.price.toString()),
+    priceOld: product.priceOld ? parseFloat(product.priceOld.toString()) : null,
+    pricePromo: product.pricePromo
+      ? parseFloat(product.pricePromo.toString())
+      : null,
+    updatedPrice: product.updatedPrice
+      ? parseFloat(product.updatedPrice.toString())
+      : null,
+    costPrice: product.costPrice
+      ? parseFloat(product.costPrice.toString())
+      : null,
+  }))
 
-  res.json(products)
+  res.json(formattedProducts)
 }
 
 /**

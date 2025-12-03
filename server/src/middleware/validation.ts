@@ -41,9 +41,17 @@ export const validate = <Schema extends ZodType<RequestValidation, any, any>>(
 
       // 2. Replace request data with the validated/transformed data
       // We only assign back what was present in the schema result
-      if (parsed.body) req.body = parsed.body
-      if (parsed.query) req.query = parsed.query
-      if (parsed.params) req.params = parsed.params
+      if (parsed.body) {
+        req.body = parsed.body
+      }
+      if (parsed.query) {
+        // Instead of: req.query = parsed.query
+        // Use Object.assign to merge properties
+        Object.assign(req.query, parsed.query)
+      }
+      if (parsed.params) {
+        Object.assign(req.params, parsed.params)
+      }
 
       return next()
     } catch (error) {
