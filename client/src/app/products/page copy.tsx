@@ -187,14 +187,104 @@ const Products = () => {
 
           <tbody className='bg-white divide-y divide-gray-200'>
             {/* Map over products to create the table rows (Step 3) */}
-            {typedProducts?.map((product) => (
-              <ProductRow
+            {typedProducts?.slice(0, 5).map((product) => (
+              // --- Start of Product Row (MOCKUP for Step 2) ---
+              <tr
                 key={product.productId}
-                product={product}
-                onEdit={handleEdit}
-                onCopy={handleCopy}
-                onDelete={handleDelete}
-              />
+                className='hover:bg-gray-50 transition-colors'
+              >
+                {/* 1. PRODUCT / ID / DATE */}
+                <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
+                  <div className='flex items-center'>
+                    {/* Image Placeholder/Thumbnail */}
+                    <div className='flex-shrink-0 h-10 w-10 mr-3'>
+                      <Image
+                        src={product.mainImage || '/no_image_placeholder.png'}
+                        alt={product.name}
+                        width={40}
+                        height={40}
+                        className='rounded-md object-cover'
+                      />
+                    </div>
+                    {/* Product Name & SKU/Date */}
+                    <div className='flex flex-col'>
+                      <div className='text-sm font-semibold text-gray-800'>
+                        {product.name}
+                      </div>
+                      <div className='text-xs text-gray-500 mt-0.5'>
+                        ID: {product.sku}
+                      </div>
+                      <div className='text-xs text-gray-400 mt-0.5'>
+                        Оновлено: {product.dateModified || 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+
+                {/* 2. AVAILABLE */}
+                <td className='px-6 py-4 whitespace-nowrap text-sm text-right'>
+                  <span
+                    className={`font-semibold ${
+                      product.stockQuantity > 0
+                        ? 'text-green-600'
+                        : 'text-red-600'
+                    }`}
+                  >
+                    {product.stockQuantity} pcs.
+                  </span>
+                </td>
+
+                {/* 3. SALES (Mock Data) */}
+                <td className='px-6 py-4 whitespace-nowrap text-sm text-right text-red-600 font-semibold'>
+                  {mockSales} units
+                </td>
+
+                {/* 4. COST (Mock Data) */}
+                <td className='px-6 py-4 whitespace-nowrap text-sm text-right text-gray-700 font-medium'>
+                  {mockCost.toFixed(2)}
+                </td>
+
+                {/* 5. PRICE */}
+                <td className='px-6 py-4 whitespace-nowrap text-sm text-right text-gray-700 font-bold'>
+                  {product.price.toFixed(2)}
+                </td>
+
+                {/* 6. MARGIN (Mock Data) */}
+                <td className='px-6 py-4 whitespace-nowrap text-sm text-right'>
+                  <span
+                    className={`font-bold ${
+                      mockMargin > 0 ? 'text-blue-600' : 'text-red-600'
+                    }`}
+                  >
+                    {mockMargin.toFixed(2)}
+                  </span>
+                </td>
+
+                {/* 7. ACTIONS */}
+                <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
+                  <div className='flex justify-end gap-2'>
+                    <button
+                      title='Редагувати'
+                      className='text-gray-400 hover:text-blue-600 p-1 rounded-full'
+                    >
+                      <Pencil className='w-4 h-4' />
+                    </button>
+                    <button
+                      title='Копіювати'
+                      className='text-gray-400 hover:text-blue-600 p-1 rounded-full'
+                    >
+                      <Copy className='w-4 h-4' />
+                    </button>
+                    <button
+                      title='Видалити'
+                      className='text-gray-400 hover:text-red-600 p-1 rounded-full'
+                    >
+                      <Trash2 className='w-4 h-4' />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              // --- End of Product Row ---
             ))}
           </tbody>
         </table>
