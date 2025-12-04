@@ -95,7 +95,7 @@ const Products = () => {
           <SearchIcon className='w-5 h-5 text-gray-400 m-2' />
           <input
             className='w-full py-2 px-2 rounded bg-white outline-none text-gray-700'
-            placeholder='Search phrase...'
+            placeholder='Пошукова фраза...'
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -135,7 +135,7 @@ const Products = () => {
       <div className='flex flex-wrap justify-end items-center gap-3 mb-6'>
         <button className='flex items-center bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-5 rounded-full shadow-md transition-all'>
           <PlusCircleIcon className='w-4 h-4 mr-2' />
-          Purchase goods
+          Закупівля товару
         </button>
 
         <button
@@ -143,12 +143,12 @@ const Products = () => {
           onClick={() => setIsModalOpen(true)}
         >
           <PlusCircleIcon className='w-4 h-4 mr-2' />
-          Add product
+          Додати товар
         </button>
 
         <button className='flex items-center bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-5 rounded-full shadow-md transition-all'>
           <Download className='w-4 h-4 mr-2' />
-          Import
+          Імпорт товарів
         </button>
 
         <button className='p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors'>
@@ -164,8 +164,8 @@ const Products = () => {
               {/* Product / Date Column - Wide */}
               <th className='px-6 py-3 text-left w-2/5 md:w-1/3'>
                 <div className='flex items-center'>
-                  Product / ID{' '}
-                  <span className='text-gray-400 text-xs ml-1'>/ Date</span>
+                  Товар / ID{' '}
+                  <span className='text-gray-400 text-xs ml-1'>/ Дата</span>
                 </div>
               </th>
               {/* Available Column - Narrow, Text Right */}
