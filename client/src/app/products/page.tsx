@@ -169,17 +169,17 @@ const Products = () => {
                 </div>
               </th>
               {/* Available Column - Narrow, Text Right */}
-              <th className='px-6 py-3 text-right'>Available</th>
+              <th className='px-6 py-3 text-right'>Доступно</th>
               {/* Sales Column - Narrow, Text Right */}
-              <th className='px-6 py-3 text-right'>Sales</th>
+              <th className='px-6 py-3 text-right'>Продажі</th>
               {/* Cost Column - Narrow, Text Right */}
-              <th className='px-6 py-3 text-right'>Cost (₴)</th>
+              <th className='px-6 py-3 text-right'>Собів. (₴)</th>
               {/* Price Column - Narrow, Text Right */}
-              <th className='px-6 py-3 text-right'>Price (₴)</th>
+              <th className='px-6 py-3 text-right'>Ціна (₴)</th>
               {/* Margin Column - Narrow, Text Right */}
-              <th className='px-6 py-3 text-right'>Margin (₴)</th>
+              <th className='px-6 py-3 text-right'>Націнка (₴)</th>
               {/* Actions Column - Narrow, Text Right */}
-              <th className='px-6 py-3 text-right w-20'>Actions</th>
+              <th className='px-6 py-3 text-right w-20'>Дії</th>
             </tr>
           </thead>
 
@@ -213,7 +213,7 @@ const Products = () => {
                         ID: {product.sku}
                       </div>
                       <div className='text-xs text-gray-400 mt-0.5'>
-                        Updated: {product.dateModified || 'N/A'}
+                        Оновлено: {product.dateModified || 'N/A'}
                       </div>
                     </div>
                   </div>
@@ -262,19 +262,19 @@ const Products = () => {
                 <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
                   <div className='flex justify-end gap-2'>
                     <button
-                      title='Edit'
+                      title='Редагувати'
                       className='text-gray-400 hover:text-blue-600 p-1 rounded-full'
                     >
                       <Pencil className='w-4 h-4' />
                     </button>
                     <button
-                      title='Copy'
+                      title='Копіювати'
                       className='text-gray-400 hover:text-blue-600 p-1 rounded-full'
                     >
                       <Copy className='w-4 h-4' />
                     </button>
                     <button
-                      title='Delete'
+                      title='Видалити'
                       className='text-gray-400 hover:text-red-600 p-1 rounded-full'
                     >
                       <Trash2 className='w-4 h-4' />
