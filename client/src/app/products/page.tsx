@@ -7,11 +7,11 @@ import {
   Download,
   Settings,
   RefreshCw,
-  Pencil,
+  /* Pencil,
   Copy,
-  Trash2,
+  Trash2 */
 } from 'lucide-react'
-import Image from 'next/image'
+//import Image from 'next/image'
 import { useState } from 'react'
 //import Header from '@/app/(components)/Header'
 import CreateProductModal from './CreateProductModal'
