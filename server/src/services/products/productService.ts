@@ -107,6 +107,50 @@ class ProductService {
     }
   }
 
+/**
+   * Calculates inventory statistics for the entire database.
+   */
+  async getProductStats() {
+    // Run queries in parallel for performance
+    const [totalGoods, inStockCount, inventoryData] = await Promise.all([
+      // 1. Total count of products
+      prisma.products.count(),
+      // 2. Count of products with stock > 0
+      prisma.products.count({ where: { stockQuantity: { gt: 0 } } }),
+      // 3. Get only price and quantity for aggregation
+      // We fetch this instead of using aggregate for "value" because
+      // (price * quantity) sum isn't directly supported in simple Prisma aggregate
+      prisma.products.findMany({
+        select: {
+          price: true,
+          stockQuantity: true,
+        },
+      }),
+    ])
+
+    // Calculate sums in memory (very fast for this data size)
+    let totalUnits = 0
+    let totalValue = 0
+
+    inventoryData.forEach((p) => {
+      const qty = p.stockQuantity || 0
+      // Convert Prisma Decimal to number
+      const price = p.price ? Number(p.price) : 0
+      
+      totalUnits += qty
+      totalValue += price * qty
+    })
+
+    return {
+      totalGoods,
+      inStockCount,
+      totalUnits,
+      totalValue,
+      // Potential profit logic from your frontend (30%)
+      potentialProfit: totalValue * 0.3, 
+    }
+  }
+
   /**
    * Creates a new product in the database.
    *

@@ -54,6 +54,17 @@ export const getProducts = async (
 }
 
 /**
+ * Get product inventory statistics
+ * @route GET /api/products/stats
+ */
+export const getProductStats = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const stats = await productService.getProductStats()
+  res.json(stats)
+}
+/**
  * Create a new product
  * @route POST /api/products
  */

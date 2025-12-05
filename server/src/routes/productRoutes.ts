@@ -6,6 +6,7 @@ import {
   updateSingleProduct,
   updateBatchProducts,
   syncNewProductsFromMarketplaces,
+  getProductStats,
 } from '../controllers/products/productController'
 import { asyncHandler } from '../middleware/asyncHandler'
 import { validate } from '../middleware/validation'
@@ -24,6 +25,9 @@ router.patch(
   validate(updateBatchProductSchema),
   asyncHandler(updateBatchProducts)
 )
+
+// GET /api/products/stats
+router.get('/stats', asyncHandler(getProductStats))
 
 router.get('/', validate(getProductsQuerySchema), asyncHandler(getProducts))
 router.post('/', validate(createProductSchema), asyncHandler(createProduct))

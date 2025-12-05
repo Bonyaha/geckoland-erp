@@ -1,3 +1,4 @@
+// server/src/routes/index.ts
 import { Router } from 'express'
 import dashboardRoutes from './dashboardRoutes'
 import productRoutes from './productRoutes'

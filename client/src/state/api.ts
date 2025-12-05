@@ -11,6 +11,14 @@ export interface Product {
   sku: string
 }
 
+export interface ProductInventoryStats {
+  totalGoods: number
+  inStockCount: number
+  totalUnits: number
+  totalValue: number
+  potentialProfit: number
+}
+
 export interface NewProduct {
   name: string
   price: number
@@ -88,9 +96,13 @@ export const api = createApi({
     }),
     getProducts: build.query<ProductsResponse, ProductQueryParams | void>({
       query: (params) => ({
-        url: '/api/products',
+        url: '/products',
         params: params || {},
       }),
+      providesTags: ['Products'],
+    }),
+    getProductStats: build.query<ProductInventoryStats, void>({
+      query: () => '/products/stats',
       providesTags: ['Products'],
     }),
     createProduct: build.mutation<Product, NewProduct>({
@@ -115,6 +127,7 @@ export const api = createApi({
 export const {
   useGetDashboardMetricsQuery,
   useGetProductsQuery,
+  useGetProductStatsQuery,
   useCreateProductMutation,
   useGetUsersQuery,
   useGetExpensesByCategoryQuery,

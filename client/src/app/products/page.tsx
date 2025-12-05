@@ -239,7 +239,7 @@ const Products = () => {
       </div>
 
       {/* STATISTICS DASHBOARD */}
-      <ProductStats products={typedProducts} />
+      <ProductStats />
 
       {/* ACTION TOOLBAR */}
       <div className='flex flex-wrap justify-end items-center gap-3 mb-6'>
