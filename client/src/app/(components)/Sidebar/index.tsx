@@ -121,7 +121,7 @@ const Sidebar = () => {
         <SidebarLink
           href='/inventory'
           icon={Archive}
-          label='Inventory'
+          label='Замовлення'
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink
