@@ -100,7 +100,7 @@ const Sidebar = () => {
             isSidebarCollapsed ? 'hidden' : 'block'
           } font-extrabold text-2xl text-gray-700 dark:text-gray-300`}
         >
-          Warehouse
+          Склад
         </h1>
 
         <button
@@ -115,7 +115,7 @@ const Sidebar = () => {
         <SidebarLink
           href='/dashboard'
           icon={Layout}
-          label='Dashboard'
+          label='Головна'
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink
@@ -127,25 +127,25 @@ const Sidebar = () => {
         <SidebarLink
           href='/products'
           icon={Clipboard}
-          label='Products'
+          label='Товари'
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink
           href='/users'
           icon={User}
-          label='Users'
+          label='Клієнти'
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink
           href='/settings'
           icon={SlidersHorizontal}
-          label='Settings'
+          label='Налаштування'
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink
           href='/expenses'
           icon={CircleDollarSign}
-          label='Expenses'
+          label='Витрати'
           isCollapsed={isSidebarCollapsed}
         />
       </div>
@@ -153,7 +153,7 @@ const Sidebar = () => {
       {/* FOOTER */}
       <div className={`${isSidebarCollapsed ? 'hidden' : 'block'} mb-10`}>
         <p className='text-center text-xs text-gray-500 dark:text-gray-400'>
-          &copy; 2025 Warehouse
+          &copy; 2025 Склад. Всі права захищені.
         </p>
       </div>
     </div>

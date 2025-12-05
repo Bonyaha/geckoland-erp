@@ -66,7 +66,13 @@ export const createProductSchema = z.object({
 // This defines the *expected shape* of the req.query object
 export const getProductsQuerySchema = z.object({
   query: z.object({
-    search: z.string().optional(), // 'search' must be a string, if it exists
+    search: z.string().optional(),
+    page: z.coerce.number().int().positive().default(1).optional(),
+    limit: z.coerce.number().int().positive().max(100).default(20).optional(),
+    stockFilter: z
+      .enum(['all', 'inStock', 'outOfStock'])
+      .default('all')
+      .optional(),
   }),
 })
 

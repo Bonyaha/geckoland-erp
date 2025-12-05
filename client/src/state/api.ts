@@ -19,6 +19,23 @@ export interface NewProduct {
   sku: string
 }
 
+export interface ProductsResponse {
+  products: Product[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    pages: number
+  }
+}
+
+export interface ProductQueryParams {
+  search?: string
+  page?: number
+  limit?: number
+  stockFilter?: 'all' | 'inStock' | 'outOfStock'
+}
+
 export interface SalesSummary {
   salesSummaryId: string
   totalValue: number
@@ -69,10 +86,10 @@ export const api = createApi({
       query: () => '/dashboard',
       providesTags: ['DashboardMetrics'],
     }),
-    getProducts: build.query<Product[], string | void>({
-      query: (search) => ({
+    getProducts: build.query<ProductsResponse, ProductQueryParams | void>({
+      query: (params) => ({
         url: '/api/products',
-        params: search ? { search } : {},
+        params: params || {},
       }),
       providesTags: ['Products'],
     }),

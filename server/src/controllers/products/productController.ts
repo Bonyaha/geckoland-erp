@@ -20,12 +20,19 @@ export const getProducts = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const queryParams: ProductQueryParams = {
+  const queryParams = {
     search: req.query.search as string | undefined,
+    page: req.query.page ? parseInt(req.query.page as string) : undefined,
+    limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
+    stockFilter: req.query.stockFilter as
+      | 'all'
+      | 'inStock'
+      | 'outOfStock'
+      | undefined,
   }
-  const products = await productService.getProducts(queryParams.search)
+  const result = await productService.getProducts(queryParams)
   // Convert Decimal to number for JSON serialization
-  const formattedProducts = products.map((product) => ({
+  const formattedProducts = result.products.map((product) => ({
     ...product,
     price: parseFloat(product.price.toString()),
     priceOld: product.priceOld ? parseFloat(product.priceOld.toString()) : null,
@@ -40,7 +47,10 @@ export const getProducts = async (
       : null,
   }))
 
-  res.json(formattedProducts)
+   res.json({
+     products: formattedProducts,
+     pagination: result.pagination,
+   })
 }
 
 /**

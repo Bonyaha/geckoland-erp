@@ -56,19 +56,55 @@ class ProductService {
    * // Search for specific products
    * const results = await productService.getProducts('laptop')
    */
-  async getProducts(search?: string) {
-    // Treat undefined OR "" as "no search"
-    const hasSearch = search && search.length > 0
+  async getProducts(params?: {
+    search?: string
+    page?: number
+    limit?: number
+    stockFilter?: 'all' | 'inStock' | 'outOfStock'
+  }) {
+    const { search, page = 1, limit = 20, stockFilter = 'all' } = params || {}
 
-    return prisma.products.findMany({
-      where: hasSearch
-        ? {
-            name: {
-              contains: search,
-            },
-          }
-        : undefined,
-    })
+    const skip = (page - 1) * limit
+
+    // Build where clause
+    const where: any = {}
+
+    // Search filter
+    if (search && search.length > 0) {
+      where.name = {
+        contains: search,
+        mode: 'insensitive', // Case-insensitive search
+      }
+    }
+
+    // Stock filter
+    if (stockFilter === 'inStock') {
+      where.stockQuantity = { gt: 0 }
+    } else if (stockFilter === 'outOfStock') {
+      where.stockQuantity = { lte: 0 }
+    }
+    // 'all' means no additional filter
+
+    // Fetch products with pagination
+    const [products, total] = await Promise.all([
+      prisma.products.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { dateModified: 'desc' },
+      }),
+      prisma.products.count({ where }),
+    ])
+
+    return {
+      products,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    }
   }
 
   /**
