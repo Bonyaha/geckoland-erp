@@ -71,10 +71,38 @@ class ProductService {
 
     // Search filter
     if (search && search.length > 0) {
-      where.name = {
-        contains: search,
-        mode: 'insensitive', // Case-insensitive search
-      }
+      // Clean the search term (remove extra spaces, convert to uppercase for ID matching)
+      const cleanSearch = search.trim()      
+
+      where.OR = [
+        // Search by product name (case-insensitive)
+        {
+          name: {
+            contains: cleanSearch,
+            mode: 'insensitive',
+          },
+        },
+        // Search by exact productId match
+        {
+          productId: {
+            equals: cleanSearch,
+          },
+        },
+        // Search by productId contains (case-insensitive)
+        {
+          productId: {
+            contains: cleanSearch,
+            mode: 'insensitive',
+          },
+        },
+        // Search by SKU
+        {
+          sku: {
+            contains: cleanSearch,
+            mode: 'insensitive',
+          },
+        },
+      ]
     }
 
     // Stock filter

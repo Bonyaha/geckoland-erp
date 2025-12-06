@@ -170,7 +170,7 @@ const Products = () => {
           <SearchIcon className='w-5 h-5 text-gray-400 m-2' />
           <input
             className='w-full py-2 px-2 rounded bg-white outline-none text-gray-700'
-            placeholder='Пошукова фраза...'
+            placeholder='Пошук за назвою, ID або SKU...'
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value)
