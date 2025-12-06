@@ -74,7 +74,10 @@ const ProductRow = ({ product, onEdit, onCopy, onDelete }: ProductRowProps) => {
               {product.name}
             </div>
             <div className='text-xs text-gray-500 mt-0.5'>
-              ID: {product.sku}
+              ID: {product.productId}
+            </div>
+            <div className='text-xs text-gray-500 mt-0.5'>
+              SKU: {product.sku}
             </div>
             <div className='text-xs text-gray-400 mt-0.5'>
               Оновлено:{' '}

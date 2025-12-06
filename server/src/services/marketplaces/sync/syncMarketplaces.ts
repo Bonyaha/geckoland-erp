@@ -75,6 +75,7 @@ const updateAllMarketplaceQuantities = async () => {
       update: {
         stockQuantity: quantity,
         promQuantity: quantity,
+        available: quantity > 0,
         lastPromSync: new Date(),
       },
       create: {
@@ -126,6 +127,7 @@ const updateAllMarketplaceQuantities = async () => {
             where: { productId: product.productId },
             data: {
               rozetkaQuantity: quantity,
+              available: quantity > 0,
               lastRozetkaSync: new Date(),
             },
           })
@@ -387,6 +389,7 @@ const syncMarketplaces = async () => {
     // Build DB update
     const updateData: any = {
       stockQuantity: entry.newMasterQuantity,
+      available: entry.newMasterQuantity > 0,
       lastSynced: new Date(),
       needsPromSync: entry.needsPromSync,
       needsRozetkaSync: entry.needsRozetkaSync,
@@ -709,6 +712,7 @@ export const syncAfterOrder = async (
 
     const updateData: any = {
       stockQuantity: update.newMasterQuantity,
+      available: update.newMasterQuantity > 0,
       lastSynced: new Date(),
     }
 

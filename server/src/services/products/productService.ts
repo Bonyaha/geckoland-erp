@@ -72,7 +72,7 @@ class ProductService {
     // Search filter
     if (search && search.length > 0) {
       // Clean the search term (remove extra spaces, convert to uppercase for ID matching)
-      const cleanSearch = search.trim()      
+      const cleanSearch = search.trim()
 
       where.OR = [
         // Search by product name (case-insensitive)
@@ -135,7 +135,7 @@ class ProductService {
     }
   }
 
-/**
+  /**
    * Calculates inventory statistics for the entire database.
    */
   async getProductStats() {
@@ -164,7 +164,7 @@ class ProductService {
       const qty = p.stockQuantity || 0
       // Convert Prisma Decimal to number
       const price = p.price ? Number(p.price) : 0
-      
+
       totalUnits += qty
       totalValue += price * qty
     })
@@ -175,7 +175,7 @@ class ProductService {
       totalUnits,
       totalValue,
       // Potential profit logic from your frontend (30%)
-      potentialProfit: totalValue * 0.3, 
+      potentialProfit: totalValue * 0.3,
     }
   }
 
@@ -239,6 +239,7 @@ class ProductService {
     if (!targetMarketplace || targetMarketplace === 'all') {
       if (updates.quantity !== undefined) {
         dbUpdateData.stockQuantity = updates.quantity
+        dbUpdateData.available = updates.quantity > 0
       }
       if (updates.price !== undefined) {
         if (
@@ -480,6 +481,7 @@ class ProductService {
             lastSynced: new Date(),
             ...(item.updates.quantity !== undefined && {
               stockQuantity: item.updates.quantity,
+              available: item.updates.quantity > 0,
             }),
             ...(item.updates.price !== undefined && {
               price: item.updates.price,
