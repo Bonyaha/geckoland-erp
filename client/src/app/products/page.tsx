@@ -127,7 +127,14 @@ const Products = () => {
     )
   }
 
-  const { products = [], pagination = { pages: 1 } } = data || {}
+ const products = data.products || []
+ const pagination = data.pagination || {
+   page: 1,
+   limit: 20,
+   total: 0,
+   pages: 1,
+ }
+
   const typedProducts: ProductType[] = products as ProductType[]
 
   // Generate page numbers for pagination
