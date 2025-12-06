@@ -2,6 +2,7 @@
 import React from 'react'
 import Image from 'next/image'
 import { Pencil, Copy, Trash2 } from 'lucide-react'
+import { formatDateTime } from '@/utils/dateUtils'
 
 // Define the type for a single product, ensuring all required fields are present
 type ProductType = {
@@ -42,6 +43,8 @@ console.log('product is: ', productId);
 // --- Component Definition ---
 
 const ProductRow = ({ product, onEdit, onCopy, onDelete }: ProductRowProps) => {
+console.log(product.lastSynced);
+
   // Calculations based on mock data
   const cost = calculateCost(product.price)
   const sales = calculateSales(product.productId)
@@ -80,8 +83,7 @@ const ProductRow = ({ product, onEdit, onCopy, onDelete }: ProductRowProps) => {
               SKU: {product.sku}
             </div>
             <div className='text-xs text-gray-400 mt-0.5'>
-              Оновлено:{' '}
-              {product.lastSynced || new Date().toLocaleDateString('uk-UA')}
+              Оновлено: {formatDateTime(product.lastSynced)}
             </div>
           </div>
         </div>
