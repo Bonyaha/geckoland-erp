@@ -7,20 +7,18 @@ import {
   Download,
   Settings,
   RefreshCw,
+  ArrowUpCircle,
   /* Pencil,
   Copy,
   Trash2 */
 } from 'lucide-react'
 //import Image from 'next/image'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 //import Header from '@/app/(components)/Header'
 import CreateProductModal from './CreateProductModal'
 import ProductStats from './ProductStats'
 import ProductRow from './ProductRow'
 
-// IMPORTANT: Updated the ProductFormData type to reflect what comes from the API
-// (which likely requires less mandatory fields than the creation form)
-// and match the structure needed for the table display.
 type ProductType = {
   productId: string
   name: string
@@ -51,6 +49,36 @@ const Products = () => {
     'all' | 'inStock' | 'outOfStock'
   >('all')
   const itemsPerPage = 20
+
+  // 3. State to control the visibility of the scroll-to-top button
+  const [showScrollArrow, setShowScrollArrow] = useState(false)
+
+  // --- Scroll Logic ---
+  const handleScroll = () => {
+    // Show the button if the user has scrolled down more than 300 pixels
+    if (window.scrollY > 300) {
+      setShowScrollArrow(true)
+    } else {
+      setShowScrollArrow(false)
+    }
+  }
+  const scrollToTop = () => {
+    // Smoothly scroll the window to the top
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    })
+  }
+
+  useEffect(() => {
+    // Attach the scroll event listener when the component mounts
+    window.addEventListener('scroll', handleScroll)
+
+    // Clean up the event listener when the component unmounts
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+    }
+  }, [])
 
   // Fetch products with filters
   const { data, isLoading, isError, refetch } = useGetProductsQuery({
@@ -99,8 +127,8 @@ const Products = () => {
     )
   }
 
-  const { products, pagination } = data
-  const typedProducts = products as ProductType[]
+  const { products = [], pagination = { pages: 1 } } = data || {}
+  const typedProducts: ProductType[] = products as ProductType[]
 
   // Generate page numbers for pagination
   const generatePageNumbers = () => {
@@ -339,6 +367,17 @@ const Products = () => {
         onClose={() => setIsModalOpen(false)}
         onCreate={handleCreateProduct}
       />
+      {/* SCROLL TO TOP ARROW COMPONENT */}
+      {showScrollArrow && (
+        <button
+          onClick={scrollToTop}
+          className='fixed bottom-8 right-8 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all duration-300 z-50'
+          aria-label='Scroll to top'
+          title='Нагору' // Title for accessibility/tooltip
+        >
+          <ArrowUpCircle className='w-6 h-6' />
+        </button>
+      )}
     </div>
   )
 }

@@ -11,7 +11,7 @@ type ProductType = {
   stockQuantity: number
   sku: string
   mainImage?: string
-  dateModified?: string
+  lastSynced?: string
   // Add other fields you might need for display (e.g., source, category)
 }
 
@@ -78,7 +78,7 @@ const ProductRow = ({ product, onEdit, onCopy, onDelete }: ProductRowProps) => {
             </div>
             <div className='text-xs text-gray-400 mt-0.5'>
               Оновлено:{' '}
-              {product.dateModified || new Date().toLocaleDateString('uk-UA')}
+              {product.lastSynced || new Date().toLocaleDateString('uk-UA')}
             </div>
           </div>
         </div>
