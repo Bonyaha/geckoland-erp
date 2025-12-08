@@ -1,7 +1,7 @@
 // client/src/app/products/ProductRow.tsx
-import React from 'react'
+import React, { useState } from 'react'
 import Image from 'next/image'
-import { Pencil, Copy, Trash2 } from 'lucide-react'
+import { Pencil, Copy, Trash2,Info, Settings } from 'lucide-react'
 import { formatDateTime } from '@/utils/dateUtils'
 
 // Define the type for a single product, ensuring all required fields are present
@@ -18,138 +18,208 @@ type ProductType = {
 
 type ProductRowProps = {
   product: ProductType
-  // Actions that the parent page needs to handle
+  isSelected: boolean
+  onSelect: (id: string) => void
   onEdit: (id: string) => void
   onCopy: (id: string) => void
   onDelete: (id: string) => void
 }
 
-// --- Mock Data Functions (Replace with your actual business logic) ---
-
-// In a real app, this would come from your database or state management
-const calculateCost = (price: number): number => {
-  // Mock: Assume cost is 70% of the price
-  return price * 0.7
-}
-
-// In a real app, this would be fetched from your sales data
-const calculateSales = (productId: string): number => {
-console.log('product is: ', productId);
-
-  // Mock: Random sales between 1 and 200 for variety
-  return Math.floor(Math.random() * 200) + 1
-}
-
 // --- Component Definition ---
 
-const ProductRow = ({ product, onEdit, onCopy, onDelete }: ProductRowProps) => {
-console.log(product.lastSynced);
-
+const ProductRow = ({
+  product,
+  isSelected,
+  onSelect,
+  onEdit,
+  onCopy,
+  onDelete,
+}: ProductRowProps) => {
+  //console.log(product.lastSynced);
+  // --- Local State for Inputs ---
+  const [costInput, setCostInput] = useState<string>('')
   // Calculations based on mock data
-  const cost = calculateCost(product.price)
-  const sales = calculateSales(product.productId)
-  const margin = product.price - cost
+  const cost = costInput ? parseFloat(costInput) : 0
+  const sales = Math.floor(Math.random() * 50) // Mock sales
+  //const margin = product.price - cost
+  const marginValue = product.price - cost
+  const marginPercent =
+    product.price > 0 ? (marginValue / product.price) * 100 : 0
+  const salesDate = '06.09' // Mock date
 
   // Utility for formatting currency
   const formatCurrency = (value: number) => value.toFixed(2)
 
   return (
-    <tr key={product.productId} className='hover:bg-gray-50 transition-colors'>
-      {/* 1. PRODUCT / ID / DATE (Wider Column) */}
-      <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
-        <div className='flex items-center'>
+    <tr
+      key={product.productId}
+      className={`hover:bg-gray-50 transition-colors border-b border-gray-100 ${
+        isSelected ? 'bg-blue-50' : ''
+      }`}
+    >
+      {/* 1. CHECKBOX */}
+      <td className='px-4 py-4 align-top w-10'>
+        <input
+          type='checkbox'
+          checked={isSelected}
+          onChange={() => onSelect(product.productId)}
+          className='mt-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4 cursor-pointer'
+        />
+      </td>
+      {/* 2. PRODUCT INFO (Wide Column) */}
+      <td className='px-4 py-4 align-top max-w-md'>
+        <div className='flex gap-3'>
           {/* Image Placeholder/Thumbnail */}
-          <div className='flex-shrink-0 h-10 w-10 mr-3'>
+          <div className='flex-shrink-0 h-16 w-16 bg-gray-200 rounded-md overflow-hidden relative'>
             <Image
               src={
                 product.mainImage ||
-                'https://placehold.co/40x40/f1f1f1/999.png?text=IMG'
+                'https://placehold.co/64x64/e2e8f0/94a3b8.png?text=IMG'
               }
               alt={product.name}
-              width={40}
-              height={40}
-              className='rounded-md object-cover border border-gray-200'
+              fill
+              className='object-cover'
             />
           </div>
-          {/* Product Name & SKU/Date */}
-          <div className='flex flex-col'>
-            <div className='text-sm font-semibold text-gray-800 line-clamp-2'>
+
+          {/* Details */}
+          <div className='flex flex-col gap-1 w-full'>
+            <div className='text-sm font-bold text-blue-700 leading-tight hover:underline cursor-pointer'>
               {product.name}
             </div>
-            <div className='text-xs text-gray-500 mt-0.5'>
-              ID: {product.productId}
-            </div>
-            <div className='text-xs text-gray-500 mt-0.5'>
-              SKU: {product.sku}
+            <div className='text-xs text-gray-500'>
+              ID: {product.productId} | Артикул: {product.sku}
+              {/* Optional Category Data */}
+              {/* | Категорія: {product.category || 'Reptiles'} */}
             </div>
             <div className='text-xs text-gray-400 mt-0.5'>
               Оновлено: {formatDateTime(product.lastSynced)}
+            </div>
+            {/* ACTION BAR (Moved here from separate column) */}
+            <div className='flex flex-wrap items-center gap-2 mt-2'>
+              <button className='px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-full transition-colors'>
+                Додати продаж
+              </button>
+
+              <button
+                title='Info'
+                className='p-1.5 bg-blue-500 text-white rounded-full hover:bg-blue-600'
+              >
+                <Info className='w-3 h-3' />
+              </button>
+
+              {/* Standard Actions */}
+              <button
+                onClick={() => onEdit(product.productId)}
+                className='p-1 text-blue-600 hover:bg-blue-100 rounded'
+              >
+                <Pencil className='w-4 h-4' />
+              </button>
+              <button
+                onClick={() => onCopy(product.productId)}
+                className='p-1 text-blue-600 hover:bg-blue-100 rounded'
+              >
+                <Copy className='w-4 h-4' />
+              </button>
+              <button
+                onClick={() => onDelete(product.productId)}
+                className='p-1 text-blue-600 hover:bg-blue-100 rounded'
+              >
+                <Trash2 className='w-4 h-4' />
+              </button>
+
+              {/* Marketplace Tags (Mock UI) */}
+              <div className='flex gap-1 ml-auto'>
+                <span className='px-1.5 py-0.5 bg-purple-600 text-white text-[10px] rounded font-bold'>
+                  Prom
+                </span>
+                {/* <span className="px-1.5 py-0.5 bg-green-600 text-white text-[10px] rounded font-bold">Rozetka</span> */}
+                <Settings className='w-4 h-4 text-blue-500 cursor-pointer' />
+              </div>
             </div>
           </div>
         </div>
       </td>
 
-      {/* 2. AVAILABLE (Green/Red text) */}
-      <td className='px-6 py-4 whitespace-nowrap text-sm text-right'>
-        <span
-          className={`font-semibold ${
-            product.stockQuantity > 0 ? 'text-green-600' : 'text-red-600'
-          }`}
-        >
-          {product.stockQuantity} одиниць
-        </span>
-      </td>
-
-      {/* 3. SALES (Red text) */}
-      <td className='px-6 py-4 whitespace-nowrap text-sm text-right text-red-600 font-semibold'>
-        {sales} продажів
-      </td>
-
-      {/* 4. COST (Default text) */}
-      <td className='px-6 py-4 whitespace-nowrap text-sm text-right text-gray-700 font-medium'>
-        {formatCurrency(cost)}
-      </td>
-
-      {/* 5. PRICE (Bold text) */}
-      <td className='px-6 py-4 whitespace-nowrap text-sm text-right text-gray-700 font-bold'>
-        {formatCurrency(product.price)}
-      </td>
-
-      {/* 6. MARGIN (Blue/Red text, Bold) */}
-      <td className='px-6 py-4 whitespace-nowrap text-sm text-right'>
-        <span
-          className={`font-bold ${
-            margin > 0 ? 'text-blue-600' : 'text-red-600'
-          }`}
-        >
-          {formatCurrency(margin)}
-        </span>
-      </td>
-
-      {/* 7. ACTIONS (Icons) */}
-      <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
-        <div className='flex justify-end gap-2'>
-          <button
-            title='Edit'
-            onClick={() => onEdit(product.productId)}
-            className='text-gray-400 hover:text-blue-600 p-1 rounded-full'
+      {/* 3. AVAILABLE ("Card" Style) */}
+      <td className='px-2 py-4 align-top'>
+        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
+          <span className='text-xs text-gray-500 font-medium mb-1'>
+            Доступно
+          </span>
+          <span
+            className={`text-2xl font-bold ${
+              product.stockQuantity > 0 ? 'text-green-500' : 'text-red-500'
+            }`}
           >
-            <Pencil className='w-4 h-4' />
+            {product.stockQuantity}
+          </span>
+          <span className='text-xs text-gray-500 mb-2'>одиниць</span>
+
+          {/* Action Trigger Image 4 */}
+          <button className='text-xs text-blue-500 hover:text-blue-700 hover:underline border-t border-dashed border-blue-300 pt-1 w-full text-center'>
+            Додати\Зменшити
           </button>
-          <button
-            title='Copy'
-            onClick={() => onCopy(product.productId)}
-            className='text-gray-400 hover:text-blue-600 p-1 rounded-full'
-          >
-            <Copy className='w-4 h-4' />
+        </div>
+      </td>
+
+      {/* 4. SALES ("Card" Style) */}
+      <td className='px-2 py-4 align-top'>
+        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
+          <span className='text-xs text-gray-500 font-medium mb-1'>
+            Кількість
+          </span>
+          <span className='text-2xl font-bold text-red-500'>{sales}</span>
+          <span className='text-xs text-gray-500 mb-2'>продажів</span>
+          {/* Action Trigger Image 5 */}
+          <button className='text-xs text-blue-500 hover:text-blue-700 hover:underline w-full text-center'>
+            з {salesDate}
           </button>
-          <button
-            title='Delete'
-            onClick={() => onDelete(product.productId)}
-            className='text-gray-400 hover:text-red-600 p-1 rounded-full'
-          >
-            <Trash2 className='w-4 h-4' />
+        </div>
+      </td>
+
+      {/* 5. COST ("Card" Style - Input) */}
+      <td className='px-2 py-4 align-top'>
+        <div className='flex flex-col items-center justify-center gap-2 p-3 h-full min-w-[120px]'>
+          {/* Input Box Image 6 */}
+          <input
+            type='number'
+            placeholder='0'
+            className='w-20 px-2 py-1 text-center text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500'
+            value={cost}
+            onChange={(e) => setCostInput(e.target.value)}
+          />
+          <button className='text-xs text-blue-500 hover:underline'>
+            Розрахувати
           </button>
+          {/* {formatCurrency(cost)} */}
+        </div>
+      </td>
+
+      {/* 6. PRICE ("Card" Style) */}
+      <td className='px-2 py-4 align-top'>
+        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
+          <span className='text-xs text-gray-500 font-medium mb-1'>Продаж</span>
+          <span className='text-xl font-bold text-green-600'>
+            {product.price}
+          </span>
+          {/* {formatCurrency(product.price)} */}
+          <span className='text-xs text-gray-500'>грн.</span>
+        </div>
+      </td>
+
+      {/* 7. MARGIN (Blue/Red text, Bold) */}
+      <td className='px-2 py-4 align-top'>
+        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[120px]'>
+          <span className='text-xs text-gray-500 font-medium mb-1'>
+            Націнка
+          </span>
+          <span className='text-lg font-bold text-green-500'>
+            {formatCurrency(marginValue)} грн.
+          </span>
+          <span className='text-sm font-bold text-green-400'>
+            ({marginPercent.toFixed(0)}%)
+          </span>          
         </div>
       </td>
     </tr>

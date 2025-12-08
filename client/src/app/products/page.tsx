@@ -48,6 +48,7 @@ const Products = () => {
   const [stockFilter, setStockFilter] = useState<
     'all' | 'inStock' | 'outOfStock'
   >('all')
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([])
   const itemsPerPage = 20
 
   // 3. State to control the visibility of the scroll-to-top button
@@ -115,6 +116,22 @@ const Products = () => {
     setCurrentPage(1) // Reset to first page when filter changes
   }
 
+  // --- Selection Logic ---
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked && data?.products) {
+      const allIds = data.products.map((p: any) => p.productId)
+      setSelectedProducts(allIds)
+    } else {
+      setSelectedProducts([])
+    }
+  }
+
+  const handleSelectOne = (id: string) => {
+    setSelectedProducts((prev) =>
+      prev.includes(id) ? prev.filter((pId) => pId !== id) : [...prev, id]
+    )
+  }
+
   if (isLoading) {
     return <div className='py-4'>Завантаження...</div>
   }
@@ -127,13 +144,13 @@ const Products = () => {
     )
   }
 
- const products = data.products || []
- const pagination = data.pagination || {
-   page: 1,
-   limit: 20,
-   total: 0,
-   pages: 1,
- }
+  const products = data.products || []
+  const pagination = data.pagination || {
+    page: 1,
+    limit: 20,
+    total: 0,
+    pages: 1,
+  }
 
   const typedProducts: ProductType[] = products as ProductType[]
 
@@ -306,18 +323,27 @@ const Products = () => {
         <table className='min-w-full divide-y divide-gray-200'>
           <thead className='bg-gray-50 text-gray-500 uppercase text-xs font-bold tracking-wider'>
             <tr>
-              <th className='px-6 py-3 text-left w-2/5 md:w-1/3'>
-                <div className='flex items-center'>
-                  Товар / ID{' '}
-                  <span className='text-gray-400 text-xs ml-1'>/ Дата</span>
-                </div>
+              {/* CHECKBOX HEADER */}
+              <th className='px-4 py-3 w-10'>
+                <input
+                  type='checkbox'
+                  className='rounded border-gray-300 text-blue-600 focus:ring-blue-500'
+                  onChange={handleSelectAll}
+                  checked={
+                    typedProducts.length > 0 &&
+                    selectedProducts.length === typedProducts.length
+                  }
+                />
               </th>
-              <th className='px-6 py-3 text-right'>Доступно</th>
-              <th className='px-6 py-3 text-right'>Продажі</th>
-              <th className='px-6 py-3 text-right'>Собів. (₴)</th>
-              <th className='px-6 py-3 text-right'>Ціна (₴)</th>
-              <th className='px-6 py-3 text-right'>Націнка (₴)</th>
-              <th className='px-6 py-3 text-right w-20'>Дії</th>
+              <th className='px-4 py-3 text-left text-blue-800 w-1/3'>
+                Товар/Послуга/Дата
+              </th>
+              {/* Centered headers for the "Card" columns */}
+              <th className='px-4 py-3 text-center text-blue-800'>Доступно</th>
+              <th className='px-4 py-3 text-center text-blue-800'>Продажі</th>
+              <th className='px-4 py-3 text-center text-blue-800'>Собів.</th>
+              <th className='px-4 py-3 text-center text-blue-800'>Ціна</th>
+              <th className='px-4 py-3 text-center text-blue-800'>Націнка</th>
             </tr>
           </thead>
 
@@ -326,6 +352,8 @@ const Products = () => {
               <ProductRow
                 key={product.productId}
                 product={product}
+                isSelected={selectedProducts.includes(product.productId)}
+                onSelect={handleSelectOne}
                 onEdit={handleEdit}
                 onCopy={handleCopy}
                 onDelete={handleDelete}
