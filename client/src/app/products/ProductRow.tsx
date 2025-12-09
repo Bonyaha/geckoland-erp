@@ -1,8 +1,9 @@
 // client/src/app/products/ProductRow.tsx
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import Image from 'next/image'
-import { Pencil, Copy, Trash2,Info, Settings } from 'lucide-react'
+import { Pencil, Copy, Trash2, Info, Settings } from 'lucide-react'
 import { formatDateTime } from '@/utils/dateUtils'
+import { parseExternalIds } from '@/utils/marketplaceUtils'
 
 // Define the type for a single product, ensuring all required fields are present
 type ProductType = {
@@ -13,7 +14,7 @@ type ProductType = {
   sku: string
   mainImage?: string
   lastSynced?: string
-  // Add other fields you might need for display (e.g., source, category)
+  externalIds?: string | Record<string, any> 
 }
 
 type ProductRowProps = {
@@ -35,6 +36,52 @@ const ProductRow = ({
   onCopy,
   onDelete,
 }: ProductRowProps) => {
+  // Helper function to render marketplace tags based on externalIds
+  const renderMarketplaceTags = useMemo(() => {
+    const ids = parseExternalIds(product.externalIds) as Record<
+      string,
+      any
+    > | null
+
+    const tags: React.ReactNode[] = []
+
+    if (ids?.prom) {
+      tags.push(
+        <span
+          key='prom'
+          title={`Prom ID: ${ids.prom}`}
+          className='px-1.5 py-0.5 bg-purple-600 text-white text-[10px] rounded font-bold'
+        >
+          Prom
+        </span>
+      )
+    }
+
+    if (ids?.rozetka) {
+      tags.push(
+        <span
+          key='rozetka'
+          title='Rozetka Linked'
+          className='px-1.5 py-0.5 bg-green-600 text-white text-[10px] rounded font-bold'
+        >
+          Rozetka
+        </span>
+      )
+    }
+
+    // Only add settings icon if we have tags
+    if (tags.length > 0) {
+      tags.push(
+        <Settings
+          key='settings'
+          className='w-4 h-4 text-blue-500 cursor-pointer'
+        />
+      )
+    }
+
+    return tags.length > 0 ? tags : null
+  }, [product.externalIds])
+
   //console.log(product.lastSynced);
   // --- Local State for Inputs ---
   const [costInput, setCostInput] = useState<string>('')
@@ -130,11 +177,7 @@ const ProductRow = ({
 
               {/* Marketplace Tags (Mock UI) */}
               <div className='flex gap-1 ml-auto'>
-                <span className='px-1.5 py-0.5 bg-purple-600 text-white text-[10px] rounded font-bold'>
-                  Prom
-                </span>
-                {/* <span className="px-1.5 py-0.5 bg-green-600 text-white text-[10px] rounded font-bold">Rozetka</span> */}
-                <Settings className='w-4 h-4 text-blue-500 cursor-pointer' />
+                {renderMarketplaceTags}
               </div>
             </div>
           </div>
@@ -219,7 +262,7 @@ const ProductRow = ({
           </span>
           <span className='text-sm font-bold text-green-400'>
             ({marginPercent.toFixed(0)}%)
-          </span>          
+          </span>
         </div>
       </td>
     </tr>
