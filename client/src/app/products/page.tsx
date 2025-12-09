@@ -1,6 +1,11 @@
+//  client/src/app/products/page.tsx
 'use client'
 
-import { useCreateProductMutation, useGetProductsQuery } from '@/state/api'
+import {
+  useCreateProductMutation,
+  useGetProductsQuery,
+  useBatchUpdateProductQuantityMutation,
+} from '@/state/api'
 import {
   PlusCircleIcon,
   SearchIcon,
@@ -8,6 +13,7 @@ import {
   Settings,
   RefreshCw,
   ArrowUpCircle,
+  Edit3,
   /* Pencil,
   Copy,
   Trash2 */
@@ -18,6 +24,7 @@ import { useState, useEffect } from 'react'
 import CreateProductModal from './CreateProductModal'
 import ProductStats from './ProductStats'
 import ProductRow from './ProductRow'
+import BatchUpdateQuantityModal from './BatchUpdateQuantityModal'
 
 type ProductType = {
   productId: string
@@ -44,15 +51,27 @@ const Products = () => {
   // State management
   const [searchTerm, setSearchTerm] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [stockFilter, setStockFilter] = useState<
     'all' | 'inStock' | 'outOfStock'
   >('all')
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
+  const [showScrollArrow, setShowScrollArrow] = useState(false)
+
   const itemsPerPage = 20
 
-  // 3. State to control the visibility of the scroll-to-top button
-  const [showScrollArrow, setShowScrollArrow] = useState(false)
+  // API hooks
+  const { data, isLoading, isError, refetch } = useGetProductsQuery({
+    search: searchTerm,
+    page: currentPage,
+    limit: itemsPerPage,
+    stockFilter,
+  })
+
+  const [createProduct] = useCreateProductMutation()
+  const [batchUpdateProductQuantity, { isLoading: isBatchUpdating }] =
+    useBatchUpdateProductQuantityMutation()
 
   // --- Scroll Logic ---
   const handleScroll = () => {
@@ -80,16 +99,6 @@ const Products = () => {
       window.removeEventListener('scroll', handleScroll)
     }
   }, [])
-
-  // Fetch products with filters
-  const { data, isLoading, isError, refetch } = useGetProductsQuery({
-    search: searchTerm,
-    page: currentPage,
-    limit: itemsPerPage,
-    stockFilter,
-  })
-
-  const [createProduct] = useCreateProductMutation()
 
   const handleCreateProduct = async (productData: ProductType) => {
     await createProduct(productData)
@@ -130,6 +139,59 @@ const Products = () => {
     setSelectedProducts((prev) =>
       prev.includes(id) ? prev.filter((pId) => pId !== id) : [...prev, id]
     )
+  }
+
+  // Batch Update Logic
+  const handleBatchUpdate = async (adjustment: number) => {
+    if (selectedProducts.length === 0) return
+
+    try {
+      // Prepare batch update data
+      const products = selectedProducts
+        .map((productId) => {
+          const product = typedProducts.find((p) => p.productId === productId)
+          if (!product) return null
+
+          const newQuantity = Math.max(0, product.stockQuantity + adjustment)
+
+          return {
+            productId,
+            updates: {
+              quantity: newQuantity,
+            },
+          }
+        })
+        .filter(Boolean) as Array<{
+        productId: string
+        updates: { quantity: number }
+      }>
+
+      // Call batch update API
+      await batchUpdateProductQuantity({
+        products,
+        targetMarketplace: 'all',
+      }).unwrap()
+
+      // Clear selection after successful update
+      setSelectedProducts([])
+
+      console.log(`Successfully updated ${products.length} products`)
+    } catch (error) {
+      console.error('Failed to update products:', error)
+    }
+  }
+
+  // Get selected products for batch modal
+  const getSelectedProductsData = () => {
+    if (!data?.products) return []
+
+    return data.products
+      .filter((p: any) => selectedProducts.includes(p.productId))
+      .map((p: any) => ({
+        productId: p.productId,
+        name: p.name,
+        currentQuantity: p.stockQuantity,
+      }))
   }
 
   if (isLoading) {
@@ -294,28 +356,56 @@ const Products = () => {
       <ProductStats />
 
       {/* ACTION TOOLBAR */}
-      <div className='flex flex-wrap justify-end items-center gap-3 mb-6'>
-        <button className='flex items-center bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-5 rounded-full shadow-md transition-all'>
-          <PlusCircleIcon className='w-4 h-4 mr-2' />
-          Закупівля товару
-        </button>
+      <div className='flex flex-wrap justify-between items-center gap-3 mb-6'>
+        {/* LEFT: Batch Actions (shown when products are selected) */}
+        <div className='flex items-center gap-3'>
+          {selectedProducts.length > 0 && (
+            <>
+              <span className='text-sm font-medium text-gray-700'>
+                Вибрано: {selectedProducts.length}
+              </span>
+              <button
+                onClick={() => setIsBatchModalOpen(true)}
+                disabled={isBatchUpdating}
+                className='flex items-center bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-5 rounded-full shadow-md transition-all disabled:bg-gray-400'
+              >
+                <Edit3 className='w-4 h-4 mr-2' />
+                {isBatchUpdating ? 'Оновлення...' : 'Змінити кількість'}
+              </button>
+              <button
+                onClick={() => setSelectedProducts([])}
+                className='text-sm text-gray-600 hover:text-gray-800 underline'
+              >
+                Скасувати вибір
+              </button>
+            </>
+          )}
+        </div>
 
-        <button
-          className='flex items-center bg-emerald-400 hover:bg-emerald-500 text-white font-medium py-2 px-5 rounded-full shadow-md transition-all'
-          onClick={() => setIsModalOpen(true)}
-        >
-          <PlusCircleIcon className='w-4 h-4 mr-2' />
-          Додати товар
-        </button>
+        {/* RIGHT: Regular Actions */}
+        <div className='flex items-center gap-3'>
+          <button className='flex items-center bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-5 rounded-full shadow-md transition-all'>
+            <PlusCircleIcon className='w-4 h-4 mr-2' />
+            Закупівля товару
+          </button>
 
-        <button className='flex items-center bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-5 rounded-full shadow-md transition-all'>
-          <Download className='w-4 h-4 mr-2' />
-          Імпорт товарів
-        </button>
+          <button
+            className='flex items-center bg-emerald-400 hover:bg-emerald-500 text-white font-medium py-2 px-5 rounded-full shadow-md transition-all'
+            onClick={() => setIsModalOpen(true)}
+          >
+            <PlusCircleIcon className='w-4 h-4 mr-2' />
+            Додати товар
+          </button>
 
-        <button className='p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors'>
-          <Settings className='w-6 h-6' />
-        </button>
+          <button className='flex items-center bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-5 rounded-full shadow-md transition-all'>
+            <Download className='w-4 h-4 mr-2' />
+            Імпорт товарів
+          </button>
+
+          <button className='p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-colors'>
+            <Settings className='w-6 h-6' />
+          </button>
+        </div>
       </div>
 
       {/* TABLE VIEW */}
@@ -396,11 +486,17 @@ const Products = () => {
         </div>
       )}
 
-      {/* MODAL */}
+      {/* MODALS */}
       <CreateProductModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onCreate={handleCreateProduct}
+      />
+      <BatchUpdateQuantityModal
+        isOpen={isBatchModalOpen}
+        onClose={() => setIsBatchModalOpen(false)}
+        onUpdate={handleBatchUpdate}
+        selectedProducts={getSelectedProductsData()}
       />
       {/* SCROLL TO TOP ARROW COMPONENT */}
       {showScrollArrow && (

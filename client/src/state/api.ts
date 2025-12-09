@@ -33,6 +33,17 @@ export interface UpdateProductQuantity {
   targetMarketplace?: 'prom' | 'rozetka' | 'all'
 }
 
+export interface BatchUpdateProductQuantity {
+  products: Array<{
+    productId: string
+    updates: {
+      quantity?: number
+      price?: number
+    }
+  }>
+  targetMarketplace?: 'prom' | 'rozetka' | 'all'
+}
+
 export interface ProductsResponse {
   products: Product[]
   pagination: {
@@ -130,6 +141,19 @@ export const api = createApi({
       }),
       invalidatesTags: ['Products'],
     }),
+    batchUpdateProductQuantity: build.mutation<any, BatchUpdateProductQuantity>(
+      {
+        query: ({ products, targetMarketplace }) => ({
+          url: `/products/batch`,
+          method: 'PATCH',
+          body: {
+            products,
+            targetMarketplace: targetMarketplace || 'all',
+          },
+        }),
+        invalidatesTags: ['Products'],
+      }
+    ),
     getUsers: build.query<User[], void>({
       query: () => '/users',
       providesTags: ['Users'],
@@ -149,4 +173,5 @@ export const {
   useGetUsersQuery,
   useGetExpensesByCategoryQuery,
   useUpdateProductQuantityMutation,
+  useBatchUpdateProductQuantityMutation,
 } = api
