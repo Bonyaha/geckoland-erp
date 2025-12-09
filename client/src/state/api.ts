@@ -27,6 +27,12 @@ export interface NewProduct {
   sku: string
 }
 
+export interface UpdateProductQuantity {
+  productId: string
+  quantity: number
+  targetMarketplace?: 'prom' | 'rozetka' | 'all'
+}
+
 export interface ProductsResponse {
   products: Product[]
   pagination: {
@@ -113,6 +119,17 @@ export const api = createApi({
       }),
       invalidatesTags: ['Products'],
     }),
+    updateProductQuantity: build.mutation<Product, UpdateProductQuantity>({
+      query: ({ productId, quantity, targetMarketplace }) => ({
+        url: `/products/${productId}`,
+        method: 'PATCH',
+        body: {
+          quantity,
+          targetMarketplace: targetMarketplace || 'all',
+        },
+      }),
+      invalidatesTags: ['Products'],
+    }),
     getUsers: build.query<User[], void>({
       query: () => '/users',
       providesTags: ['Users'],
@@ -131,4 +148,5 @@ export const {
   useCreateProductMutation,
   useGetUsersQuery,
   useGetExpensesByCategoryQuery,
+  useUpdateProductQuantityMutation,
 } = api

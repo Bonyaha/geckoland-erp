@@ -4,6 +4,8 @@ import Image from 'next/image'
 import { Pencil, Copy, Trash2, Info, Settings } from 'lucide-react'
 import { formatDateTime } from '@/utils/dateUtils'
 import { parseExternalIds } from '@/utils/marketplaceUtils'
+import UpdateQuantityModal from './UpdateQuantityModal'
+import { useUpdateProductQuantityMutation } from '@/state/api'
 
 // Define the type for a single product, ensuring all required fields are present
 type ProductType = {
@@ -82,6 +84,25 @@ const ProductRow = ({
     return tags.length > 0 ? tags : null
   }, [product.externalIds])
 
+const [isQuantityModalOpen, setIsQuantityModalOpen] = useState(false)
+const [updateProductQuantity, { isLoading: isUpdating }] =
+  useUpdateProductQuantityMutation()
+
+const handleQuantityUpdate = async (newQuantity: number) => {
+  try {
+    await updateProductQuantity({
+      productId: product.productId,
+      quantity: newQuantity,
+      targetMarketplace: 'all', // or let user choose
+    }).unwrap()
+
+    // Optional: Show success message
+    console.log('Quantity updated successfully')
+  } catch (error) {
+    console.error('Failed to update quantity:', error)
+    // Optional: Show error message to user
+  }
+}
   //console.log(product.lastSynced);
   // --- Local State for Inputs ---
   const [costInput, setCostInput] = useState<string>('')
@@ -125,6 +146,7 @@ const ProductRow = ({
               }
               alt={product.name}
               fill
+              sizes='64px'
               className='object-cover'
             />
           </div>
@@ -176,9 +198,7 @@ const ProductRow = ({
               </button>
 
               {/* Marketplace Tags (Mock UI) */}
-              <div className='flex gap-1 ml-auto'>
-                {renderMarketplaceTags}
-              </div>
+              <div className='flex gap-1 ml-auto'>{renderMarketplaceTags}</div>
             </div>
           </div>
         </div>
@@ -200,8 +220,12 @@ const ProductRow = ({
           <span className='text-xs text-gray-500 mb-2'>одиниць</span>
 
           {/* Action Trigger Image 4 */}
-          <button className='text-xs text-blue-500 hover:text-blue-700 hover:underline border-t border-dashed border-blue-300 pt-1 w-full text-center'>
-            Додати\Зменшити
+          <button
+            onClick={() => setIsQuantityModalOpen(true)}
+            disabled={isUpdating}
+            className='text-xs text-blue-500 hover:text-blue-700 hover:underline border-t border-dashed border-blue-300 pt-1 w-full text-center'
+          >
+            {isUpdating ? 'Оновлення...' : 'Додати\\Зменшити'}
           </button>
         </div>
       </td>
@@ -264,6 +288,13 @@ const ProductRow = ({
             ({marginPercent.toFixed(0)}%)
           </span>
         </div>
+        <UpdateQuantityModal
+          isOpen={isQuantityModalOpen}
+          onClose={() => setIsQuantityModalOpen(false)}
+          onUpdate={handleQuantityUpdate}
+          currentQuantity={product.stockQuantity}
+          productName={product.name}
+        />
       </td>
     </tr>
   )
