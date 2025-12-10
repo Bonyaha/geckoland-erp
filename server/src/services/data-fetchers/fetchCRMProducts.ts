@@ -1,3 +1,4 @@
+// server/src/services/data-fetchers/fetchCRMProducts.ts
 import axios from 'axios'
 import * as fs from 'fs/promises'
 import {config} from '../../config/environment'
@@ -67,7 +68,7 @@ export async function fetchCRMProducts() {
     })
     
     await fs.writeFile(
-      'prisma/data/products.json',
+      'prisma/data/productsFromHP.json',
       JSON.stringify(transformedProducts, null, 2)
     )
 
@@ -95,7 +96,7 @@ export async function fetchAllProductsFromDb() {
     console.log(`✅ Found ${allDbProducts.length} products in the database.`);
    
     await fs.writeFile(
-      'prisma/data/products.json',
+      'prisma/data/productsFromDB.json',
       JSON.stringify(allDbProducts, null, 2)
     );
 

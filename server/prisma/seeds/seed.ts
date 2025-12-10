@@ -1,3 +1,4 @@
+// server/prisma/seeds/seed.ts
 import prisma from "../../src/config/database";
 import fs from "fs";
 import path from "path";

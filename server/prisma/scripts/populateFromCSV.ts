@@ -245,10 +245,13 @@ async function populateProductsFromCSV(
 
 async function main() {
   // Choose which file to process here
+console.log('in populateProductsFromCSV main function');
+
   const fileToProcess: 'fromHP' | 'fromDB' = 'fromHP'
 
   if (fileToProcess === 'fromHP') {
-    const csvFilePath = path.join(__dirname, 'data', 'products.csv')
+    const csvFilePath = path.join(__dirname, '..', 'data', 'products.csv')
+
     await populateProductsFromCSV(csvFilePath, mapHPCsvToProduct)
   } else if (fileToProcess === 'fromDB') {
     const csvFilePath = path.join(__dirname, 'data', 'productsFromDB.csv')

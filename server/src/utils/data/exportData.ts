@@ -1,3 +1,10 @@
+// server/src/utils/data/exportData.ts
+/* 
+  This script exports all products, orders, and order items from the database
+  into a JSON file located at prisma/data/backup.json. This can be used for
+  backup or data migration purposes.
+*/
+
 import prisma from '../../config/database'
 import { writeFileSync } from 'fs'
 import path from 'path'

@@ -1,4 +1,4 @@
-import data from '../data/products.json'
+/* import data from '../data/products.json'
 
 interface Product {
   sku: string | null
@@ -11,3 +11,4 @@ const skus = products
   .filter((sku): sku is string => sku !== null)
 const duplicates = skus.filter((sku, index) => skus.indexOf(sku) !== index)
 console.log('Duplicate SKUs:', [...new Set(duplicates)])
+ */

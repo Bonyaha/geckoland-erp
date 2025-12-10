@@ -166,7 +166,7 @@ const handleQuantityUpdate = async (newQuantity: number) => {
             </div>
             {/* ACTION BAR (Moved here from separate column) */}
             <div className='flex flex-wrap items-center gap-2 mt-2'>
-              <button className='px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-full transition-colors'>
+              <button className='px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-full transition-colors cursor-pointer'>
                 Додати продаж
               </button>
 
@@ -223,7 +223,7 @@ const handleQuantityUpdate = async (newQuantity: number) => {
           <button
             onClick={() => setIsQuantityModalOpen(true)}
             disabled={isUpdating}
-            className='text-xs text-blue-500 hover:text-blue-700 hover:underline border-t border-dashed border-blue-300 pt-1 w-full text-center'
+            className='text-xs text-blue-500 hover:text-blue-700 hover:underline border-t border-dashed border-blue-300 pt-1 w-full text-center cursor-pointer'
           >
             {isUpdating ? 'Оновлення...' : 'Додати\\Зменшити'}
           </button>
@@ -256,7 +256,7 @@ const handleQuantityUpdate = async (newQuantity: number) => {
             value={cost}
             onChange={(e) => setCostInput(e.target.value)}
           />
-          <button className='text-xs text-blue-500 hover:underline'>
+          <button className='text-xs text-blue-500 hover:underline cursor-pointer'>
             Розрахувати
           </button>
           {/* {formatCurrency(cost)} */}
