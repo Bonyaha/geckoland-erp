@@ -1,4 +1,4 @@
-//server\src\services\marketplaces\sync\syncMarketplaces.ts
+// server/src/services/marketplaces/sync/syncMarketplaces.ts
 //import cron from 'node-cron'
 import prisma from '../../../config/database'
 import { fetchCRMProducts } from '../../data-fetchers/fetchCRMProducts'
@@ -15,8 +15,7 @@ import {
   updateMultipleRozetkaProducts,
   RozetkaUpdateParams,
 } from '../rozetkaClient'
-import {
-  normalizeQuantity} from './marketplaceSyncHelpers'
+import { normalizeQuantity } from '../../../utils/helpers/normalizeQuantity'
 import type { ProductSyncEntry } from '../../../types/marketplaces'
 
 // Update quantities for all products in app's database
@@ -142,8 +141,52 @@ const updateAllMarketplaceQuantities = async () => {
   console.log('✅ All marketplace quantities update completed')
 }
 
-// Main function to sync marketplaces
-// This will be called periodically to keep marketplace data in sync
+/**
+ * Synchronizes product quantities between the internal database
+ * and all connected marketplaces (Prom and Rozetka).
+ *
+ * This is a full two-way inventory reconciliation engine:
+ * it detects quantity changes on marketplaces, computes deltas,
+ * updates the database accordingly, and pushes required updates
+ * back to marketplaces based on selected synchronization strategy.
+ *
+ * @returns Summary of synchronization results, including
+ * counts of updated items, detected discrepancies, and errors.
+ *
+ * @remarks
+ * - Fetches product feeds from Prom and Rozetka independently.
+ * - Compares marketplace quantities with last known database values.
+ * - Computes quantity deltas and determines whether an update is required.
+ * - Applies two distinct synchronization strategies:
+ *   - `same_quantity`: marketplaces are kept in strict alignment.
+ *   - `different_quantity`: each marketplace maintains independent stock.
+ * - Updates internal DB quantities before propagating changes outward.
+ * - Aggregates all update operations and performs batch syncs to marketplaces.
+ * - Ensures the system continues processing even when individual updates fail.
+ * - Produces a detailed result object summarizing changes and encountered errors.
+ *
+ * @example
+ * const summary = await syncMarketplaces();
+ *
+ * console.log(`Updated ${summary.totalUpdated} products across marketplaces.`);
+ *
+ * if (summary.errors.length > 0) {
+ *   console.warn('Sync completed with warnings:');
+ *   summary.errors.forEach((err) => console.warn(' -', err));
+ * }
+ *
+ * @example
+ * // Behavior example — SAME QUANTITY strategy:
+ * // DB: 100 units, Prom: 95, Rozetka: 100
+ * // Prom delta = -5 → DB becomes 95 → Rozetka also updated to 95
+ *
+ * @example
+ * // Behavior example — DIFFERENT QUANTITY strategy:
+ * // DB: 100 units, Prom: 95, Rozetka: 120
+ * // Prom delta = -5 → DB becomes 95
+ * // Rozetka stays 120 (no enforced alignment)
+ */
+
 
 const syncMarketplaces = async () => {
   // Fetch external products
@@ -498,10 +541,69 @@ const syncMarketplaces = async () => {
 }
 
 /**
- * Update product quantities in DB and sync to marketplaces after new order.
- * @param orderedProducts Array of items from the order, with productId and orderedProducts
- * @param sourceMarketplace 'prom' | 'rozetka' - where the order came from
+ * Applies order-based inventory synchronization across the internal database
+ * and connected marketplaces (Prom and Rozetka).
+ *
+ * This function adjusts stock levels after an order is placed on a marketplace,
+ * updates the master quantity in the ERP, recalculates marketplace-specific quantities,
+ * applies the appropriate sync strategy (`same_quantity` or `different_quantity`), and
+ * determines whether downstream marketplace updates are required.
+ *
+ * Marketplace API updates are currently disabled for safety, but the function still:
+ * - Computes required deltas
+ * - Marks products with sync flags
+ * - Writes updated stock values to the database
+ *
+ * @param orderedProducts Array of ordered product items, each containing:
+ * - `productId`: internal product identifier
+ * - `orderedQuantity`: number of units purchased in the order
+ *
+ * @param sourceMarketplace Marketplace where the order originated (`prom` or `rozetka`)
+ *
+ * @remarks
+ * - Reduces local master stock based on the order quantity.
+ * - Determines synchronization strategy:
+ *   - `same_quantity`: both marketplaces must remain aligned; order delta is mirrored.
+ *   - `different_quantity`: marketplaces operate independently; only source marketplace updates.
+ * - Computes new marketplace quantities (Prom/Rozetka) and sets sync flags accordingly.
+ * - Updates database fields: `stockQuantity`, `promQuantity`, `rozetkaQuantity`,
+ *   availability flags, and sync timestamps.
+ * - Prepares, but does not execute, outbound marketplace API updates
+ *   (execution is explicitly commented out for safety).
+ * - Clears sync flags after internal processing is complete.
+ *
+ * @example
+ * await syncAfterOrder(
+ *   [
+ *     { productId: "P123", orderedQuantity: 2 },
+ *     { productId: "P456", orderedQuantity: 1 }
+ *   ],
+ *   "prom"
+ * );
+ *
+ * // Effects:
+ * // - Stock is reduced for each product
+ * // - Prom quantity decreases by ordered amount
+ * // - If quantities were previously equal, Rozetka is aligned to new stock
+ * // - DB is updated; sync flags set depending on strategy
+ *
+ * @example
+ * // SAME QUANTITY strategy example:
+ * // promQuantity = 50, rozetkaQuantity = 50, stock = 50
+ * // Prom order of 3 units:
+ * //   - master = 47
+ * //   - newPromQuantity = 47
+ * //   - newRozetkaQuantity = 47 (mirrored)
+ *
+ * @example
+ * // DIFFERENT QUANTITY strategy example:
+ * // promQuantity = 40, rozetkaQuantity = 55
+ * // Rozetka order of 5 units:
+ * //   - master = 50
+ * //   - newRozetkaQuantity = 50
+ * //   - Prom remains unchanged at 40
  */
+
 
 export const syncAfterOrder = async (
   orderedProducts: Array<{

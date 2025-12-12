@@ -2,7 +2,7 @@ import axios from 'axios'
 import * as fs from 'fs/promises'
 import { all } from 'axios'
 import { solar } from 'googleapis/build/src/apis/solar'
-import {Source} from '../../config/database'
+import { Source } from '../../config/database'
 import { config } from '../../config/environment'
 import { PromProductData } from '../../types/products'
 
@@ -31,9 +31,9 @@ export async function fetchPromProducts() {
       // Add last_id parameter if we have it (for subsequent requests)
       if (lastId !== null) {
         params.last_id = lastId
-        console.log(
+        /* console.log(
           `Fetching products with last_id: ${lastId}, limit: ${limit}`
-        )
+        ) */
       } else {
         //console.log(`Fetching first batch with limit: ${limit}`)
       }
@@ -47,9 +47,9 @@ export async function fetchPromProducts() {
 
       if (products && products.length > 0) {
         allProducts.push(...products)
-        console.log(
+        /* console.log(
           `Fetched ${products.length} products. Total so far: ${allProducts.length}`
-        )
+        ) */
 
         // Get the ID of the last product for the next request
         // Assuming each product has an 'id' field
@@ -62,13 +62,13 @@ export async function fetchPromProducts() {
         if (newLastId === lastId) {
           // Safety check: if last_id hasn't changed, break to avoid infinite loop
           hasMoreProducts = false
-          console.log('Stopping - last_id unchanged')
+          //console.log('Stopping - last_id unchanged')
         } else {
           lastId = newLastId
         }
       } else {
         hasMoreProducts = false
-        console.log('No more products returned')
+        //console.log('No more products returned')
       }
 
       // Small delay to be respectful to the API
@@ -84,13 +84,13 @@ export async function fetchPromProducts() {
 
   console.log(`\nFinished! Total products fetched: ${allProducts.length}`)
   //console.log(allProducts[allProducts.length - 1])
-  checkForDuplicates(allProducts)
+  //checkForDuplicates(allProducts)
 
   // Filter products with status 'on_display'
   const filteredProducts = allProducts.filter(
     (product) => product.status === 'on_display'
   )
-  console.log('example of filtered product')
+  //console.log('example of filtered product')
 
   //console.log(filteredProducts[0]);
 
@@ -131,13 +131,14 @@ export async function fetchPromProductsWithTransformation(): Promise<
   PromProductData[]
 > {
   const allProducts = await fetchPromProducts()
+  //console.log('example: ', allProducts[0])
 
   const transformedProducts: PromProductData[] = allProducts.map(
     (product: any) => ({
       productId: String(product.id),
       sku: product.sku || null,
       externalIds: { prom: String(product.id), rozetka: null },
-      name: product.name || '',
+      name: product.name_multilang.uk || '',
       price: String(product.price || '0.00'),
       priceOld: null,
       pricePromo: null,
@@ -184,6 +185,8 @@ console.log("I am on main");
 
   const allProducts = await fetchPromProducts()
   // You can do something with allProducts here if needed
+console.log('example: ', allProducts[0].name_multilang.uk);
+
 }
 
 main().catch((error) => {

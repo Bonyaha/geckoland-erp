@@ -5,6 +5,7 @@ import {
   useCreateProductMutation,
   useGetProductsQuery,
   useBatchUpdateProductQuantityMutation,
+  useSyncProductsFromMarketplacesMutation,
 } from '@/state/api'
 import {
   PlusCircleIcon,
@@ -58,11 +59,12 @@ const Products = () => {
   >('all')
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
   const [showScrollArrow, setShowScrollArrow] = useState(false)
+  const [syncMessage, setSyncMessage] = useState<string | null>(null)
 
   const itemsPerPage = 20
 
   // API hooks
-  const { data, isLoading, isError, refetch } = useGetProductsQuery({
+  const { data, isLoading, isError } = useGetProductsQuery({
     search: searchTerm,
     page: currentPage,
     limit: itemsPerPage,
@@ -72,6 +74,8 @@ const Products = () => {
   const [createProduct] = useCreateProductMutation()
   const [batchUpdateProductQuantity, { isLoading: isBatchUpdating }] =
     useBatchUpdateProductQuantityMutation()
+  const [syncProducts, { isLoading: isSyncing }] =
+    useSyncProductsFromMarketplacesMutation()
 
   // --- Scroll Logic ---
   const handleScroll = () => {
@@ -109,10 +113,36 @@ const Products = () => {
   const handleCopy = (id: string) => console.log('Copy product:', id)
   const handleDelete = (id: string) => console.log('Delete product:', id)
 
-  // Handle refresh
-  const handleRefresh = () => {
-    refetch()
+  const handleMarketplaceSync = async () => {
+    try {
+      setSyncMessage('Синхронізація з маркетплейсами...')
+
+      const result = await syncProducts().unwrap()
+
+      // Show success message with details
+      const message = `
+        ✅ Синхронізація завершена!
+        Prom: ${result.productsCreatedFromProm} нових товарів
+        Rozetka: ${result.productsCreatedFromRozetka} нових товарів
+        Всього: ${result.totalCreated} нових товарів
+      `
+
+      setSyncMessage(message)
+
+      // Clear message after 5 seconds
+      setTimeout(() => setSyncMessage(null), 5000)
+
+      // If there were errors, log them
+      if (result.errors.length > 0) {
+        console.error('Sync errors:', result.errors)
+      }
+    } catch (error) {
+      console.error('Failed to sync products:', error)
+      setSyncMessage('❌ Помилка синхронізації. Спробуйте ще раз.')
+      setTimeout(() => setSyncMessage(null), 5000)
+    }
   }
+ 
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -241,10 +271,22 @@ const Products = () => {
       {/* TOP SEARCH BAR */}
       <div className='mb-6'>
         <div className='flex items-center border-2 border-gray-200 rounded bg-white shadow-sm'>
-          <RefreshCw
-            className='w-5 h-5 text-gray-400 m-2 cursor-pointer hover:text-gray-600 transition-colors'
-            onClick={handleRefresh}
-          />
+          <button
+            type='button'
+            onClick={isSyncing ? undefined : handleMarketplaceSync}
+            title={
+              isSyncing ? 'Синхронізація...' : 'Синхронізація з маркетплейсами'
+            }
+            className='m-2 focus:outline-none' // Moved margin here to preserve layout
+          >
+            <RefreshCw
+              className={`w-5 h-5 transition-colors ${
+                isSyncing
+                  ? 'text-blue-600 animate-spin'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            />
+          </button>
           <div className='h-6 w-px bg-gray-300 mx-1'></div>
           <SearchIcon className='w-5 h-5 text-gray-400 m-2' />
           <input
@@ -257,6 +299,15 @@ const Products = () => {
             }}
           />
         </div>
+
+        {/* SYNC MESSAGE NOTIFICATION */}
+        {syncMessage && (
+          <div className='mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg'>
+            <p className='text-sm text-blue-800 whitespace-pre-line'>
+              {syncMessage}
+            </p>
+          </div>
+        )}
 
         {/* FILTERS & PAGINATION */}
         <div className='flex justify-between items-center mt-2 text-sm text-gray-600 ml-1'>

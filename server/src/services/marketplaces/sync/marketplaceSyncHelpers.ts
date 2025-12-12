@@ -1,4 +1,4 @@
-//server\src\services\marketplaces\sync\marketplaceSyncHelpers.ts
+// server/src/services/marketplaces/sync/marketplaceSyncHelpers.ts
 import prisma from '../../../config/database'
 import { fetchPromProducts } from '../../data-fetchers/fetchPromProducts'
 import { fetchRozetkaProducts } from '../../data-fetchers/fetchRozetkaProducts'

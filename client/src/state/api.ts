@@ -61,6 +61,14 @@ export interface ProductQueryParams {
   stockFilter?: 'all' | 'inStock' | 'outOfStock'
 }
 
+export interface SyncMarketplacesResult {
+  success: boolean
+  productsCreatedFromProm: number
+  productsCreatedFromRozetka: number
+  totalCreated: number
+  errors: string[]
+}
+
 export interface SalesSummary {
   salesSummaryId: string
   totalValue: number
@@ -154,6 +162,13 @@ export const api = createApi({
         invalidatesTags: ['Products'],
       }
     ),
+    syncProductsFromMarketplaces: build.mutation<SyncMarketplacesResult, void>({
+      query: () => ({
+        url: '/products/sync/marketplaces',
+        method: 'POST',
+      }),
+      invalidatesTags: ['Products'],
+    }),
     getUsers: build.query<User[], void>({
       query: () => '/users',
       providesTags: ['Users'],
@@ -174,4 +189,5 @@ export const {
   useGetExpensesByCategoryQuery,
   useUpdateProductQuantityMutation,
   useBatchUpdateProductQuantityMutation,
+  useSyncProductsFromMarketplacesMutation,
 } = api

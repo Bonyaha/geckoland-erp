@@ -15,9 +15,9 @@ import {
 import { fetchPromProductsWithTransformation } from '../../services/data-fetchers/fetchPromProducts'
 import {
   createMarketplaceUpdatePromise,
-  createMarketplaceSyncStatus,
-  normalizeQuantity,
+  createMarketplaceSyncStatus,  
 } from '../../services/marketplaces/sync/marketplaceSyncHelpers'
+import { normalizeQuantity } from '../../utils/helpers/normalizeQuantity'
 import { AppError, ErrorFactory } from '../../middleware/errorHandler'
 
 export const getProducts = async (

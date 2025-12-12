@@ -1,5 +1,5 @@
 // server/src/types/marketplaces.ts
-
+import {Prisma} from '../config/database'
 /**
  * ============================================
  * SHARED MARKETPLACE TYPES
@@ -92,8 +92,13 @@ export interface MarketplaceUpdateResult {
  * Used to cast the 'any' type coming from Prisma/Zod to ensure type safety.
  * 
  * @remarks
- * The externalIds field in the database is JSON type, so Prisma returns 'any'.
- * Always cast to this interface when working with externalIds.
+ * externalIds is a JSON column.
+ * For READS: Prisma returns JSON with weak typing, so cast to ProductExternalIds
+ *           when accessing properties in application code.
+ *
+ * For WRITES: Prisma requires Prisma.InputJsonValue-compatible objects.
+ *            When persisting externalIds, cast/convert to Prisma.InputJsonValue
+ *            (or use a dedicated Json type) to satisfy the index signature requirement.
  * 
  * @example
  * const product = await prisma.products.findUnique({ where: { productId } })
@@ -111,6 +116,8 @@ export interface ProductExternalIds {
   }
   // Add other marketplaces here in the future
 }
+
+export type ProductExternalIdsJson = Prisma.InputJsonObject & ProductExternalIds
 
 // ============================================
 // PROM MARKETPLACE TYPES
