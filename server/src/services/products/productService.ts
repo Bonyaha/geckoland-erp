@@ -674,204 +674,174 @@ class ProductService {
     console.log('🔄 Starting sync for new products from marketplaces...')
 
     // Step 1: Get all existing products from database
-    const existingProducts = await prisma.products.findMany({
-      select: {
-        productId: true,
-        sku: true,
-        externalIds: true,
-      },
-    })
+    const [existingProducts, promProducts, rozetkaProducts] = await Promise.all(
+      [
+        prisma.products.findMany({
+          select: { productId: true, sku: true, externalIds: true },
+        }),
+        fetchPromProductsWithTransformation().catch((error) => {
+          console.error('Error fetching Prom products:', error.message)
+          result.errors.push(`Prom fetch failed: ${error.message}`)
+          return [] as PromProductData[]
+        }),
+        fetchRozetkaProductsWithTransformation().catch((error) => {
+          console.error('Error fetching Rozetka products:', error.message)
+          result.errors.push(`Rozetka fetch failed: ${error.message}`)
+          return [] as RozetkaProductData[]
+        }),
+      ]
+    )
 
-    // Build lookup structures
+    console.log(`✅ Fetched ${promProducts.length} Prom products`)
+    console.log(`✅ Fetched ${rozetkaProducts.length} Rozetka products`)
+
+    // Step 2: Build efficient lookup structures
     const existingPromIds = new Set<string>()
     const existingRozetkaIds = new Set<string>()
     const existingSKUs = new Set<string>()
 
     existingProducts.forEach((product) => {
       const externalIds = product.externalIds as ProductExternalIds | null
-
-      if (externalIds?.prom) {
-        existingPromIds.add(externalIds.prom.toString())
-      }
-
+      if (externalIds?.prom) existingPromIds.add(externalIds.prom.toString())
       if (externalIds?.rozetka?.rz_item_id) {
         existingRozetkaIds.add(externalIds.rozetka.rz_item_id.toString())
       }
-
-      if (product.sku) {
-        existingSKUs.add(product.sku)
-      }
+      if (product.sku) existingSKUs.add(product.sku)
     })
 
-    console.log(
-      `📦 Found ${existingProducts.length} existing products in database`
-    )
+    console.log(`📦 Found ${existingProducts.length} existing products`)
     console.log(`   - ${existingPromIds.size} with Prom IDs`)
     console.log(`   - ${existingRozetkaIds.size} with Rozetka IDs`)
     console.log(`   - ${existingSKUs.size} unique SKUs`)
 
-    // Step 2: Fetch products from both marketplaces
-    console.log('Fetching products from marketplaces...')
-    let promProducts: PromProductData[] = []
-    let rozetkaProducts: RozetkaProductData[] = []
-
-    try {
-      promProducts = await fetchPromProductsWithTransformation()
-      console.log(`✅ Fetched ${promProducts.length} products from Prom`)
-    } catch (error: any) {
-      console.error('Error fetching Prom products:', error.message)
-      throw ErrorFactory.internal(
-        `Error fetching Prom products: ${error.message}`
-      )
-    }
-
-    try {
-      rozetkaProducts = await fetchRozetkaProductsWithTransformation()
-      console.log(`✅ Fetched ${rozetkaProducts.length} products from Rozetka`)
-    } catch (error: any) {
-      console.error('Error fetching Rozetka products:', error.message)
-      throw ErrorFactory.internal(
-        `Error fetching Rozetka products: ${error.message}`
-      )
-    }
-
-    // Step 3: Build SKU maps for cross-marketplace matching
-    const promBySKU = new Map<string, PromProductData>()
-    promProducts.forEach((p) => {
-      if (p.sku) promBySKU.set(p.sku, p)
-    })
-
+    // Build Rozetka lookup by SKU (for matching)
     const rozetkaBySKU = new Map<string, RozetkaProductData>()
     rozetkaProducts.forEach((p) => {
       if (p.sku) rozetkaBySKU.set(p.sku, p)
     })
 
-    // Step 4: Process Prom products (create new ones, checking for Rozetka matches)
-    const processedSKUs = new Set<string>() // Track SKUs we've already created
+    // Step 3: Filter new products (pre-filter to avoid processing duplicates)
+    const newPromProducts = promProducts.filter((p) => {
+      const promId = p.productId.toString()
+      const sku = p.sku
+      return !existingPromIds.has(promId) && !(sku && existingSKUs.has(sku))
+    })
 
-    for (const promProduct of promProducts) {
+    console.log(
+      `📊 Found ${newPromProducts.length} new Prom products to create`
+    )
+
+    // Step 4: Batch create Prom products (with Rozetka matching)
+    const promCreateOperations: Prisma.ProductsCreateInput[] = []
+    const processedSKUs = new Set<string>() // Track what we've processed
+
+    for (const promProduct of newPromProducts) {
       const promId = promProduct.productId.toString()
       const sku = promProduct.sku
 
-      // Skip if already exists in database
-      if (existingPromIds.has(promId)) {
-        continue
-      }
+      // Check for Rozetka match by SKU
+      const matchingRozetkaProduct = sku ? rozetkaBySKU.get(sku) : null
 
-      // Skip if already exists by SKU
-      if (sku && existingSKUs.has(sku)) {
-        continue
-      }
+      if (matchingRozetkaProduct) {
+        // Combined Prom + Rozetka product
+        console.log(`✨ Creating unified record for SKU ${sku}`)
 
-      // Skip if we already processed this SKU in this sync
-      if (sku && processedSKUs.has(sku)) {
-        continue
-      }
-
-      try {
-        console.log(`Creating product from Prom: ${promId} (SKU: ${sku})`)
-
-        // Check if this product also exists in Rozetka (by SKU)
-        const matchingRozetkaProduct = sku ? rozetkaBySKU.get(sku) : null
-
-        if (matchingRozetkaProduct) {
-          // Create product with BOTH Prom and Rozetka external IDs
-          console.log(
-            `  ✨ Found matching Rozetka product for SKU ${sku}, creating unified record`
-          )
-
-          const combinedExternalIds: ProductExternalIdsJson = {
-            prom: promId,
-            rozetka: {
-              rz_item_id: matchingRozetkaProduct.productId,
-              item_id: matchingRozetkaProduct.externalIds.rozetka,
-            },
-          }
-
-          // Use Prom data as base, but add Rozetka external IDs
-          await prisma.products.create({
-            data: {
-              ...promProduct,
-              externalIds: combinedExternalIds,
-              stockQuantity: normalizeQuantity(promProduct.stockQuantity),
-              promQuantity: normalizeQuantity(promProduct.stockQuantity),
-              rozetkaQuantity: normalizeQuantity(
-                matchingRozetkaProduct.stockQuantity
-              ),
-              lastPromSync: new Date(),
-              lastRozetkaSync: new Date(),
-            },
-          })
-
-          result.productsCreatedFromProm++
-          if (sku) processedSKUs.add(sku)
-        } else {
-          // Create product with only Prom data
-          await this.createProductFromProm(promProduct)
-          result.productsCreatedFromProm++
-          if (sku) processedSKUs.add(sku)
+        const combinedExternalIds: ProductExternalIdsJson = {
+          prom: promId,
+          rozetka: {
+            rz_item_id: matchingRozetkaProduct.productId,
+            item_id: matchingRozetkaProduct.externalIds.rozetka,
+          },
         }
 
-        existingPromIds.add(promId)
-        if (sku) existingSKUs.add(sku)
-      } catch (error: any) {
-        console.error(
-          `Error creating product ${promProduct.productId} from Prom:`,
-          error.message
-        )
-        result.errors.push(
-          `Prom product ${promProduct.productId}: ${error.message}`
-        )
+        promCreateOperations.push({
+          ...promProduct,
+          externalIds: combinedExternalIds,
+          stockQuantity: normalizeQuantity(promProduct.stockQuantity),
+          promQuantity: normalizeQuantity(promProduct.stockQuantity),
+          rozetkaQuantity: normalizeQuantity(
+            matchingRozetkaProduct.stockQuantity
+          ),
+          lastPromSync: new Date(),
+          lastRozetkaSync: new Date(),
+        })
+
+        if (sku) processedSKUs.add(sku)
+      } else {
+        // Prom-only product
+        promCreateOperations.push({
+          ...promProduct,
+          stockQuantity: normalizeQuantity(promProduct.stockQuantity),
+          promQuantity: normalizeQuantity(promProduct.stockQuantity),
+          lastPromSync: new Date(),
+        })
+
+        if (sku) processedSKUs.add(sku)
       }
     }
 
-    // Step 5: Process Rozetka products (only create if not already processed)
-    for (const rozetkaProduct of rozetkaProducts) {
-      const itemId = rozetkaProduct.productId?.toString()
-      const sku = rozetkaProduct.sku
-
-      if (!itemId) continue
-
-      // Skip if already exists in database
-      if (existingRozetkaIds.has(itemId)) {
-        continue
-      }
-
-      // Skip if already exists by SKU
-      if (sku && existingSKUs.has(sku)) {
-        continue
-      }
-
-      // Skip if we already processed this SKU (from Prom)
-      if (sku && processedSKUs.has(sku)) {
+    // Execute batch create for Prom products
+    if (promCreateOperations.length > 0) {
+      try {
+        await prisma.$transaction(
+          promCreateOperations.map((data) => prisma.products.create({ data }))
+        )
+        result.productsCreatedFromProm = promCreateOperations.length
         console.log(
-          `  ⏭️  Skipping Rozetka product ${itemId} (SKU: ${sku}) - already created from Prom`
+          `✅ Created ${promCreateOperations.length} products from Prom`
         )
-        continue
-      }
-
-      try {
-        console.log(`Creating product from Rozetka: ${itemId} (SKU: ${sku})`)
-        await this.createProductFromRozetka(rozetkaProduct)
-        result.productsCreatedFromRozetka++
-
-        existingRozetkaIds.add(itemId)
-        if (sku) {
-          existingSKUs.add(sku)
-          processedSKUs.add(sku)
-        }
       } catch (error: any) {
-        console.error(
-          `Error creating product ${rozetkaProduct.productId} from Rozetka:`,
-          error.message
-        )
-        result.errors.push(
-          `Rozetka product ${rozetkaProduct.productId}: ${error.message}`
-        )
+        console.error('Error in Prom batch creation:', error)
+        result.errors.push(`Prom batch creation failed: ${error.message}`)
+        result.success = false
       }
     }
+    // STEP 5: Filter and batch create Rozetka-only products
+    const newRozetkaProducts = rozetkaProducts.filter((p) => {
+      const itemId = p.productId?.toString()
+      const sku = p.sku
 
-    // Calculate totals
+      if (!itemId) return false
+
+      // Skip if already in database, already processed, or matched with Prom
+      return (
+        !existingRozetkaIds.has(itemId) &&
+        !(sku && existingSKUs.has(sku)) &&
+        !(sku && processedSKUs.has(sku))
+      )
+    })
+
+    console.log(
+      `📊 Found ${newRozetkaProducts.length} new Rozetka-only products`
+    )
+
+    const rozetkaCreateOperations: Prisma.ProductsCreateInput[] =
+      newRozetkaProducts.map((rozetkaProduct) => ({
+        ...rozetkaProduct,
+        stockQuantity: normalizeQuantity(rozetkaProduct.stockQuantity),
+        rozetkaQuantity: normalizeQuantity(rozetkaProduct.stockQuantity),
+        lastRozetkaSync: new Date(),
+      }))
+
+    // Execute batch create for Rozetka products
+    if (rozetkaCreateOperations.length > 0) {
+      try {
+        await prisma.$transaction(
+          rozetkaCreateOperations.map((data) =>
+            prisma.products.create({ data })
+          )
+        )
+        result.productsCreatedFromRozetka = rozetkaCreateOperations.length
+        console.log(
+          `✅ Created ${rozetkaCreateOperations.length} products from Rozetka`
+        )
+      } catch (error: any) {
+        console.error('Error in Rozetka batch creation:', error)
+        result.errors.push(`Rozetka batch creation failed: ${error.message}`)
+        result.success = false
+      }
+    }
+    // STEP 6: Calculate totals and return
     result.totalCreated =
       result.productsCreatedFromProm + result.productsCreatedFromRozetka
 

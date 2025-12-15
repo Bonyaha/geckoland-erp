@@ -277,7 +277,7 @@ const Products = () => {
             title={
               isSyncing ? 'Синхронізація...' : 'Синхронізація з маркетплейсами'
             }
-            className='m-2 focus:outline-none' // Moved margin here to preserve layout
+            className='m-2 focus:outline-none cursor-pointer' // Moved margin here to preserve layout
           >
             <RefreshCw
               className={`w-5 h-5 transition-colors ${
@@ -468,7 +468,7 @@ const Products = () => {
               <th className='px-4 py-3 w-10'>
                 <input
                   type='checkbox'
-                  className='rounded border-gray-300 text-blue-600 focus:ring-blue-500'
+                  className='rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer'
                   onChange={handleSelectAll}
                   checked={
                     typedProducts.length > 0 &&

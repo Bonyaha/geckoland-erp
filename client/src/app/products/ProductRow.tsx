@@ -239,7 +239,7 @@ const handleQuantityUpdate = async (newQuantity: number) => {
           <span className='text-2xl font-bold text-red-500'>{sales}</span>
           <span className='text-xs text-gray-500 mb-2'>продажів</span>
           {/* Action Trigger Image 5 */}
-          <button className='text-xs text-blue-500 hover:text-blue-700 hover:underline w-full text-center'>
+          <button className='text-xs text-blue-500 hover:text-blue-700 hover:underline w-full text-center cursor-pointer'>
             з {salesDate}
           </button>
         </div>
