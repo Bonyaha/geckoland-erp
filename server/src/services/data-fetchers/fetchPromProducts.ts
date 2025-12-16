@@ -94,7 +94,7 @@ export async function fetchPromProducts() {
 
   //console.log(filteredProducts[0]);
 
-  return filteredProducts
+  return allProducts
 }
 
 /**

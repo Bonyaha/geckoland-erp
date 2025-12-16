@@ -70,7 +70,7 @@ async function fetchAllRozetkaProducts(accessToken: string): Promise<any[]> {
     )   
 console.log('Total filteredProducts: ', filteredProducts.length);
 
-    return filteredProducts
+    return allProducts
   } catch (error: any) {
     console.error(
       '❌ Error fetching products:',
@@ -164,4 +164,4 @@ export async function fetchRozetkaProductsWithTransformation(): Promise<
 
 //fetchAllRozetkaProducts()
 //fetchRozetkaProducts()
-//fetchRozetkaProductsWithTransformation()
+fetchRozetkaProductsWithTransformation()

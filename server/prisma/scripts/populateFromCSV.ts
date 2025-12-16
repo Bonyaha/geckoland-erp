@@ -8,7 +8,7 @@ import { enrichWithPromIds } from '../../src/utils/helpers/mapExternalIdsProm'
 import { enrichWithRozetkaIds } from '../../src/utils/helpers/mapExternalIdsRozetka'
 import { enrichWithPromCategoriesAndDescription } from '../../src/utils/helpers/enrichWithPromCategories'
 import { enrichWithRozetkaCategories } from '../../src/utils/helpers/enrichWithRozetkaCategories'
-
+import { fetchCRMProducts } from '../../src/services/data-fetchers/fetchCRMProducts'
 
 /* 
   This file provides a generic way to populate the Products table in database from CSV files. It can read two types of CSVs:
@@ -93,20 +93,20 @@ function mapHPCsvToProduct(row: ProductFromHPCSV): any {
     externalIds: { prom: null, rozetka: null },
     description: row['Опис'] || null,
     mainImage: imageUrls[0] || null,
-    images: imageUrls,    
+    images: imageUrls,
     available: quantity > 0,
     currency: 'UAH',
     lastSynced: new Date(),
     needsSync: false,
     categoryData: row['Категорія'] ? { name: row['Категорія'] } : null,
-    measureUnit: row['Од.вим.'] || 'шт',    
+    measureUnit: row['Од.вим.'] || 'шт',
     // Set defaults for fields not present in this CSV
     promQuantity: null,
     rozetkaQuantity: null,
     priceOld: null,
     pricePromo: null,
     updatedPrice: null,
-    dateModified: null,    
+    dateModified: new Date(),
     lastPromSync: null,
     lastRozetkaSync: null,
     needsPromSync: false,
@@ -160,102 +160,183 @@ function mapDbCsvToProduct(row: ProductFromDbCSV): any {
   }
 }
 
-// --- MAIN GENERIC FUNCTION ---
+// --- SHARED ENRICHMENT AND INSERT LOGIC ---
 
-async function populateProductsFromCSV(
-  filePath: string,
-  mapper: (row: any) => any
-) {
-  const products: any[] = []
+/**
+ * Enriches products with external IDs and categories, then inserts them into the database.
+ * This is the core logic shared by both CSV and API population methods.
+ */
+async function enrichAndInsertProducts(products: any[]): Promise<void> {
+  console.log(`Processing ${products.length} products...`)
 
-  if (!fs.existsSync(filePath)) {
-    console.error(`Error: The file was not found at ${filePath}`)
-    console.error(
-      'Please place your products.csv file in the geckoland-erp/server/prisma/data/ directory.'
-    )
+  if (products.length === 0) {
+    console.log('No products to process.')
     return
   }
 
-  fs.createReadStream(filePath)
-    .pipe(csv())
-    .on('data', (row: any) => {
-      // Use the provided mapper to transform the row
-      const product = mapper(row)
-      if (product) {
-        products.push(product)
-      }
-    })
-    .on('end', async () => {
-      try {
-        console.log(`Found ${products.length} products in the CSV file.`)
+  console.log('Enriching products with Prom IDs and categories...')
+  let enrichedProducts = await enrichWithPromIds(products)
+  enrichedProducts = await enrichWithPromCategoriesAndDescription(enrichedProducts)
 
-        if (products.length > 0) {
-          console.log('Enriching products with Prom IDs and categories...')
-          let enrichedProducts = await enrichWithPromIds(products)
-          enrichedProducts = await enrichWithPromCategoriesAndDescription(
-            enrichedProducts
-          )
+  console.log('Enriching products with Rozetka IDs and categories...')
+  enrichedProducts = await enrichWithRozetkaIds(enrichedProducts)
+  enrichedProducts = await enrichWithRozetkaCategories(enrichedProducts)
 
-          console.log('Enriching products with Rozetka IDs and categories...')
-          enrichedProducts = await enrichWithRozetkaIds(enrichedProducts)
-          enrichedProducts = await enrichWithRozetkaCategories(enrichedProducts)
+  console.log('Setting marketplace quantities...')
+  enrichedProducts = enrichedProducts.map((product) => ({
+    ...product,
+    promQuantity: product.externalIds?.prom ? product.stockQuantity : null,
+    rozetkaQuantity: product.externalIds?.rozetka ? product.stockQuantity : null,
+  }))
 
-          console.log('Setting marketplace quantities...')
-          enrichedProducts = enrichedProducts.map((product) => ({
-            ...product,
-            promQuantity: product.externalIds?.prom
-              ? product.stockQuantity
-              : null,
-            rozetkaQuantity: product.externalIds?.rozetka
-              ? product.stockQuantity
-              : null,
-          }))
+  console.log('Clearing the Products table...')
+  await prisma.products.deleteMany({})
 
-          console.log('Clearing the Products table...')
-          await prisma.products.deleteMany({})
+  console.log('Populating the Products table...')
 
-          console.log('Populating the Products table...')
+  let successCount = 0
+  for (const product of enrichedProducts) {
+    try {
+      await prisma.products.create({
+        data: product,
+      })
+      successCount++
+    } catch (error) {
+      console.error(`Failed to insert product ${product.name}:`, error)
+    }
+  }
 
-          // Insert products one by one to handle Decimal types properly
-          let successCount = 0
-          for (const product of enrichedProducts) {
-            try {
-              await prisma.products.create({
-                data: product,
-              })
-              successCount++
-            } catch (error) {
-              console.error(`Failed to insert product ${product.name}:`, error)
-            }
-          }
+  console.log(
+    `✅ Successfully inserted ${successCount} out of ${enrichedProducts.length} products.`
+  )
+}
 
-          console.log(
-            `Successfully inserted ${successCount} out of ${products.length} products.`
-          )
+// --- CSV POPULATION FUNCTION ---
+
+/**
+ * Populates the database from a CSV file using the provided mapper function.
+ */
+async function populateProductsFromCSV(
+  filePath: string,
+  mapper: (row: any) => any
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const products: any[] = []
+
+    if (!fs.existsSync(filePath)) {
+      console.error(`Error: The file was not found at ${filePath}`)
+      console.error(
+        'Please place your CSV file in the geckoland-erp/server/prisma/data/ directory.'
+      )
+      reject(new Error('CSV file not found'))
+      return
+    }
+
+    fs.createReadStream(filePath)
+      .pipe(csv())
+      .on('data', (row: any) => {
+        const product = mapper(row)
+        if (product) {
+          products.push(product)
         }
-      } catch (error) {
-        console.error('An error occurred during the database operation:', error)
-      } finally {
-        await prisma.$disconnect()
-      }
-    })
+      })
+      .on('end', async () => {
+        try {
+          console.log(`Found ${products.length} products in the CSV file.`)
+          await enrichAndInsertProducts(products)
+          resolve()
+        } catch (error) {
+          console.error('Error during CSV processing:', error)
+          reject(error)
+        }
+      })
+      .on('error', (error) => {
+        console.error('Error reading CSV file:', error)
+        reject(error)
+      })
+  })
+}
+
+// --- API POPULATION FUNCTION ---
+
+/**
+ * Populates the database by fetching products from HugeProfit API.
+ * Uses the existing fetchCRMProducts function to get data.
+ */
+async function populateProductsFromAPI(): Promise<void> {
+  try {
+    console.log('🚀 Fetching products from HugeProfit API...')
+    
+    // Fetch products from API (this also saves to productsFromHP.json)
+    const products = await fetchCRMProducts()
+    
+    if (!products || products.length === 0) {
+      console.log('No products returned from API.')
+      return
+    }
+
+    console.log(`✅ Fetched ${products.length} products from API`)
+
+    // Use the shared enrichment and insert logic
+    await enrichAndInsertProducts(products)
+    
+  } catch (error) {
+    console.error('❌ Error fetching products from API:', error)
+    throw error
+  }
 }
 
 // --- CONTROLLER TO RUN THE POPULATION ---
 
 async function main() {
-  // Choose which file to process here
-console.log('in populateProductsFromCSV main function');
+  try {
+    console.log('=== Product Database Population Tool ===\n')
 
-  const fileToProcess: 'fromHP' | 'fromDB' = 'fromHP'
+    // Choose your population method here:
+    // 'fromHP_CSV' - Use CSV export from HugeProfit
+    // 'fromDB_CSV' - Use CSV export from database
+    // 'fromAPI'    - Fetch directly from HugeProfit API
 
-  if (fileToProcess === 'fromHP') {
-    const csvFilePath = path.join(__dirname, '..', 'data', 'products.csv')
+    const populationMethod = 'fromAPI' as
+      | 'fromHP_CSV'
+      | 'fromDB_CSV'
+      | 'fromAPI'
 
-    await populateProductsFromCSV(csvFilePath, mapHPCsvToProduct)
-  } else if (fileToProcess === 'fromDB') {
-    const csvFilePath = path.join(__dirname, 'data', 'productsFromDB.csv')
-    await populateProductsFromCSV(csvFilePath, mapDbCsvToProduct)
+    switch (populationMethod) {
+      case 'fromHP_CSV':
+        console.log('📄 Using HugeProfit CSV file...\n')
+        const hpCsvPath = path.join(__dirname, '..', 'data', 'products.csv')
+        await populateProductsFromCSV(hpCsvPath, mapHPCsvToProduct)
+        break
+
+      case 'fromDB_CSV':
+        console.log('📄 Using Database CSV export...\n')
+        const dbCsvPath = path.join(
+          __dirname,
+          '..',
+          'data',
+          'productsFromDB.csv'
+        )
+        await populateProductsFromCSV(dbCsvPath, mapDbCsvToProduct)
+        break
+
+      case 'fromAPI':
+        console.log('🌐 Using HugeProfit API...\n')
+        await populateProductsFromAPI()
+        break
+
+      default:
+        console.error('Invalid population method selected')
+        process.exit(1)
+    }
+
+    console.log('\n✨ Population complete!')
+  } catch (error) {
+    console.error('\n❌ Population failed:', error)
+    process.exit(1)
+  } finally {
+    await prisma.$disconnect()
+    console.log('🔌 Database connection closed.')
   }
 }
 

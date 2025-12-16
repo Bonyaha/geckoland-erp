@@ -900,6 +900,31 @@
     "source": "rozetka"
   },
   {
+    "productId": "402542997",
+    "sku": "202ркп2525",
+    "externalIds": {
+      "prom": null,
+      "rozetka": "110365557"
+    },
+    "name": "Репто календар з підставкою та маркером 25 на 25см",
+    "price": "902",
+    "stockQuantity": 0,
+    "available": false,
+    "priceOld": null,
+    "pricePromo": null,
+    "updatedPrice": null,
+    "mainImage": "https://content2.rozetka.com.ua/goods/images/preview/377483210.png",
+    "images": [
+      "https://content2.rozetka.com.ua/goods/images/preview/377483210.png"
+    ],
+    "dateModified": "2023-10-31T10:22:24.000Z",
+    "categoryData": {
+      "id": 4625493,
+      "title": "Календарі"
+    },
+    "source": "rozetka"
+  },
+  {
     "productId": "402543000",
     "sku": "200J-WA-013",
     "externalIds": {
@@ -2006,8 +2031,8 @@
     },
     "name": "Аргентинські таргани ( Blaptica Dubia ) - Живі кормові комахи для рептилій, птахів, їжаків, комахоїдних тварин 3-4 см 100 шт.",
     "price": "509",
-    "stockQuantity": 4,
-    "available": true,
+    "stockQuantity": 0,
+    "available": false,
     "priceOld": "500",
     "pricePromo": "437",
     "updatedPrice": null,
@@ -2031,8 +2056,8 @@
     },
     "name": "Аргентинські таргани ( Blaptica Dubia ) - Живі кормові комахи для рептилій, птахів, їжаків, комахоїдних тварин 3-4 см 50 шт.",
     "price": "266",
-    "stockQuantity": 0,
-    "available": false,
+    "stockQuantity": 2,
+    "available": true,
     "priceOld": "300",
     "pricePromo": "231",
     "updatedPrice": null,
@@ -2181,7 +2206,7 @@
     },
     "name": "Зофобас, зоофобус ( Zophobas morio ) - Живі кормові комахи для рептилій, птахів, їжаків, павуків, комахоїдних тварин 20 шт.",
     "price": "76",
-    "stockQuantity": 8,
+    "stockQuantity": 5,
     "available": true,
     "priceOld": "100",
     "pricePromo": null,
@@ -2756,8 +2781,8 @@
     },
     "name": "Килимок субстрат в тераріум для рептилій, равликів, геконів, еублефарів, агам, змій, хамелеонів, черепах 40 на 30 см коричневий",
     "price": "158",
-    "stockQuantity": 1,
-    "available": true,
+    "stockQuantity": 0,
+    "available": false,
     "priceOld": "200",
     "pricePromo": "139",
     "updatedPrice": null,
@@ -3106,7 +3131,7 @@
     },
     "name": "Аргентинські таргани ( Blaptica Dubia ) - Живі кормові комахи для рептилій, птахів, їжаків, комахоїдних тварин 2-3 см 50 шт.",
     "price": "234",
-    "stockQuantity": 2,
+    "stockQuantity": 3,
     "available": true,
     "priceOld": "300",
     "pricePromo": "204",
@@ -3131,8 +3156,8 @@
     },
     "name": "Аргентинські таргани ( Blaptica Dubia ) - Живі кормові комахи для рептилій, птахів, їжаків, комахоїдних тварин 2-3 см 100 шт.",
     "price": "433",
-    "stockQuantity": 0,
-    "available": false,
+    "stockQuantity": 2,
+    "available": true,
     "priceOld": "450",
     "pricePromo": null,
     "updatedPrice": null,

@@ -3,7 +3,7 @@ import axios from 'axios'
 import * as fs from 'fs/promises'
 import {config} from '../../config/environment'
 import prisma, { Source } from '../../config/database'
-
+import { nanoid } from 'nanoid'
 /* 
   ------------------------------------------------------------------ 
       Function to fetch products from HugeProfit CRM API 
@@ -34,30 +34,27 @@ export async function fetchCRMProducts() {
       const promoPrice = salePrice && salePrice !== regularPrice ? salePrice : null;
 
       return {
-        productId: String(product.id),
+        productId: String(product.id) + `_${nanoid(6)}`,
         sku: product.sku || null,
-        name: product.name || "Unnamed Product",
-        price: String(regularPrice || '0.00'),
+        name: product.name || 'Unnamed Product',
+        price: String(parseFloat(regularPrice) || '0.00'),
         stockQuantity: parseInt(stockInfo.quantity || 0, 10),
-        source: Source.prom,
+        source: Source.crm,
         externalIds: { prom: null, rozetka: null },
         description:
           product.description === 'None' ? null : product.description,
         mainImage: product.images?.[0] || null,
-        images: product.images || [],
-        inStock: parseInt(stockInfo.instock || 0, 10),
+        images: product.images || [],        
         available: Boolean(stockInfo.instock > 0),
         priceOld: null,
-        pricePromo:
-          promoPrice ? String(promoPrice) : null,
+        pricePromo: promoPrice ? String(promoPrice) : null,
         updatedPrice: String(regularPrice || '0.00'),
         currency: 'UAH',
         dateModified: new Date(),
         lastSynced: new Date(),
-        needsSync: false,        
-        categoryData: { rawData: product.category || null },
-        measureUnit: product.unit || 'шт.',
-        status: 'active',
+        needsSync: false,
+        categoryData: product.category || null,
+        measureUnit: product.unit || 'шт.',       
         lastPromSync: null,
         lastRozetkaSync: null,
         needsPromSync: false,
