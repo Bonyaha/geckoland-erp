@@ -7,6 +7,12 @@ import { parseExternalIds } from '@/utils/marketplaceUtils'
 import UpdateQuantityModal from './UpdateQuantityModal'
 import { useUpdateProductQuantityMutation } from '@/state/api'
 
+// --- Type Definitions ---
+// Define the type for category data
+type CategoryData = {
+  id: number | string
+  name: string
+}
 // Define the type for a single product, ensuring all required fields are present
 type ProductType = {
   productId: string
@@ -16,7 +22,11 @@ type ProductType = {
   sku: string
   mainImage?: string
   lastSynced?: string
-  externalIds?: string | Record<string, any> 
+  externalIds?: string | Record<string, any>
+  categoryData?: {
+    prom?: CategoryData
+    rozetka?: CategoryData
+  }
 }
 
 type ProductRowProps = {
@@ -38,6 +48,8 @@ const ProductRow = ({
   onCopy,
   onDelete,
 }: ProductRowProps) => {
+  //console.log('product is: ',product);
+
   // Helper function to render marketplace tags based on externalIds
   const renderMarketplaceTags = useMemo(() => {
     const ids = parseExternalIds(product.externalIds) as Record<
@@ -84,25 +96,25 @@ const ProductRow = ({
     return tags.length > 0 ? tags : null
   }, [product.externalIds])
 
-const [isQuantityModalOpen, setIsQuantityModalOpen] = useState(false)
-const [updateProductQuantity, { isLoading: isUpdating }] =
-  useUpdateProductQuantityMutation()
+  const [isQuantityModalOpen, setIsQuantityModalOpen] = useState(false)
+  const [updateProductQuantity, { isLoading: isUpdating }] =
+    useUpdateProductQuantityMutation()
 
-const handleQuantityUpdate = async (newQuantity: number) => {
-  try {
-    await updateProductQuantity({
-      productId: product.productId,
-      quantity: newQuantity,
-      targetMarketplace: 'all', // or let user choose
-    }).unwrap()
+  const handleQuantityUpdate = async (newQuantity: number) => {
+    try {
+      await updateProductQuantity({
+        productId: product.productId,
+        quantity: newQuantity,
+        targetMarketplace: 'all', // or let user choose
+      }).unwrap()
 
-    // Optional: Show success message
-    console.log('Quantity updated successfully')
-  } catch (error) {
-    console.error('Failed to update quantity:', error)
-    // Optional: Show error message to user
+      // Optional: Show success message
+      console.log('Quantity updated successfully')
+    } catch (error) {
+      console.error('Failed to update quantity:', error)
+      // Optional: Show error message to user
+    }
   }
-}
   //console.log(product.lastSynced);
   // --- Local State for Inputs ---
   const [costInput, setCostInput] = useState<string>('')
@@ -117,6 +129,27 @@ const handleQuantityUpdate = async (newQuantity: number) => {
 
   // Utility for formatting currency
   const formatCurrency = (value: number) => value.toFixed(2)
+
+  // Logic to build the category string
+  const categoryDisplay = useMemo(() => {
+    if (!product.categoryData) return null
+
+    const parts: string[] = []
+
+    // Check for Prom
+    if (product.categoryData.prom?.name) {
+      parts.push(`Пром: ${product.categoryData.prom.name}`)
+    }
+
+    // Check for Rozetka
+    if (product.categoryData.rozetka?.name) {
+      parts.push(`Розетка: ${product.categoryData.rozetka.name}`)
+    }
+
+    // Join with a separator (e.g., " / ")
+    if (parts.length === 0) return null
+    return parts.join(' / ')
+  }, [product.categoryData])
 
   return (
     <tr
@@ -157,9 +190,10 @@ const handleQuantityUpdate = async (newQuantity: number) => {
               {product.name}
             </div>
             <div className='text-xs text-gray-500'>
-              ID: {product.productId} | Артикул: {product.sku}
-              {/* Optional Category Data */}
-              {/* | Категорія: {product.category || 'Reptiles'} */}
+              ID: {product.productId} | Артикул: {product.sku}              
+            </div>
+            <div className='text-xs text-gray-500'>              
+              {categoryDisplay && <> Категорія: {categoryDisplay}</>}
             </div>
             <div className='text-xs text-gray-400 mt-0.5'>
               Оновлено: {formatDateTime(product.lastSynced)}
