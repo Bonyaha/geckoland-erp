@@ -462,7 +462,7 @@ const Products = () => {
       {/* TABLE VIEW */}
       <div className='bg-white rounded-xl shadow-lg overflow-x-auto min-w-full'>
         <table className='min-w-full divide-y divide-gray-200'>
-          <thead className='bg-gray-50 text-gray-500 uppercase text-xs font-bold tracking-wider'>
+          <thead className='bg-gray-50 uppercase text-xs font-bold tracking-wider'>
             <tr>
               {/* CHECKBOX HEADER */}
               <th className='px-4 py-3 w-10'>
@@ -476,15 +476,25 @@ const Products = () => {
                   }
                 />
               </th>
-              <th className='px-4 py-3 text-left text-blue-800 w-1/3'>
-                Товар/Послуга/Дата
+              <th className='px-4 py-3 text-center text-black font-bold w-1/3'>
+                Товар
               </th>
               {/* Centered headers for the "Card" columns */}
-              <th className='px-4 py-3 text-center text-blue-800'>Доступно</th>
-              <th className='px-4 py-3 text-center text-blue-800'>Продажі</th>
-              <th className='px-4 py-3 text-center text-blue-800'>Собів.</th>
-              <th className='px-4 py-3 text-center text-blue-800'>Ціна</th>
-              <th className='px-4 py-3 text-center text-blue-800'>Націнка</th>
+              <th className='px-4 py-3 text-center text-black font-bold'>
+                Доступно
+              </th>
+              <th className='px-4 py-3 text-center text-black font-bold'>
+                Продажі
+              </th>
+              <th className='px-4 py-3 text-center text-black font-bold'>
+                Собів.
+              </th>
+              <th className='px-4 py-3 text-center text-black font-bold'>
+                Ціна
+              </th>
+              <th className='px-4 py-3 text-center text-black font-bold'>
+                Націнка
+              </th>
             </tr>
           </thead>
 

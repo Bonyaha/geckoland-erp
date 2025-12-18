@@ -27,9 +27,10 @@ export interface NewProduct {
   sku: string
 }
 
-export interface UpdateProductQuantity {
+export interface UpdateProduct {
   productId: string
-  quantity: number
+  quantity?: number
+  price?: number
   targetMarketplace?: 'prom' | 'rozetka' | 'all'
 }
 
@@ -138,12 +139,13 @@ export const api = createApi({
       }),
       invalidatesTags: ['Products'],
     }),
-    updateProductQuantity: build.mutation<Product, UpdateProductQuantity>({
-      query: ({ productId, quantity, targetMarketplace }) => ({
+    updateProduct: build.mutation<Product, UpdateProduct>({
+      query: ({ productId, quantity, price, targetMarketplace }) => ({
         url: `/products/${productId}`,
         method: 'PATCH',
         body: {
           quantity,
+          price,
           targetMarketplace: targetMarketplace || 'all',
         },
       }),
@@ -187,7 +189,7 @@ export const {
   useCreateProductMutation,
   useGetUsersQuery,
   useGetExpensesByCategoryQuery,
-  useUpdateProductQuantityMutation,
+  useUpdateProductMutation,
   useBatchUpdateProductQuantityMutation,
   useSyncProductsFromMarketplacesMutation,
 } = api

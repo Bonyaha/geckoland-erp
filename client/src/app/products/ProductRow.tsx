@@ -5,7 +5,8 @@ import { Pencil, Copy, Trash2, Info, Settings } from 'lucide-react'
 import { formatDateTime } from '@/utils/dateUtils'
 import { parseExternalIds } from '@/utils/marketplaceUtils'
 import UpdateQuantityModal from './UpdateQuantityModal'
-import { useUpdateProductQuantityMutation } from '@/state/api'
+import UpdatePriceModal from './UpdatePriceModal'
+import { useUpdateProductMutation } from '@/state/api'
 
 // --- Type Definitions ---
 // Define the type for category data
@@ -98,7 +99,8 @@ const ProductRow = ({
 
   const [isQuantityModalOpen, setIsQuantityModalOpen] = useState(false)
   const [updateProductQuantity, { isLoading: isUpdating }] =
-    useUpdateProductQuantityMutation()
+    useUpdateProductMutation()
+  const [isPriceModalOpen, setIsPriceModalOpen] = useState(false)
 
   const handleQuantityUpdate = async (newQuantity: number) => {
     try {
@@ -115,6 +117,20 @@ const ProductRow = ({
       // Optional: Show error message to user
     }
   }
+
+  const handlePriceUpdate = async (newPrice: number) => {
+    try {
+      // We use the same mutation but pass 'price' instead of 'quantity'
+      await updateProductQuantity({
+        productId: product.productId,
+        price: newPrice, // Your RTK Query mutation should handle optional price
+        targetMarketplace: 'all',
+      }).unwrap()
+    } catch (error) {
+      console.error('Failed to update price:', error)
+    }
+  }
+
   //console.log(product.lastSynced);
   // --- Local State for Inputs ---
   const [costInput, setCostInput] = useState<string>('')
@@ -134,21 +150,32 @@ const ProductRow = ({
   const categoryDisplay = useMemo(() => {
     if (!product.categoryData) return null
 
-    const parts: string[] = []
+    const items: React.ReactNode[] = []
 
     // Check for Prom
     if (product.categoryData.prom?.name) {
-      parts.push(`Пром: ${product.categoryData.prom.name}`)
+      items.push(
+        <span key='prom'>
+          <span className='underline'>Пром</span>:{' '}
+          {product.categoryData.prom.name}
+        </span>
+      )
     }
 
     // Check for Rozetka
     if (product.categoryData.rozetka?.name) {
-      parts.push(`Розетка: ${product.categoryData.rozetka.name}`)
+      items.push(
+        <span key='rozetka'>
+          <span className='underline'>Розетка</span>:{' '}
+          {product.categoryData.rozetka.name}
+        </span>
+      )
     }
 
+    if (items.length === 0) return null
+
     // Join with a separator (e.g., " / ")
-    if (parts.length === 0) return null
-    return parts.join(' / ')
+    return items.reduce((prev, curr) => [prev, ' / ', curr])
   }, [product.categoryData])
 
   return (
@@ -186,16 +213,16 @@ const ProductRow = ({
 
           {/* Details */}
           <div className='flex flex-col gap-1 w-full'>
-            <div className='text-sm font-bold text-blue-700 leading-tight hover:underline cursor-pointer'>
+            <div className='text-lg font-bold text-blue-700 leading-tight hover:underline cursor-pointer'>
               {product.name}
             </div>
-            <div className='text-xs text-gray-500'>
-              ID: {product.productId} | Артикул: {product.sku}              
+            <div className='text-sm text-gray-500'>
+              ID: {product.productId} | Артикул: {product.sku}
             </div>
-            <div className='text-xs text-gray-500'>              
+            <div className='text-sm text-gray-500'>
               {categoryDisplay && <> Категорія: {categoryDisplay}</>}
             </div>
-            <div className='text-xs text-gray-400 mt-0.5'>
+            <div className='text-sm text-gray-400 mt-0.5'>
               Оновлено: {formatDateTime(product.lastSynced)}
             </div>
             {/* ACTION BAR (Moved here from separate column) */}
@@ -253,7 +280,7 @@ const ProductRow = ({
           </span>
           <span className='text-xs text-gray-500 mb-2'>одиниць</span>
 
-          {/* Action Trigger Image 4 */}
+          {/* Action Trigger*/}
           <button
             onClick={() => setIsQuantityModalOpen(true)}
             disabled={isUpdating}
@@ -306,6 +333,12 @@ const ProductRow = ({
           </span>
           {/* {formatCurrency(product.price)} */}
           <span className='text-xs text-gray-500'>грн.</span>
+          <button
+            onClick={() => setIsPriceModalOpen(true)}
+            className='text-xs text-blue-500 hover:text-blue-700 hover:underline border-t border-dashed border-blue-300 pt-1 mt-2 w-full text-center cursor-pointer'
+          >
+            Змінити
+          </button>
         </div>
       </td>
 
@@ -327,6 +360,13 @@ const ProductRow = ({
           onClose={() => setIsQuantityModalOpen(false)}
           onUpdate={handleQuantityUpdate}
           currentQuantity={product.stockQuantity}
+          productName={product.name}
+        />
+        <UpdatePriceModal
+          isOpen={isPriceModalOpen}
+          onClose={() => setIsPriceModalOpen(false)}
+          onUpdate={handlePriceUpdate}
+          currentPrice={product.price}
           productName={product.name}
         />
       </td>
