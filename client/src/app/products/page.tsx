@@ -4,7 +4,7 @@
 import {
   useCreateProductMutation,
   useGetProductsQuery,
-  useBatchUpdateProductQuantityMutation,
+  useBatchUpdateProductMutation,
   useSyncProductsFromMarketplacesMutation,
 } from '@/state/api'
 import {
@@ -15,6 +15,7 @@ import {
   RefreshCw,
   ArrowUpCircle,
   Edit3,
+  DollarSign,
   /* Pencil,
   Copy,
   Trash2 */
@@ -25,7 +26,7 @@ import { useState, useEffect } from 'react'
 import CreateProductModal from './CreateProductModal'
 import ProductStats from './ProductStats'
 import ProductRow from './ProductRow'
-import BatchUpdateQuantityModal from './BatchUpdateQuantityModal'
+import BatchUpdateModal from './BatchUpdateModal'
 
 type ProductType = {
   productId: string
@@ -60,6 +61,7 @@ const Products = () => {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
   const [showScrollArrow, setShowScrollArrow] = useState(false)
   const [syncMessage, setSyncMessage] = useState<string | null>(null)
+  const [batchMode, setBatchMode] = useState<'quantity' | 'price'>('quantity')
 
   const itemsPerPage = 20
 
@@ -72,8 +74,8 @@ const Products = () => {
   })
 
   const [createProduct] = useCreateProductMutation()
-  const [batchUpdateProductQuantity, { isLoading: isBatchUpdating }] =
-    useBatchUpdateProductQuantityMutation()
+  const [batchUpdateProduct, { isLoading: isBatchUpdating }] =
+    useBatchUpdateProductMutation()
   const [syncProducts, { isLoading: isSyncing }] =
     useSyncProductsFromMarketplacesMutation()
 
@@ -142,7 +144,6 @@ const Products = () => {
       setTimeout(() => setSyncMessage(null), 5000)
     }
   }
- 
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -172,55 +173,42 @@ const Products = () => {
   }
 
   // Batch Update Logic
-  const handleBatchUpdate = async (adjustment: number) => {
+  const handleBatchUpdate = async (
+    newValue: number,
+    mode: 'quantity' | 'price'
+  ) => {
     if (selectedProducts.length === 0) return
 
     try {
-      // Prepare batch update data
-      const products = selectedProducts
-        .map((productId) => {
-          const product = typedProducts.find((p) => p.productId === productId)
-          if (!product) return null
+      const products = selectedProducts.map((productId) => ({
+        productId,
+        updates: {
+          // We now use the exact newValue provided by the user
+          [mode === 'price' ? 'price' : 'stockQuantity']: newValue,
+        },
+      }))
 
-          const newQuantity = Math.max(0, product.stockQuantity + adjustment)
-
-          return {
-            productId,
-            updates: {
-              quantity: newQuantity,
-            },
-          }
-        })
-        .filter(Boolean) as Array<{
-        productId: string
-        updates: { quantity: number }
-      }>
-
-      // Call batch update API
-      await batchUpdateProductQuantity({
+      await batchUpdateProduct({
         products,
         targetMarketplace: 'all',
       }).unwrap()
 
-      // Clear selection after successful update
       setSelectedProducts([])
-
-      console.log(`Successfully updated ${products.length} products`)
+      setIsBatchModalOpen(false)
     } catch (error) {
-      console.error('Failed to update products:', error)
+      console.error('Failed to batch update:', error)
     }
   }
 
   // Get selected products for batch modal
   const getSelectedProductsData = () => {
     if (!data?.products) return []
-
     return data.products
       .filter((p: any) => selectedProducts.includes(p.productId))
       .map((p: any) => ({
         productId: p.productId,
         name: p.name,
-        currentQuantity: p.stockQuantity,
+        currentValue: batchMode === 'price' ? p.price : p.stockQuantity,
       }))
   }
 
@@ -415,19 +403,38 @@ const Products = () => {
               <span className='text-sm font-medium text-gray-700'>
                 Вибрано: {selectedProducts.length}
               </span>
+
+              {/* Quantity Button */}
               <button
-                onClick={() => setIsBatchModalOpen(true)}
+                onClick={() => {
+                  setBatchMode('quantity')
+                  setIsBatchModalOpen(true)
+                }}
                 disabled={isBatchUpdating}
                 className='flex items-center bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-5 rounded-full shadow-md transition-all disabled:bg-gray-400'
               >
                 <Edit3 className='w-4 h-4 mr-2' />
-                {isBatchUpdating ? 'Оновлення...' : 'Змінити кількість'}
+                Кількість
               </button>
+
+              {/* Price Button */}
+              <button
+                onClick={() => {
+                  setBatchMode('price')
+                  setIsBatchModalOpen(true)
+                }}
+                disabled={isBatchUpdating}
+                className='flex items-center bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 px-5 rounded-full shadow-md transition-all disabled:bg-gray-400'
+              >
+                <DollarSign className='w-4 h-4 mr-2' />
+                Ціна
+              </button>
+
               <button
                 onClick={() => setSelectedProducts([])}
                 className='text-sm text-gray-600 hover:text-gray-800 underline'
               >
-                Скасувати вибір
+                Скасувати
               </button>
             </>
           )}
@@ -553,11 +560,12 @@ const Products = () => {
         onClose={() => setIsModalOpen(false)}
         onCreate={handleCreateProduct}
       />
-      <BatchUpdateQuantityModal
+      <BatchUpdateModal
         isOpen={isBatchModalOpen}
         onClose={() => setIsBatchModalOpen(false)}
         onUpdate={handleBatchUpdate}
         selectedProducts={getSelectedProductsData()}
+        mode={batchMode}
       />
       {/* SCROLL TO TOP ARROW COMPONENT */}
       {showScrollArrow && (

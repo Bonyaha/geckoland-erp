@@ -151,7 +151,7 @@ export const api = createApi({
       }),
       invalidatesTags: ['Products'],
     }),
-    batchUpdateProductQuantity: build.mutation<any, BatchUpdateProductQuantity>(
+    batchUpdateProduct: build.mutation<any, BatchUpdateProductQuantity>(
       {
         query: ({ products, targetMarketplace }) => ({
           url: `/products/batch`,
@@ -190,6 +190,6 @@ export const {
   useGetUsersQuery,
   useGetExpensesByCategoryQuery,
   useUpdateProductMutation,
-  useBatchUpdateProductQuantityMutation,
+  useBatchUpdateProductMutation,
   useSyncProductsFromMarketplacesMutation,
 } = api
