@@ -20,7 +20,8 @@ export async function fetchCRMProducts() {
 
   try {
     const response = await axios.get(baseUrl, { headers })
-    //console.log('Sample product:', response.data.data[0])
+    let sample = response.data.data.filter((p: any) => p.id === 6289876)
+    console.log('Sample product:', sample[0].stock)
 
     const { data: products } = response.data
     console.log(`Fetched ${products.length} products.`)
@@ -30,6 +31,7 @@ export async function fetchCRMProducts() {
     const transformedProducts = allProducts.map((product: any) => {
       const stockInfo = product.stock?.[0] || {}
       const salePrice = stockInfo.sale_price;
+      const costPrice = stockInfo.net_price;
       const regularPrice = stockInfo.price;
       const promoPrice = salePrice && salePrice !== regularPrice ? salePrice : null;
 
@@ -61,6 +63,7 @@ export async function fetchCRMProducts() {
         needsRozetkaSync: false,
         promQuantity: parseInt(stockInfo.quantity || 0, 10),
         rozetkaQuantity: parseInt(stockInfo.quantity || 0, 10),
+        costPrice: costPrice ? String(costPrice) : null,
       }
     })
     

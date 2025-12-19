@@ -5,6 +5,7 @@ import { Pencil, Copy, Trash2, Info, Settings } from 'lucide-react'
 import { formatDateTime } from '@/utils/dateUtils'
 import { parseExternalIds } from '@/utils/marketplaceUtils'
 import UpdateQuantityModal from './UpdateQuantityModal'
+import UpdateCostPriceModal from './UpdateCostPriceModal'
 import UpdatePriceModal from './UpdatePriceModal'
 import { useUpdateProductMutation } from '@/state/api'
 
@@ -19,6 +20,7 @@ type ProductType = {
   productId: string
   name: string
   price: number
+  costPrice?: number | null
   stockQuantity: number
   sku: string
   mainImage?: string
@@ -50,6 +52,12 @@ const ProductRow = ({
   onDelete,
 }: ProductRowProps) => {
   //console.log('product is: ',product);
+  const [isQuantityModalOpen, setIsQuantityModalOpen] = useState(false)
+  const [updateProduct, { isLoading: isUpdating }] =
+    useUpdateProductMutation()
+  const [isPriceModalOpen, setIsPriceModalOpen] = useState(false)
+  //const [costInput, setCostInput] = useState<string>('')
+  const [isCostModalOpen, setIsCostModalOpen] = useState(false)
 
   // Helper function to render marketplace tags based on externalIds
   const renderMarketplaceTags = useMemo(() => {
@@ -97,14 +105,9 @@ const ProductRow = ({
     return tags.length > 0 ? tags : null
   }, [product.externalIds])
 
-  const [isQuantityModalOpen, setIsQuantityModalOpen] = useState(false)
-  const [updateProductQuantity, { isLoading: isUpdating }] =
-    useUpdateProductMutation()
-  const [isPriceModalOpen, setIsPriceModalOpen] = useState(false)
-
   const handleQuantityUpdate = async (newQuantity: number) => {
     try {
-      await updateProductQuantity({
+      await updateProduct({
         productId: product.productId,
         quantity: newQuantity,
         targetMarketplace: 'all', // or let user choose
@@ -121,7 +124,7 @@ const ProductRow = ({
   const handlePriceUpdate = async (newPrice: number) => {
     try {
       // We use the same mutation but pass 'price' instead of 'quantity'
-      await updateProductQuantity({
+      await updateProduct({
         productId: product.productId,
         price: newPrice, // Your RTK Query mutation should handle optional price
         targetMarketplace: 'all',
@@ -131,11 +134,20 @@ const ProductRow = ({
     }
   }
 
+  const handleCostUpdate = async (newCost: number) => {
+    try {
+      await updateProduct({
+        productId: product.productId,
+        product: { costPrice: newCost },
+      }).unwrap()
+    } catch (error) {
+      console.error('Failed to update cost:', error)
+    }
+  }
   //console.log(product.lastSynced);
   // --- Local State for Inputs ---
-  const [costInput, setCostInput] = useState<string>('')
   // Calculations based on mock data
-  const cost = costInput ? parseFloat(costInput) : 0
+  const cost = product.costPrice ? product.costPrice : 0
   const sales = Math.floor(Math.random() * 50) // Mock sales
   //const margin = product.price - cost
   const marginValue = product.price - cost
@@ -308,16 +320,17 @@ const ProductRow = ({
 
       {/* 5. COST ("Card" Style - Input) */}
       <td className='px-2 py-4 align-top'>
-        <div className='flex flex-col items-center justify-center gap-2 p-3 h-full min-w-[120px]'>
+        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
           {/* Input Box Image 6 */}
-          <input
-            type='number'
-            placeholder='0'
-            className='w-20 px-2 py-1 text-center text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500'
-            value={cost}
-            onChange={(e) => setCostInput(e.target.value)}
-          />
-          <button className='text-xs text-blue-500 hover:underline cursor-pointer'>
+          <span className='text-xl font-bold text-green-600'>
+            {product.costPrice}
+          </span>
+          <span className='text-xs text-gray-500'>грн.</span>
+
+          <button
+            onClick={() => setIsCostModalOpen(true)}
+            className='text-xs text-blue-500 hover:underline cursor-pointer'
+          >
             Розрахувати
           </button>
           {/* {formatCurrency(cost)} */}
@@ -367,6 +380,12 @@ const ProductRow = ({
           onClose={() => setIsPriceModalOpen(false)}
           onUpdate={handlePriceUpdate}
           currentPrice={product.price}
+          productName={product.name}
+        />
+        <UpdateCostPriceModal
+          isOpen={isCostModalOpen}
+          onClose={() => setIsCostModalOpen(false)}
+          onUpdate={handleCostUpdate}
           productName={product.name}
         />
       </td>
