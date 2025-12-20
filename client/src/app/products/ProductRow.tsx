@@ -126,7 +126,7 @@ const ProductRow = ({
       // We use the same mutation but pass 'price' instead of 'quantity'
       await updateProduct({
         productId: product.productId,
-        price: newPrice, // Your RTK Query mutation should handle optional price
+        price: newPrice,
         targetMarketplace: 'all',
       }).unwrap()
     } catch (error) {
@@ -138,7 +138,8 @@ const ProductRow = ({
     try {
       await updateProduct({
         productId: product.productId,
-        product: { costPrice: newCost },
+        costPrice: newCost,
+        targetMarketplace: 'all',
       }).unwrap()
     } catch (error) {
       console.error('Failed to update cost:', error)

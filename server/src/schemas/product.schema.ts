@@ -83,6 +83,7 @@ export const productUpdateParamsSchema = z
   .object({
     quantity: z.number().nonnegative().optional(),
     price: z.number().nonnegative().optional(),
+    costPrice: z.number().nonnegative().optional(),
   })
   .strict() // Fails if other properties (e.g., "name") are passed
   .refine(

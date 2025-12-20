@@ -31,6 +31,7 @@ export interface UpdateProduct {
   productId: string
   quantity?: number
   price?: number
+  costPrice?: number
   targetMarketplace?: 'prom' | 'rozetka' | 'all'
 }
 
@@ -140,30 +141,35 @@ export const api = createApi({
       invalidatesTags: ['Products'],
     }),
     updateProduct: build.mutation<Product, UpdateProduct>({
-      query: ({ productId, quantity, price, targetMarketplace }) => ({
+      query: ({
+        productId,
+        quantity,
+        price,
+        costPrice,
+        targetMarketplace,
+      }) => ({
         url: `/products/${productId}`,
         method: 'PATCH',
         body: {
           quantity,
           price,
+          costPrice,
           targetMarketplace: targetMarketplace || 'all',
         },
       }),
       invalidatesTags: ['Products'],
     }),
-    batchUpdateProduct: build.mutation<any, BatchUpdateProductQuantity>(
-      {
-        query: ({ products, targetMarketplace }) => ({
-          url: `/products/batch`,
-          method: 'PATCH',
-          body: {
-            products,
-            targetMarketplace: targetMarketplace || 'all',
-          },
-        }),
-        invalidatesTags: ['Products'],
-      }
-    ),
+    batchUpdateProduct: build.mutation<any, BatchUpdateProductQuantity>({
+      query: ({ products, targetMarketplace }) => ({
+        url: `/products/batch`,
+        method: 'PATCH',
+        body: {
+          products,
+          targetMarketplace: targetMarketplace || 'all',
+        },
+      }),
+      invalidatesTags: ['Products'],
+    }),
     syncProductsFromMarketplaces: build.mutation<SyncMarketplacesResult, void>({
       query: () => ({
         url: '/products/sync/marketplaces',

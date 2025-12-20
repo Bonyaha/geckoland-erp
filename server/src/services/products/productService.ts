@@ -236,6 +236,13 @@ class ProductService {
       dateModified: now,
     }
 
+console.log('updates.costPrice is:', updates.costPrice);
+
+    if (updates.costPrice !== undefined) {
+      dbUpdateData.costPrice = updates.costPrice
+      console.log(`Updating costPrice for ${productId}: ${updates.costPrice}`)
+    }
+
     // If updating all sides (default), update DB first
     if (!targetMarketplace || targetMarketplace === 'all') {
       if (updates.quantity !== undefined) {
@@ -277,6 +284,11 @@ class ProductService {
 
     const externalIds = currentProduct.externalIds as ProductExternalIds | null
 
+    // Only sync to marketplaces if quantity or price changed (not costPrice)
+    const needsMarketplaceSync =
+      updates.quantity !== undefined || updates.price !== undefined
+
+if (needsMarketplaceSync) {
     // Prom update
     if (
       !targetMarketplace ||
@@ -353,6 +365,7 @@ class ProductService {
     if (syncPromises.length > 0) {
       await Promise.allSettled(syncPromises)
     }
+}
 
     // Mark sync complete and update marketplace-specific fields
     // 1. Finalize DB update with sync status
@@ -375,7 +388,7 @@ class ProductService {
       }
     }
 
-    if (syncErrors.length === 0) {
+    if (syncErrors.length === 0 && needsMarketplaceSync) {
       finalUpdateData.needsSync = false
     }
 
@@ -389,15 +402,20 @@ class ProductService {
 
     // 2. Send response
     const success = syncErrors.length === 0
-    const message = success
-      ? `Product updated${
-          targetMarketplace
-            ? ' for ' + targetMarketplace
-            : ' and synced everywhere'
-        } successfully.`
-      : `Product update processed${
-          targetMarketplace ? ' for ' + targetMarketplace : ''
-        }, but with sync errors.`
+    let message: string
+    if (updates.costPrice !== undefined && !needsMarketplaceSync) {
+      message = 'Cost price updated successfully (internal only)'
+    } else if (success) {
+      message = `Product updated${
+        targetMarketplace
+          ? ' for ' + targetMarketplace
+          : ' and synced everywhere'
+      } successfully.`
+    } else {
+      message = `Product update processed${
+        targetMarketplace ? ' for ' + targetMarketplace : ''
+      }, but with sync errors.`
+    }
 
     return {
       success,
