@@ -31,9 +31,6 @@ const SidebarLink = ({
   isCollapsed,
 }: SidebarLinkProps) => {
   const pathname = usePathname()
-  /* console.log(`pathname`, pathname)
-  console.log(`href`, href) */
-
   const isActive =
     pathname === href || (pathname === '/' && href === '/dashboard')
 
@@ -42,20 +39,17 @@ const SidebarLink = ({
       <div
         className={`cursor-pointer flex items-center ${
           isCollapsed ? 'justify-center py-4' : 'justify-start px-8 py-4'
-        }
-        hover:text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900 gap-3 transition-colors ${
+        } gap-3 transition-colors ${
           isActive
-            ? 'bg-blue-200 text-white dark:bg-blue-800 dark:text-gray-50'
-            : ''
-        }
-      }`}
+            ? 'bg-blue-600 text-white' // Active state: Blue background, White text, NO HOVER bg
+            : 'text-gray-200 hover:bg-white hover:text-black' // Inactive state: Gray text, HOVER effects applied
+        }`}
       >
-        <Icon className='w-6 h-6 !text-gray-700 dark:!text-gray-300' />
+        {/* Updated icon color to inherit from parent text color */}
+        <Icon className='w-6 h-6' />
 
         <span
-          className={`${
-            isCollapsed ? 'hidden' : 'block'
-          } font-medium text-gray-700 dark:text-gray-300`}
+          className={`${isCollapsed ? 'hidden' : 'block'} font-medium text-lg`}
         >
           {label}
         </span>
@@ -76,7 +70,7 @@ const Sidebar = () => {
 
   const sidebarClassNames = `fixed flex flex-col ${
     isSidebarCollapsed ? 'w-0 md:w-16' : 'w-72 md:w-64'
-  } bg-white dark:bg-gray-800 transition-all duration-300 overflow-hidden h-full shadow-md z-40 dark:shadow-gray-900`
+  } bg-[#383a3d] transition-all duration-300 overflow-hidden h-full shadow-md z-40`
 
   return (
     <div className={sidebarClassNames}>
@@ -86,7 +80,7 @@ const Sidebar = () => {
           isSidebarCollapsed ? 'px-5' : 'px-8'
         }`}
       >
-        <div className='text-gray-700 dark:text-gray-300'>
+        <div className='text-white'>
           <Image
             src='/logo.png'
             alt='warehouse logo'
@@ -98,7 +92,7 @@ const Sidebar = () => {
         <h1
           className={`${
             isSidebarCollapsed ? 'hidden' : 'block'
-          } font-extrabold text-2xl text-gray-700 dark:text-gray-300`}
+          } font-extrabold text-2xl text-white`} // Logo name is now white
         >
           Склад
         </h1>
@@ -152,7 +146,7 @@ const Sidebar = () => {
 
       {/* FOOTER */}
       <div className={`${isSidebarCollapsed ? 'hidden' : 'block'} mb-10`}>
-        <p className='text-center text-xs text-gray-500 dark:text-gray-400'>
+        <p className='text-center text-xs text-gray-400'>
           &copy; 2025 Склад. Всі права захищені.
         </p>
       </div>
