@@ -47,10 +47,10 @@ export const getProducts = async (
       : null,
   }))
 
-   res.json({
-     products: formattedProducts,
-     pagination: result.pagination,
-   })
+  res.json({
+    products: formattedProducts,
+    pagination: result.pagination,
+  })
 }
 
 /**
@@ -111,13 +111,21 @@ export const updateSingleProduct = async (
 ): Promise<void> => {
   // Middleware guarantees req.params and req.body match updateSingleProductSchema
   const { productId } = req.params
-  const { quantity, price, targetMarketplace } = req.body
+  const { quantity, price, costPrice, targetMarketplace } = req.body
 
+  console.log('updateSingleProduct received:', {
+    productId,
+    quantity,
+    price,
+    costPrice,
+    targetMarketplace,
+  })
   const input: SingleProductUpdateInput = {
     productId,
     updates: {
       quantity,
       price,
+      costPrice,
     },
     targetMarketplace,
   }
