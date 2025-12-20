@@ -16,9 +16,7 @@ import {
   ArrowUpCircle,
   Edit3,
   DollarSign,
-  /* Pencil,
-  Copy,
-  Trash2 */
+  CheckCircle,
 } from 'lucide-react'
 //import Image from 'next/image'
 import { useState, useEffect } from 'react'
@@ -62,7 +60,9 @@ const Products = () => {
   const [showScrollArrow, setShowScrollArrow] = useState(false)
   const [syncMessage, setSyncMessage] = useState<string | null>(null)
   const [batchMode, setBatchMode] = useState<'quantity' | 'price'>('quantity')
-
+  const [notificationMessage, setNotificationMessage] = useState<string | null>(
+    null
+  )
   const itemsPerPage = 20
 
   // API hooks
@@ -254,6 +254,14 @@ const Products = () => {
     return pages
   }
 
+const handleCostUpdateNotification = (productName: string) => {
+  setNotificationMessage(`Собівартість для "${productName}" збережена!`)
+
+  // Auto-hide after 3 seconds
+  setTimeout(() => {
+    setNotificationMessage(null)
+  }, 3000)
+}
   return (
     <div className='mx-auto pb-5 w-full'>
       {/* TOP SEARCH BAR */}
@@ -515,6 +523,7 @@ const Products = () => {
                 onEdit={handleEdit}
                 onCopy={handleCopy}
                 onDelete={handleDelete}
+                onCostUpdate={handleCostUpdateNotification}
               />
             ))}
           </tbody>
@@ -526,6 +535,17 @@ const Products = () => {
           </div>
         )}
       </div>
+      {/* SUCCESS NOTIFICATION - Outside the table */}
+      {notificationMessage && (
+        <div className='fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-bottom-4 duration-300'>
+          <div className='bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-gray-700'>
+            <div className='bg-green-500 rounded-full p-1'>
+              <CheckCircle className='w-5 h-5 text-white' />
+            </div>
+            <span className='text-sm font-medium'>{notificationMessage}</span>
+          </div>
+        </div>
+      )}
 
       {/* BOTTOM PAGINATION (Optional - for better UX) */}
       {pagination.pages > 1 && (
