@@ -15,7 +15,7 @@ const UpdateCostPriceModal = ({
   productName,
 }: UpdateCostPriceModalProps) => {
   const [purchaseUsd, setPurchaseUsd] = useState<string>('')
-  const [exchangeRate, setExchangeRate] = useState<string>('41.5') // Default rate example
+  const [exchangeRate, setExchangeRate] = useState<string>('1') // Default rate example
   const [shippingUsd, setShippingUsd] = useState<string>('')
   const [otherUah, setOtherUah] = useState<string>('')
 

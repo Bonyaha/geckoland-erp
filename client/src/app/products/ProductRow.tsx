@@ -53,11 +53,19 @@ const ProductRow = ({
 }: ProductRowProps) => {
   //console.log('product is: ',product);
   const [isQuantityModalOpen, setIsQuantityModalOpen] = useState(false)
-  const [updateProduct, { isLoading: isUpdating }] =
-    useUpdateProductMutation()
+  const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation()
   const [isPriceModalOpen, setIsPriceModalOpen] = useState(false)
   //const [costInput, setCostInput] = useState<string>('')
   const [isCostModalOpen, setIsCostModalOpen] = useState(false)
+  const [manualCost, setManualCost] = useState<string>('')
+
+const cardButtonClass =
+  'text-xs bg-white border border-gray-200 text-blue-600 px-3 py-1 rounded-md hover:bg-blue-50 transition-colors shadow-sm w-full max-w-[110px] cursor-pointer'
+
+  const hasCostPrice =
+    product.costPrice !== null &&
+    product.costPrice !== undefined &&
+    product.costPrice > 0
 
   // Helper function to render marketplace tags based on externalIds
   const renderMarketplaceTags = useMemo(() => {
@@ -134,6 +142,22 @@ const ProductRow = ({
     }
   }
 
+  const handleManualCostSave = async () => {
+    const value = parseFloat(manualCost)
+    if (!isNaN(value) && value >= 0) {
+      try {
+        await updateProduct({
+          productId: product.productId,
+          costPrice: value,
+          targetMarketplace: 'all',
+        }).unwrap()
+        setManualCost('') // Reset input on success
+      } catch (error) {
+        console.error('Failed to update cost price manually:', error)
+      }
+    }
+  }
+
   const handleCostUpdate = async (newCost: number) => {
     try {
       await updateProduct({
@@ -145,8 +169,7 @@ const ProductRow = ({
       console.error('Failed to update cost:', error)
     }
   }
-  //console.log(product.lastSynced);
-  // --- Local State for Inputs ---
+
   // Calculations based on mock data
   const cost = product.costPrice ? product.costPrice : 0
   const sales = Math.floor(Math.random() * 50) // Mock sales
@@ -281,12 +304,9 @@ const ProductRow = ({
       {/* 3. AVAILABLE ("Card" Style) */}
       <td className='px-2 py-4 align-top'>
         <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
-          <span className='text-xs text-gray-500 font-medium mb-1'>
-            Доступно
-          </span>
           <span
             className={`text-2xl font-bold ${
-              product.stockQuantity > 0 ? 'text-green-500' : 'text-red-500'
+              product.stockQuantity > 0 ? 'text-green-600' : 'text-red-600'
             }`}
           >
             {product.stockQuantity}
@@ -297,7 +317,7 @@ const ProductRow = ({
           <button
             onClick={() => setIsQuantityModalOpen(true)}
             disabled={isUpdating}
-            className='text-xs text-blue-500 hover:text-blue-700 hover:underline border-t border-dashed border-blue-300 pt-1 w-full text-center cursor-pointer'
+            className={cardButtonClass}
           >
             {isUpdating ? 'Оновлення...' : 'Додати\\Зменшити'}
           </button>
@@ -308,10 +328,11 @@ const ProductRow = ({
       <td className='px-2 py-4 align-top'>
         <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
           <span className='text-xs text-gray-500 font-medium mb-1'>
-            Кількість
+            Кількість продажів
           </span>
-          <span className='text-2xl font-bold text-red-500'>{sales}</span>
-          <span className='text-xs text-gray-500 mb-2'>продажів</span>
+
+          <span className='text-2xl font-bold text-green-600'>{sales}</span>
+
           {/* Action Trigger Image 5 */}
           <button className='text-xs text-blue-500 hover:text-blue-700 hover:underline w-full text-center cursor-pointer'>
             з {salesDate}
@@ -322,34 +343,57 @@ const ProductRow = ({
       {/* 5. COST ("Card" Style - Input) */}
       <td className='px-2 py-4 align-top'>
         <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
-          {/* Input Box Image 6 */}
-          <span className='text-xl font-bold text-green-600'>
-            {product.costPrice}
+          <span className='text-xs text-gray-500 font-medium mb-1'>
+            Собівартість
           </span>
-          <span className='text-xs text-gray-500'>грн.</span>
-
-          <button
-            onClick={() => setIsCostModalOpen(true)}
-            className='text-xs text-blue-500 hover:underline cursor-pointer'
-          >
-            Розрахувати
-          </button>
-          {/* {formatCurrency(cost)} */}
+          {hasCostPrice ? (
+            /* VIEW MODE: When cost price exists */
+            <>
+              <span className='text-lg font-bold text-green-600 mb-2'>
+                {product.costPrice?.toFixed(2)}{' '}
+                <span className='text-black text-xs font-light'>грн.</span>
+              </span>
+              <button
+                onClick={() => setIsCostModalOpen(true)}
+                className={cardButtonClass}
+              >
+                Змінити
+              </button>
+            </>
+          ) : (
+            /* INPUT MODE: When cost price is missing */
+            <>
+              <input
+                type='number'
+                placeholder='0.00'
+                className='w-full text-center text-sm border border-gray-300 rounded-md mb-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none'
+                value={manualCost}
+                onChange={(e) => setManualCost(e.target.value)}
+                onBlur={handleManualCostSave}
+                onKeyDown={(e) => e.key === 'Enter' && handleManualCostSave()}
+              />
+              <button
+                onClick={() => setIsCostModalOpen(true)}
+                className='text-xs text-blue-500 hover:text-blue-700 underline transition-colors'
+              >
+                Розрахувати
+              </button>
+            </>
+          )}
         </div>
       </td>
 
       {/* 6. PRICE ("Card" Style) */}
       <td className='px-2 py-4 align-top'>
         <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
-          <span className='text-xs text-gray-500 font-medium mb-1'>Продаж</span>
           <span className='text-xl font-bold text-green-600'>
-            {product.price}
+            {product.price?.toFixed(2)}{' '}
+            <span className='text-black text-xs font-light'>грн.</span>
           </span>
           {/* {formatCurrency(product.price)} */}
-          <span className='text-xs text-gray-500'>грн.</span>
           <button
             onClick={() => setIsPriceModalOpen(true)}
-            className='text-xs text-blue-500 hover:text-blue-700 hover:underline border-t border-dashed border-blue-300 pt-1 mt-2 w-full text-center cursor-pointer'
+            className={cardButtonClass}
           >
             Змінити
           </button>
@@ -362,8 +406,9 @@ const ProductRow = ({
           <span className='text-xs text-gray-500 font-medium mb-1'>
             Націнка
           </span>
-          <span className='text-lg font-bold text-green-500'>
-            {formatCurrency(marginValue)} грн.
+          <span className='text-lg font-bold text-green-600'>
+            {formatCurrency(marginValue)}{' '}
+            <span className='text-black text-xs font-light'>грн.</span>
           </span>
           <span className='text-sm font-bold text-green-400'>
             ({marginPercent.toFixed(0)}%)
