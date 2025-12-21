@@ -47,6 +47,8 @@ type ProductType = {
   [key: string]: string | number | boolean | string[] | undefined
 }
 
+type UpdateMode = 'quantity' | 'price' | 'costPrice'
+
 const Products = () => {
   // State management
   const [searchTerm, setSearchTerm] = useState('')
@@ -59,7 +61,9 @@ const Products = () => {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
   const [showScrollArrow, setShowScrollArrow] = useState(false)
   const [syncMessage, setSyncMessage] = useState<string | null>(null)
-  const [batchMode, setBatchMode] = useState<'quantity' | 'price'>('quantity')
+  const [batchMode, setBatchMode] = useState<
+    'quantity' | 'price' | 'costPrice'
+  >('quantity')
   const [notificationMessage, setNotificationMessage] = useState<string | null>(
     null
   )
@@ -173,10 +177,7 @@ const Products = () => {
   }
 
   // Batch Update Logic
-  const handleBatchUpdate = async (
-    newValue: number,
-    mode: 'quantity' | 'price'
-  ) => {
+  const handleBatchUpdate = async (newValue: number, mode: UpdateMode) => {
     if (selectedProducts.length === 0) return
 
     try {
@@ -184,7 +185,11 @@ const Products = () => {
         productId,
         updates: {
           // We now use the exact newValue provided by the user
-          [mode === 'price' ? 'price' : 'stockQuantity']: newValue,
+          [mode === 'price'
+            ? 'price'
+            : mode === 'costPrice'
+            ? 'costPrice'
+            : 'stockQuantity']: newValue,
         },
       }))
 
@@ -208,7 +213,12 @@ const Products = () => {
       .map((p: any) => ({
         productId: p.productId,
         name: p.name,
-        currentValue: batchMode === 'price' ? p.price : p.stockQuantity,
+        currentValue:
+          batchMode === 'price'
+            ? p.price
+            : batchMode === 'costPrice'
+            ? p.costPrice || 0
+            : p.stockQuantity,
       }))
   }
 
@@ -438,6 +448,18 @@ const handleCostUpdateNotification = (productName: string) => {
                 Ціна
               </button>
 
+              {/* Cost Price Button */}
+              <button
+                onClick={() => {
+                  setBatchMode('costPrice')
+                  setIsBatchModalOpen(true)
+                }}
+                disabled={isBatchUpdating}
+                className='flex items-center bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-5 rounded-full shadow-md transition-all disabled:bg-gray-400'
+              >
+                <Settings className='w-4 h-4 mr-2' />
+                Собівартість
+              </button>
               <button
                 onClick={() => setSelectedProducts([])}
                 className='text-sm text-gray-600 hover:text-gray-800 underline'

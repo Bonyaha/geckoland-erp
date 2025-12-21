@@ -1,3 +1,4 @@
+//client/src/app/(components)/Sidebar/index.tsx
 'use client'
 
 import {
@@ -74,36 +75,38 @@ const Sidebar = () => {
 
   return (
     <div className={sidebarClassNames}>
-      {/* TOP LOGO */}
+      {/* TOP LOGO & TOGGLE SECTION*/}
       <div
-        className={`flex gap-3 justify-between md:justify-normal items-center pt-8 ${
-          isSidebarCollapsed ? 'px-5' : 'px-8'
+        className={`flex gap-3 items-center pt-8 ${
+          isSidebarCollapsed ? 'justify-center' : 'px-8'
         }`}
       >
-        <div className='text-white'>
-          <Image
-            src='/logo.png'
-            alt='warehouse logo'
-            width={27}
-            height={27}
-            className='rounded w-8'
-          />
-        </div>
-        <h1
-          className={`${
-            isSidebarCollapsed ? 'hidden' : 'block'
-          } font-extrabold text-2xl text-white`} // Logo name is now white
-        >
-          Склад
-        </h1>
-
         <button
-          className='md:hidden px-3 py-3 bg-gray-100 rounded-full hover:bg-blue-100 dark:bg-gray-700 dark:hover:bg-blue-900'
+          className='p-2 bg-gray-700 rounded-full hover:bg-gray-600 transition-colors cursor-pointer'
           onClick={toggleSidebar}
         >
-          <Menu className='w-4 h-4 text-gray-700 dark:text-gray-300' />
+          <Menu className='w-5 h-5 text-white' />
         </button>
+
+        {/* LOGO AND TEXT - Hidden when collapsed to save space */}
+        {!isSidebarCollapsed && (
+          <div className='flex items-center gap-3'>
+            <div className='text-white'>
+              <Image
+                src='/logo.png'
+                alt='warehouse logo'
+                width={27}
+                height={27}
+                className='rounded w-8'
+              />
+            </div>
+            <h1 className='font-extrabold text-2xl text-white whitespace-nowrap'>
+              Склад
+            </h1>
+          </div>
+        )}
       </div>
+
       {/* LINKS */}
       <div className='flex-grow mt-8'>
         <SidebarLink

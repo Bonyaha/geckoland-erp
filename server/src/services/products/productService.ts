@@ -236,7 +236,7 @@ class ProductService {
       dateModified: now,
     }
 
-console.log('updates.costPrice is:', updates.costPrice);
+    console.log('updates.costPrice is:', updates.costPrice)
 
     if (updates.costPrice !== undefined) {
       dbUpdateData.costPrice = updates.costPrice
@@ -288,84 +288,84 @@ console.log('updates.costPrice is:', updates.costPrice);
     const needsMarketplaceSync =
       updates.quantity !== undefined || updates.price !== undefined
 
-if (needsMarketplaceSync) {
-    // Prom update
-    if (
-      !targetMarketplace ||
-      targetMarketplace === 'all' ||
-      targetMarketplace === 'prom'
-    ) {
-      //console.log('target is Prom')
-      if (!externalIds?.prom) {
-        // If the user *specifically* asked for prom, treat it as an error
-        if (targetMarketplace === 'prom') {
-          throw ErrorFactory.badRequest(
-            `Product ${productId} is not linked to a Prom product (no external ID).`
+    if (needsMarketplaceSync) {
+      // Prom update
+      if (
+        !targetMarketplace ||
+        targetMarketplace === 'all' ||
+        targetMarketplace === 'prom'
+      ) {
+        //console.log('target is Prom')
+        if (!externalIds?.prom) {
+          // If the user *specifically* asked for prom, treat it as an error
+          if (targetMarketplace === 'prom') {
+            throw ErrorFactory.badRequest(
+              `Product ${productId} is not linked to a Prom product (no external ID).`
+            )
+          }
+          // Otherwise (targetMarketplace='all'), just skip it silently.
+        } else {
+          const promUpdates: ProductUpdateParams = {}
+          if (updates.quantity !== undefined)
+            promUpdates.quantity = updates.quantity
+          if (updates.price !== undefined) promUpdates.price = updates.price
+
+          syncPromises.push(
+            createMarketplaceUpdatePromise({
+              marketplaceName: 'Prom',
+              productId,
+              updateFunction: () =>
+                updatePromProduct(externalIds.prom!, promUpdates),
+              onSuccess: () => (syncStatus.promSynced = true),
+              resultsArray: syncResults,
+              errorsArray: syncErrors,
+            })
           )
         }
-        // Otherwise (targetMarketplace='all'), just skip it silently.
-      } else {
-        const promUpdates: ProductUpdateParams = {}
-        if (updates.quantity !== undefined)
-          promUpdates.quantity = updates.quantity
-        if (updates.price !== undefined) promUpdates.price = updates.price
-
-        syncPromises.push(
-          createMarketplaceUpdatePromise({
-            marketplaceName: 'Prom',
-            productId,
-            updateFunction: () =>
-              updatePromProduct(externalIds.prom!, promUpdates),
-            onSuccess: () => (syncStatus.promSynced = true),
-            resultsArray: syncResults,
-            errorsArray: syncErrors,
-          })
-        )
       }
-    }
 
-    // Rozetka update
-    if (
-      !targetMarketplace ||
-      targetMarketplace === 'all' ||
-      targetMarketplace === 'rozetka'
-    ) {
-      if (!externalIds?.rozetka?.item_id) {
-        // Only throw if the user *specifically* asked for Rozetka
-        if (targetMarketplace === 'rozetka') {
-          throw ErrorFactory.badRequest(
-            `Product ${productId} is not linked to a Rozetka product (no external ID).`
+      // Rozetka update
+      if (
+        !targetMarketplace ||
+        targetMarketplace === 'all' ||
+        targetMarketplace === 'rozetka'
+      ) {
+        if (!externalIds?.rozetka?.item_id) {
+          // Only throw if the user *specifically* asked for Rozetka
+          if (targetMarketplace === 'rozetka') {
+            throw ErrorFactory.badRequest(
+              `Product ${productId} is not linked to a Rozetka product (no external ID).`
+            )
+          }
+          // If target was 'all', we just silently skip it
+        } else {
+          const rozetkaUpdates: ProductUpdateParams = {}
+          if (updates.quantity !== undefined)
+            rozetkaUpdates.quantity = updates.quantity
+          if (updates.price !== undefined) rozetkaUpdates.price = updates.price
+
+          syncPromises.push(
+            createMarketplaceUpdatePromise({
+              marketplaceName: 'Rozetka',
+              productId,
+              updateFunction: () =>
+                updateRozetkaProduct(
+                  externalIds.rozetka!.item_id!,
+                  rozetkaUpdates
+                ),
+              onSuccess: () => (syncStatus.rozetkaSynced = true),
+              resultsArray: syncResults,
+              errorsArray: syncErrors,
+            })
           )
         }
-        // If target was 'all', we just silently skip it
-      } else {
-        const rozetkaUpdates: ProductUpdateParams = {}
-        if (updates.quantity !== undefined)
-          rozetkaUpdates.quantity = updates.quantity
-        if (updates.price !== undefined) rozetkaUpdates.price = updates.price
+      }
 
-        syncPromises.push(
-          createMarketplaceUpdatePromise({
-            marketplaceName: 'Rozetka',
-            productId,
-            updateFunction: () =>
-              updateRozetkaProduct(
-                externalIds.rozetka!.item_id!,
-                rozetkaUpdates
-              ),
-            onSuccess: () => (syncStatus.rozetkaSynced = true),
-            resultsArray: syncResults,
-            errorsArray: syncErrors,
-          })
-        )
+      // Execute parallel updates
+      if (syncPromises.length > 0) {
+        await Promise.allSettled(syncPromises)
       }
     }
-
-    // Execute parallel updates
-    if (syncPromises.length > 0) {
-      await Promise.allSettled(syncPromises)
-    }
-}
 
     // Mark sync complete and update marketplace-specific fields
     // 1. Finalize DB update with sync status
@@ -440,6 +440,7 @@ if (needsMarketplaceSync) {
    * - If targeting specific marketplace, validates quantities don't exceed stock
    * - Uses Prisma transactions for database updates
    * - Uses marketplace batch APIs when available for efficiency
+   * - Cost price updates are internal only and skip marketplace sync
    *
    * @example
    * const result = await productService.updateBatchProducts({
@@ -488,26 +489,56 @@ if (needsMarketplaceSync) {
       }
     }
 
-    // Case 1: Update DB first (if updating everywhere)
+    // Check if this is ONLY a cost price update (no quantity or price changes)
+    const isCostPriceOnlyUpdate = products.every(
+      (item: BatchProductUpdateItem) =>
+        item.updates.costPrice !== undefined &&
+        item.updates.quantity === undefined &&
+        item.updates.price === undefined
+    )
+
+    // Case 1: Update DB first (if updating everywhere OR if cost price only)
     let dbResults: PromiseSettledResult<any>[] = []
 
-    if (!targetMarketplace || targetMarketplace === 'all') {
-      const dbUpdatePromises = products.map((item: BatchProductUpdateItem) =>
-        prisma.products.update({
+    if (
+      !targetMarketplace ||
+      targetMarketplace === 'all' ||
+      isCostPriceOnlyUpdate
+    ) {
+      const dbUpdatePromises = products.map((item: BatchProductUpdateItem) => {
+        const updateData: Record<string, unknown> = {
+          lastSynced: new Date(),
+          dateModified: new Date(),
+        }
+        // Only set needsSync if we're updating marketplace-relevant fields
+        if (
+          item.updates.quantity !== undefined ||
+          item.updates.price !== undefined
+        ) {
+          updateData.needsSync = true
+        }
+
+        if (item.updates.quantity !== undefined) {
+          updateData.stockQuantity = item.updates.quantity
+          updateData.available = item.updates.quantity > 0
+        }
+
+        if (item.updates.price !== undefined) {
+          updateData.price = item.updates.price
+        }
+
+        if (item.updates.costPrice !== undefined) {
+          updateData.costPrice = item.updates.costPrice
+          console.log(
+            `Updating costPrice for ${item.productId}: ${item.updates.costPrice}`
+          )
+        }
+
+        return prisma.products.update({
           where: { productId: item.productId },
-          data: {
-            needsSync: true,
-            lastSynced: new Date(),
-            ...(item.updates.quantity !== undefined && {
-              stockQuantity: item.updates.quantity,
-              available: item.updates.quantity > 0,
-            }),
-            ...(item.updates.price !== undefined && {
-              price: item.updates.price,
-            }),
-          },
+          data: updateData,
         })
-      )
+      })
       dbResults = await Promise.allSettled(dbUpdatePromises)
     } else {
       // Skip DB updates for marketplace-only operations
@@ -532,16 +563,45 @@ if (needsMarketplaceSync) {
           })
     )
 
+    // If this is ONLY a cost price update, skip marketplace sync entirely
+    if (isCostPriceOnlyUpdate) {
+      console.log('📝 Cost price only update - skipping marketplace sync')
+
+      const message = 'Batch cost price update completed (internal only)'
+
+      return {
+        success: failedUpdates.length === 0,
+        message,
+        summary: {
+          totalRequested: products.length,
+          successfulDatabaseUpdates: successfulUpdates.length,
+          failedDatabaseUpdates: failedUpdates.length,
+          marketplacesSynced: [],
+          marketplaceErrors: undefined,
+        },
+        details: {
+          successfulProducts: successfulUpdates,
+          failedProducts: failedUpdates.length > 0 ? failedUpdates : undefined,
+        },
+      }
+    }
+
     //Collect marketplace updates
     const promUpdates: PromBatchUpdate[] = []
     const rozetkaUpdates: RozetkaBatchUpdate[] = []
 
-    //❗❗❗Differ from productController.ts
     for (const productId of successfulUpdates) {
       const original = products.find(
         (p: BatchProductUpdateItem) => p.productId === productId
       )
       if (!original) continue
+
+      // Skip marketplace updates if this product only has costPrice update
+      const hasMarketplaceUpdates =
+        original.updates.quantity !== undefined ||
+        original.updates.price !== undefined
+
+      if (!hasMarketplaceUpdates) continue
 
       const dbProduct = dbMap.get(productId)
       const externalIds = dbProduct?.externalIds as ProductExternalIds | null
@@ -625,7 +685,18 @@ if (needsMarketplaceSync) {
 
     //Mark DB as synced
     const syncTime = new Date()
-    const markSyncedPromises = successfulUpdates.map((productId) => {
+const productsNeedingSyncUpdate = successfulUpdates.filter((productId) => {
+  const original = products.find(
+    (p: BatchProductUpdateItem) => p.productId === productId
+  )
+  return (
+    original &&
+    (original.updates.quantity !== undefined ||
+      original.updates.price !== undefined)
+  )
+})
+if (productsNeedingSyncUpdate.length > 0) {
+    const markSyncedPromises = productsNeedingSyncUpdate.map((productId) => {
       const data: Record<string, unknown> = { needsSync: false }
       if (syncStatus.promSynced) {
         data.lastPromSync = syncTime
@@ -636,7 +707,7 @@ if (needsMarketplaceSync) {
       return prisma.products.update({ where: { productId }, data })
     })
     await Promise.allSettled(markSyncedPromises)
-
+}
     const success = syncErrors.length === 0 && failedUpdates.length === 0
     const message = `Batch update completed${
       targetMarketplace ? ' for ' + targetMarketplace : ''

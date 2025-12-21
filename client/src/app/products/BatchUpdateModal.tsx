@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { X, DollarSign, Box, Save } from 'lucide-react'
+import { X, DollarSign, Box, Save,Settings } from 'lucide-react'
 
-type UpdateMode = 'quantity' | 'price'
+type UpdateMode = 'quantity' | 'price' | 'costPrice'
 
 type BatchUpdateModalProps = {
   isOpen: boolean
@@ -31,9 +31,15 @@ const BatchUpdateModal = ({
 
   if (!isOpen) return null
 
-  const isPrice = mode === 'price'
+  const isPrice = mode === 'price' || mode === 'costPrice'
   const unit = isPrice ? 'грн' : 'од.'
-  const label = isPrice ? 'ціну' : 'кількість'
+
+  const getLabel = () => {
+    if (mode === 'price') return 'ціну'
+    if (mode === 'costPrice') return 'собівартість'
+    return 'кількість'
+  }
+  const label = getLabel()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,11 +55,13 @@ const BatchUpdateModal = ({
       <div className='relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4'>
         <div className='flex items-center justify-between p-6 border-b border-gray-200'>
           <h3 className='text-xl font-bold text-gray-800 flex items-center gap-2'>
-            {isPrice ? (
+            {mode === 'price' && (
               <DollarSign className='w-5 h-5 text-emerald-500' />
-            ) : (
-              <Box className='w-5 h-5 text-purple-500' />
             )}
+            {mode === 'costPrice' && (
+              <Settings className='w-5 h-5 text-blue-500' />
+            )}
+            {mode === 'quantity' && <Box className='w-5 h-5 text-purple-500' />}
             Встановити нову {label}
           </h3>
           <button
@@ -128,9 +136,11 @@ const BatchUpdateModal = ({
               type='submit'
               disabled={newValue === ''}
               className={`flex-1 py-3 text-white rounded-lg font-medium shadow-lg flex items-center justify-center gap-2 disabled:bg-gray-300 ${
-                isPrice
+                mode === 'price'
                   ? 'bg-emerald-600 hover:bg-emerald-700'
-                  : 'bg-blue-600 hover:bg-blue-700'
+                  : mode === 'costPrice'
+                  ? 'bg-blue-600 hover:bg-blue-700'
+                  : 'bg-purple-600 hover:bg-purple-700'
               }`}
             >
               <Save className='w-4 h-4' />
