@@ -88,7 +88,7 @@ export async function fetchRozetkaProducts() {
 
     // Step 2: Fetch all products using the token
     const allProducts = await fetchAllRozetkaProducts(accessToken)
-    //console.log('allProducts', allProducts[0])
+    console.log('allProducts', allProducts[0])
 
      return allProducts
   } catch (error: any) {
@@ -163,5 +163,5 @@ export async function fetchRozetkaProductsWithTransformation(): Promise<
 
 
 //fetchAllRozetkaProducts()
-//fetchRozetkaProducts()
+fetchRozetkaProducts()
 //fetchRozetkaProductsWithTransformation()

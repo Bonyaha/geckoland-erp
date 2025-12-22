@@ -243,7 +243,7 @@ const Products = () => {
   }
 
   const typedProducts: ProductType[] = products as ProductType[]
-
+  console.log('Typed products:', typedProducts[0])
   // Generate page numbers for pagination
   const generatePageNumbers = () => {
     const pages = []

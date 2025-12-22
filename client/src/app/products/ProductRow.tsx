@@ -8,9 +8,15 @@ import {
   Info,
   Settings,
   Loader2,
+  ExternalLink,
 } from 'lucide-react'
 import { formatDateTime } from '@/utils/dateUtils'
-import { parseExternalIds } from '@/utils/marketplaceUtils'
+import {
+  parseExternalIds,
+  getPromEditUrl,
+  getRozetkaProductUrl,
+  openInNewTab,
+} from '@/utils/marketplaceUtils'
 import UpdateQuantityModal from './UpdateQuantityModal'
 import UpdateCostPriceModal from './UpdateCostPriceModal'
 import UpdatePriceModal from './UpdatePriceModal'
@@ -78,6 +84,15 @@ const ProductRow = ({
     product.costPrice !== undefined &&
     product.costPrice > 0
 
+// Handler for marketplace tag clicks
+  const handleMarketplaceClick = (marketplace: 'prom' | 'rozetka', id: string) => {
+    const url = marketplace === 'prom' 
+      ? getPromEditUrl(id) 
+      : getRozetkaProductUrl(id)
+    
+    openInNewTab(url)
+  }
+
   // Helper function to render marketplace tags based on externalIds
   const renderMarketplaceTags = useMemo(() => {
     const ids = parseExternalIds(product.externalIds) as Record<
@@ -91,10 +106,15 @@ const ProductRow = ({
       tags.push(
         <span
           key='prom'
-          title={`Prom ID: ${ids.prom}`}
-          className='px-1.5 py-0.5 bg-purple-600 text-white text-[10px] rounded font-bold'
+          title={`Prom ID: ${ids.prom}\nНатисни, щоб відкрити в Prom маркетплейсі`}
+          onClick={(e) => {
+            e.stopPropagation() // Prevent row selection
+            handleMarketplaceClick('prom', ids.prom)
+          }}
+          className='px-1.5 py-0.5 bg-purple-600 text-white text-[10px] rounded font-bold cursor-pointer hover:bg-purple-700 transition-colors'
         >
           Prom
+          <ExternalLink className='w-2.5 h-2.5' />
         </span>
       )
     }
@@ -103,10 +123,15 @@ const ProductRow = ({
       tags.push(
         <span
           key='rozetka'
-          title='Rozetka Linked'
-          className='px-1.5 py-0.5 bg-green-600 text-white text-[10px] rounded font-bold'
+          title={`Rozetka ID: ${ids.rozetka.rz_item_id}\nНатисни, щоб відкрити в Rozetka маркетплейсі`}
+          onClick={(e) => {
+            e.stopPropagation() // Prevent row selection
+            handleMarketplaceClick('rozetka', ids.rozetka.rz_item_id)
+          }}
+          className='px-1.5 py-0.5 bg-green-600 text-white text-[10px] rounded font-bold cursor-pointer hover:bg-green-700 transition-colors'
         >
           Rozetka
+          <ExternalLink className='w-2.5 h-2.5' />
         </span>
       )
     }
@@ -116,13 +141,19 @@ const ProductRow = ({
       tags.push(
         <Settings
           key='settings'
-          className='w-4 h-4 text-blue-500 cursor-pointer'
+          className='w-4 h-4 text-blue-500 cursor-pointer hover:text-blue-600 transition-colors'
+          onClick={(e) => {
+            e.stopPropagation()
+            // Add settings functionality here if needed
+            console.log('Settings clicked for product:', product.productId)
+          }}
+          title='Product settings'
         />
       )
     }
 
     return tags.length > 0 ? tags : null
-  }, [product.externalIds])
+  }, [product.externalIds, product.productId])
 
   const handleQuantityUpdate = async (newQuantity: number) => {
     try {
