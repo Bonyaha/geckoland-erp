@@ -13,7 +13,7 @@ import {
   Download,
   Settings,
   RefreshCw,
-  ArrowUpCircle,
+  ArrowUp,
   Edit3,
   DollarSign,
   CheckCircle,
@@ -86,7 +86,7 @@ const Products = () => {
   // --- Scroll Logic ---
   const handleScroll = () => {
     // Show the button if the user has scrolled down more than 300 pixels
-    if (window.scrollY > 300) {
+    if (window.scrollY > 400) {
       setShowScrollArrow(true)
     } else {
       setShowScrollArrow(false)
@@ -264,14 +264,14 @@ const Products = () => {
     return pages
   }
 
-const handleCostUpdateNotification = (productName: string) => {
-  setNotificationMessage(`Собівартість для "${productName}" збережена!`)
+  const handleCostUpdateNotification = (productName: string) => {
+    setNotificationMessage(`Собівартість для "${productName}" збережена!`)
 
-  // Auto-hide after 3 seconds
-  setTimeout(() => {
-    setNotificationMessage(null)
-  }, 3000)
-}
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+      setNotificationMessage(null)
+    }, 3000)
+  }
   return (
     <div className='mx-auto pb-5 w-full'>
       {/* TOP SEARCH BAR */}
@@ -613,11 +613,11 @@ const handleCostUpdateNotification = (productName: string) => {
       {showScrollArrow && (
         <button
           onClick={scrollToTop}
-          className='fixed bottom-8 right-8 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all duration-300 z-50'
+          className='fixed bottom-8 right-8 p-3 bg-blue-400 text-white rounded-lg shadow-lg hover:bg-blue-500 transition-all duration-300 z-50 cursor-pointer'
           aria-label='Scroll to top'
           title='Нагору' // Title for accessibility/tooltip
         >
-          <ArrowUpCircle className='w-6 h-6' />
+          <ArrowUp className='w-6 h-6' />
         </button>
       )}
     </div>

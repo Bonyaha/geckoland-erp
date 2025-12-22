@@ -4,7 +4,7 @@
 import {
   Archive,
   CircleDollarSign,
-  Clipboard,
+  Package,
   Layout,
   LucideIcon,
   Menu,
@@ -82,10 +82,10 @@ const Sidebar = () => {
         }`}
       >
         <button
-          className='p-2 bg-gray-700 rounded-full hover:bg-gray-600 transition-colors cursor-pointer'
+          className='p-3 bg-gray-700 rounded-full hover:bg-gray-600 transition-colors cursor-pointer'
           onClick={toggleSidebar}
         >
-          <Menu className='w-5 h-5 text-white' />
+          <Menu className='w-7 h-7 text-white' />
         </button>
 
         {/* LOGO AND TEXT - Hidden when collapsed to save space */}
@@ -123,7 +123,7 @@ const Sidebar = () => {
         />
         <SidebarLink
           href='/products'
-          icon={Clipboard}
+          icon={Package}
           label='Товари'
           isCollapsed={isSidebarCollapsed}
         />
