@@ -499,7 +499,7 @@ const Products = () => {
       {/* TABLE VIEW */}
       <div className='bg-white rounded-xl shadow-lg overflow-x-auto min-w-full'>
         <table className='min-w-full divide-y divide-gray-200'>
-          <thead className='bg-gray-50 uppercase text-xs font-bold tracking-wider'>
+          <thead className='bg-gray-50 uppercase text-sm font-bold tracking-wider'>
             <tr>
               {/* CHECKBOX HEADER */}
               <th className='px-4 py-3 w-10'>

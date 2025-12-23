@@ -2,7 +2,7 @@
 'use client'
 
 import {
-  Archive,
+  ShoppingCart,
   CircleDollarSign,
   Package,
   Layout,
@@ -117,7 +117,7 @@ const Sidebar = () => {
         />
         <SidebarLink
           href='/inventory'
-          icon={Archive}
+          icon={ShoppingCart}
           label='Замовлення'
           isCollapsed={isSidebarCollapsed}
         />
@@ -134,15 +134,15 @@ const Sidebar = () => {
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink
-          href='/settings'
-          icon={SlidersHorizontal}
-          label='Налаштування'
-          isCollapsed={isSidebarCollapsed}
-        />
-        <SidebarLink
           href='/expenses'
           icon={CircleDollarSign}
           label='Витрати'
+          isCollapsed={isSidebarCollapsed}
+        />
+        <SidebarLink
+          href='/settings'
+          icon={SlidersHorizontal}
+          label='Налаштування'
           isCollapsed={isSidebarCollapsed}
         />
       </div>

@@ -83,7 +83,7 @@ const UpdateQuantityModal = ({
           </h3>
           <button
             onClick={handleCancel}
-            className='text-gray-400 hover:text-gray-600 transition-colors'
+            className='text-gray-400 hover:text-gray-600 transition-colors cursor-pointer'
           >
             <X className='w-6 h-6' />
           </button>
@@ -193,7 +193,7 @@ const UpdateQuantityModal = ({
             <button
               type='button'
               onClick={handleCancel}
-              className='flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium'
+              className='flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium cursor-pointer'
             >
               Скасувати
             </button>
@@ -203,7 +203,7 @@ const UpdateQuantityModal = ({
               disabled={
                 (quantity === '' ? 0 : Number(quantity)) === currentQuantity
               }
-              className='flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed'
+              className='flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed cursor-pointer'
             >
               Зберегти
             </button>
