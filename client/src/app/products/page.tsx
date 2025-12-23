@@ -429,7 +429,7 @@ const Products = () => {
                   setIsBatchModalOpen(true)
                 }}
                 disabled={isBatchUpdating}
-                className='flex items-center bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-5 rounded-full shadow-md transition-all disabled:bg-gray-400'
+                className='flex items-center bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-5 rounded-full shadow-md transition-all disabled:bg-gray-400 cursor-pointer'
               >
                 <Edit3 className='w-4 h-4 mr-2' />
                 Кількість
@@ -442,7 +442,7 @@ const Products = () => {
                   setIsBatchModalOpen(true)
                 }}
                 disabled={isBatchUpdating}
-                className='flex items-center bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 px-5 rounded-full shadow-md transition-all disabled:bg-gray-400'
+                className='flex items-center bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 px-5 rounded-full shadow-md transition-all disabled:bg-gray-400 cursor-pointer'
               >
                 <DollarSign className='w-4 h-4 mr-2' />
                 Ціна
@@ -455,14 +455,14 @@ const Products = () => {
                   setIsBatchModalOpen(true)
                 }}
                 disabled={isBatchUpdating}
-                className='flex items-center bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-5 rounded-full shadow-md transition-all disabled:bg-gray-400'
+                className='flex items-center bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-5 rounded-full shadow-md transition-all disabled:bg-gray-400 cursor-pointer'
               >
                 <Settings className='w-4 h-4 mr-2' />
                 Собівартість
               </button>
               <button
                 onClick={() => setSelectedProducts([])}
-                className='text-sm text-gray-600 hover:text-gray-800 underline'
+                className='text-sm text-gray-600 hover:text-gray-800 underline cursor-pointer'
               >
                 Скасувати
               </button>
@@ -518,17 +518,18 @@ const Products = () => {
               </th>
               {/* Centered headers for the "Card" columns */}
               <th className='px-4 py-3 text-center text-black font-bold'>
-                Доступно
+                Ціна
               </th>
               <th className='px-4 py-3 text-center text-black font-bold'>
-                Продажі
+                Доступно
               </th>
               <th className='px-4 py-3 text-center text-black font-bold'>
                 Собів.
               </th>
               <th className='px-4 py-3 text-center text-black font-bold'>
-                Ціна
+                Продажі
               </th>
+
               <th className='px-4 py-3 text-center text-black font-bold'>
                 Націнка
               </th>

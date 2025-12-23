@@ -71,13 +71,13 @@ const UpdatePriceModal = ({
             <button
               type='button'
               onClick={onClose}
-              className='flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium'
+              className='flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium cursor-pointer'
             >
               Скасувати
             </button>
             <button
               type='submit'
-              className='flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium shadow-lg'
+              className='flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium shadow-lg cursor-pointer'
             >
               Зберегти
             </button>

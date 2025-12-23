@@ -7,8 +7,7 @@ import {
   Trash2,
   Info,
   Settings,
-  Loader2,
-  ExternalLink,
+  Loader2,  
 } from 'lucide-react'
 import { formatDateTime } from '@/utils/dateUtils'
 import {
@@ -113,8 +112,7 @@ const ProductRow = ({
           }}
           className='px-1.5 py-0.5 bg-purple-600 text-white text-[10px] rounded font-bold cursor-pointer hover:bg-purple-700 transition-colors'
         >
-          Prom
-          <ExternalLink className='w-2.5 h-2.5' />
+          Prom          
         </span>
       )
     }
@@ -130,8 +128,7 @@ const ProductRow = ({
           }}
           className='px-1.5 py-0.5 bg-green-600 text-white text-[10px] rounded font-bold cursor-pointer hover:bg-green-700 transition-colors'
         >
-          Rozetka
-          <ExternalLink className='w-2.5 h-2.5' />
+          Rozetka          
         </span>
       )
     }
@@ -139,19 +136,19 @@ const ProductRow = ({
     // Only add settings icon if we have tags
     if (tags.length > 0) {
       tags.push(
-        <Settings
+        <span
           key='settings'
-          className='w-4 h-4 text-blue-500 cursor-pointer hover:text-blue-600 transition-colors'
+          className='cursor-pointer group' // Use a group for hover effects
           onClick={(e) => {
             e.stopPropagation()
-            // Add settings functionality here if needed
             console.log('Settings clicked for product:', product.productId)
           }}
-          title='Product settings'
-        />
+          title='Product settings' // Title works perfectly on a span
+        >
+          <Settings className='w-4 h-4 text-blue-500 group-hover:text-blue-600 transition-colors' />
+        </span>
       )
     }
-
     return tags.length > 0 ? tags : null
   }, [product.externalIds, product.productId])
 
@@ -266,240 +263,233 @@ const ProductRow = ({
   }, [product.categoryData])
 
   return (
-      <tr
-        key={product.productId}
-        className={`hover:bg-gray-50 transition-colors border-b border-gray-100 ${
-          isSelected ? 'bg-blue-50' : ''
-        }`}
-      >
-        {/* 1. CHECKBOX */}
-        <td className='px-4 py-4 align-top w-10'>
-          <input
-            type='checkbox'
-            checked={isSelected}
-            onChange={() => onSelect(product.productId)}
-            className='mt-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4 cursor-pointer'
-          />
-        </td>
-        {/* 2. PRODUCT INFO (Wide Column) */}
-        <td className='px-4 py-4 align-top max-w-md'>
-          <div className='flex gap-3'>
-            {/* Image Placeholder/Thumbnail */}
-            <div className='flex-shrink-0 h-16 w-16 bg-gray-200 rounded-md overflow-hidden relative'>
-              <Image
-                src={
-                  product.mainImage ||
-                  'https://placehold.co/64x64/e2e8f0/94a3b8.png?text=IMG'
-                }
-                alt={product.name}
-                fill
-                sizes='64px'
-                className='object-cover'
-              />
+    <tr
+      key={product.productId}
+      className={`hover:bg-gray-50 transition-colors border-b border-gray-100 ${
+        isSelected ? 'bg-blue-50' : ''
+      }`}
+    >
+      {/* 1. CHECKBOX */}
+      <td className='px-4 py-4 align-top w-10'>
+        <input
+          type='checkbox'
+          checked={isSelected}
+          onChange={() => onSelect(product.productId)}
+          className='mt-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4 cursor-pointer'
+        />
+      </td>
+      {/* 2. PRODUCT INFO (Wide Column) */}
+      <td className='px-4 py-4 align-top max-w-md'>
+        <div className='flex gap-3'>
+          {/* Image Placeholder/Thumbnail */}
+          <div className='flex-shrink-0 h-16 w-16 bg-gray-200 rounded-md overflow-hidden relative'>
+            <Image
+              src={
+                product.mainImage ||
+                'https://placehold.co/64x64/e2e8f0/94a3b8.png?text=IMG'
+              }
+              alt={product.name}
+              fill
+              sizes='64px'
+              className='object-cover'
+            />
+          </div>
+
+          {/* Details */}
+          <div className='flex flex-col gap-1 w-full'>
+            <div className='text-lg font-bold text-blue-700 leading-tight hover:underline cursor-pointer'>
+              {product.name}
             </div>
+            <div className='text-sm text-gray-500'>
+              ID: {product.productId} | Артикул: {product.sku}
+            </div>
+            <div className='text-sm text-gray-500'>
+              {categoryDisplay && <> Категорія: {categoryDisplay}</>}
+            </div>
+            <div className='text-sm text-gray-400 mt-0.5'>
+              Оновлено: {formatDateTime(product.lastSynced)}
+            </div>
+            {/* ACTION BAR (Moved here from separate column) */}
+            <div className='flex flex-wrap items-center gap-2 mt-2'>
+              <button className='px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-full transition-colors cursor-pointer'>
+                Додати продаж
+              </button>
 
-            {/* Details */}
-            <div className='flex flex-col gap-1 w-full'>
-              <div className='text-lg font-bold text-blue-700 leading-tight hover:underline cursor-pointer'>
-                {product.name}
-              </div>
-              <div className='text-sm text-gray-500'>
-                ID: {product.productId} | Артикул: {product.sku}
-              </div>
-              <div className='text-sm text-gray-500'>
-                {categoryDisplay && <> Категорія: {categoryDisplay}</>}
-              </div>
-              <div className='text-sm text-gray-400 mt-0.5'>
-                Оновлено: {formatDateTime(product.lastSynced)}
-              </div>
-              {/* ACTION BAR (Moved here from separate column) */}
-              <div className='flex flex-wrap items-center gap-2 mt-2'>
-                <button className='px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-full transition-colors cursor-pointer'>
-                  Додати продаж
-                </button>
+              <button
+                title='Info'
+                className='p-1.5 bg-blue-500 text-white rounded-full hover:bg-blue-600'
+              >
+                <Info className='w-3 h-3' />
+              </button>
 
-                <button
-                  title='Info'
-                  className='p-1.5 bg-blue-500 text-white rounded-full hover:bg-blue-600'
-                >
-                  <Info className='w-3 h-3' />
-                </button>
+              {/* Standard Actions */}
+              <button
+                onClick={() => onEdit(product.productId)}
+                className='p-1 text-blue-600 hover:bg-blue-100 rounded'
+              >
+                <Pencil className='w-4 h-4' />
+              </button>
+              <button
+                onClick={() => onCopy(product.productId)}
+                className='p-1 text-blue-600 hover:bg-blue-100 rounded'
+              >
+                <Copy className='w-4 h-4' />
+              </button>
+              <button
+                onClick={() => onDelete(product.productId)}
+                className='p-1 text-blue-600 hover:bg-blue-100 rounded'
+              >
+                <Trash2 className='w-4 h-4' />
+              </button>
 
-                {/* Standard Actions */}
-                <button
-                  onClick={() => onEdit(product.productId)}
-                  className='p-1 text-blue-600 hover:bg-blue-100 rounded'
-                >
-                  <Pencil className='w-4 h-4' />
-                </button>
-                <button
-                  onClick={() => onCopy(product.productId)}
-                  className='p-1 text-blue-600 hover:bg-blue-100 rounded'
-                >
-                  <Copy className='w-4 h-4' />
-                </button>
-                <button
-                  onClick={() => onDelete(product.productId)}
-                  className='p-1 text-blue-600 hover:bg-blue-100 rounded'
-                >
-                  <Trash2 className='w-4 h-4' />
-                </button>
-
-                {/* Marketplace Tags (Mock UI) */}
-                <div className='flex gap-1 ml-auto'>
-                  {renderMarketplaceTags}
-                </div>
-              </div>
+              {/* Marketplace Tags (Mock UI) */}
+              <div className='flex gap-1 ml-auto'>{renderMarketplaceTags}</div>
             </div>
           </div>
-        </td>
+        </div>
+      </td>
 
-        {/* 3. AVAILABLE ("Card" Style) */}
-        <td className='px-2 py-4 align-top'>
-          <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
-            <span
-              className={`text-2xl font-bold ${
-                product.stockQuantity > 0 ? 'text-green-600' : 'text-red-600'
-              }`}
-            >
-              {product.stockQuantity}
-            </span>
-            <span className='text-xs text-gray-500 mb-2'>одиниць</span>
+      {/* 6. PRICE ("Card" Style) */}
+      <td className='px-2 py-4 align-top'>
+        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
+          <span className='text-xl font-bold text-green-600'>
+            {product.price?.toFixed(2)}{' '}
+            <span className='text-black text-xs font-light'>грн.</span>
+          </span>
+          {/* {formatCurrency(product.price)} */}
+          <button
+            onClick={() => setIsPriceModalOpen(true)}
+            className={cardButtonClass}
+          >
+            Змінити
+          </button>
+        </div>
+      </td>
 
-            {/* Action Trigger*/}
-            <button
-              onClick={() => setIsQuantityModalOpen(true)}
-              disabled={isUpdating}
-              className={cardButtonClass}
-            >
-              {isUpdating ? 'Оновлення...' : 'Додати\\Зменшити'}
-            </button>
-          </div>
-        </td>
+      {/* 3. AVAILABLE ("Card" Style) */}
+      <td className='px-2 py-4 align-top'>
+        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
+          <span
+            className={`text-2xl font-bold ${
+              product.stockQuantity > 0 ? 'text-green-600' : 'text-red-600'
+            }`}
+          >
+            {product.stockQuantity}
+          </span>
+          <span className='text-xs text-gray-500 mb-2'>одиниць</span>
 
-        {/* 4. SALES ("Card" Style) */}
-        <td className='px-2 py-4 align-top'>
-          <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
-            <span className='text-xs text-gray-500 font-medium mb-1'>
-              Кількість продажів
-            </span>
+          {/* Action Trigger*/}
+          <button
+            onClick={() => setIsQuantityModalOpen(true)}
+            disabled={isUpdating}
+            className={cardButtonClass}
+          >
+            {isUpdating ? 'Оновлення...' : 'Додати\\Зменшити'}
+          </button>
+        </div>
+      </td>
+      {/* 5. COST ("Card" Style - Input) */}
+      <td className='px-2 py-4 align-top'>
+        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
+          <span className='text-xs text-gray-500 font-medium mb-1'>
+            Собівартість
+          </span>
+          {hasCostPrice ? (
+            /* VIEW MODE: When cost price exists */
+            <>
+              <span className='text-lg font-bold text-green-600 mb-2'>
+                {product.costPrice?.toFixed(2)}{' '}
+                <span className='text-black text-xs font-light'>грн.</span>
+              </span>
+              <button
+                onClick={() => setIsCostModalOpen(true)}
+                className={cardButtonClass}
+              >
+                Змінити
+              </button>
+            </>
+          ) : (
+            /* INPUT MODE: When cost price is missing */
+            <>
+              <div className='relative w-full flex items-center mb-2'>
+                <input
+                  type='number'
+                  placeholder='0.00'
+                  className='w-full text-center text-sm border border-gray-300 rounded-md mb-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none'
+                  value={manualCost}
+                  onChange={(e) => setManualCost(e.target.value)}
+                  onBlur={handleManualCostSave}
+                  onKeyDown={(e) => e.key === 'Enter' && handleManualCostSave()}
+                  disabled={isUpdating}
+                />
+                {isUpdating && (
+                  <div className='absolute right-2'>
+                    <Loader2 className='w-3 h-3 text-blue-500 animate-spin' />
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setIsCostModalOpen(true)}
+                className={cardButtonClass}
+              >
+                Розрахувати
+              </button>
+            </>
+          )}
+        </div>
+      </td>
+      {/* 4. SALES ("Card" Style) */}
+      <td className='px-2 py-4 align-top'>
+        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
+          <span className='text-xs text-gray-500 font-medium mb-1'>
+            Кількість продажів
+          </span>
 
-            <span className='text-2xl font-bold text-green-600'>{sales}</span>
+          <span className='text-2xl font-bold text-green-600'>{sales}</span>
 
-            {/* Action Trigger Image 5 */}
-            <button className='text-xs text-blue-500 hover:text-blue-700 hover:underline w-full text-center cursor-pointer'>
-              з {salesDate}
-            </button>
-          </div>
-        </td>
+          {/* Action Trigger Image 5 */}
+          <button className='text-xs text-blue-500 hover:text-blue-700 hover:underline w-full text-center cursor-pointer'>
+            з {salesDate}
+          </button>
+        </div>
+      </td>
 
-        {/* 5. COST ("Card" Style - Input) */}
-        <td className='px-2 py-4 align-top'>
-          <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
-            <span className='text-xs text-gray-500 font-medium mb-1'>
-              Собівартість
-            </span>
-            {hasCostPrice ? (
-              /* VIEW MODE: When cost price exists */
-              <>
-                <span className='text-lg font-bold text-green-600 mb-2'>
-                  {product.costPrice?.toFixed(2)}{' '}
-                  <span className='text-black text-xs font-light'>грн.</span>
-                </span>
-                <button
-                  onClick={() => setIsCostModalOpen(true)}
-                  className={cardButtonClass}
-                >
-                  Змінити
-                </button>
-              </>
-            ) : (
-              /* INPUT MODE: When cost price is missing */
-              <>
-                <div className='relative w-full flex items-center mb-2'>
-                  <input
-                    type='number'
-                    placeholder='0.00'
-                    className='w-full text-center text-sm border border-gray-300 rounded-md mb-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none'
-                    value={manualCost}
-                    onChange={(e) => setManualCost(e.target.value)}
-                    onBlur={handleManualCostSave}
-                    onKeyDown={(e) =>
-                      e.key === 'Enter' && handleManualCostSave()
-                    }
-                    disabled={isUpdating}
-                  />
-                  {isUpdating && (
-                    <div className='absolute right-2'>
-                      <Loader2 className='w-3 h-3 text-blue-500 animate-spin' />
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={() => setIsCostModalOpen(true)}
-                  className={cardButtonClass}
-                >
-                  Розрахувати
-                </button>
-              </>
-            )}
-          </div>
-        </td>
-
-        {/* 6. PRICE ("Card" Style) */}
-        <td className='px-2 py-4 align-top'>
-          <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
-            <span className='text-xl font-bold text-green-600'>
-              {product.price?.toFixed(2)}{' '}
-              <span className='text-black text-xs font-light'>грн.</span>
-            </span>
-            {/* {formatCurrency(product.price)} */}
-            <button
-              onClick={() => setIsPriceModalOpen(true)}
-              className={cardButtonClass}
-            >
-              Змінити
-            </button>
-          </div>
-        </td>
-
-        {/* 7. MARGIN (Blue/Red text, Bold) */}
-        <td className='px-2 py-4 align-top'>
-          <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[120px]'>
-            <span className='text-xs text-gray-500 font-medium mb-1'>
-              Націнка
-            </span>
-            <span className='text-lg font-bold text-green-600'>
-              {formatCurrency(marginValue)}{' '}
-              <span className='text-black text-xs font-light'>грн.</span>
-            </span>
-            <span className='text-sm font-bold text-green-400'>
-              ({marginPercent.toFixed(0)}%)
-            </span>
-          </div>
-          <UpdateQuantityModal
-            isOpen={isQuantityModalOpen}
-            onClose={() => setIsQuantityModalOpen(false)}
-            onUpdate={handleQuantityUpdate}
-            currentQuantity={product.stockQuantity}
-            productName={product.name}
-          />
-          <UpdatePriceModal
-            isOpen={isPriceModalOpen}
-            onClose={() => setIsPriceModalOpen(false)}
-            onUpdate={handlePriceUpdate}
-            currentPrice={product.price}
-            productName={product.name}
-          />
-          <UpdateCostPriceModal
-            isOpen={isCostModalOpen}
-            onClose={() => setIsCostModalOpen(false)}
-            onUpdate={handleCostUpdate}
-            productName={product.name}
-          />
-        </td>
-      </tr>   
-  
+      {/* 7. MARGIN (Blue/Red text, Bold) */}
+      <td className='px-2 py-4 align-top'>
+        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[120px]'>
+          <span className='text-xs text-gray-500 font-medium mb-1'>
+            Націнка
+          </span>
+          <span className='text-lg font-bold text-green-600'>
+            {formatCurrency(marginValue)}{' '}
+            <span className='text-black text-xs font-light'>грн.</span>
+          </span>
+          <span className='text-sm font-bold text-green-400'>
+            ({marginPercent.toFixed(0)}%)
+          </span>
+        </div>
+        <UpdateQuantityModal
+          isOpen={isQuantityModalOpen}
+          onClose={() => setIsQuantityModalOpen(false)}
+          onUpdate={handleQuantityUpdate}
+          currentQuantity={product.stockQuantity}
+          productName={product.name}
+        />
+        <UpdatePriceModal
+          isOpen={isPriceModalOpen}
+          onClose={() => setIsPriceModalOpen(false)}
+          onUpdate={handlePriceUpdate}
+          currentPrice={product.price}
+          productName={product.name}
+        />
+        <UpdateCostPriceModal
+          isOpen={isCostModalOpen}
+          onClose={() => setIsCostModalOpen(false)}
+          onUpdate={handleCostUpdate}
+          productName={product.name}
+        />
+      </td>
+    </tr>
   )
 }
 
