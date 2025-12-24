@@ -3,7 +3,7 @@
 
 import {
   ShoppingCart,
-  CircleDollarSign,
+  Wallet,
   Package,
   Layout,
   LucideIcon,
@@ -135,7 +135,7 @@ const Sidebar = () => {
         />
         <SidebarLink
           href='/expenses'
-          icon={CircleDollarSign}
+          icon={Wallet}
           label='Витрати'
           isCollapsed={isSidebarCollapsed}
         />
