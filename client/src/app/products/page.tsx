@@ -11,6 +11,7 @@ import {
   PlusCircleIcon,
   SearchIcon,
   Download,
+  Calculator,
   Settings,
   RefreshCw,
   ArrowUp,
@@ -457,7 +458,7 @@ const Products = () => {
                 disabled={isBatchUpdating}
                 className='flex items-center bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-5 rounded-full shadow-md transition-all disabled:bg-gray-400 cursor-pointer'
               >
-                <Settings className='w-4 h-4 mr-2' />
+                <Calculator className='w-4 h-4 mr-2' />
                 Собівартість
               </button>
               <button

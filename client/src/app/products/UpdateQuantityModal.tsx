@@ -1,6 +1,6 @@
 // client/src/app/products/UpdateQuantityModal.tsx
 import React, { useState, useEffect } from 'react'
-import { X, Plus, Minus, Box } from 'lucide-react'
+import { X, Box, Save } from 'lucide-react'
 
 type UpdateQuantityModalProps = {
   isOpen: boolean
@@ -119,33 +119,29 @@ const UpdateQuantityModal = ({
               <button
                 type='button'
                 onClick={() => handleAdjustment(-10)}
-                className='flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors'
+                className='flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors  cursor-pointer'
               >
-                <Minus className='w-4 h-4' />
                 <span className='font-semibold'>-10</span>
               </button>
               <button
                 type='button'
                 onClick={() => handleAdjustment(-1)}
-                className='flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors'
+                className='flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors cursor-pointer'
               >
-                <Minus className='w-4 h-4' />
                 <span className='font-semibold'>-1</span>
               </button>
               <button
                 type='button'
                 onClick={() => handleAdjustment(1)}
-                className='flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors'
+                className='flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors cursor-pointer'
               >
-                <Plus className='w-4 h-4' />
                 <span className='font-semibold'>+1</span>
               </button>
               <button
                 type='button'
                 onClick={() => handleAdjustment(10)}
-                className='flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors'
+                className='flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors cursor-pointer'
               >
-                <Plus className='w-4 h-4' />
                 <span className='font-semibold'>+10</span>
               </button>
             </div>
@@ -202,13 +198,13 @@ const UpdateQuantityModal = ({
             </button>
             <button
               type='submit'
-              // Disable if quantity hasn't changed (safely handle empty string comparison)
               disabled={
                 (quantity === '' ? 0 : Number(quantity)) === currentQuantity
               }
-              className='flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed cursor-pointer'
+              className='flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed cursor-pointer'
             >
-              Зберегти
+              <Save className='w-4 h-4' />
+              <span>Зберегти</span>
             </button>
           </div>
         </form>

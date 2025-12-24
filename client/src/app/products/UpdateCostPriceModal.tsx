@@ -1,3 +1,4 @@
+// client/src/app/products/UpdateCostPriceModal.tsx
 import React, { useState, useEffect } from 'react'
 import {
   X,
@@ -7,6 +8,7 @@ import {
   Percent,
   DollarSign,
   RotateCcw,
+  Save,
 } from 'lucide-react'
 
 type UpdateCostPriceModalProps = {
@@ -199,11 +201,11 @@ const UpdateCostPriceModal = ({
               <div className='grid grid-cols-2 gap-4'>
                 <div>
                   <label className='block text-xs font-semibold text-gray-600 mb-1'>
-                    Ціна закупівлі ($)
+                    Ціна закупівлі
                   </label>
                   <input
                     type='number'
-                    step='0.01'
+                    step='1'
                     value={purchaseUsd}
                     onChange={(e) => setPurchaseUsd(e.target.value)}
                     className={inputStyle}
@@ -229,7 +231,7 @@ const UpdateCostPriceModal = ({
                 </label>
                 <input
                   type='number'
-                  step='0.01'
+                  step='1'
                   value={shippingUsd}
                   onChange={(e) => setShippingUsd(e.target.value)}
                   className={inputStyle}
@@ -473,8 +475,14 @@ const UpdateCostPriceModal = ({
             </button>
             <button
               type='submit'
-              className='flex-1 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 shadow-md cursor-pointer'
+              disabled={
+                mode === 'formula'
+                  ? calculatedFromFormula <= 0
+                  : quickCost === '' || parseFloat(quickCost) <= 0
+              }
+              className='flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed cursor-pointer'
             >
+              <Save className='w-4 h-4' />
               Зберегти
             </button>
           </div>

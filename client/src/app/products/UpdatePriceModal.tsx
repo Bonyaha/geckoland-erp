@@ -1,6 +1,6 @@
 // client/src/app/products/UpdatePriceModal.tsx
 import React, { useState, useEffect } from 'react'
-import { X, Plus, Minus, Percent, DollarSign, RotateCcw } from 'lucide-react'
+import { X, Plus, Minus, Percent, DollarSign, RotateCcw, Save } from 'lucide-react'
 
 type UpdatePriceModalProps = {
   isOpen: boolean
@@ -362,8 +362,9 @@ const handleReset = () => {
             <button
               onClick={handleSubmit}
               disabled={(price === '' ? 0 : parseFloat(price)) === currentPrice}
-              className='flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg cursor-pointer'
+              className='flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed cursor-pointer'
             >
+              <Save className='w-4 h-4' />
               Зберегти
             </button>
           </div>
