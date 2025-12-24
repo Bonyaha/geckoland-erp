@@ -1,6 +1,6 @@
 // client/src/app/products/UpdateQuantityModal.tsx
 import React, { useState, useEffect } from 'react'
-import { X, Plus, Minus } from 'lucide-react'
+import { X, Plus, Minus, Box } from 'lucide-react'
 
 type UpdateQuantityModalProps = {
   isOpen: boolean
@@ -78,9 +78,12 @@ const UpdateQuantityModal = ({
       <div className='relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4'>
         {/* Header */}
         <div className='flex items-center justify-between p-6 border-b border-gray-200'>
-          <h3 className='text-xl font-bold text-gray-800'>
-            Змінити кількість товару
-          </h3>
+          <div className='flex items-center gap-2'>
+            <Box className='w-5 h-5 text-purple-500' />
+            <h3 className='text-xl font-bold text-gray-800'>
+              Змінити кількість товару
+            </h3>
+          </div>
           <button
             onClick={handleCancel}
             className='text-gray-400 hover:text-gray-600 transition-colors cursor-pointer'
