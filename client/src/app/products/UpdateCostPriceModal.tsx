@@ -1,3 +1,4 @@
+// client/src/app/products/UpdateCostPriceModal.tsx
 import React, { useState } from 'react'
 import { X, Calculator } from 'lucide-react'
 
@@ -47,7 +48,7 @@ const UpdateCostPriceModal = ({
             Розрахунок собівартості
           </h3>
           <button onClick={onClose}>
-            <X className='w-5 h-5 text-gray-400' />
+            <X className='w-5 h-5 text-gray-400 cursor-pointer' />
           </button>
         </div>
 
@@ -122,13 +123,13 @@ const UpdateCostPriceModal = ({
             <button
               type='button'
               onClick={onClose}
-              className='flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200'
+              className='flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 cursor-pointer shadow-md'
             >
               Скасувати
             </button>
             <button
               type='submit'
-              className='flex-1 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 shadow-md'
+              className='flex-1 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 cursor-pointer shadow-md'
             >
               Зберегти
             </button>
