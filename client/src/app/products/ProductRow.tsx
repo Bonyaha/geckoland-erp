@@ -487,6 +487,7 @@ const ProductRow = ({
           onClose={() => setIsCostModalOpen(false)}
           onUpdate={handleCostUpdate}
           productName={product.name}
+          currentCost={product.costPrice || 0}
         />
       </td>
     </tr>

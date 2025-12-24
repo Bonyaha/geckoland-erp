@@ -9,6 +9,7 @@ import {
   DollarSign,
   RotateCcw,
   Save,
+  TrendingUp,
 } from 'lucide-react'
 
 type UpdateCostPriceModalProps = {
@@ -16,6 +17,7 @@ type UpdateCostPriceModalProps = {
   onClose: () => void
   onUpdate: (newCost: number) => void
   productName: string
+  currentCost: number
 }
 
 type CalculationMode = 'formula' | 'quick' | 'percent'
@@ -25,6 +27,7 @@ const UpdateCostPriceModal = ({
   onClose,
   onUpdate,
   productName,
+  currentCost,
 }: UpdateCostPriceModalProps) => {
   const [mode, setMode] = useState<CalculationMode>('formula')
 
@@ -35,11 +38,9 @@ const UpdateCostPriceModal = ({
   const [otherUah, setOtherUah] = useState<string>('')
 
   // Quick adjustment mode states
-  const [quickCost, setQuickCost] = useState<string>('0')
+  const [quickCost, setQuickCost] = useState<string>('')
   const [adjustment, setAdjustment] = useState<number>(0)
   const [percentAdjustment, setPercentAdjustment] = useState<number>(0)
-
-  const initialCost = 0 // Since we don't have a current cost, start from 0
 
   useEffect(() => {
     if (isOpen) {
@@ -48,12 +49,12 @@ const UpdateCostPriceModal = ({
       setExchangeRate('1')
       setShippingUsd('')
       setOtherUah('')
-      setQuickCost('0')
+      setQuickCost(currentCost.toFixed(2))
       setAdjustment(0)
       setPercentAdjustment(0)
       setMode('formula')
     }
-  }, [isOpen])
+  }, [isOpen, currentCost])
 
   if (!isOpen) return null
 
@@ -65,10 +66,8 @@ const UpdateCostPriceModal = ({
 
   // Quick adjustment handlers
   const handleQuickAdjustment = (value: number) => {
-    const currentBase =
-      mode === 'percent' ? initialCost : parseFloat(quickCost) || 0
     const newAdjustment = adjustment + value
-    const newCost = currentBase + newAdjustment
+    const newCost = currentCost + newAdjustment
 
     if (newCost < 0) return
 
@@ -78,10 +77,9 @@ const UpdateCostPriceModal = ({
   }
 
   const handlePercentAdjustment = (percent: number) => {
-    const baseValue = parseFloat(quickCost) || initialCost
     const newPercentAdjustment = percentAdjustment + percent
     const multiplier = 1 + newPercentAdjustment / 100
-    const newCost = baseValue * multiplier
+    const newCost = currentCost * multiplier
 
     if (newCost < 0) return
 
@@ -107,7 +105,7 @@ const UpdateCostPriceModal = ({
   }
 
   const handleReset = () => {
-    setQuickCost('0')
+    setQuickCost(currentCost.toFixed(2))
     setAdjustment(0)
     setPercentAdjustment(0)
   }
@@ -120,7 +118,7 @@ const UpdateCostPriceModal = ({
     if (mode === 'formula') {
       finalCost = calculatedFromFormula
     } else {
-      finalCost = quickCost === '' ? 0 : parseFloat(quickCost)
+      finalCost = quickCost === '' ? currentCost : parseFloat(quickCost)
     }
 
     if (finalCost > 0) {
@@ -128,6 +126,13 @@ const UpdateCostPriceModal = ({
       onClose()
     }
   }
+
+  // Calculate the change from current cost
+  const currentQuickCostValue =
+    quickCost === '' ? currentCost : parseFloat(quickCost)
+  const changeFromCurrent = currentQuickCostValue - currentCost
+  const percentChangeFromCurrent =
+    currentCost > 0 ? (changeFromCurrent / currentCost) * 100 : 0
 
   const inputStyle =
     'w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none'
@@ -149,6 +154,55 @@ const UpdateCostPriceModal = ({
           <p className='text-sm text-gray-500 font-medium truncate'>
             {productName}
           </p>
+
+          {/* Current Cost Display */}
+          <div className='bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-4'>
+            <div className='flex items-center justify-between'>
+              <div>
+                <p className='text-xs text-gray-500 font-medium mb-1'>
+                  Поточна собівартість:
+                </p>
+                <p className='text-2xl font-bold text-gray-800'>
+                  {currentCost.toFixed(2)}{' '}
+                  <span className='text-lg text-gray-600'>грн</span>
+                </p>
+              </div>
+              <div className='bg-white rounded-full p-3 shadow-sm'>
+                <TrendingUp className='w-6 h-6 text-blue-600' />
+              </div>
+            </div>
+
+            {/* Show change indicator in quick/percent modes */}
+            {mode !== 'formula' && changeFromCurrent !== 0 && (
+              <div className='mt-3 pt-3 border-t border-gray-200'>
+                <div className='flex items-center justify-between text-sm'>
+                  <span className='text-gray-600'>Зміна:</span>
+                  <div className='flex items-center gap-2'>
+                    <span
+                      className={`font-semibold ${
+                        changeFromCurrent > 0
+                          ? 'text-green-600'
+                          : 'text-red-600'
+                      }`}
+                    >
+                      {changeFromCurrent > 0 ? '+' : ''}
+                      {changeFromCurrent.toFixed(2)} грн
+                    </span>
+                    <span
+                      className={`text-xs font-medium ${
+                        percentChangeFromCurrent > 0
+                          ? 'text-green-600'
+                          : 'text-red-600'
+                      }`}
+                    >
+                      ({percentChangeFromCurrent > 0 ? '+' : ''}
+                      {percentChangeFromCurrent.toFixed(1)}%)
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Mode Selector */}
           <div>
@@ -201,11 +255,11 @@ const UpdateCostPriceModal = ({
               <div className='grid grid-cols-2 gap-4'>
                 <div>
                   <label className='block text-xs font-semibold text-gray-600 mb-1'>
-                    Ціна закупівлі
+                    Ціна закупівлі ($)
                   </label>
                   <input
                     type='number'
-                    step='1'
+                    step='0.01'
                     value={purchaseUsd}
                     onChange={(e) => setPurchaseUsd(e.target.value)}
                     className={inputStyle}
@@ -217,7 +271,7 @@ const UpdateCostPriceModal = ({
                   </label>
                   <input
                     type='number'
-                    step='0.1'
+                    step='0.01'
                     value={exchangeRate}
                     onChange={(e) => setExchangeRate(e.target.value)}
                     className={inputStyle}
@@ -231,7 +285,7 @@ const UpdateCostPriceModal = ({
                 </label>
                 <input
                   type='number'
-                  step='1'
+                  step='0.01'
                   value={shippingUsd}
                   onChange={(e) => setShippingUsd(e.target.value)}
                   className={inputStyle}
@@ -244,20 +298,45 @@ const UpdateCostPriceModal = ({
                 </label>
                 <input
                   type='number'
-                  step='1'
+                  step='0.01'
                   value={otherUah}
                   onChange={(e) => setOtherUah(e.target.value)}
                   className={inputStyle}
                 />
               </div>
 
-              <div className='mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100 text-center'>
-                <p className='text-sm text-blue-600 mb-1'>
+              <div className='mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100'>
+                <p className='text-sm text-blue-600 mb-1 text-center'>
                   Підсумкова собівартість:
                 </p>
-                <p className='text-2xl font-bold text-blue-700'>
+                <p className='text-2xl font-bold text-blue-700 text-center'>
                   {calculatedFromFormula.toFixed(2)} грн.
                 </p>
+                {calculatedFromFormula > 0 &&
+                  calculatedFromFormula !== currentCost && (
+                    <div className='mt-2 pt-2 border-t border-blue-200'>
+                      <p className='text-xs text-center text-gray-600'>
+                        Зміна:{' '}
+                        <span
+                          className={`font-semibold ${
+                            calculatedFromFormula > currentCost
+                              ? 'text-green-600'
+                              : 'text-red-600'
+                          }`}
+                        >
+                          {calculatedFromFormula > currentCost ? '+' : ''}
+                          {(calculatedFromFormula - currentCost).toFixed(2)} грн
+                        </span>{' '}
+                        ({calculatedFromFormula > currentCost ? '+' : ''}
+                        {(
+                          ((calculatedFromFormula - currentCost) /
+                            currentCost) *
+                          100
+                        ).toFixed(1)}
+                        %)
+                      </p>
+                    </div>
+                  )}
               </div>
             </>
           )}
@@ -324,9 +403,9 @@ const UpdateCostPriceModal = ({
               <div>
                 <div className='flex justify-between items-end mb-2'>
                   <label className='block text-sm font-medium text-gray-700'>
-                    Собівартість (грн):
+                    Нова собівартість (грн):
                   </label>
-                  {parseFloat(quickCost || '0') !== 0 && (
+                  {parseFloat(quickCost || '0') !== currentCost && (
                     <button
                       type='button'
                       onClick={handleReset}
@@ -349,7 +428,9 @@ const UpdateCostPriceModal = ({
 
               {adjustment !== 0 && (
                 <div className='p-4 bg-blue-50 rounded-lg'>
-                  <p className='text-sm text-gray-600 mb-1'>Зміна:</p>
+                  <p className='text-sm text-gray-600 mb-1'>
+                    Останнє коригування:
+                  </p>
                   <p
                     className={`text-xl font-bold ${
                       adjustment > 0 ? 'text-green-600' : 'text-red-600'
@@ -425,9 +506,9 @@ const UpdateCostPriceModal = ({
               <div>
                 <div className='flex justify-between items-end mb-2'>
                   <label className='block text-sm font-medium text-gray-700'>
-                    Собівартість (грн):
+                    Нова собівартість (грн):
                   </label>
-                  {parseFloat(quickCost || '0') !== 0 && (
+                  {parseFloat(quickCost || '0') !== currentCost && (
                     <button
                       type='button'
                       onClick={handleReset}
@@ -450,7 +531,9 @@ const UpdateCostPriceModal = ({
 
               {percentAdjustment !== 0 && (
                 <div className='p-4 bg-blue-50 rounded-lg'>
-                  <p className='text-sm text-gray-600 mb-1'>Зміна:</p>
+                  <p className='text-sm text-gray-600 mb-1'>
+                    Останнє коригування:
+                  </p>
                   <p
                     className={`text-xl font-bold ${
                       percentAdjustment > 0 ? 'text-green-600' : 'text-red-600'
