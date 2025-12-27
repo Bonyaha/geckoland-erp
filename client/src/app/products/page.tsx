@@ -50,6 +50,8 @@ type ProductType = {
 
 type UpdateMode = 'quantity' | 'price' | 'costPrice'
 
+type CalculationMethod = 'absolute' | 'relative' | 'percent' | 'formula'
+
 const Products = () => {
   // State management
   const [searchTerm, setSearchTerm] = useState('')
@@ -178,21 +180,64 @@ const Products = () => {
   }
 
   // Batch Update Logic
-  const handleBatchUpdate = async (newValue: number, mode: UpdateMode) => {
+  const handleBatchUpdate = async (
+    newValue: number,
+    mode: UpdateMode,
+    method: CalculationMethod
+  ) => {
     if (selectedProducts.length === 0) return
 
     try {
-      const products = selectedProducts.map((productId) => ({
-        productId,
-        updates: {
-          // We now use the exact newValue provided by the user
-          [mode === 'price'
-            ? 'price'
-            : mode === 'costPrice'
-            ? 'costPrice'
-            : 'stockQuantity']: newValue,
-        },
-      }))
+      // Get current product data to calculate relative/percent updates
+      const currentProducts = data?.products.filter((p: any) =>
+        selectedProducts.includes(p.productId)
+      )
+
+      if (!currentProducts) return
+
+      const products = currentProducts.map((product: any) => {
+        let finalValue = newValue
+
+        // For relative/percent methods, calculate the final value based on current value
+        if (method === 'relative' || method === 'percent') {
+          const currentValue =
+            mode === 'price'
+              ? product.price
+              : mode === 'costPrice'
+              ? product.costPrice || 0
+              : product.stockQuantity
+
+          if (method === 'relative') {
+            finalValue = currentValue + newValue
+          } else if (method === 'percent') {
+            finalValue = currentValue * (1 + newValue / 100)
+          }
+
+          // Ensure non-negative values
+          finalValue = Math.max(0, finalValue)
+
+          // Round quantity to integer
+          if (mode === 'quantity') {
+            finalValue = Math.round(finalValue)
+          }
+        }
+
+        // Build the updates object with correct field names
+        const updates: any = {}
+
+        if (mode === 'price') {
+          updates.price = finalValue
+        } else if (mode === 'costPrice') {
+          updates.costPrice = finalValue
+        } else if (mode === 'quantity') {
+          updates.quantity = finalValue
+        }
+
+        return {
+          productId: product.productId,
+          updates,
+        }
+      })
 
       await batchUpdateProduct({
         products,
