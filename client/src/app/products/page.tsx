@@ -18,9 +18,12 @@ import {
   Edit3,
   DollarSign,
   CheckCircle,
+  ArrowUpDown,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react'
 //import Image from 'next/image'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 //import Header from '@/app/(components)/Header'
 import CreateProductModal from './CreateProductModal'
 import ProductStats from './ProductStats'
@@ -45,15 +48,16 @@ type ProductType = {
   updatedPrice?: number
   currency?: string
   dateModified?: string
+  costPrice?: number
   [key: string]: string | number | boolean | string[] | undefined
 }
 
 type UpdateMode = 'quantity' | 'price' | 'costPrice'
-
 type CalculationMethod = 'absolute' | 'relative' | 'percent' | 'formula'
+type SortField = 'name' | 'price' | 'stockQuantity' | 'costPrice'
+type SortDirection = 'asc' | 'desc' | null
 
-const Products = () => {
-  // State management
+const Products = () => {  
   const [searchTerm, setSearchTerm] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false)
@@ -70,6 +74,9 @@ const Products = () => {
   const [notificationMessage, setNotificationMessage] = useState<string | null>(
     null
   )
+const [sortField, setSortField] = useState<SortField | null>(null)
+const [sortDirection, setSortDirection] = useState<SortDirection>(null)
+
   const itemsPerPage = 20
 
   // API hooks
@@ -88,7 +95,7 @@ const Products = () => {
 
   // --- Scroll Logic ---
   const handleScroll = () => {
-    // Show the button if the user has scrolled down more than 300 pixels
+    // Show the button if the user has scrolled down more than 400 pixels
     if (window.scrollY > 400) {
       setShowScrollArrow(true)
     } else {
@@ -112,6 +119,74 @@ const Products = () => {
       window.removeEventListener('scroll', handleScroll)
     }
   }, [])
+
+//NEW
+ const handleSort = (field: SortField) => {
+   if (sortField === field) {
+     // Cycle through: asc -> desc -> null
+     if (sortDirection === 'asc') {
+       setSortDirection('desc')
+     } else if (sortDirection === 'desc') {
+       setSortDirection(null)
+       setSortField(null)
+     }
+   } else {
+     setSortField(field)
+     setSortDirection('asc')
+   }
+ }
+
+const SortIcon = ({ field }: { field: SortField }) => {
+  if (sortField !== field) {
+    return <ArrowUpDown className='w-4 h-4 text-gray-400' />
+  }
+
+  if (sortDirection === 'asc') {
+    return <ChevronUp className='w-4 h-4 text-blue-600' />
+  }
+
+  return <ChevronDown className='w-4 h-4 text-blue-600' />
+}
+
+const sortedProducts = useMemo(() => {
+  if (!data?.products) return []
+
+  const products = [...data.products]
+
+  if (!sortField || !sortDirection) {
+    return products
+  }
+
+  return products.sort((a, b) => {
+    let aValue = a[sortField]
+    let bValue = b[sortField]
+
+    // Handle null/undefined values
+    if (aValue === null || aValue === undefined) aValue = 0
+    if (bValue === null || bValue === undefined) bValue = 0
+
+    // String comparison for name
+    if (sortField === 'name') {
+      const aStr = String(aValue).toLowerCase()
+      const bStr = String(bValue).toLowerCase()
+
+      if (sortDirection === 'asc') {
+        return aStr.localeCompare(bStr, 'uk')
+      }
+      return bStr.localeCompare(aStr, 'uk')
+    }
+
+    // Numeric comparison for price, stockQuantity, costPrice
+    const aNum = Number(aValue)
+    const bNum = Number(bValue)
+
+    if (sortDirection === 'asc') {
+      return aNum - bNum
+    }
+    return bNum - aNum
+  })
+}, [data?.products, sortField, sortDirection])
+
 
   const handleCreateProduct = async (productData: ProductType) => {
     await createProduct(productData)
@@ -280,7 +355,7 @@ const Products = () => {
     )
   }
 
-  const products = data.products || []
+  //const products = data.products || []
   const pagination = data.pagination || {
     page: 1,
     limit: 20,
@@ -288,8 +363,9 @@ const Products = () => {
     pages: 1,
   }
 
-  const typedProducts: ProductType[] = products as ProductType[]
-  console.log('Typed products:', typedProducts[0])
+  const typedProducts: ProductType[] = sortedProducts as ProductType[]
+  //console.log('Typed products:', typedProducts[0])
+
   // Generate page numbers for pagination
   const generatePageNumbers = () => {
     const pages = []
@@ -559,23 +635,51 @@ const Products = () => {
                   }
                 />
               </th>
-              <th className='px-4 py-3 text-center text-black font-bold w-1/3'>
-                Товар
+
+              {/* SORTABLE COLUMNS */}
+              <th
+                className='px-4 py-3 text-center text-black font-bold w-1/3 cursor-pointer hover:bg-gray-100 transition-colors'
+                onClick={() => handleSort('name')}
+              >
+                <div className='flex items-center justify-center gap-2'>
+                  <span>Товар</span>
+                  <SortIcon field='name' />
+                </div>
               </th>
-              {/* Centered headers for the "Card" columns */}
-              <th className='px-4 py-3 text-center text-black font-bold'>
-                Ціна
+
+              <th
+                className='px-4 py-3 text-center text-black font-bold cursor-pointer hover:bg-gray-100 transition-colors'
+                onClick={() => handleSort('price')}
+              >
+                <div className='flex items-center justify-center gap-2'>
+                  <span>Ціна</span>
+                  <SortIcon field='price' />
+                </div>
               </th>
-              <th className='px-4 py-3 text-center text-black font-bold'>
-                Доступно
+
+              <th
+                className='px-4 py-3 text-center text-black font-bold cursor-pointer hover:bg-gray-100 transition-colors'
+                onClick={() => handleSort('stockQuantity')}
+              >
+                <div className='flex items-center justify-center gap-2'>
+                  <span>Доступно</span>
+                  <SortIcon field='stockQuantity' />
+                </div>
               </th>
-              <th className='px-4 py-3 text-center text-black font-bold'>
-                Собів.
-              </th>
+
               <th className='px-4 py-3 text-center text-black font-bold'>
                 Продажі
               </th>
 
+              <th
+                className='px-4 py-3 text-center text-black font-bold cursor-pointer hover:bg-gray-100 transition-colors'
+                onClick={() => handleSort('costPrice')}
+              >
+                <div className='flex items-center justify-center gap-2'>
+                  <span>Собів.</span>
+                  <SortIcon field='costPrice' />
+                </div>
+              </th>
               <th className='px-4 py-3 text-center text-black font-bold'>
                 Націнка
               </th>
@@ -604,6 +708,7 @@ const Products = () => {
           </div>
         )}
       </div>
+
       {/* SUCCESS NOTIFICATION - Outside the table */}
       {notificationMessage && (
         <div className='fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-bottom-4 duration-300'>

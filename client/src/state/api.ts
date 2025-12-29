@@ -9,6 +9,7 @@ export interface Product {
   rating?: number
   stockQuantity: number
   sku: string
+  costPrice?: number
 }
 
 export interface ProductInventoryStats {

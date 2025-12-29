@@ -349,7 +349,7 @@ const ProductRow = ({
         </div>
       </td>
 
-      {/* 6. PRICE ("Card" Style) */}
+      {/* PRICE ("Card" Style) */}
       <td className='px-2 py-4 align-top'>
         <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
           <span className='text-xl font-bold text-green-600'>
@@ -366,7 +366,7 @@ const ProductRow = ({
         </div>
       </td>
 
-      {/* 3. AVAILABLE ("Card" Style) */}
+      {/* AVAILABLE ("Card" Style) */}
       <td className='px-2 py-4 align-top'>
         <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
           <span
@@ -388,7 +388,24 @@ const ProductRow = ({
           </button>
         </div>
       </td>
-      {/* 5. COST ("Card" Style - Input) */}
+
+      {/* SALES ("Card" Style) */}
+      <td className='px-2 py-4 align-top'>
+        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
+          <span className='text-xs text-gray-500 font-medium mb-1'>
+            Кількість продажів
+          </span>
+
+          <span className='text-2xl font-bold text-green-600'>{sales}</span>
+
+          {/* Action Trigger Image 5 */}
+          <button className='text-xs text-blue-500 hover:text-blue-700 hover:underline w-full text-center cursor-pointer'>
+            з {salesDate}
+          </button>
+        </div>
+      </td>
+
+      {/* COST ("Card" Style - Input) */}
       <td className='px-2 py-4 align-top'>
         <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
           <span className='text-xs text-gray-500 font-medium mb-1'>
@@ -438,23 +455,8 @@ const ProductRow = ({
           )}
         </div>
       </td>
-      {/* 4. SALES ("Card" Style) */}
-      <td className='px-2 py-4 align-top'>
-        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
-          <span className='text-xs text-gray-500 font-medium mb-1'>
-            Кількість продажів
-          </span>
 
-          <span className='text-2xl font-bold text-green-600'>{sales}</span>
-
-          {/* Action Trigger Image 5 */}
-          <button className='text-xs text-blue-500 hover:text-blue-700 hover:underline w-full text-center cursor-pointer'>
-            з {salesDate}
-          </button>
-        </div>
-      </td>
-
-      {/* 7. MARGIN (Blue/Red text, Bold) */}
+      {/* MARGIN (Blue/Red text, Bold) */}
       <td className='px-2 py-4 align-top'>
         <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[120px]'>
           <span className='text-xs text-gray-500 font-medium mb-1'>
