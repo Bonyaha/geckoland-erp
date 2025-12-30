@@ -9,6 +9,7 @@ import gmailRoutes from './gmailRoutes'
 import authRoutes from './authRoutes'
 import orderRoutes from './orderRoutes'
 import trackingRoutes from './trackingRoutes'
+import salesRoutes from './salesRoutes'
 import { gmail } from 'googleapis/build/src/apis/gmail'
 
 const router = Router()
@@ -41,6 +42,7 @@ router.get('/', (req, res) => {
       auth: '/api/auth',
       orders: '/api/orders',
       tracking: '/api/tracking',
+      sales: '/api/sales',
     },
   })
 })
@@ -57,6 +59,7 @@ router.use('/api/gmail', gmailRoutes)
 router.use('/api/auth', authRoutes)
 router.use('/api/orders', orderRoutes)
 router.use('/api/tracking', trackingRoutes)
+router.use('/api/sales', salesRoutes)
 
 /**
  * 404 handler for undefined routes
@@ -75,6 +78,7 @@ router.use((req, res) => {
       '/api/auth',
       '/api/orders',
       '/api/tracking',
+      '/api/sales',
     ],
   })
 })

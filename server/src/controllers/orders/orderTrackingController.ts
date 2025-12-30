@@ -5,6 +5,9 @@ import { novaPoshtaService } from '../../services/delivery/novaPoshtaService'
 import { OrderStatus } from '@prisma/client'
 import { ErrorFactory } from '../../middleware/errorHandler'
 import { OrderTrackingUpdateRequest, OrderTrackingResult } from '../../types/orders'
+import SalesService from '../../services/sales/salesService'
+
+const salesService = new SalesService()
 
 /**
  * Map Nova Poshta status to our OrderStatus enum
@@ -203,6 +206,43 @@ export const updateOrderTrackingStatuses = async (
         })
 
         updatedCount++
+
+        // If status changed to DELIVERED, create sales records
+        if (mappedStatus === OrderStatus.DELIVERED) {
+          console.log(
+            `📈 Order ${
+              orderData.orderNumber || orderData.orderId
+            } status changed to DELIVERED via tracking, creating sales records...`
+          )
+
+          // Create sales records asynchronously
+          salesService
+            .createSalesFromOrder(orderData.orderId)
+            .then((result) => {
+              if (result.success) {
+                console.log(
+                  `✅ Successfully created ${
+                    result.salesIds.length
+                  } sales records for order ${
+                    result.orderNumber || orderData.orderId
+                  }`
+                )
+              } else {
+                console.error(
+                  `⚠️ Failed to create sales records for order ${
+                    result.orderNumber || orderData.orderId
+                  }:`,
+                  result.error
+                )
+              }
+            })
+            .catch((error) => {
+              console.error(
+                `❌ Error in sales creation process for order ${orderData.orderId}:`,
+                error
+              )
+            })
+        }
 
         // Create typed tracking result
         updateResults.push({

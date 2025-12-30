@@ -1,11 +1,13 @@
 // server\src\services\orders\orderService.ts
-import prisma, { Source, Prisma } from '../../config/database'
+import prisma, { Source, Prisma, OrderStatus } from '../../config/database'
 import { Decimal } from '@prisma/client/runtime/library'
 import { PromClient, type PromOrder } from '../marketplaces/promClient'
 import { RozetkaClient, type RozetkaOrder } from '../marketplaces/rozetkaClient'
 import { nanoid } from 'nanoid'
 //import { syncAfterOrder } from '../marketplaces/sync/marketplaceSyncService'
 import { ErrorFactory, AppError } from '../../middleware/errorHandler'
+import SalesService from '../sales/salesService'
+
 import {
   OrderSyncResult,
   OrderCheckSummary,
@@ -29,10 +31,12 @@ import {
 class OrderService {
   private promClient: PromClient
   private rozetkaClient: RozetkaClient
+  private salesService: SalesService
 
   constructor() {
     this.promClient = new PromClient()
     this.rozetkaClient = new RozetkaClient()
+    this.salesService = new SalesService()
   }
 
   // ============================================
@@ -1153,15 +1157,69 @@ class OrderService {
   }
 
   /** Update order in database by ID
+   * Automatically creates Sales records when status changes to DELIVERED
    */
 
   async updateOrder(orderId: string, updates: Prisma.OrdersUpdateInput) {
     try {
-      return await prisma.orders.update({
+      // Get the current order state before update
+      const currentOrder = await prisma.orders.findUnique({
+        where: { orderId },
+        select: { status: true, orderNumber: true },
+      })
+
+      if (!currentOrder) {
+        throw ErrorFactory.notFound(`Order ${orderId} not found`)
+      }
+
+      // Track if status is changing to DELIVERED
+      const isChangingToDelivered =
+        updates.status === OrderStatus.DELIVERED &&
+        currentOrder.status !== OrderStatus.DELIVERED
+
+      // Update the order
+      const updatedOrder = await prisma.orders.update({
         where: { orderId },
         data: updates,
         include: { orderItems: true },
       })
+
+      // If status changed to DELIVERED, create sales records
+      if (isChangingToDelivered) {
+        console.log(
+          `📈 Order ${
+            currentOrder.orderNumber || orderId
+          } status changed to DELIVERED, creating sales records...`
+        )
+
+        // Create sales records asynchronously (don't block the response)
+        this.salesService
+          .createSalesFromOrder(orderId)
+          .then((result) => {
+            if (result.success) {
+              console.log(
+                `✅ Successfully created ${
+                  result.salesIds.length
+                } sales records for order ${result.orderNumber || orderId}`
+              )
+            } else {
+              console.error(
+                `⚠️ Failed to create sales records for order ${
+                  result.orderNumber || orderId
+                }:`,
+                result.error
+              )
+            }
+          })
+          .catch((error) => {
+            console.error(
+              `❌ Error in sales creation process for order ${orderId}:`,
+              error
+            )
+          })
+      }
+
+      return updatedOrder
     } catch (error: any) {
       if (error.code === 'P2025')
         throw ErrorFactory.notFound(`Order ${orderId} not found`)
