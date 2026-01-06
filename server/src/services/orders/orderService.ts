@@ -213,7 +213,6 @@ class OrderService {
       orderItemId: `item_${orderId}_${unifiedItem.externalProductId}_${nanoid(
         6
       )}`,
-      externalProductId: unifiedItem.externalProductId,
       productId: unifiedItem.productId,
       sku: unifiedItem.sku,
       productName: unifiedItem.name,

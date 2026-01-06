@@ -305,8 +305,7 @@ export interface OrderPaymentInfoInternal extends Omit<OrderPaymentInfo, 'paymen
  * }
  */
 export interface OrderItemInput {
-  orderItemId: string
-  externalProductId: string
+  orderItemId: string  
   productId?: string | null
   sku?: string | null
   productName: string

@@ -163,5 +163,5 @@ export async function fetchRozetkaProductsWithTransformation(): Promise<
 
 
 //fetchAllRozetkaProducts()
-fetchRozetkaProducts()
+//fetchRozetkaProducts()
 //fetchRozetkaProductsWithTransformation()
