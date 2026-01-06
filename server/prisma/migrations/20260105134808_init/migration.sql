@@ -1,13 +1,44 @@
 -- CreateEnum
 CREATE TYPE "Source" AS ENUM ('prom', 'rozetka', 'crm');
 
+-- CreateEnum
+CREATE TYPE "OrderStatus" AS ENUM ('RECEIVED', 'PREPARED', 'SHIPPED', 'AWAITING_PICKUP', 'DELIVERED', 'CANCELED', 'RETURN');
+
+-- CreateEnum
+CREATE TYPE "DeliveryOption" AS ENUM ('NovaPoshta', 'UkrPoshta');
+
+-- CreateEnum
+CREATE TYPE "PaymentOption" AS ENUM ('ApplePay', 'GooglePay', 'RozetkaPay', 'IBAN', 'PromPayment', 'CashOnDelivery');
+
 -- CreateTable
 CREATE TABLE "Users" (
     "userId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
+    "role" TEXT NOT NULL DEFAULT 'user',
 
     CONSTRAINT "Users_pkey" PRIMARY KEY ("userId")
+);
+
+-- CreateTable
+CREATE TABLE "Clients" (
+    "clientId" TEXT NOT NULL,
+    "firstName" TEXT NOT NULL,
+    "lastName" TEXT NOT NULL,
+    "secondName" TEXT,
+    "phone" TEXT NOT NULL,
+    "email" TEXT,
+    "address" TEXT,
+    "deliveryOptionName" "DeliveryOption",
+    "paymentOptionName" "PaymentOption",
+    "reliability" TEXT,
+    "totalOrders" INTEGER NOT NULL DEFAULT 0,
+    "totalSpent" DECIMAL(10,2) NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ(6) NOT NULL,
+
+    CONSTRAINT "Clients_pkey" PRIMARY KEY ("clientId")
 );
 
 -- CreateTable
@@ -64,15 +95,14 @@ CREATE TABLE "Orders" (
     "recipientSecondName" TEXT,
     "recipientPhone" TEXT,
     "recipientFullName" TEXT,
-    "deliveryOptionId" INTEGER,
-    "deliveryOptionName" TEXT,
+    "deliveryOptionName" "DeliveryOption",
     "deliveryAddress" TEXT,
     "deliveryCity" TEXT,
     "trackingNumber" TEXT,
     "deliveryCost" DECIMAL(10,2),
     "deliveryProviderData" JSONB,
     "paymentOptionId" INTEGER,
-    "paymentOptionName" TEXT,
+    "paymentOptionName" "PaymentOption",
     "paymentData" JSONB,
     "paymentStatus" TEXT,
     "totalAmount" DECIMAL(10,2) NOT NULL,
@@ -81,7 +111,7 @@ CREATE TABLE "Orders" (
     "currency" TEXT NOT NULL DEFAULT 'UAH',
     "totalQuantity" INTEGER,
     "itemCount" INTEGER NOT NULL,
-    "status" TEXT NOT NULL,
+    "status" "OrderStatus" NOT NULL DEFAULT 'RECEIVED',
     "statusName" TEXT,
     "statusGroup" INTEGER,
     "cpaCommission" DECIMAL(10,2),
@@ -106,7 +136,6 @@ CREATE TABLE "Orders" (
 CREATE TABLE "OrderItems" (
     "orderItemId" TEXT NOT NULL,
     "orderId" TEXT NOT NULL,
-    "externalProductId" TEXT NOT NULL,
     "productId" TEXT,
     "sku" TEXT,
     "productName" TEXT NOT NULL,
@@ -127,7 +156,9 @@ CREATE TABLE "OrderItems" (
 CREATE TABLE "Sales" (
     "saleId" TEXT NOT NULL,
     "productId" TEXT NOT NULL,
-    "timestamp" TIMESTAMP(3) NOT NULL,
+    "orderId" TEXT,
+    "orderItemId" TEXT,
+    "timestamp" TIMESTAMPTZ(6) NOT NULL,
     "quantity" INTEGER NOT NULL,
     "unitPrice" DECIMAL(10,2) NOT NULL,
     "totalAmount" DECIMAL(10,2) NOT NULL,
@@ -198,10 +229,25 @@ CREATE TABLE "ExpenseByCategory" (
 );
 
 -- CreateIndex
-CREATE INDEX "OrderItems_externalProductId_idx" ON "OrderItems"("externalProductId");
+CREATE UNIQUE INDEX "Users_email_key" ON "Users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Clients_phone_key" ON "Clients"("phone");
 
 -- CreateIndex
 CREATE INDEX "OrderItems_sku_idx" ON "OrderItems"("sku");
+
+-- CreateIndex
+CREATE INDEX "Sales_timestamp_idx" ON "Sales"("timestamp");
+
+-- CreateIndex
+CREATE INDEX "Sales_productId_idx" ON "Sales"("productId");
+
+-- CreateIndex
+CREATE INDEX "Sales_orderId_idx" ON "Sales"("orderId");
+
+-- AddForeignKey
+ALTER TABLE "Orders" ADD CONSTRAINT "Orders_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "Clients"("clientId") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "OrderItems" ADD CONSTRAINT "OrderItems_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Orders"("orderId") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -213,8 +259,13 @@ ALTER TABLE "OrderItems" ADD CONSTRAINT "OrderItems_productId_fkey" FOREIGN KEY 
 ALTER TABLE "Sales" ADD CONSTRAINT "Sales_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Products"("productId") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Sales" ADD CONSTRAINT "Sales_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Orders"("orderId") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Sales" ADD CONSTRAINT "Sales_orderItemId_fkey" FOREIGN KEY ("orderItemId") REFERENCES "OrderItems"("orderItemId") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Purchases" ADD CONSTRAINT "Purchases_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Products"("productId") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ExpenseByCategory" ADD CONSTRAINT "ExpenseByCategory_expenseSummaryId_fkey" FOREIGN KEY ("expenseSummaryId") REFERENCES "ExpenseSummary"("expenseSummaryId") ON DELETE RESTRICT ON UPDATE CASCADE;
-

@@ -1,6 +1,11 @@
 // server/src/schemas/order.schema.ts
 import { z } from 'zod'
-import { Source, OrderStatus } from '../config/database'
+import {
+  Source,
+  OrderStatus,
+  DeliveryOption,
+  PaymentOption,
+} from '../config/database'
 import { Decimal } from '@prisma/client/runtime/library'
 
 // ============================================
@@ -42,8 +47,7 @@ const recipientInfoSchema = z.object({
 const deliveryInfoSchema = z.object({
   deliveryAddress: z.string().optional(),
   deliveryCity: z.string().optional(),
-  trackingNumber: z.string().optional(),
-  deliveryOptionId: z.number().optional(),
+  trackingNumber: z.string().optional(),  
   deliveryOptionName: z.string().optional(),
   deliveryCost: z.number().nonnegative().optional(),
   deliveryProviderData: z.any().optional(),
@@ -109,6 +113,8 @@ export const updateOrderSchema = z.object({
     statusName: z.string().optional(),
     trackingNumber: z.string().optional(),
     deliveryAddress: z.string().optional(),
+    deliveryOptionName: z.enum(DeliveryOption).optional(),
+    paymentOptionName: z.enum(PaymentOption).optional(),
     clientNotes: z.string().optional(),
     sellerComment: z.string().optional(),
     isViewed: z.boolean().optional(),

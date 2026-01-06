@@ -26,6 +26,9 @@ import {
   NormalizedPhone,
   NormalizedFullName,
   BaseOrderCreateInput,
+  OrderPaymentInfoInternal,
+  mapToDeliveryOption,
+  mapToPaymentOption,
 } from '../../types/orders'
 
 class OrderService {
@@ -245,7 +248,7 @@ class OrderService {
     customer: OrderCustomerInfo
     recipient?: OrderRecipientInfo
     delivery: OrderDeliveryInfo
-    payment: OrderPaymentInfo
+    payment: OrderPaymentInfoInternal
     financial: OrderFinancialInfo
     items: OrderItemInput[]
     status?: string
@@ -322,8 +325,7 @@ class OrderService {
       createdAt: baseOrder.createdAt,
       lastModified: baseOrder.lastModified,
 
-      // Customer info
-      clientId: customer.clientId,
+      // Customer info      
       clientFirstName: customer.clientFirstName,
       clientLastName: customer.clientLastName,
       clientSecondName: customer.clientSecondName,
@@ -338,8 +340,7 @@ class OrderService {
       recipientPhone: recipient?.recipientPhone,
       recipientFullName: recipient?.recipientFullName,
 
-      // Delivery info
-      deliveryOptionId: delivery.deliveryOptionId,
+      // Delivery info      
       deliveryOptionName: delivery.deliveryOptionName,
       deliveryAddress: delivery.deliveryAddress,
       deliveryCity: delivery.deliveryCity,
@@ -518,9 +519,10 @@ class OrderService {
       }
 
       // Delivery information
-      const deliveryInfo: OrderDeliveryInfo = {
-        deliveryOptionId: promOrder.delivery_option?.id,
-        deliveryOptionName: promOrder.delivery_option?.name,
+      const deliveryInfo: OrderDeliveryInfo = {        
+        deliveryOptionName: mapToDeliveryOption(
+          promOrder.delivery_option?.name
+        ),
         deliveryAddress: promOrder.delivery_address,
         deliveryCity:
           promOrder.delivery_provider_data?.recipient_address.city_name,
@@ -530,9 +532,9 @@ class OrderService {
       }
 
       // Payment information
-      const paymentInfo: OrderPaymentInfo = {
+      const paymentInfo: OrderPaymentInfoInternal = {
         paymentOptionId: promOrder.payment_option?.id,
-        paymentOptionName: promOrder.payment_option?.name,
+        paymentOptionName: mapToPaymentOption(promOrder.payment_option?.name),
         paymentData: promOrder.payment_data,
         paymentStatus: promOrder.payment_data?.payment_status,
       }
@@ -700,9 +702,10 @@ class OrderService {
       }
 
       // Delivery information
-      const deliveryInfo: OrderDeliveryInfo = {
-        deliveryOptionId: rozetkaOrder.delivery?.delivery_service_id,
-        deliveryOptionName: rozetkaOrder.delivery?.delivery_service_name,
+      const deliveryInfo: OrderDeliveryInfo = {        
+        deliveryOptionName: mapToDeliveryOption(
+          rozetkaOrder.delivery?.delivery_service_name
+        ),
         deliveryCity: rozetkaOrder.delivery?.city?.name,
         trackingNumber: rozetkaOrder.ttn,
         deliveryCost,
@@ -711,9 +714,11 @@ class OrderService {
       }
 
       // Payment information
-      const paymentInfo: OrderPaymentInfo = {
+      const paymentInfo: OrderPaymentInfoInternal = {
         paymentOptionId: rozetkaOrder.payment?.payment_method_id,
-        paymentOptionName: rozetkaOrder.payment?.payment_method_name,
+        paymentOptionName: mapToPaymentOption(
+          rozetkaOrder.payment?.payment_method_name
+        ),
         paymentStatus: rozetkaOrder.payment?.payment_status.title,
         paymentData: rozetkaOrder.payment,
       }
@@ -892,13 +897,13 @@ class OrderService {
       const deliveryInfo: OrderDeliveryInfo = {
         deliveryAddress,
         deliveryCity,
-        deliveryOptionName,
+        deliveryOptionName: mapToDeliveryOption(deliveryOptionName),
         deliveryCost: deliveryCost ? new Decimal(deliveryCost) : new Decimal(0),
       }
 
       // Payment information
-      const paymentInfo: OrderPaymentInfo = {
-        paymentOptionName,
+      const paymentInfo: OrderPaymentInfoInternal = {
+        paymentOptionName: mapToPaymentOption(paymentOptionName),
       }
 
       // Financial information

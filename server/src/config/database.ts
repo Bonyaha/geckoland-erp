@@ -21,5 +21,18 @@ if (process.env.NODE_ENV !== 'production') {
   global.prisma = prisma
 }
 
+export enum DeliveryOption {
+  NovaPoshta = 'NovaPoshta',
+  UkrPoshta = 'UkrPoshta',
+}
+
+export enum PaymentOption {
+  ApplePay = 'ApplePay',
+  GooglePay = 'GooglePay',
+  RozetkaPay = 'RozetkaPay',
+  IBAN = 'IBAN',
+  PromPayment = 'PromPayment',
+  CashOnDelivery = 'CashOnDelivery',
+}
 export { Source, OrderStatus, Prisma }
 export default prisma

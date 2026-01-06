@@ -1,4 +1,4 @@
-// server/prisma/scripts/populateFromCSV.ts
+// server/prisma/scripts/populateDB.ts
 import prisma, { Source } from '../../src/config/database'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -11,11 +11,12 @@ import { enrichWithRozetkaCategories } from '../../src/utils/helpers/enrichWithR
 import { fetchCRMProducts } from '../../src/services/data-fetchers/fetchCRMProducts'
 
 /* 
-  This file provides a generic way to populate the Products table in database from CSV files. It can read two types of CSVs:
+  This file provides a generic way to populate the Products table in the database from CSV files or directly from HugeProfit API. It supports:
   1. products.csv from HugeProfit CRM export
   2. productsFromDB.csv exported from the existing database
+  3. Fetching products directly via the HugeProfit API
 
-  It uses mapper functions to transform each CSV row into the format expected by Prisma and the database.
+  It uses mapper functions to transform each CSV row (or API response) into the format expected by Prisma and the database.
  */
 
 // --- INTERFACES FOR EACH CSV STRUCTURE ---
@@ -43,7 +44,7 @@ interface ProductFromDbCSV {
   externalIds: string // Comes as a JSON string
   description: string
   mainImage: string
-  images: string // Comes as a comma-separated or JSON string  
+  images: string // Comes as a comma-separated or JSON string
   available: string // Comes as 'true' or 'false'
   priceOld: string
   pricePromo: string
@@ -51,9 +52,9 @@ interface ProductFromDbCSV {
   currency: string
   dateModified: string
   lastSynced: string
-  needsSync: string 
+  needsSync: string
   categoryData: string // JSON string
-  measureUnit: string  
+  measureUnit: string
   lastPromSync: string
   lastRozetkaSync: string
   needsPromSync: string
@@ -140,7 +141,7 @@ function mapDbCsvToProduct(row: ProductFromDbCSV): any {
     description: row.description || null,
     mainImage: row.mainImage || null,
     // Assuming 'images' is a JSON array string like '["url1", "url2"]'
-    images: safeJsonParse(row.images) || [],    
+    images: safeJsonParse(row.images) || [],
     available: row.available === 'true',
     priceOld: row.priceOld ? String(row.priceOld) : null,
     pricePromo: row.pricePromo ? String(row.pricePromo) : null,
@@ -148,9 +149,9 @@ function mapDbCsvToProduct(row: ProductFromDbCSV): any {
     currency: row.currency || 'UAH',
     dateModified: row.dateModified ? new Date(row.dateModified) : null,
     lastSynced: row.lastSynced ? new Date(row.lastSynced) : new Date(),
-    needsSync: row.needsSync === 'true',    
+    needsSync: row.needsSync === 'true',
     categoryData: safeJsonParse(row.categoryData),
-    measureUnit: row.measureUnit || 'шт',    
+    measureUnit: row.measureUnit || 'шт',
     lastPromSync: row.lastPromSync ? new Date(row.lastPromSync) : null,
     lastRozetkaSync: row.lastRozetkaSync ? new Date(row.lastRozetkaSync) : null,
     needsPromSync: row.needsPromSync === 'true',
@@ -176,7 +177,9 @@ async function enrichAndInsertProducts(products: any[]): Promise<void> {
 
   console.log('Enriching products with Prom IDs and categories...')
   let enrichedProducts = await enrichWithPromIds(products)
-  enrichedProducts = await enrichWithPromCategoriesAndDescription(enrichedProducts)
+  enrichedProducts = await enrichWithPromCategoriesAndDescription(
+    enrichedProducts
+  )
 
   console.log('Enriching products with Rozetka IDs and categories...')
   enrichedProducts = await enrichWithRozetkaIds(enrichedProducts)
@@ -186,7 +189,9 @@ async function enrichAndInsertProducts(products: any[]): Promise<void> {
   enrichedProducts = enrichedProducts.map((product) => ({
     ...product,
     promQuantity: product.externalIds?.prom ? product.stockQuantity : null,
-    rozetkaQuantity: product.externalIds?.rozetka ? product.stockQuantity : null,
+    rozetkaQuantity: product.externalIds?.rozetka
+      ? product.stockQuantity
+      : null,
   }))
 
   console.log('Clearing the Products table...')
@@ -266,10 +271,10 @@ async function populateProductsFromCSV(
 async function populateProductsFromAPI(): Promise<void> {
   try {
     console.log('🚀 Fetching products from HugeProfit API...')
-    
+
     // Fetch products from API (this also saves to productsFromHP.json)
     const products = await fetchCRMProducts()
-    
+
     if (!products || products.length === 0) {
       console.log('No products returned from API.')
       return
@@ -279,7 +284,6 @@ async function populateProductsFromAPI(): Promise<void> {
 
     // Use the shared enrichment and insert logic
     await enrichAndInsertProducts(products)
-    
   } catch (error) {
     console.error('❌ Error fetching products from API:', error)
     throw error

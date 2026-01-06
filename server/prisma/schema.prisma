@@ -8,11 +8,29 @@ datasource db {
 }
 
 model Users {
-  userId String @id @default(cuid())
-  name   String
-  email  String @unique
+  userId   String @id @default(cuid())
+  name     String
+  email    String @unique
   password String
-  role   String @default("user")
+  role     String @default("user")
+}
+
+model Clients {
+  clientId      String   @id @default(cuid())
+  firstName     String
+  lastName      String
+  secondName    String?
+  phone         String   @unique
+  email         String?
+  address       String?
+  deliveryOptionName  DeliveryOption? // Nova Poshta, UkrPoshta, etc.
+  paymentOptionName   PaymentOption?
+  reliability   String? 
+  totalOrders   Int      @default(0)
+  totalSpent    Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(6)
+  orders        Orders[]
 }
 
 model Products {
@@ -68,15 +86,14 @@ model Orders {
   recipientSecondName     String?
   recipientPhone          String?
   recipientFullName       String?
-  deliveryOptionId        Int?
-  deliveryOptionName      String?
+  deliveryOptionName      DeliveryOption?
   deliveryAddress         String?
   deliveryCity            String?
   trackingNumber          String?
   deliveryCost            Decimal?     @db.Decimal(10, 2)
   deliveryProviderData    Json?
   paymentOptionId         Int?
-  paymentOptionName       String?
+  paymentOptionName       PaymentOption?
   paymentData             Json?
   paymentStatus           String?
   totalAmount             Decimal      @db.Decimal(10, 2)
@@ -85,7 +102,7 @@ model Orders {
   currency                String       @default("UAH")
   totalQuantity           Int?
   itemCount               Int
-  status                  OrderStatus @default(RECEIVED)
+  status                  OrderStatus  @default(RECEIVED)
   statusName              String?
   statusGroup             Int?
   cpaCommission           Decimal?     @db.Decimal(10, 2)
@@ -103,12 +120,13 @@ model Orders {
   specialOfferData        Json?
   rawOrderData            Json?
   orderItems              OrderItems[]
+  client                  Clients?     @relation(fields: [clientId], references: [clientId])
+  sales                   Sales[]
 }
 
 model OrderItems {
   orderItemId          String    @id @default(cuid())
   orderId              String
-  externalProductId    String
   productId            String?
   sku                  String?
   productName          String
@@ -123,19 +141,27 @@ model OrderItems {
   rawItemData          Json?
   order                Orders    @relation(fields: [orderId], references: [orderId], onDelete: Cascade)
   product              Products? @relation(fields: [productId], references: [productId])
+  sales                Sales[]
 
-  @@index([externalProductId])
   @@index([sku])
 }
 
 model Sales {
-  saleId      String   @id
+  saleId      String      @id @default(cuid())
   productId   String
-  timestamp   DateTime
+  orderId     String?
+  orderItemId String?
+  timestamp   DateTime    @db.Timestamptz(6)
   quantity    Int
-  unitPrice   Decimal  @db.Decimal(10, 2)
-  totalAmount Decimal  @db.Decimal(10, 2)
-  product     Products @relation(fields: [productId], references: [productId])
+  unitPrice   Decimal     @db.Decimal(10, 2)
+  totalAmount Decimal     @db.Decimal(10, 2)
+  product     Products    @relation(fields: [productId], references: [productId])
+  order       Orders?     @relation(fields: [orderId], references: [orderId])
+  orderItem   OrderItems? @relation(fields: [orderItemId], references: [orderItemId])
+
+  @@index([timestamp])
+  @@index([productId])
+  @@index([orderId])
 }
 
 model Purchases {
@@ -199,4 +225,18 @@ enum OrderStatus {
   DELIVERED
   CANCELED
   RETURN
+}
+
+enum DeliveryOption {
+  NovaPoshta
+  UkrPoshta
+}
+
+enum PaymentOption {
+  ApplePay
+  GooglePay
+  RozetkaPay
+  IBAN
+  PromPayment
+  CashOnDelivery
 }
