@@ -141,6 +141,52 @@ class OrderService {
     return str.length > 0 ? str : null
   }
 
+  /**
+   * Lookup productId from database by SKU or external product ID
+   * This ensures OrderItems get linked to Products table
+   */
+  private async lookupProductId(
+    sku: string | null | undefined,
+    externalProductId: string,
+    source: Source
+  ): Promise<string | null> {
+    try {
+      // First try to find by SKU if available
+      if (sku) {
+        const product = await prisma.products.findFirst({
+          where: { sku },
+          select: { productId: true },
+        })
+        if (product) return product.productId
+      }
+
+      // Then try by external ID in the externalIds JSON field
+      // The externalIds structure is: { prom: "123", rozetka: "456" }
+      const products = await prisma.products.findMany({
+        where: { source },
+        select: { productId: true, externalIds: true },
+      })
+
+      for (const product of products) {
+        const externalIds = product.externalIds as any
+        const marketplaceId =
+          source === Source.prom ? externalIds?.prom : externalIds?.rozetka
+
+        if (marketplaceId === externalProductId) {
+          return product.productId
+        }
+      }
+
+      console.warn(
+        `Product not found for SKU: ${sku}, External ID: ${externalProductId}, Source: ${source}`
+      )
+      return null
+    } catch (error) {
+      console.error('Error looking up product:', error)
+      return null
+    }
+  }
+
   // ============================================
   // HELPER METHODS - ITEM MAPPING
   // ============================================
@@ -148,9 +194,18 @@ class OrderService {
   /**
    * Convert Prom order items to unified format
    */
-  private mapPromItemToUnified(promItem: any): UnifiedOrderItem {
+  private async mapPromItemToUnified(promItem: any): Promise<UnifiedOrderItem> {
+    const sku = promItem.sku || null
+    const externalProductId = promItem.id.toString()
+
+    // Lookup the actual productId
+    const productId = await this.lookupProductId(
+      sku,
+      externalProductId,
+      Source.prom
+    )
     return {
-      productId: null,
+      productId,
       externalProductId: promItem.id.toString(),
       sku: promItem.sku || null,
       name: promItem.name,
@@ -165,9 +220,20 @@ class OrderService {
   /**
    * Convert Rozetka order items to unified format
    */
-  private mapRozetkaItemToUnified(rozetkaItem: any): UnifiedOrderItem {
+  private async mapRozetkaItemToUnified(
+    rozetkaItem: any
+  ): Promise<UnifiedOrderItem> {
+    const sku = rozetkaItem.item?.article || null
+    const externalProductId = rozetkaItem.item_id.toString()
+
+    // Lookup the actual productId
+    const productId = await this.lookupProductId(
+      sku,
+      externalProductId,
+      Source.rozetka
+    )
     return {
-      productId: null,
+      productId,
       externalProductId: rozetkaItem.item_id.toString(),
       sku: rozetkaItem.item?.article || null,
       name: rozetkaItem.item_name,
@@ -182,12 +248,20 @@ class OrderService {
   /**
    * Convert CRM/Frontend order items to unified format
    */
-  private mapCRMItemToUnified(crmItem: any): UnifiedOrderItem {
+  private async mapCRMItemToUnified(crmItem: any): Promise<UnifiedOrderItem> {
     // Calculate total price if not provided
     const unitPrice = Number(crmItem.unitPrice || 0)
     const quantity = Number(crmItem.quantity || 1)
     const totalPrice = Number(crmItem.totalPrice || unitPrice * quantity)
 
+    const sku = crmItem.sku || null
+    const externalProductId = crmItem.productId || crmItem.sku || nanoid(6)
+
+    let productId = crmItem.productId || null
+    if (!productId && sku) {
+      // For CRM orders, check all sources since user might reference existing products
+      productId = await this.lookupProductId(sku, externalProductId, Source.crm)
+    }
     return {
       // For CRM, internal and external ID are often the same, or derived from SKU
       productId: crmItem.productId || null,
@@ -283,7 +357,7 @@ class OrderService {
       itemCount: params.items.length,
       totalQuantity: params.items.reduce((sum, item) => sum + item.quantity, 0),
 
-      status: (params.status as any) || 'RECEIVED',
+      status: (params.status as any) || 'DELIVERED',
       statusName: params.statusName,
       statusGroup: params.statusGroup,
 
@@ -314,6 +388,7 @@ class OrderService {
     baseOrder: BaseOrderCreateInput
   ): Prisma.OrdersCreateInput {
     const { customer, recipient, delivery, payment, financial } = baseOrder
+    console.log('status is: ', baseOrder.status)
 
     return {
       orderId: baseOrder.orderId,
@@ -324,7 +399,7 @@ class OrderService {
       createdAt: baseOrder.createdAt,
       lastModified: baseOrder.lastModified,
 
-      // Customer info      
+      // Customer info
       clientFirstName: customer.clientFirstName,
       clientLastName: customer.clientLastName,
       clientSecondName: customer.clientSecondName,
@@ -339,7 +414,7 @@ class OrderService {
       recipientPhone: recipient?.recipientPhone,
       recipientFullName: recipient?.recipientFullName,
 
-      // Delivery info      
+      // Delivery info
       deliveryOptionName: delivery.deliveryOptionName,
       deliveryAddress: delivery.deliveryAddress,
       deliveryCity: delivery.deliveryCity,
@@ -475,8 +550,11 @@ class OrderService {
       const deliveryCost = promOrder.delivery_cost || 0
 
       // Convert Prom items to unified format
-      const unifiedItems: UnifiedOrderItem[] =
-        promOrder.products?.map((item) => this.mapPromItemToUnified(item)) || []
+       const unifiedItems: UnifiedOrderItem[] = await Promise.all(
+         (promOrder.products || []).map((item) =>
+           this.mapPromItemToUnified(item)
+         )
+       )
 
       const orderItems: OrderItemInput[] = unifiedItems.map((item, index) => {
         const promItem = promOrder.products![index]
@@ -518,7 +596,7 @@ class OrderService {
       }
 
       // Delivery information
-      const deliveryInfo: OrderDeliveryInfo = {        
+      const deliveryInfo: OrderDeliveryInfo = {
         deliveryOptionName: mapToDeliveryOption(
           promOrder.delivery_option?.name
         ),
@@ -653,10 +731,11 @@ class OrderService {
         : 0
 
       // Convert Rozetka items to unified format
-      const unifiedItems: UnifiedOrderItem[] =
-        rozetkaOrder.purchases?.map((item) =>
+      const unifiedItems: UnifiedOrderItem[] = await Promise.all(
+        (rozetkaOrder.purchases || []).map((item) =>
           this.mapRozetkaItemToUnified(item)
-        ) || []
+        )
+      )
 
       // Convert unified items to OrderItemInput
       const orderItems: OrderItemInput[] = unifiedItems.map((item, index) =>
@@ -701,7 +780,7 @@ class OrderService {
       }
 
       // Delivery information
-      const deliveryInfo: OrderDeliveryInfo = {        
+      const deliveryInfo: OrderDeliveryInfo = {
         deliveryOptionName: mapToDeliveryOption(
           rozetkaOrder.delivery?.delivery_service_name
         ),
@@ -850,8 +929,8 @@ class OrderService {
       }
 
       // 1. Convert to Unified Format
-      const unifiedItems: UnifiedOrderItem[] = items.map((item) =>
-        this.mapCRMItemToUnified(item)
+      const unifiedItems: UnifiedOrderItem[] = await Promise.all(
+        items.map((item) => this.mapCRMItemToUnified(item))
       )
 
       // 2. Convert to Database Input using the shared helper
@@ -999,6 +1078,7 @@ class OrderService {
       let created = 0
       let skipped = 0
       let errors = 0
+      console.log('example of order: ', newOrders[0])
 
       for (const promOrder of newOrders) {
         try {

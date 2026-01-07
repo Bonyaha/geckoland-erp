@@ -10,7 +10,6 @@ import {
   SalesStatistics,
 } from '../../types/sales'
 
-
 /**
  * Service to handle Sales table operations
  * Automatically creates Sales records when orders are marked as DELIVERED
@@ -53,9 +52,7 @@ class SalesService {
       // Check if sales records already exist for this order
       const existingSales = await prisma.sales.findMany({
         where: {
-          saleId: {
-            startsWith: `sale_${orderId}`,
-          },
+          orderId: orderId, // Changed: Check by orderId instead of saleId pattern
         },
       })
 
@@ -84,12 +81,15 @@ class SalesService {
           continue
         }
 
-        const saleId = `sale_${orderId}_${item.productId}_${nanoid(6)}`
+        const saleId = `sale_${orderId}_${item.orderItemId}_${nanoid(6)}`
 
+        // FIXED: Added orderId and orderItemId to the create data
         await prisma.sales.create({
           data: {
             saleId,
             productId: item.productId,
+            orderId: orderId, // ✅ Added
+            orderItemId: item.orderItemId, // ✅ Added
             timestamp,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
@@ -167,9 +167,7 @@ class SalesService {
           // Check if sales records already exist for this order
           const existingSales = await prisma.sales.findMany({
             where: {
-              saleId: {
-                startsWith: `sale_${order.orderId}`,
-              },
+              orderId: order.orderId, // Changed: Check by orderId instead of saleId pattern
             },
           })
 
@@ -199,14 +197,17 @@ class SalesService {
               continue
             }
 
-            const saleId = `sale_${order.orderId}_${item.productId}_${nanoid(
+            const saleId = `sale_${order.orderId}_${item.orderItemId}_${nanoid(
               6
             )}`
 
+            // FIXED: Added orderId and orderItemId to the create data
             await prisma.sales.create({
               data: {
                 saleId,
                 productId: item.productId,
+                orderId: order.orderId, // ✅ Added
+                orderItemId: item.orderItemId, // ✅ Added
                 timestamp,
                 quantity: item.quantity,
                 unitPrice: item.unitPrice,
