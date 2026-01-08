@@ -200,14 +200,13 @@ class SalesService {
             const saleId = `sale_${order.orderId}_${item.orderItemId}_${nanoid(
               6
             )}`
-
-            // FIXED: Added orderId and orderItemId to the create data
+            
             await prisma.sales.create({
               data: {
                 saleId,
                 productId: item.productId,
-                orderId: order.orderId, // ✅ Added
-                orderItemId: item.orderItemId, // ✅ Added
+                orderId: order.orderId,
+                orderItemId: item.orderItemId,
                 timestamp,
                 quantity: item.quantity,
                 unitPrice: item.unitPrice,
