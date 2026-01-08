@@ -84,7 +84,7 @@ const ProductRow = ({
   //const [costInput, setCostInput] = useState<string>('')
   const [isCostModalOpen, setIsCostModalOpen] = useState(false)
   const [isQuantityModalOpen, setIsQuantityModalOpen] = useState(false)
-const [isSalesDateModalOpen, setIsSalesDateModalOpen] = useState(false)
+  const [isSalesDateModalOpen, setIsSalesDateModalOpen] = useState(false)
   const [manualCost, setManualCost] = useState<string>('')
   //const [showNotification, setShowNotification] = useState(false)
 
@@ -233,11 +233,11 @@ const [isSalesDateModalOpen, setIsSalesDateModalOpen] = useState(false)
     }
   }
 
-const handleDateSelect = (date: Date) => {
-  console.log('Selected date for sales filter:', date)
-  // TODO: Implement filtering sales by selected date
-  // This would typically trigger a new API call to fetch sales data for the selected date
-}
+  const handleDateSelect = (date: Date) => {
+    console.log('Selected date for sales filter:', date)
+    // TODO: Implement filtering sales by selected date
+    // This would typically trigger a new API call to fetch sales data for the selected date
+  }
 
   // Sales calculations
   const sales = salesData?.totalQuantitySold || 0

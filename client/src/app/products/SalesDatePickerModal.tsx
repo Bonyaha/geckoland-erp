@@ -134,7 +134,7 @@ const SalesDatePickerModal = ({
           </div>
           <button
             onClick={onClose}
-            className='text-white hover:bg-white/20 rounded-full p-2 transition-colors'
+            className='text-white hover:bg-white/20 rounded-full p-2 transition-colors cursor-pointer'
           >
             <X className='w-5 h-5' />
           </button>
@@ -171,7 +171,7 @@ const SalesDatePickerModal = ({
           <div className='flex items-center justify-between mb-4'>
             <button
               onClick={handlePrevMonth}
-              className='p-2 hover:bg-gray-100 rounded-lg transition-colors'
+              className='p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer'
             >
               <svg
                 className='w-5 h-5 text-gray-600'
@@ -194,7 +194,7 @@ const SalesDatePickerModal = ({
 
             <button
               onClick={handleNextMonth}
-              className='p-2 hover:bg-gray-100 rounded-lg transition-colors'
+              className='p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer'
             >
               <svg
                 className='w-5 h-5 text-gray-600'
@@ -225,13 +225,14 @@ const SalesDatePickerModal = ({
           </div>
 
           {/* Calendar Days */}
-          <div className='grid grid-cols-7 gap-1'>
+          <div className='grid grid-cols-7 gap-1 '>
             {calendarDays.map((day, index) => (
-              <div key={index} className='aspect-square'>
+              <div key={index} className='aspect-square '>
                 {day ? (
                   <button
+                    type='button'
                     onClick={() => handleDayClick(day)}
-                    className={`w-full h-full flex items-center justify-center rounded-lg text-sm font-medium transition-all ${
+                    className={`w-full h-full flex items-center justify-center rounded-lg text-sm font-medium transition-all cursor-pointer ${
                       isSelected(day)
                         ? 'bg-blue-500 text-white shadow-lg scale-105'
                         : isToday(day)
@@ -253,13 +254,13 @@ const SalesDatePickerModal = ({
         <div className='px-6 py-4 bg-gray-50 flex gap-3 border-t border-gray-200'>
           <button
             onClick={onClose}
-            className='flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-colors'
+            className='flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer shadow-md'
           >
             Закрити
           </button>
           <button
             onClick={handleConfirm}
-            className='flex-1 px-4 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors shadow-md'
+            className='flex-1 px-4 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors cursor-pointer shadow-md'
           >
             Підтвердити
           </button>
