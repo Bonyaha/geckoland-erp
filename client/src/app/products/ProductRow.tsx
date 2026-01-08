@@ -7,7 +7,8 @@ import {
   Trash2,
   Info,
   Settings,
-  Loader2,  
+  Loader2,
+  Calendar,
 } from 'lucide-react'
 import { formatDateTime } from '@/utils/dateUtils'
 import {
@@ -19,6 +20,7 @@ import {
 import UpdateQuantityModal from './UpdateQuantityModal'
 import UpdateCostPriceModal from './UpdateCostPriceModal'
 import UpdatePriceModal from './UpdatePriceModal'
+import SalesDatePickerModal from './SalesDatePickerModal'
 import { useUpdateProductMutation } from '@/state/api'
 
 // --- Type Definitions ---
@@ -44,8 +46,17 @@ type ProductType = {
   }
 }
 
+type SalesData = {
+  productId: string
+  totalQuantitySold: number
+  totalRevenue: number
+  salesCount: number
+  lastSaleDate?: string
+}
+
 type ProductRowProps = {
   product: ProductType
+  salesData?: SalesData
   isSelected: boolean
   onSelect: (id: string) => void
   onEdit: (id: string) => void
@@ -58,6 +69,7 @@ type ProductRowProps = {
 
 const ProductRow = ({
   product,
+  salesData,
   isSelected,
   onSelect,
   onEdit,
@@ -72,6 +84,7 @@ const ProductRow = ({
   //const [costInput, setCostInput] = useState<string>('')
   const [isCostModalOpen, setIsCostModalOpen] = useState(false)
   const [isQuantityModalOpen, setIsQuantityModalOpen] = useState(false)
+const [isSalesDateModalOpen, setIsSalesDateModalOpen] = useState(false)
   const [manualCost, setManualCost] = useState<string>('')
   //const [showNotification, setShowNotification] = useState(false)
 
@@ -83,12 +96,14 @@ const ProductRow = ({
     product.costPrice !== undefined &&
     product.costPrice > 0
 
-// Handler for marketplace tag clicks
-  const handleMarketplaceClick = (marketplace: 'prom' | 'rozetka', id: string) => {
-    const url = marketplace === 'prom' 
-      ? getPromEditUrl(id) 
-      : getRozetkaProductUrl(id)
-    
+  // Handler for marketplace tag clicks
+  const handleMarketplaceClick = (
+    marketplace: 'prom' | 'rozetka',
+    id: string
+  ) => {
+    const url =
+      marketplace === 'prom' ? getPromEditUrl(id) : getRozetkaProductUrl(id)
+
     openInNewTab(url)
   }
 
@@ -112,7 +127,7 @@ const ProductRow = ({
           }}
           className='px-1.5 py-0.5 bg-purple-600 text-white text-[10px] rounded font-bold cursor-pointer hover:bg-purple-700 transition-colors'
         >
-          Prom          
+          Prom
         </span>
       )
     }
@@ -128,7 +143,7 @@ const ProductRow = ({
           }}
           className='px-1.5 py-0.5 bg-green-600 text-white text-[10px] rounded font-bold cursor-pointer hover:bg-green-700 transition-colors'
         >
-          Rozetka          
+          Rozetka
         </span>
       )
     }
@@ -195,7 +210,7 @@ const ProductRow = ({
         // Trigger notification in parent
         if (onCostUpdate) {
           onCostUpdate(product.name)
-        }        
+        }
       } catch (error) {
         console.error('Failed to update cost price manually:', error)
       }
@@ -218,14 +233,26 @@ const ProductRow = ({
     }
   }
 
-  // Calculations based on mock data
+const handleDateSelect = (date: Date) => {
+  console.log('Selected date for sales filter:', date)
+  // TODO: Implement filtering sales by selected date
+  // This would typically trigger a new API call to fetch sales data for the selected date
+}
+
+  // Sales calculations
+  const sales = salesData?.totalQuantitySold || 0
+  const lastSaleDate = salesData?.lastSaleDate
+    ? new Date(salesData.lastSaleDate).toLocaleDateString('uk-UA', {
+        day: '2-digit',
+        month: '2-digit',
+      })
+    : null
+
+  // Margin calculations
   const cost = product.costPrice ? product.costPrice : 0
-  const sales = Math.floor(Math.random() * 50) // Mock sales
-  //const margin = product.price - cost
   const marginValue = product.price - cost
   const marginPercent =
     product.price > 0 ? (marginValue / product.price) * 100 : 0
-  const salesDate = '06.09' // Mock date
 
   // Utility for formatting currency
   const formatCurrency = (value: number) => value.toFixed(2)
@@ -342,7 +369,7 @@ const ProductRow = ({
                 <Trash2 className='w-4 h-4' />
               </button>
 
-              {/* Marketplace Tags (Mock UI) */}
+              {/* Marketplace Tags */}
               <div className='flex gap-1 ml-auto'>{renderMarketplaceTags}</div>
             </div>
           </div>
@@ -398,10 +425,19 @@ const ProductRow = ({
 
           <span className='text-2xl font-bold text-green-600'>{sales}</span>
 
-          {/* Action Trigger Image 5 */}
-          <button className='text-xs text-blue-500 hover:text-blue-700 hover:underline w-full text-center cursor-pointer'>
-            з {salesDate}
-          </button>
+          {lastSaleDate && (
+            <button
+              onClick={() => setIsSalesDateModalOpen(true)}
+              className='flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 hover:underline w-full justify-center cursor-pointer mt-1'
+            >
+              <Calendar className='w-3 h-3' />
+              <span>з {lastSaleDate}</span>
+            </button>
+          )}
+
+          {!lastSaleDate && sales === 0 && (
+            <span className='text-xs text-gray-400 mt-1'>немає продажів</span>
+          )}
         </div>
       </td>
 
@@ -456,7 +492,7 @@ const ProductRow = ({
         </div>
       </td>
 
-      {/* MARGIN (Blue/Red text, Bold) */}
+      {/* MARGIN */}
       <td className='px-2 py-4 align-top'>
         <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[120px]'>
           <span className='text-xs text-gray-500 font-medium mb-1'>
@@ -470,6 +506,8 @@ const ProductRow = ({
             ({marginPercent.toFixed(0)}%)
           </span>
         </div>
+
+        {/* Modals */}
         <UpdateQuantityModal
           isOpen={isQuantityModalOpen}
           onClose={() => setIsQuantityModalOpen(false)}
@@ -490,6 +528,13 @@ const ProductRow = ({
           onUpdate={handleCostUpdate}
           productName={product.name}
           currentCost={product.costPrice || 0}
+        />
+        <SalesDatePickerModal
+          isOpen={isSalesDateModalOpen}
+          onClose={() => setIsSalesDateModalOpen(false)}
+          onDateSelect={handleDateSelect}
+          productName={product.name}
+          currentSalesCount={sales}
         />
       </td>
     </tr>

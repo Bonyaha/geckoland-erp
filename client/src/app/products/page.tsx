@@ -6,6 +6,7 @@ import {
   useGetProductsQuery,
   useBatchUpdateProductMutation,
   useSyncProductsFromMarketplacesMutation,
+  useGetProductsSalesQuery,
 } from '@/state/api'
 import {
   PlusCircleIcon,
@@ -57,7 +58,7 @@ type CalculationMethod = 'absolute' | 'relative' | 'percent' | 'formula'
 type SortField = 'name' | 'price' | 'stockQuantity' | 'costPrice'
 type SortDirection = 'asc' | 'desc' | null
 
-const Products = () => {  
+const Products = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false)
@@ -74,8 +75,8 @@ const Products = () => {
   const [notificationMessage, setNotificationMessage] = useState<string | null>(
     null
   )
-const [sortField, setSortField] = useState<SortField | null>(null)
-const [sortDirection, setSortDirection] = useState<SortDirection>(null)
+  const [sortField, setSortField] = useState<SortField | null>(null)
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null)
 
   const itemsPerPage = 20
 
@@ -86,6 +87,17 @@ const [sortDirection, setSortDirection] = useState<SortDirection>(null)
     limit: itemsPerPage,
     stockFilter,
   })
+
+  // Get product IDs for sales query
+  const productIds = useMemo(() => {
+    return data?.products?.map((p: any) => p.productId) || []
+  }, [data?.products])
+
+  // Fetch sales data for current products
+  const { data: salesData } = useGetProductsSalesQuery(
+    { productIds },
+    { skip: productIds.length === 0 }
+  )
 
   const [createProduct] = useCreateProductMutation()
   const [batchUpdateProduct, { isLoading: isBatchUpdating }] =
@@ -120,73 +132,72 @@ const [sortDirection, setSortDirection] = useState<SortDirection>(null)
     }
   }, [])
 
-//NEW
- const handleSort = (field: SortField) => {
-   if (sortField === field) {
-     // Cycle through: asc -> desc -> null
-     if (sortDirection === 'asc') {
-       setSortDirection('desc')
-     } else if (sortDirection === 'desc') {
-       setSortDirection(null)
-       setSortField(null)
-     }
-   } else {
-     setSortField(field)
-     setSortDirection('asc')
-   }
- }
-
-const SortIcon = ({ field }: { field: SortField }) => {
-  if (sortField !== field) {
-    return <ArrowUpDown className='w-4 h-4 text-gray-400' />
-  }
-
-  if (sortDirection === 'asc') {
-    return <ChevronUp className='w-4 h-4 text-blue-600' />
-  }
-
-  return <ChevronDown className='w-4 h-4 text-blue-600' />
-}
-
-const sortedProducts = useMemo(() => {
-  if (!data?.products) return []
-
-  const products = [...data.products]
-
-  if (!sortField || !sortDirection) {
-    return products
-  }
-
-  return products.sort((a, b) => {
-    let aValue = a[sortField]
-    let bValue = b[sortField]
-
-    // Handle null/undefined values
-    if (aValue === null || aValue === undefined) aValue = 0
-    if (bValue === null || bValue === undefined) bValue = 0
-
-    // String comparison for name
-    if (sortField === 'name') {
-      const aStr = String(aValue).toLowerCase()
-      const bStr = String(bValue).toLowerCase()
-
+  //NEW
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // Cycle through: asc -> desc -> null
       if (sortDirection === 'asc') {
-        return aStr.localeCompare(bStr, 'uk')
+        setSortDirection('desc')
+      } else if (sortDirection === 'desc') {
+        setSortDirection(null)
+        setSortField(null)
       }
-      return bStr.localeCompare(aStr, 'uk')
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
     }
+  }
 
-    // Numeric comparison for price, stockQuantity, costPrice
-    const aNum = Number(aValue)
-    const bNum = Number(bValue)
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className='w-4 h-4 text-gray-400' />
+    }
 
     if (sortDirection === 'asc') {
-      return aNum - bNum
+      return <ChevronUp className='w-4 h-4 text-blue-600' />
     }
-    return bNum - aNum
-  })
-}, [data?.products, sortField, sortDirection])
 
+    return <ChevronDown className='w-4 h-4 text-blue-600' />
+  }
+
+  const sortedProducts = useMemo(() => {
+    if (!data?.products) return []
+
+    const products = [...data.products]
+
+    if (!sortField || !sortDirection) {
+      return products
+    }
+
+    return products.sort((a, b) => {
+      let aValue = a[sortField]
+      let bValue = b[sortField]
+
+      // Handle null/undefined values
+      if (aValue === null || aValue === undefined) aValue = 0
+      if (bValue === null || bValue === undefined) bValue = 0
+
+      // String comparison for name
+      if (sortField === 'name') {
+        const aStr = String(aValue).toLowerCase()
+        const bStr = String(bValue).toLowerCase()
+
+        if (sortDirection === 'asc') {
+          return aStr.localeCompare(bStr, 'uk')
+        }
+        return bStr.localeCompare(aStr, 'uk')
+      }
+
+      // Numeric comparison for price, stockQuantity, costPrice
+      const aNum = Number(aValue)
+      const bNum = Number(bValue)
+
+      if (sortDirection === 'asc') {
+        return aNum - bNum
+      }
+      return bNum - aNum
+    })
+  }, [data?.products, sortField, sortDirection])
 
   const handleCreateProduct = async (productData: ProductType) => {
     await createProduct(productData)
@@ -394,6 +405,7 @@ const sortedProducts = useMemo(() => {
       setNotificationMessage(null)
     }, 3000)
   }
+
   return (
     <div className='mx-auto pb-5 w-full'>
       {/* TOP SEARCH BAR */}
@@ -691,6 +703,7 @@ const sortedProducts = useMemo(() => {
               <ProductRow
                 key={product.productId}
                 product={product}
+                salesData={salesData?.[product.productId]}
                 isSelected={selectedProducts.includes(product.productId)}
                 onSelect={handleSelectOne}
                 onEdit={handleEdit}

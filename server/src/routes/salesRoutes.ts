@@ -6,6 +6,7 @@ import {
   createSalesForOrder,
   getSalesStats,
   checkSalesHealth,
+  getProductsSalesData,
 } from '../controllers/sales/salesController'
 
 const router = Router()
@@ -39,5 +40,13 @@ router.get('/stats', asyncHandler(getSalesStats))
  * @access  Private
  */
 router.get('/health', asyncHandler(checkSalesHealth))
+
+/**
+ * @route   POST /api/sales/products
+ * @desc    Get aggregated sales data for multiple products
+ * @access  Private
+ * @body    productIds - Array of product IDs
+ */
+router.post('/products', asyncHandler(getProductsSalesData))
 
 export default router

@@ -72,6 +72,18 @@ export interface SyncMarketplacesResult {
   errors: string[]
 }
 
+export interface ProductSalesData {
+  productId: string
+  totalQuantitySold: number
+  totalRevenue: number
+  salesCount: number
+  lastSaleDate?: string
+}
+
+export interface ProductSalesMap {
+  [productId: string]: ProductSalesData
+}
+
 export interface SalesSummary {
   salesSummaryId: string
   totalValue: number
@@ -116,7 +128,7 @@ export interface User {
 export const api = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL }),
   reducerPath: 'api',
-  tagTypes: ['DashboardMetrics', 'Products', 'Users', 'Expenses'],
+  tagTypes: ['DashboardMetrics', 'Products', 'Users', 'Expenses', 'Sales'],
   endpoints: (build) => ({
     getDashboardMetrics: build.query<DashboardMetrics, void>({
       query: () => '/dashboard',
@@ -132,6 +144,14 @@ export const api = createApi({
     getProductStats: build.query<ProductInventoryStats, void>({
       query: () => '/products/stats',
       providesTags: ['Products'],
+    }),
+    getProductsSales: build.query<ProductSalesMap, { productIds: string[] }>({
+      query: ({ productIds }) => ({
+        url: '/sales/products',
+        method: 'POST',
+        body: { productIds },
+      }),
+      providesTags: ['Sales'],
     }),
     createProduct: build.mutation<Product, NewProduct>({
       query: (newProduct) => ({
@@ -193,6 +213,7 @@ export const {
   useGetDashboardMetricsQuery,
   useGetProductsQuery,
   useGetProductStatsQuery,
+  useGetProductsSalesQuery,
   useCreateProductMutation,
   useGetUsersQuery,
   useGetExpensesByCategoryQuery,

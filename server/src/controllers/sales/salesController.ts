@@ -199,3 +199,71 @@ export const checkSalesHealth = async (
     data: healthResponse,
   })
 }
+
+/**
+ * Get sales data for multiple products
+ * Returns aggregated sales information per product
+ * @route POST /api/sales/products
+ * @body productIds - Array of product IDs to get sales data for
+ */
+export const getProductsSalesData = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { productIds } = req.body
+
+  if (!productIds || !Array.isArray(productIds) || productIds.length === 0) {
+    throw ErrorFactory.badRequest('productIds array is required')
+  }
+
+  console.log(`📊 Fetching sales data for ${productIds.length} products`)
+
+  try {
+    // Get aggregated sales data for each product
+    const salesDataPromises = productIds.map(async (productId: string) => {
+      const sales = await prisma.sales.findMany({
+        where: { productId },
+        orderBy: { timestamp: 'desc' },
+      })
+
+      if (sales.length === 0) {
+        return {
+          productId,
+          totalQuantitySold: 0,
+          totalRevenue: 0,
+          salesCount: 0,
+          lastSaleDate: null,
+        }
+      }
+
+      const totalQuantitySold = sales.reduce((sum, sale) => sum + sale.quantity, 0)
+      const totalRevenue = sales.reduce(
+        (sum, sale) => sum + parseFloat(sale.totalAmount.toString()),
+        0
+      )
+
+      return {
+        productId,
+        totalQuantitySold,
+        totalRevenue,
+        salesCount: sales.length,
+        lastSaleDate: sales[0].timestamp.toISOString(),
+      }
+    })
+
+    const salesDataArray = await Promise.all(salesDataPromises)
+
+    // Convert array to map for easier frontend lookup
+    const salesDataMap = salesDataArray.reduce((acc, data) => {
+      acc[data.productId] = data
+      return acc
+    }, {} as Record<string, any>)
+
+    res.status(200).json(salesDataMap)
+  } catch (error: any) {
+    console.error('❌ Error fetching products sales data:', error)
+    throw ErrorFactory.internal(
+      `Failed to fetch sales data: ${error.message || 'Unknown error'}`
+    )
+  }
+}
