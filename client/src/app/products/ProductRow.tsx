@@ -257,12 +257,14 @@ const ProductRow = ({
       return new Date(salesDateFilter).toLocaleDateString('uk-UA', {
         day: '2-digit',
         month: '2-digit',
+        year: 'numeric',
       })
     }
     if (salesData?.lastSaleDate) {
       return new Date(salesData.lastSaleDate).toLocaleDateString('uk-UA', {
         day: '2-digit',
         month: '2-digit',
+        year: 'numeric',
       })
     }
     return null
