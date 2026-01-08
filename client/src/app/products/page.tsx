@@ -77,6 +77,9 @@ const Products = () => {
   )
   const [sortField, setSortField] = useState<SortField | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
+  const [salesDateFilters, setSalesDateFilters] = useState<
+    Record<string, string>
+  >({})
 
   const itemsPerPage = 20
 
@@ -93,9 +96,22 @@ const Products = () => {
     return data?.products?.map((p: any) => p.productId) || []
   }, [data?.products])
 
+  // Get the earliest date filter from all products (if any)
+  const earliestDateFilter = useMemo(() => {
+    const dates = Object.values(salesDateFilters).filter(Boolean)
+    if (dates.length === 0) return undefined
+
+    // Find the earliest date
+    const earliestDate = dates.reduce((earliest, current) => {
+      return new Date(current) < new Date(earliest) ? current : earliest
+    })
+
+    return earliestDate
+  }, [salesDateFilters])
+
   // Fetch sales data for current products
   const { data: salesData } = useGetProductsSalesQuery(
-    { productIds },
+    { productIds, startDate: earliestDateFilter },
     { skip: productIds.length === 0 }
   )
 
@@ -406,6 +422,21 @@ const Products = () => {
     }, 3000)
   }
 
+const handleSalesDateChange = (productId: string, date: Date) => {
+  setSalesDateFilters((prev) => ({
+    ...prev,
+    [productId]: date.toISOString(),
+  }))
+}
+
+const handleClearSalesDate = (productId: string) => {
+  setSalesDateFilters((prev) => {
+    const newFilters = { ...prev }
+    delete newFilters[productId]
+    return newFilters
+  })
+}
+
   return (
     <div className='mx-auto pb-5 w-full'>
       {/* TOP SEARCH BAR */}
@@ -704,12 +735,15 @@ const Products = () => {
                 key={product.productId}
                 product={product}
                 salesData={salesData?.[product.productId]}
+                salesDateFilter={salesDateFilters[product.productId]}
                 isSelected={selectedProducts.includes(product.productId)}
                 onSelect={handleSelectOne}
                 onEdit={handleEdit}
                 onCopy={handleCopy}
                 onDelete={handleDelete}
                 onCostUpdate={handleCostUpdateNotification}
+                onSalesDateChange={handleSalesDateChange}
+                onClearSalesDate={handleClearSalesDate}
               />
             ))}
           </tbody>

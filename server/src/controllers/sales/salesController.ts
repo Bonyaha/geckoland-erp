@@ -205,25 +205,41 @@ export const checkSalesHealth = async (
  * Returns aggregated sales information per product
  * @route POST /api/sales/products
  * @body productIds - Array of product IDs to get sales data for
+ * @body startDate - Optional ISO date string to filter sales from this date onwards
  */
 export const getProductsSalesData = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { productIds } = req.body
+  const { productIds, startDate } = req.body
 
   if (!productIds || !Array.isArray(productIds) || productIds.length === 0) {
     throw ErrorFactory.badRequest('productIds array is required')
   }
 
-  console.log(`📊 Fetching sales data for ${productIds.length} products`)
+  console.log(`📊 Fetching sales data for ${productIds.length} products${startDate ? ` from ${startDate}` : ''}`)
 
   try {
+    // Build the where clause for sales filtering
+    const whereClause: any = {}
+    
+    if (startDate) {
+      const filterDate = new Date(startDate)
+      if (!isNaN(filterDate.getTime())) {
+        whereClause.timestamp = {
+          gte: filterDate,
+        }
+      }
+    }
+
     // Get aggregated sales data for each product
     const salesDataPromises = productIds.map(async (productId: string) => {
       const sales = await prisma.sales.findMany({
-        where: { productId },
-        orderBy: { timestamp: 'desc' },
+        where: { 
+          productId,
+          ...whereClause,
+        },
+        orderBy: { timestamp: 'asc' },
       })
 
       if (sales.length === 0) {

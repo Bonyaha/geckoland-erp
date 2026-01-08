@@ -84,6 +84,11 @@ export interface ProductSalesMap {
   [productId: string]: ProductSalesData
 }
 
+export interface GetProductSalesParams {
+  productIds: string[]
+  startDate?: string
+}
+
 export interface SalesSummary {
   salesSummaryId: string
   totalValue: number
@@ -145,11 +150,11 @@ export const api = createApi({
       query: () => '/products/stats',
       providesTags: ['Products'],
     }),
-    getProductsSales: build.query<ProductSalesMap, { productIds: string[] }>({
-      query: ({ productIds }) => ({
+    getProductsSales: build.query<ProductSalesMap, GetProductSalesParams>({
+      query: ({ productIds, startDate }) => ({
         url: '/sales/products',
         method: 'POST',
-        body: { productIds },
+        body: { productIds, startDate },
       }),
       providesTags: ['Sales'],
     }),

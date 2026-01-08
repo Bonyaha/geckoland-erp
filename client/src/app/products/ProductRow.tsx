@@ -57,12 +57,15 @@ type SalesData = {
 type ProductRowProps = {
   product: ProductType
   salesData?: SalesData
+  salesDateFilter?: string
   isSelected: boolean
   onSelect: (id: string) => void
   onEdit: (id: string) => void
   onCopy: (id: string) => void
   onDelete: (id: string) => void
   onCostUpdate?: (productName: string) => void
+  onSalesDateChange: (productId: string, date: Date) => void
+  onClearSalesDate: (productId: string) => void
 }
 
 // --- Component Definition ---
@@ -70,12 +73,15 @@ type ProductRowProps = {
 const ProductRow = ({
   product,
   salesData,
+  salesDateFilter,
   isSelected,
   onSelect,
   onEdit,
   onCopy,
   onDelete,
   onCostUpdate,
+  onSalesDateChange,
+  onClearSalesDate,
 }: ProductRowProps) => {
   //console.log('product is: ',product);
 
@@ -234,19 +240,33 @@ const ProductRow = ({
   }
 
   const handleDateSelect = (date: Date) => {
-    console.log('Selected date for sales filter:', date)
-    // TODO: Implement filtering sales by selected date
-    // This would typically trigger a new API call to fetch sales data for the selected date
+    onSalesDateChange(product.productId, date)
+    setIsSalesDateModalOpen(false)
+  }
+
+  const handleClearDate = () => {
+    onClearSalesDate(product.productId)
   }
 
   // Sales calculations
   const sales = salesData?.totalQuantitySold || 0
-  const lastSaleDate = salesData?.lastSaleDate
-    ? new Date(salesData.lastSaleDate).toLocaleDateString('uk-UA', {
+
+  // Display the filter date if set, otherwise show the last sale date
+  const displayDate = useMemo(() => {
+    if (salesDateFilter) {
+      return new Date(salesDateFilter).toLocaleDateString('uk-UA', {
         day: '2-digit',
         month: '2-digit',
       })
-    : null
+    }
+    if (salesData?.lastSaleDate) {
+      return new Date(salesData.lastSaleDate).toLocaleDateString('uk-UA', {
+        day: '2-digit',
+        month: '2-digit',
+      })
+    }
+    return null
+  }, [salesDateFilter, salesData?.lastSaleDate])
 
   // Margin calculations
   const cost = product.costPrice ? product.costPrice : 0
@@ -425,18 +445,38 @@ const ProductRow = ({
 
           <span className='text-2xl font-bold text-green-600'>{sales}</span>
 
-          {lastSaleDate && (
+          {displayDate && (
+            <div className='flex flex-col items-center gap-1 mt-1 w-full'>
+              <button
+                onClick={() => setIsSalesDateModalOpen(true)}
+                className='flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 hover:underline w-full justify-center cursor-pointer'
+              >
+                <Calendar className='w-3 h-3' />
+                <span>з {displayDate}</span>
+              </button>
+              {salesDateFilter && (
+                <button
+                  onClick={handleClearDate}
+                  className='text-[10px] text-red-500 hover:text-red-700 hover:underline cursor-pointer'
+                >
+                  Скинути фільтр
+                </button>
+              )}
+            </div>
+          )}
+
+          {!displayDate && sales === 0 && (
+            <span className='text-xs text-gray-400 mt-1'>немає продажів</span>
+          )}
+
+          {!displayDate && sales > 0 && (
             <button
               onClick={() => setIsSalesDateModalOpen(true)}
               className='flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 hover:underline w-full justify-center cursor-pointer mt-1'
             >
               <Calendar className='w-3 h-3' />
-              <span>з {lastSaleDate}</span>
+              <span>Вибрати дату</span>
             </button>
-          )}
-
-          {!lastSaleDate && sales === 0 && (
-            <span className='text-xs text-gray-400 mt-1'>немає продажів</span>
           )}
         </div>
       </td>
@@ -535,6 +575,7 @@ const ProductRow = ({
           onDateSelect={handleDateSelect}
           productName={product.name}
           currentSalesCount={sales}
+          initialDate={salesDateFilter || salesData?.lastSaleDate}
         />
       </td>
     </tr>

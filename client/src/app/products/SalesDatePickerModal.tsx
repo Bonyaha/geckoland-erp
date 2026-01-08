@@ -10,6 +10,7 @@ type SalesDatePickerModalProps = {
   onDateSelect: (date: Date) => void
   productName: string
   currentSalesCount: number
+  initialDate?: string
 }
 
 const SalesDatePickerModal = ({
@@ -18,9 +19,14 @@ const SalesDatePickerModal = ({
   onDateSelect,
   productName,
   currentSalesCount,
+  initialDate,
 }: SalesDatePickerModalProps) => {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
-  const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
+  const [selectedDate, setSelectedDate] = useState<Date>(
+    initialDate ? new Date(initialDate) : new Date()
+  )
+  const [currentMonth, setCurrentMonth] = useState<Date>(
+    initialDate ? new Date(initialDate) : new Date()
+  )
 
   if (!isOpen) return null
 
@@ -225,12 +231,11 @@ const SalesDatePickerModal = ({
           </div>
 
           {/* Calendar Days */}
-          <div className='grid grid-cols-7 gap-1 '>
+          <div className='grid grid-cols-7 gap-1'>
             {calendarDays.map((day, index) => (
-              <div key={index} className='aspect-square '>
+              <div key={index} className='aspect-square'>
                 {day ? (
                   <button
-                    type='button'
                     onClick={() => handleDayClick(day)}
                     className={`w-full h-full flex items-center justify-center rounded-lg text-sm font-medium transition-all cursor-pointer ${
                       isSelected(day)
