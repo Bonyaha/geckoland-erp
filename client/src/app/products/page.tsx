@@ -534,7 +534,7 @@ const handleClearSalesDate = (productId: string) => {
             {currentPage > 1 && (
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
-                className='px-2 py-1 hover:text-blue-600 transition-colors'
+                className='px-2 py-1 hover:text-blue-600 transition-colors cursor-pointer'
               >
                 ←
               </button>
@@ -549,7 +549,7 @@ const handleClearSalesDate = (productId: string) => {
                   currentPage === pageNum
                     ? 'font-semibold text-blue-600'
                     : 'hover:text-blue-600'
-                }`}
+                } cursor-pointer`}
               >
                 {pageNum}
               </button>
@@ -559,7 +559,7 @@ const handleClearSalesDate = (productId: string) => {
             {currentPage < pagination.pages && (
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
-                className='px-2 py-1 hover:text-blue-600 transition-colors'
+                className='px-2 py-1 hover:text-blue-600 transition-colors cursor-pointer'
               >
                 →
               </button>
@@ -774,7 +774,7 @@ const handleClearSalesDate = (productId: string) => {
           {currentPage > 1 && (
             <button
               onClick={() => handlePageChange(currentPage - 1)}
-              className='px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors'
+              className='px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors cursor-pointer'
             >
               Попередня
             </button>
@@ -787,7 +787,7 @@ const handleClearSalesDate = (productId: string) => {
           {currentPage < pagination.pages && (
             <button
               onClick={() => handlePageChange(currentPage + 1)}
-              className='px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors'
+              className='px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors cursor-pointer'
             >
               Наступна
             </button>
