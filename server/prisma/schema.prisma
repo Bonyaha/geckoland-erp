@@ -91,8 +91,7 @@ model Orders {
   deliveryCity            String?
   trackingNumber          String?
   deliveryCost            Decimal?     @db.Decimal(10, 2)
-  deliveryProviderData    Json?
-  paymentOptionId         Int?
+  deliveryProviderData    Json?  
   paymentOptionName       PaymentOption?
   paymentData             Json?
   paymentStatus           String?
@@ -103,21 +102,15 @@ model Orders {
   totalQuantity           Int?
   itemCount               Int
   status                  OrderStatus  @default(RECEIVED)
-  statusName              String?
-  statusGroup             Int?
+  statusName              String?  
   cpaCommission           Decimal?     @db.Decimal(10, 2)
   prosaleCommission       Decimal?     @db.Decimal(10, 2)
   isCommissionRefunded    Boolean      @default(false)
   clientNotes             String?
-  sellerComment           String?
-  sellerComments          Json?
-  utmData                 Json?
+  sellerComment           String?  
   orderSource             String?
   dontCallCustomer        Boolean      @default(false)
-  isViewed                Boolean      @default(false)
-  isFulfillment           Boolean      @default(false)
-  canCopy                 Boolean      @default(false)
-  specialOfferData        Json?
+  isViewed                Boolean      @default(false)  
   rawOrderData            Json?
   orderItems              OrderItems[]
   client                  Clients?     @relation(fields: [clientId], references: [clientId])
@@ -151,15 +144,19 @@ model Sales {
   productId   String
   orderId     String?
   orderItemId String?
-  timestamp   DateTime    @db.Timestamptz(6)
+  createdAt   DateTime    @db.Timestamptz(6)
   quantity    Int
   unitPrice   Decimal     @db.Decimal(10, 2)
   totalAmount Decimal     @db.Decimal(10, 2)
+  sku         String?
+  name        String?
+  source      Source?
+  orderNumber String?
   product     Products    @relation(fields: [productId], references: [productId])
   order       Orders?     @relation(fields: [orderId], references: [orderId])
   orderItem   OrderItems? @relation(fields: [orderItemId], references: [orderItemId])
 
-  @@index([timestamp])
+  @@index([createdAt])
   @@index([productId])
   @@index([orderId])
 }
