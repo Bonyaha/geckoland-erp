@@ -226,7 +226,7 @@ export const getProductsSalesData = async (
     if (startDate) {
       const filterDate = new Date(startDate)
       if (!isNaN(filterDate.getTime())) {
-        whereClause.timestamp = {
+        whereClause.createdAt = {
           gte: filterDate,
         }
       }
@@ -235,11 +235,11 @@ export const getProductsSalesData = async (
     // Get aggregated sales data for each product
     const salesDataPromises = productIds.map(async (productId: string) => {
       const sales = await prisma.sales.findMany({
-        where: { 
+        where: {
           productId,
           ...whereClause,
         },
-        orderBy: { timestamp: 'asc' },
+        orderBy: { createdAt: 'asc' },
       })
 
       if (sales.length === 0) {
@@ -263,7 +263,7 @@ export const getProductsSalesData = async (
         totalQuantitySold,
         totalRevenue,
         salesCount: sales.length,
-        lastSaleDate: sales[0].timestamp.toISOString(),
+        lastSaleDate: sales[0].createdAt.toISOString(),
       }
     })
 

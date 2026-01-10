@@ -129,12 +129,7 @@ class OrderService {
     }
   }
 
-  private normalizeSellerComments(comments: any): Prisma.InputJsonValue {
-    if (!comments) return []
-    if (Array.isArray(comments)) return comments.filter(Boolean)
-    return [comments]
-  }
-
+  
   private normalizeStringOrNull(value: any): string | null {
     if (value === undefined || value === null) return null
     const str = String(value).trim()
@@ -424,7 +419,6 @@ class OrderService {
         delivery.deliveryProviderData as Prisma.InputJsonValue,
 
       // Payment info
-      paymentOptionId: payment.paymentOptionId,
       paymentOptionName: payment.paymentOptionName,
       paymentData: payment.paymentData as Prisma.InputJsonValue,
       paymentStatus: payment.paymentStatus,
@@ -445,25 +439,17 @@ class OrderService {
       // Status
       status: baseOrder.status,
       statusName: baseOrder.statusName,
-      statusGroup: baseOrder.statusGroup,
 
       // Additional info
       clientNotes: baseOrder.clientNotes,
       sellerComment: baseOrder.sellerComment,
-      sellerComments: baseOrder.sellerComments as Prisma.InputJsonValue,
 
       // Marketing
-      utmData: baseOrder.utmData as Prisma.InputJsonValue,
       orderSource: baseOrder.orderSource,
 
       // Flags
       dontCallCustomer: baseOrder.dontCallCustomer,
       isViewed: baseOrder.isViewed,
-      isFulfillment: baseOrder.isFulfillment,
-      canCopy: baseOrder.canCopy,
-
-      // Special offers
-      specialOfferData: baseOrder.specialOfferData as Prisma.InputJsonValue,
 
       // Raw data
       rawOrderData: baseOrder.rawOrderData as Prisma.InputJsonValue,
@@ -521,8 +507,7 @@ class OrderService {
       deliveryAddress: this.normalizeStringOrNull(data.deliveryAddress),
       deliveryCity: this.normalizeStringOrNull(data.deliveryCity),
 
-      sellerComment: this.normalizeStringOrNull(data.sellerComment),
-      sellerComments: this.normalizeSellerComments(data.sellerComments),
+      sellerComment: this.normalizeStringOrNull(data.sellerComment),      
 
       status: data.status || 'RECEIVED',
       statusName: this.normalizeStringOrNull(data.statusName),

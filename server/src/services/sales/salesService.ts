@@ -70,7 +70,7 @@ class SalesService {
 
       // Create sales records for each order item
       const salesIds: string[] = []
-      const timestamp = order.lastModified || order.createdAt
+      const createdAt = order.lastModified || order.createdAt
 
       for (const item of order.orderItems) {
         // Skip items without productId (cannot track sales without product reference)
@@ -90,7 +90,7 @@ class SalesService {
             productId: item.productId,
             orderId: orderId, // ✅ Added
             orderItemId: item.orderItemId, // ✅ Added
-            timestamp,
+            createdAt,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             totalAmount: item.totalPrice,
@@ -183,7 +183,7 @@ class SalesService {
           }
 
           // Create sales records for each item
-          const timestamp = order.lastModified || order.createdAt
+          const createdAt = order.lastModified || order.createdAt
           let createdCount = 0
 
           for (const item of order.orderItems) {
@@ -207,7 +207,7 @@ class SalesService {
                 productId: item.productId,
                 orderId: order.orderId,
                 orderItemId: item.orderItemId,
-                timestamp,
+                createdAt,
                 quantity: item.quantity,
                 unitPrice: item.unitPrice,
                 totalAmount: item.totalPrice,
@@ -275,7 +275,7 @@ class SalesService {
   ): Promise<SalesStatistics> {
     const sales = await prisma.sales.findMany({
       where: {
-        timestamp: {
+        createdAt: {
           gte: startDate,
           lte: endDate,
         },
