@@ -11,11 +11,9 @@ import {
   ChevronUp,
   SlidersHorizontal,
   User,
-  Circle,
 } from 'lucide-react'
 import React, { useState } from 'react'
-import { useAppDispatch, useAppSelector } from '@/app/redux'
-import { setIsSidebarCollapsed } from '@/state'
+import { useAppSelector } from '@/app/redux'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 
@@ -78,11 +76,10 @@ const SidebarLink = ({
 }
 
 const Sidebar = () => {
-  const dispatch = useAppDispatch()
   const isSidebarCollapsed = useAppSelector(
-    (state) => state.global.isSidebarCollapsed
+    (state) => state.global.isSidebarCollapsed,
   )
-  const [isOrdersOpen, setIsOrdersOpen] = useState(true) // Default open to match image
+  const [isOrdersOpen, setIsOrdersOpen] = useState(true)
 
   const sidebarClassNames = `fixed flex flex-col ${
     isSidebarCollapsed ? 'w-0 md:w-20' : 'w-64'
@@ -127,22 +124,48 @@ const Sidebar = () => {
 
         {!isSidebarCollapsed && isOrdersOpen && (
           <div className='ml-12 space-y-1 mt-1 transition-all duration-300'>
-            {[
-              'Всі замовлення',
-              'Прийняті',
-              'В роботі',
-              'Відправлені',
-              'Виконані',
-              'Відмінені',
-            ].map((sub) => (
-              <Link
-                key={sub}
-                href={`/orders/${sub}`}
-                className='block py-2 text-sm text-gray-400 hover:text-white transition-colors'
-              >
-                {sub}
-              </Link>
-            ))}
+            <Link
+              href='/orders'
+              className='block py-2 text-sm text-gray-400 hover:text-white transition-colors'
+            >
+              Всі замовлення
+            </Link>
+            <Link
+              href='/orders?status=RECEIVED'
+              className='block py-2 text-sm text-gray-400 hover:text-white transition-colors'
+            >
+              Нові
+            </Link>
+            <Link
+              href='/orders?status=PREPARED'
+              className='block py-2 text-sm text-gray-400 hover:text-white transition-colors'
+            >
+              Зібрані
+            </Link>
+            <Link
+              href='/orders?status=SHIPPED'
+              className='block py-2 text-sm text-gray-400 hover:text-white transition-colors'
+            >
+              Відправлені
+            </Link>
+            <Link
+              href='/orders?status=DELIVERED'
+              className='block py-2 text-sm text-gray-400 hover:text-white transition-colors'
+            >
+              Доставлені
+            </Link>
+            <Link
+              href='/orders?status=CANCELED'
+              className='block py-2 text-sm text-gray-400 hover:text-white transition-colors'
+            >
+              Скасовані
+            </Link>
+            <Link
+              href='/orders/create'
+              className='block py-2 text-sm text-gray-400 hover:text-white transition-colors'
+            >
+              Створити замовлення
+            </Link>
           </div>
         )}
 
