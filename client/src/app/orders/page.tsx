@@ -51,8 +51,6 @@ const Toast = ({
   )
 }
 
-
-
 const OrdersPage = () => {
   const searchParams = useSearchParams()
   const statusFromUrl = searchParams.get('status') as OrderStatus | null
@@ -258,42 +256,51 @@ const OrdersPage = () => {
     )
   }
 
-  // Unified Helper: Base text + Card Popover on hover
-  // Unified Helper: Base text + Card Popover on hover (Bottom Direction)
+  // Unified Helper: Base text + Card Popover on hover (Bottom Direction)  
   const CopyableItem = ({
     value,
     displayValue,
     className = '',
+    align = 'center', // New prop: 'left' | 'center' | 'right'
   }: {
     value: string
     displayValue?: string
     className?: string
-  }) => (
-    <div className='relative group inline-block'>
-      {/* The visible text/trigger */}
-      <div
-        onClick={(e) => handleCopy(e, value)}
-        className={`cursor-pointer transition-colors group-hover:text-green-600 ${className}`}
-      >
-        {displayValue || value}
-      </div>
+    align?: 'left' | 'center' | 'right'
+  }) => {
+    // Determine positioning based on alignment
+    const positionClasses = {
+      left: 'left-0 origin-left', // Anchors to left, grows right
+      center: 'left-1/2 -translate-x-1/2 origin-center', // Perfectly centered
+      right: 'right-0 origin-right', // Anchors to right, grows left
+    }
 
-      {/* The Card-style popover (Now appearing on the BOTTOM) */}
-      <div className='absolute left-0 top-full mt-2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50 -translate-y-2 group-hover:translate-y-0'>
-        <div className='bg-white border border-gray-300 rounded-xl px-4 py-2 shadow-xl flex flex-col whitespace-nowrap border-t-4 border-t-green-500'>
-          <span className='text-green-600 font-bold text-lg leading-tight'>
-            {value}
-          </span>
-          <span className='text-gray-400 text-[10px] mt-0.5'>
-            Натисніть, щоб скопіювати
-          </span>
+    return (
+      <div className='relative group inline-block'>
+        {/* Visible Text */}
+        <div
+          onClick={(e) => handleCopy(e, value)}
+          className={`cursor-pointer transition-colors group-hover:text-transparent ${className}`}
+        >
+          {displayValue || value}
+        </div>
 
-          {/* Small arrow/tail (Flipped to point UP) */}
-          <div className='absolute -top-2 left-4 w-3 h-3 bg-white border-l border-t border-gray-300 rotate-45'></div>
+        {/* Popover */}
+        <div
+          className={`absolute top-1/2 -translate-y-1/2 ${positionClasses[align]} opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50 min-w-max`}
+        >
+          <div className='bg-white border border-green-200 rounded-xl px-4 py-2 shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex flex-col items-center justify-center whitespace-nowrap'>
+            <span className='text-green-600 font-bold text-lg leading-tight'>
+              {value}
+            </span>
+            <span className='text-gray-400 text-[10px] font-medium mt-0.5 uppercase tracking-wide'>
+              Натисніть, щоб скопіювати
+            </span>
+          </div>
         </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   return (
     <div className='p-6 bg-gray-50 min-h-screen text-base'>
@@ -428,6 +435,7 @@ const OrdersPage = () => {
                           }
                           displayValue={`#${order.orderNumber || order.externalOrderId}`}
                           className='text-base font-bold text-gray-900'
+                          align='left'
                         />
                         <div className='text-xs text-gray-500 mt-1'>
                           {getSourceBadge(order.source)}
@@ -534,6 +542,7 @@ const OrdersPage = () => {
                       value={selectedOrder.orderNumber || ''}
                       displayValue={`#${selectedOrder.orderNumber}`}
                       className='text-2xl font-bold text-green-600'
+                      align='left'
                     />
                   </div>
                   <p className='text-sm text-gray-500 mt-1'>
@@ -542,7 +551,7 @@ const OrdersPage = () => {
                 </div>
                 <button
                   onClick={() => setSelectedOrder(null)}
-                  className='text-2xl text-gray-400 hover:text-gray-600'
+                  className='text-2xl text-gray-400 hover:text-gray-600 cursor-pointer'
                 >
                   ✕
                 </button>
@@ -560,6 +569,7 @@ const OrdersPage = () => {
                   <CopyableItem
                     value={selectedOrder.clientPhone}
                     className='text-lg font-bold text-gray-900'
+                    align='left'
                   />
                   {selectedOrder.clientEmail && (
                     <p className='text-sm text-gray-600 mt-2'>
@@ -578,9 +588,11 @@ const OrdersPage = () => {
                     {selectedOrder.deliveryCity}
                   </p>
                   {selectedOrder.trackingNumber && (
-                    <p className='text-base font-bold text-blue-600 mt-1'>
-                      ТТН: {selectedOrder.trackingNumber}
-                    </p>
+                    <CopyableItem
+                      value={selectedOrder.trackingNumber}
+                      displayValue={`ТТН: ${selectedOrder.trackingNumber}`}
+                      className='text-lg font-bold text-gray-900'
+                    />
                   )}
                 </div>
               </div>
