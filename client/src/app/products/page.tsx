@@ -18,7 +18,7 @@ import {
   ArrowUp,
   Edit3,
   DollarSign,
-  CheckCircle,
+  /* CheckCircle */
   ArrowUpDown,
   ChevronUp,
   ChevronDown,
@@ -30,6 +30,8 @@ import CreateProductModal from './CreateProductModal'
 import ProductStats from './ProductStats'
 import ProductRow from './ProductRow'
 import BatchUpdateModal from './BatchUpdateModal'
+import Toast from '@/app/(components)/Toast'
+import { useToast } from '@/hooks/useToast'
 
 type ProductType = {
   productId: string
@@ -67,14 +69,14 @@ const Products = () => {
     'all' | 'inStock' | 'outOfStock'
   >('all')
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
-  const [showScrollArrow, setShowScrollArrow] = useState(false)
-  const [syncMessage, setSyncMessage] = useState<string | null>(null)
+  const [showScrollArrow, setShowScrollArrow] = useState(false)  
   const [batchMode, setBatchMode] = useState<
     'quantity' | 'price' | 'costPrice'
   >('quantity')
-  const [notificationMessage, setNotificationMessage] = useState<string | null>(
+  /* const [notificationMessage, setNotificationMessage] = useState<string | null>(
     null
-  )
+  ) */
+  const { toast, showToast, hideToast } = useToast()
   const [sortField, setSortField] = useState<SortField | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
   const [salesDateFilters, setSalesDateFilters] = useState<
@@ -112,7 +114,7 @@ const Products = () => {
   // Fetch sales data for current products
   const { data: salesData } = useGetProductsSalesQuery(
     { productIds, startDate: earliestDateFilter },
-    { skip: productIds.length === 0 }
+    { skip: productIds.length === 0 },
   )
 
   const [createProduct] = useCreateProductMutation()
@@ -226,22 +228,14 @@ const Products = () => {
 
   const handleMarketplaceSync = async () => {
     try {
-      setSyncMessage('Синхронізація з маркетплейсами...')
+      showToast('Синхронізація з маркетплейсами...', 'info')
 
       const result = await syncProducts().unwrap()
 
-      // Show success message with details
-      const message = `
-        ✅ Синхронізація завершена!
-        Prom: ${result.productsCreatedFromProm} нових товарів
-        Rozetka: ${result.productsCreatedFromRozetka} нових товарів
-        Всього: ${result.totalCreated} нових товарів
-      `
-
-      setSyncMessage(message)
-
-      // Clear message after 5 seconds
-      setTimeout(() => setSyncMessage(null), 5000)
+      showToast(
+        `✅ Синхронізація завершена! Prom: ${result.productsCreatedFromProm}, Rozetka: ${result.productsCreatedFromRozetka}, Всього: ${result.totalCreated}`,
+        'success',
+      )     
 
       // If there were errors, log them
       if (result.errors.length > 0) {
@@ -249,8 +243,7 @@ const Products = () => {
       }
     } catch (error) {
       console.error('Failed to sync products:', error)
-      setSyncMessage('❌ Помилка синхронізації. Спробуйте ще раз.')
-      setTimeout(() => setSyncMessage(null), 5000)
+      showToast('❌ Помилка синхронізації. Спробуйте ще раз.', 'error')
     }
   }
 
@@ -277,7 +270,7 @@ const Products = () => {
 
   const handleSelectOne = (id: string) => {
     setSelectedProducts((prev) =>
-      prev.includes(id) ? prev.filter((pId) => pId !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((pId) => pId !== id) : [...prev, id],
     )
   }
 
@@ -285,14 +278,14 @@ const Products = () => {
   const handleBatchUpdate = async (
     newValue: number,
     mode: UpdateMode,
-    method: CalculationMethod
+    method: CalculationMethod,
   ) => {
     if (selectedProducts.length === 0) return
 
     try {
       // Get current product data to calculate relative/percent updates
       const currentProducts = data?.products.filter((p: any) =>
-        selectedProducts.includes(p.productId)
+        selectedProducts.includes(p.productId),
       )
 
       if (!currentProducts) return
@@ -306,8 +299,8 @@ const Products = () => {
             mode === 'price'
               ? product.price
               : mode === 'costPrice'
-              ? product.costPrice || 0
-              : product.stockQuantity
+                ? product.costPrice || 0
+                : product.stockQuantity
 
           if (method === 'relative') {
             finalValue = currentValue + newValue
@@ -346,10 +339,16 @@ const Products = () => {
         targetMarketplace: 'all',
       }).unwrap()
 
+      showToast(
+        `Успішно оновлено ${selectedProducts.length} товарів`,
+        'success',
+      )
+
       setSelectedProducts([])
       setIsBatchModalOpen(false)
     } catch (error) {
       console.error('Failed to batch update:', error)
+      showToast('Помилка групового оновлення', 'error')
     }
   }
 
@@ -365,8 +364,8 @@ const Products = () => {
           batchMode === 'price'
             ? p.price
             : batchMode === 'costPrice'
-            ? p.costPrice || 0
-            : p.stockQuantity,
+              ? p.costPrice || 0
+              : p.stockQuantity,
       }))
   }
 
@@ -414,28 +413,23 @@ const Products = () => {
   }
 
   const handleCostUpdateNotification = (productName: string) => {
-    setNotificationMessage(`Собівартість для "${productName}" збережена!`)
-
-    // Auto-hide after 3 seconds
-    setTimeout(() => {
-      setNotificationMessage(null)
-    }, 3000)
+    showToast(`Собівартість для "${productName}" збережена!`, 'success')
   }
 
-const handleSalesDateChange = (productId: string, date: Date) => {
-  setSalesDateFilters((prev) => ({
-    ...prev,
-    [productId]: date.toISOString(),
-  }))
-}
+  const handleSalesDateChange = (productId: string, date: Date) => {
+    setSalesDateFilters((prev) => ({
+      ...prev,
+      [productId]: date.toISOString(),
+    }))
+  }
 
-const handleClearSalesDate = (productId: string) => {
-  setSalesDateFilters((prev) => {
-    const newFilters = { ...prev }
-    delete newFilters[productId]
-    return newFilters
-  })
-}
+  const handleClearSalesDate = (productId: string) => {
+    setSalesDateFilters((prev) => {
+      const newFilters = { ...prev }
+      delete newFilters[productId]
+      return newFilters
+    })
+  }
 
   return (
     <div className='mx-auto pb-5 w-full'>
@@ -470,15 +464,6 @@ const handleClearSalesDate = (productId: string) => {
             }}
           />
         </div>
-
-        {/* SYNC MESSAGE NOTIFICATION */}
-        {syncMessage && (
-          <div className='mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg'>
-            <p className='text-sm text-blue-800 whitespace-pre-line'>
-              {syncMessage}
-            </p>
-          </div>
-        )}
 
         {/* FILTERS & PAGINATION */}
         <div className='flex justify-between items-center mt-2 text-sm text-gray-600 ml-1'>
@@ -756,17 +741,12 @@ const handleClearSalesDate = (productId: string) => {
         )}
       </div>
 
-      {/* SUCCESS NOTIFICATION - Outside the table */}
-      {notificationMessage && (
-        <div className='fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-bottom-4 duration-300'>
-          <div className='bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-gray-700'>
-            <div className='bg-green-500 rounded-full p-1'>
-              <CheckCircle className='w-5 h-5 text-white' />
-            </div>
-            <span className='text-sm font-medium'>{notificationMessage}</span>
-          </div>
-        </div>
-      )}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}        
+      />
 
       {/* BOTTOM PAGINATION (Optional - for better UX) */}
       {pagination.pages > 1 && (

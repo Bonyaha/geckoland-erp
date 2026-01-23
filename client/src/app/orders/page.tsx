@@ -1,7 +1,7 @@
 // client/src/app/orders/page.tsx
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect /* useRef */ } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import {
@@ -23,10 +23,12 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
-  X,
+  /* X */
 } from 'lucide-react'
+import Toast from '@/app/(components)/Toast'
+import { useToast } from '@/hooks/useToast'
 
-const Toast = ({
+/* const Toast = ({
   message,
   isVisible,
   onClose,
@@ -49,7 +51,7 @@ const Toast = ({
       </button>
     </div>
   )
-}
+} */
 
 const OrdersPage = () => {
   const searchParams = useSearchParams()
@@ -64,8 +66,7 @@ const OrdersPage = () => {
   const [sourceFilter, setSourceFilter] = useState<OrderSource | 'all'>('all')
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 
-  const [toast, setToast] = useState({ message: '', isVisible: false })
-  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const { toast, showToast, hideToast } = useToast()  
 
   // Update status filter when URL changes
   useEffect(() => {
@@ -78,24 +79,7 @@ const OrdersPage = () => {
     // Reset to first page when status changes
     setPage(1)
   }, [statusFromUrl])
-
-  // Auto-close toast
-  useEffect(() => {
-    if (toast.isVisible) {
-      if (toastTimeoutRef.current) {
-        clearTimeout(toastTimeoutRef.current)
-      }
-      toastTimeoutRef.current = setTimeout(() => {
-        setToast((prev) => ({ ...prev, isVisible: false }))
-      }, 3000) // Close after 3 seconds
-    }
-    return () => {
-      if (toastTimeoutRef.current) {
-        clearTimeout(toastTimeoutRef.current)
-      }
-    }
-  }, [toast.isVisible])
-
+  
   // API hooks
   const {
     data: ordersData,
@@ -131,12 +115,14 @@ const OrdersPage = () => {
   const handleCheckNewOrders = async () => {
     try {
       const result = await checkNewOrders().unwrap()
-      alert(
-        `Знайдено нових замовлень:\nProm: ${result.prom.created}\nRozetka: ${result.rozetka.created}\nВсього: ${result.totals.created}`,
+      showToast(
+        `Знайдено нових замовлень: Prom: ${result.prom.created}, Rozetka: ${result.rozetka.created}, Всього: ${result.totals.created}`,
+        'success',
       )
       refetch()
     } catch (error) {
       console.error('Failed to check new orders:', error)
+      showToast('Помилка перевірки нових замовлень', 'error')
     }
   }
 
@@ -242,10 +228,7 @@ const OrdersPage = () => {
   const handleCopy = (e: React.MouseEvent, text: string) => {
     e.stopPropagation() // Prevents the Modal from opening
     navigator.clipboard.writeText(text)
-    setToast({
-      message: `Номер ${text} скопійовано`,
-      isVisible: true,
-    })
+    showToast(`Номер ${text} скопійовано`, 'success')
   }
 
   if (isLoading) {
@@ -256,7 +239,7 @@ const OrdersPage = () => {
     )
   }
 
-  // Unified Helper: Base text + Card Popover on hover (Bottom Direction)  
+  // Unified Helper: Base text + Card Popover on hover (Bottom Direction)
   const CopyableItem = ({
     value,
     displayValue,
@@ -307,8 +290,9 @@ const OrdersPage = () => {
       {/* Toast Notification */}
       <Toast
         message={toast.message}
+        type={toast.type}
         isVisible={toast.isVisible}
-        onClose={() => setToast((prev) => ({ ...prev, isVisible: false }))}
+        onClose={hideToast}
       />
       {/* Header */}
       <div className='mb-6'>
