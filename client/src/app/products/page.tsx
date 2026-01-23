@@ -729,6 +729,7 @@ const Products = () => {
                 onCostUpdate={handleCostUpdateNotification}
                 onSalesDateChange={handleSalesDateChange}
                 onClearSalesDate={handleClearSalesDate}
+                showToast={showToast}
               />
             ))}
           </tbody>
@@ -745,7 +746,7 @@ const Products = () => {
         message={toast.message}
         type={toast.type}
         isVisible={toast.isVisible}
-        onClose={hideToast}        
+        onClose={hideToast}
       />
 
       {/* BOTTOM PAGINATION (Optional - for better UX) */}

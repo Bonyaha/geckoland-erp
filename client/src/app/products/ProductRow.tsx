@@ -22,6 +22,7 @@ import UpdateCostPriceModal from './UpdateCostPriceModal'
 import UpdatePriceModal from './UpdatePriceModal'
 import SalesDatePickerModal from './SalesDatePickerModal'
 import { useUpdateProductMutation } from '@/state/api'
+import CopyableItem from '@/app/(components)/CopyableItem'
 
 // --- Type Definitions ---
 // Define the type for category data
@@ -66,6 +67,7 @@ type ProductRowProps = {
   onCostUpdate?: (productName: string) => void
   onSalesDateChange: (productId: string, date: Date) => void
   onClearSalesDate: (productId: string) => void
+  showToast: (message: string, type: 'success' | 'error' | 'info') => void
 }
 
 // --- Component Definition ---
@@ -82,6 +84,7 @@ const ProductRow = ({
   onCostUpdate,
   onSalesDateChange,
   onClearSalesDate,
+  showToast,
 }: ProductRowProps) => {
   //console.log('product is: ',product);
 
@@ -91,8 +94,7 @@ const ProductRow = ({
   const [isCostModalOpen, setIsCostModalOpen] = useState(false)
   const [isQuantityModalOpen, setIsQuantityModalOpen] = useState(false)
   const [isSalesDateModalOpen, setIsSalesDateModalOpen] = useState(false)
-  const [manualCost, setManualCost] = useState<string>('')
-  //const [showNotification, setShowNotification] = useState(false)
+  const [manualCost, setManualCost] = useState<string>('')  
 
   const cardButtonClass =
     'text-xs bg-white border border-gray-200 text-blue-600 px-3 py-1 rounded-md hover:bg-blue-50 transition-colors shadow-sm w-full max-w-[110px] cursor-pointer'
@@ -105,7 +107,7 @@ const ProductRow = ({
   // Handler for marketplace tag clicks
   const handleMarketplaceClick = (
     marketplace: 'prom' | 'rozetka',
-    id: string
+    id: string,
   ) => {
     const url =
       marketplace === 'prom' ? getPromEditUrl(id) : getRozetkaProductUrl(id)
@@ -134,7 +136,7 @@ const ProductRow = ({
           className='px-1.5 py-0.5 bg-purple-600 text-white text-[10px] rounded font-bold cursor-pointer hover:bg-purple-700 transition-colors'
         >
           Prom
-        </span>
+        </span>,
       )
     }
 
@@ -150,7 +152,7 @@ const ProductRow = ({
           className='px-1.5 py-0.5 bg-green-600 text-white text-[10px] rounded font-bold cursor-pointer hover:bg-green-700 transition-colors'
         >
           Rozetka
-        </span>
+        </span>,
       )
     }
 
@@ -167,7 +169,7 @@ const ProductRow = ({
           title='Product settings' // Title works perfectly on a span
         >
           <Settings className='w-4 h-4 text-blue-500 group-hover:text-blue-600 transition-colors' />
-        </span>
+        </span>,
       )
     }
     return tags.length > 0 ? tags : null
@@ -291,7 +293,7 @@ const ProductRow = ({
         <span key='prom'>
           <span className='underline'>Пром</span>:{' '}
           {product.categoryData.prom.name}
-        </span>
+        </span>,
       )
     }
 
@@ -301,7 +303,7 @@ const ProductRow = ({
         <span key='rozetka'>
           <span className='underline'>Розетка</span>:{' '}
           {product.categoryData.rozetka.name}
-        </span>
+        </span>,
       )
     }
 
@@ -310,6 +312,18 @@ const ProductRow = ({
     // Join with a separator (e.g., " / ")
     return items.reduce((prev, curr) => [prev, ' / ', curr])
   }, [product.categoryData])
+
+  const handleCopy = (value: string) => {
+    showToast(`Номер ${value} скопійовано`, 'success')
+
+    /*  if (isLoading) {
+     return (
+       <div className='flex items-center justify-center h-screen'>
+         <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600' />
+       </div>
+     )
+   } */
+  }
 
   return (
     <tr
@@ -350,7 +364,20 @@ const ProductRow = ({
               {product.name}
             </div>
             <div className='text-sm text-gray-500'>
-              ID: {product.productId} | Артикул: {product.sku}
+              <span>ID:</span>
+              <CopyableItem
+                value={product.productId}
+                className='text-sm text-gray-500 font-medium'
+                align='left'
+                onCopy={handleCopy}
+              />
+              <span>| Артикул:</span>
+              <CopyableItem
+                value={product.sku}
+                className='text-sm text-gray-500 font-medium'
+                /* align='left' */
+                onCopy={handleCopy}
+              />
             </div>
             <div className='text-sm text-gray-500'>
               {categoryDisplay && <> Категорія: {categoryDisplay}</>}

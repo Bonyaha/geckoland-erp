@@ -27,31 +27,7 @@ import {
 } from 'lucide-react'
 import Toast from '@/app/(components)/Toast'
 import { useToast } from '@/hooks/useToast'
-
-/* const Toast = ({
-  message,
-  isVisible,
-  onClose,
-}: {
-  message: string
-  isVisible: boolean
-  onClose: () => void
-}) => {
-  if (!isVisible) return null
-
-  return (
-    <div className='fixed top-4 left-1/2 transform -translate-x-1/2 z-[100] flex items-center gap-3 bg-gray-900 text-white px-6 py-3 rounded-xl shadow-2xl animate-in fade-in zoom-in duration-300'>
-      <CheckCircle className='text-green-400' size={20} />
-      <span className='text-sm font-semibold'>{message}</span>
-      <button
-        onClick={onClose}
-        className='ml-2 text-gray-400 hover:text-white transition-colors'
-      >
-        <X size={18} />
-      </button>
-    </div>
-  )
-} */
+import CopyableItem from '@/app/(components)/CopyableItem'
 
 const OrdersPage = () => {
   const searchParams = useSearchParams()
@@ -66,7 +42,7 @@ const OrdersPage = () => {
   const [sourceFilter, setSourceFilter] = useState<OrderSource | 'all'>('all')
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 
-  const { toast, showToast, hideToast } = useToast()  
+  const { toast, showToast, hideToast } = useToast()
 
   // Update status filter when URL changes
   useEffect(() => {
@@ -79,7 +55,7 @@ const OrdersPage = () => {
     // Reset to first page when status changes
     setPage(1)
   }, [statusFromUrl])
-  
+
   // API hooks
   const {
     data: ordersData,
@@ -225,64 +201,16 @@ const OrdersPage = () => {
     )
   })
 
-  const handleCopy = (e: React.MouseEvent, text: string) => {
-    e.stopPropagation() // Prevents the Modal from opening
-    navigator.clipboard.writeText(text)
-    showToast(`Номер ${text} скопійовано`, 'success')
-  }
+  const handleCopy = (value: string) => {
+    showToast(`Номер ${value} скопійовано`, 'success')
 
-  if (isLoading) {
-    return (
-      <div className='flex items-center justify-center h-screen'>
-        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600' />
-      </div>
-    )
-  }
-
-  // Unified Helper: Base text + Card Popover on hover (Bottom Direction)
-  const CopyableItem = ({
-    value,
-    displayValue,
-    className = '',
-    align = 'center', // New prop: 'left' | 'center' | 'right'
-  }: {
-    value: string
-    displayValue?: string
-    className?: string
-    align?: 'left' | 'center' | 'right'
-  }) => {
-    // Determine positioning based on alignment
-    const positionClasses = {
-      left: 'left-0 origin-left', // Anchors to left, grows right
-      center: 'left-1/2 -translate-x-1/2 origin-center', // Perfectly centered
-      right: 'right-0 origin-right', // Anchors to right, grows left
+    if (isLoading) {
+      return (
+        <div className='flex items-center justify-center h-screen'>
+          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600' />
+        </div>
+      )
     }
-
-    return (
-      <div className='relative group inline-block'>
-        {/* Visible Text */}
-        <div
-          onClick={(e) => handleCopy(e, value)}
-          className={`cursor-pointer transition-colors group-hover:text-transparent ${className}`}
-        >
-          {displayValue || value}
-        </div>
-
-        {/* Popover */}
-        <div
-          className={`absolute top-1/2 -translate-y-1/2 ${positionClasses[align]} opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50 min-w-max`}
-        >
-          <div className='bg-white border border-green-200 rounded-xl px-4 py-2 shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex flex-col items-center justify-center whitespace-nowrap'>
-            <span className='text-green-600 font-bold text-lg leading-tight'>
-              {value}
-            </span>
-            <span className='text-gray-400 text-[10px] font-medium mt-0.5 uppercase tracking-wide'>
-              Натисніть, щоб скопіювати
-            </span>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -420,6 +348,7 @@ const OrdersPage = () => {
                           displayValue={`#${order.orderNumber || order.externalOrderId}`}
                           className='text-base font-bold text-gray-900'
                           align='left'
+                          onCopy={handleCopy}
                         />
                         <div className='text-xs text-gray-500 mt-1'>
                           {getSourceBadge(order.source)}
@@ -434,6 +363,7 @@ const OrdersPage = () => {
                     <CopyableItem
                       value={order.clientPhone}
                       className='text-base font-medium text-gray-600 mt-1'
+                      onCopy={handleCopy}
                     />
                   </td>
 
@@ -527,6 +457,7 @@ const OrdersPage = () => {
                       displayValue={`#${selectedOrder.orderNumber}`}
                       className='text-2xl font-bold text-green-600'
                       align='left'
+                      onCopy={handleCopy}
                     />
                   </div>
                   <p className='text-sm text-gray-500 mt-1'>
@@ -554,6 +485,7 @@ const OrdersPage = () => {
                     value={selectedOrder.clientPhone}
                     className='text-lg font-bold text-gray-900'
                     align='left'
+                    onCopy={handleCopy}
                   />
                   {selectedOrder.clientEmail && (
                     <p className='text-sm text-gray-600 mt-2'>
@@ -576,6 +508,7 @@ const OrdersPage = () => {
                       value={selectedOrder.trackingNumber}
                       displayValue={`ТТН: ${selectedOrder.trackingNumber}`}
                       className='text-lg font-bold text-gray-900'
+                      onCopy={handleCopy}
                     />
                   )}
                 </div>
