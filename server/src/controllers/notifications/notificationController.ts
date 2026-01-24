@@ -13,10 +13,17 @@ import OrderService from '../../services/orders/orderService'
 const orderService = new OrderService()
 
 // --- ENHANCED: Paths and data structures ---
-const HISTORY_PATH = path.join(process.cwd(), 'prisma/gmail-history.json')
+const HISTORY_PATH = path.join(
+  process.cwd(),
+  'src',
+  'storage',
+  'gmail-history.json',
+)
 const PROCESSED_MESSAGES_PATH = path.join(
   process.cwd(),
-  'prisma/processed-messages.json'
+  'src',
+  'storage',
+  'processed-messages.json'
 )
 
 // In-memory cache for recently processed messages (prevents duplicates within same session)
@@ -310,6 +317,8 @@ async function processMessage(
  * Main processing function (extracted for queue handling)
  */
 async function processNotification(req: Request): Promise<void> {
+console.log('I am at processNotification function');
+
   await initializeLabelCache()
   if (!labelIdMap) throw new Error('Label cache is not initialized.')
 
@@ -448,6 +457,8 @@ async function processQueue(): Promise<void> {
  * Main controller to handle incoming Pub/Sub notifications from Gmail
  */
 export const handleGmailNotification = async (req: Request, res: Response) => {
+console.log('I am at handleGmailNotification function');
+
   const startTime = Date.now()
 
   // Acknowledge immediately to prevent retries

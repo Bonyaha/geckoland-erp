@@ -9,9 +9,9 @@ import type { OAuth2Client } from 'googleapis-common'
 
 const CREDENTIALS_PATH = path.join(
   process.cwd(),
-  'prisma/google-credentials.json'
+  'src/config/credentials/google-credentials.json',
 )
-const TOKEN_PATH = path.join(process.cwd(), 'prisma/gmail-token.json')
+const TOKEN_PATH = path.join(process.cwd(), 'src/config/credentials/gmail-token.json')
 const SCOPES = [
   'https://www.googleapis.com/auth/gmail.modify',
   'https://www.googleapis.com/auth/gmail.readonly',

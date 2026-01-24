@@ -3,9 +3,9 @@
 		"src/**/*"
 	],
 	"ignore": [
-		"prisma/gmail-history.json",
-		"prisma/gmail-token.json",
-		"prisma/rozetka-token-cache.json",
+		"src/storage/gmail-history.json",
+		"src/config/credentials/gmail-token.json",
+		"src/storage/rozetkaTokenCache.json",
 		"node_modules/**/*",
 		"dist/**/*"
 	],
