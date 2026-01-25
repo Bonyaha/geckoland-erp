@@ -141,10 +141,10 @@ export const config = {
   paths: {
     root: process.cwd(),
     prisma: path.join(process.cwd(), 'prisma'),
-    historyFile: path.join(process.cwd(), 'prisma/gmail-history.json'),
+    historyFile: path.join(process.cwd(), 'src', 'storage', 'gmail-history.json'),
     processedMessagesFile: path.join(
       process.cwd(),
-      'prisma/processed-messages.json'
+      'src', 'storage', 'processed-messages.json'
     ),
   },
 } as const

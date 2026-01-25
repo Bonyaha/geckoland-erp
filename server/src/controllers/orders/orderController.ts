@@ -54,15 +54,16 @@ export const createCRMOrder = async (
     throw ErrorFactory.badRequest('Order data is required')
   }
 
-  const orderId = await orderService.createOrderFromCRM(orderData)
+  const result = await orderService.createOrderFromCRM(orderData)
 
-  if (!orderId) {
+  if (!result.success) {
     // preserve custom error message
     throw ErrorFactory.internal('Failed to create CRM order')
   }
   res.status(201).json({
+    success: true,
     message: 'CRM order created successfully',
-    orderId,
+    orderId: result.orderId,
   })
 }
 
