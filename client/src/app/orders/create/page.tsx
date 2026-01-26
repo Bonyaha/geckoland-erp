@@ -31,7 +31,7 @@ const CreateOrderPage = () => {
     items: [],
     totalAmount: 0,
     currency: 'UAH',
-    notes: '',
+    clientNotes: '',
   })
 
   const [currentItem, setCurrentItem] = useState<OrderItem>({
@@ -43,6 +43,8 @@ const CreateOrderPage = () => {
 
   // Handlers
   const handleInputChange = (field: keyof CreateCRMOrderInput, value: any) => {
+console.log('value is: ', value);
+
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -72,6 +74,17 @@ const CreateOrderPage = () => {
     })
   }
 
+const handleCurrentItemChange = (field: keyof OrderItem, value: string) => {
+  setCurrentItem((prev) => ({
+    ...prev,
+    [field]:
+      field === 'quantity' || field === 'unitPrice'
+        ? value === ''
+          ? ''
+          : Number(value) // Allow empty string in state
+        : value,
+  }))
+}
   const handleRemoveItem = (index: number) => {
     const removedItem = formData.items[index]
     setFormData((prev) => ({
@@ -114,6 +127,7 @@ const CreateOrderPage = () => {
       currency: 'UAH',
     }).format(amount)
   }
+console.log(formData)
 
   return (
     <div className='p-6 bg-gray-50 min-h-screen'>
@@ -295,10 +309,7 @@ const CreateOrderPage = () => {
                     type='text'
                     value={currentItem.productName}
                     onChange={(e) =>
-                      setCurrentItem({
-                        ...currentItem,
-                        productName: e.target.value,
-                      })
+                      handleCurrentItemChange('productName', e.target.value)
                     }
                     className='w-full px-3 py-2 border border-gray-300 rounded-lg'
                     placeholder='Назва товару'
@@ -312,7 +323,7 @@ const CreateOrderPage = () => {
                     type='text'
                     value={currentItem.sku}
                     onChange={(e) =>
-                      setCurrentItem({ ...currentItem, sku: e.target.value })
+                      handleCurrentItemChange('sku', e.target.value)
                     }
                     className='w-full px-3 py-2 border border-gray-300 rounded-lg'
                     placeholder='SKU'
@@ -327,10 +338,7 @@ const CreateOrderPage = () => {
                     min='1'
                     value={currentItem.quantity}
                     onChange={(e) =>
-                      setCurrentItem({
-                        ...currentItem,
-                        quantity: Number(e.target.value),
-                      })
+                      handleCurrentItemChange('quantity', e.target.value)
                     }
                     className='w-full px-3 py-2 border border-gray-300 rounded-lg'
                   />
@@ -345,10 +353,7 @@ const CreateOrderPage = () => {
                     step='0.01'
                     value={currentItem.unitPrice}
                     onChange={(e) =>
-                      setCurrentItem({
-                        ...currentItem,
-                        unitPrice: Number(e.target.value),
-                      })
+                      handleCurrentItemChange('unitPrice', e.target.value)
                     }
                     className='w-full px-3 py-2 border border-gray-300 rounded-lg'
                   />
@@ -403,8 +408,8 @@ const CreateOrderPage = () => {
               Примітки
             </h2>
             <textarea
-              value={formData.notes}
-              onChange={(e) => handleInputChange('notes', e.target.value)}
+              value={formData.clientNotes}
+              onChange={(e) => handleInputChange('clientNotes', e.target.value)}
               rows={4}
               className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
               placeholder='Додаткова інформація про замовлення...'

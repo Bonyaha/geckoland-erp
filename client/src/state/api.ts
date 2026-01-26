@@ -279,7 +279,7 @@ export interface CreateCRMOrderInput {
   }>
   totalAmount: number
   currency?: string
-  notes?: string
+  clientNotes?: string
   status?: string
 }
 

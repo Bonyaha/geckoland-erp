@@ -47,8 +47,8 @@ const recipientInfoSchema = z.object({
 const deliveryInfoSchema = z.object({
   deliveryAddress: z.string().optional(),
   deliveryCity: z.string().optional(),
-  trackingNumber: z.string().optional(),  
-  deliveryOptionName: z.string().optional(),
+  trackingNumber: z.string().optional(),
+  deliveryOptionName: z.enum(DeliveryOption).optional(),
   deliveryCost: z.number().nonnegative().optional(),
   deliveryProviderData: z.any().optional(),
 })
@@ -56,7 +56,7 @@ const deliveryInfoSchema = z.object({
 // Payment info schema
 const paymentInfoSchema = z.object({
   paymentOptionId: z.number().optional(),
-  paymentOptionName: z.string().optional(),
+  paymentOptionName: z.enum(PaymentOption).optional(),
   paymentData: z.any().optional(),
   paymentStatus: z.string().optional(),
 })
@@ -70,10 +70,10 @@ export const getOrdersQuerySchema = z.object({
   query: z.object({
     page: z.coerce.number().int().positive().optional(),
     limit: z.coerce.number().int().positive().max(100).optional(),
-    source: z.nativeEnum(Source).optional(),
+    source: z.enum(Source).optional(),
     status: z.string().optional(),
-    dateFrom: z.string().datetime().optional(),
-    dateTo: z.string().datetime().optional(),
+    dateFrom: z.iso.datetime().optional(),
+    dateTo: z.iso.datetime().optional(),
   }),
 })
 
@@ -96,7 +96,7 @@ export const createCRMOrderSchema = z.object({
       items: z.array(orderItemSchema).min(1, 'At least one item is required'),
       totalAmount: z.number().nonnegative(),
       currency: z.string().default('UAH'),
-      notes: z.string().optional(),
+      clientNotes: z.string().optional(),
       status: z.string().optional(),
     }),
 })

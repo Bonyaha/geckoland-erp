@@ -902,7 +902,7 @@ class OrderService {
         items,
         totalAmount,
         deliveryCost,
-        notes,
+        clientNotes,
         status = 'RECEIVED',
         currency = 'UAH',
       } = frontendOrderData
@@ -992,7 +992,7 @@ class OrderService {
         items: orderItems,
         status,
         statusName: status,
-        clientNotes: notes || null,
+        clientNotes: clientNotes || null,
         rawOrderData: frontendOrderData,
       })
 
