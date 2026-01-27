@@ -33,11 +33,14 @@ export const validate = <Schema extends ZodType<RequestValidation, any, any>>(
     try {
       // 1. Validate the entire request structure against the schema
       // Zod will strip unknown keys (like 'query' if your schema only has 'body')
+console.log('req.query object is: ', JSON.stringify(req.query, null, 2))
+
       const parsed = await schema.parseAsync({
         body: req.body,
         query: req.query,
         params: req.params,
       })
+
 
       // 2. Replace request data with the validated/transformed data
       // We only assign back what was present in the schema result
@@ -55,6 +58,8 @@ export const validate = <Schema extends ZodType<RequestValidation, any, any>>(
 
       return next()
     } catch (error) {
+console.log('error is in validation', error);
+
       if (error instanceof ZodError) {
         const formattedErrors = error.issues.map((err) => ({
           field: err.path.join('.'),

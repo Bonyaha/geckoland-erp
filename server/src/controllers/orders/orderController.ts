@@ -54,12 +54,10 @@ export const createCRMOrder = async (
     throw ErrorFactory.badRequest('Order data is required')
   }
 
+  // Just await the service call - if it throws an AppError, let it bubble up
+  // The error middleware will handle it properly
   const result = await orderService.createOrderFromCRM(orderData)
 
-  if (!result.success) {
-    // preserve custom error message
-    throw ErrorFactory.internal('Failed to create CRM order')
-  }
   res.status(201).json({
     success: true,
     message: 'CRM order created successfully',

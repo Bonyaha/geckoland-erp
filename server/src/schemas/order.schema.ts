@@ -31,7 +31,7 @@ const customerInfoSchema = z.object({
   clientSecondName: z.string().optional(),
   clientFullName: z.string().optional(),
   clientPhone: z.string().min(10, 'Valid phone number is required'),
-  clientEmail: z.email().optional().nullable(),
+  clientEmail: z.email().optional().nullable().or(z.literal('')),
 })
 
 // Recipient info schema (optional fields)

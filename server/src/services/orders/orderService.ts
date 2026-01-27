@@ -129,7 +129,6 @@ class OrderService {
     }
   }
 
-  
   private normalizeStringOrNull(value: any): string | null {
     if (value === undefined || value === null) return null
     const str = String(value).trim()
@@ -143,7 +142,7 @@ class OrderService {
   private async lookupProductId(
     sku: string | null | undefined,
     externalProductId: string,
-    source: Source
+    source: Source,
   ): Promise<string | null> {
     try {
       // First try to find by SKU if available
@@ -173,7 +172,7 @@ class OrderService {
       }
 
       console.warn(
-        `Product not found for SKU: ${sku}, External ID: ${externalProductId}, Source: ${source}`
+        `Product not found for SKU: ${sku}, External ID: ${externalProductId}, Source: ${source}`,
       )
       return null
     } catch (error) {
@@ -197,7 +196,7 @@ class OrderService {
     const productId = await this.lookupProductId(
       sku,
       externalProductId,
-      Source.prom
+      Source.prom,
     )
     return {
       productId,
@@ -216,7 +215,7 @@ class OrderService {
    * Convert Rozetka order items to unified format
    */
   private async mapRozetkaItemToUnified(
-    rozetkaItem: any
+    rozetkaItem: any,
   ): Promise<UnifiedOrderItem> {
     const sku = rozetkaItem.item?.article || null
     const externalProductId = rozetkaItem.item_id.toString()
@@ -225,7 +224,7 @@ class OrderService {
     const productId = await this.lookupProductId(
       sku,
       externalProductId,
-      Source.rozetka
+      Source.rozetka,
     )
     return {
       productId,
@@ -253,13 +252,16 @@ class OrderService {
     const externalProductId = crmItem.productId || crmItem.sku || nanoid(6)
 
     let productId = crmItem.productId || null
+
     if (!productId && sku) {
       // For CRM orders, check all sources since user might reference existing products
       productId = await this.lookupProductId(sku, externalProductId, Source.crm)
     }
+    console.log('I am at mapCRMItemToUnified, productId is: ', productId)
+
     return {
       // For CRM, internal and external ID are often the same, or derived from SKU
-      productId: crmItem.productId || null,
+      productId,
       externalProductId: crmItem.productId || crmItem.sku || nanoid(6),
       sku: crmItem.sku || null,
       name: crmItem.productName,
@@ -276,13 +278,13 @@ class OrderService {
   private convertUnifiedToOrderItem(
     unifiedItem: UnifiedOrderItem,
     orderId: string,
-    rawItemData: any
+    rawItemData: any,
   ): OrderItemInput {
     return {
       orderItemId: `item_${orderId}_${unifiedItem.externalProductId}_${nanoid(
-        6
+        6,
       )}`,
-      productId: unifiedItem.productId,
+      productId: unifiedItem.productId /*  '4654075__n1gMr' */, // TEMP FIX FOR TESTING
       sku: unifiedItem.sku,
       productName: unifiedItem.name,
       productImage: unifiedItem.image,
@@ -380,10 +382,9 @@ class OrderService {
    * This is the final step before database insertion.
    */
   private convertBaseOrderToPrisma(
-    baseOrder: BaseOrderCreateInput
+    baseOrder: BaseOrderCreateInput,
   ): Prisma.OrdersCreateInput {
     const { customer, recipient, delivery, payment, financial } = baseOrder
-    console.log('status is: ', baseOrder.status)
 
     return {
       orderId: baseOrder.orderId,
@@ -465,7 +466,7 @@ class OrderService {
    * Normalize order data fields (e.g., trim strings, format phone numbers)
    */
   private normalizeOrderData(
-    data: Prisma.OrdersCreateInput
+    data: Prisma.OrdersCreateInput,
   ): Prisma.OrdersCreateInput {
     // 1. Process Phones
     const clientPhoneObj = this.normalizePhone(data.clientPhone)
@@ -507,7 +508,7 @@ class OrderService {
       deliveryAddress: this.normalizeStringOrNull(data.deliveryAddress),
       deliveryCity: this.normalizeStringOrNull(data.deliveryCity),
 
-      sellerComment: this.normalizeStringOrNull(data.sellerComment),      
+      sellerComment: this.normalizeStringOrNull(data.sellerComment),
 
       status: data.status || 'RECEIVED',
       statusName: this.normalizeStringOrNull(data.statusName),
@@ -520,143 +521,141 @@ class OrderService {
 
   /**
    * Create orders in database from Prom order data
+   *
+   * @throws {AppError} When order validation fails or database errors occur
+   * @returns {OrderCreationResult} Success result with orderId
    */
   async createOrderFromProm(
-    promOrder: PromOrder
+    promOrder: PromOrder,
   ): Promise<OrderCreationResult> {
     const orderId = `prom_${promOrder.id}_${nanoid(8)}`
 
-    try {
-      if (!promOrder.id)
-        throw ErrorFactory.validationError('Missing Prom order ID')
+    if (!promOrder.id)
+      throw ErrorFactory.validationError('Missing Prom order ID')
 
-      // Parse financial data
-      const totalAmount = this.parsePrice(promOrder.price)
-      const deliveryCost = promOrder.delivery_cost || 0
+    // Parse financial data
+    const totalAmount = this.parsePrice(promOrder.price)
+    const deliveryCost = promOrder.delivery_cost || 0
 
-      // Convert Prom items to unified format
-       const unifiedItems: UnifiedOrderItem[] = await Promise.all(
-         (promOrder.products || []).map((item) =>
-           this.mapPromItemToUnified(item)
-         )
-       )
+    // Convert Prom items to unified format
+    const unifiedItems: UnifiedOrderItem[] = await Promise.all(
+      (promOrder.products || []).map((item) => this.mapPromItemToUnified(item)),
+    )
 
-      const orderItems: OrderItemInput[] = unifiedItems.map((item, index) => {
-        const promItem = promOrder.products![index]
-        const baseItem = this.convertUnifiedToOrderItem(
-          item,
-          promOrder.id.toString(),
-          promItem
-        )
-
-        // Add Prom-specific fields
-        return {
-          ...baseItem,
-          productNameMultilang: promItem.name_multilang,
-          measureUnit: promItem.measure_unit || null,
-          cpaCommission: promItem.cpa_commission
-            ? parseFloat(promItem.cpa_commission.amount)
-            : null,
-        }
-      })
-
-      /* Build structured components */
-
-      // Customer information
-      const customerInfo: OrderCustomerInfo = {
-        clientId: promOrder.client_id?.toString(),
-        clientFirstName: promOrder.client_first_name,
-        clientLastName: promOrder.client_last_name,
-        clientSecondName: promOrder.client_second_name,
-        clientPhone: promOrder.phone,
-        clientEmail: promOrder.email,
-      }
-
-      // Delivery recipient (if different from client)
-      const recipientInfo: OrderRecipientInfo = {
-        recipientFirstName: promOrder.delivery_recipient?.first_name,
-        recipientLastName: promOrder.delivery_recipient?.last_name,
-        recipientSecondName: promOrder.delivery_recipient?.second_name,
-        recipientPhone: promOrder.delivery_recipient?.phone,
-      }
-
-      // Delivery information
-      const deliveryInfo: OrderDeliveryInfo = {
-        deliveryOptionName: mapToDeliveryOption(
-          promOrder.delivery_option?.name
-        ),
-        deliveryAddress: promOrder.delivery_address,
-        deliveryCity:
-          promOrder.delivery_provider_data?.recipient_address.city_name,
-        deliveryCost,
-        deliveryProviderData: promOrder.delivery_provider_data,
-        trackingNumber: promOrder.delivery_provider_data?.declaration_number,
-      }
-
-      // Payment information
-      const paymentInfo: OrderPaymentInfoInternal = {
-        paymentOptionId: promOrder.payment_option?.id,
-        paymentOptionName: mapToPaymentOption(promOrder.payment_option?.name),
-        paymentData: promOrder.payment_data,
-        paymentStatus: promOrder.payment_data?.payment_status,
-      }
-
-      // Financial information
-      const financialInfo: OrderFinancialInfo = {
-        totalAmount,
-        fullPrice: promOrder.full_price
-          ? this.parsePrice(promOrder.full_price)
-          : null,
-        currency: 'UAH',
-        cpaCommission: promOrder.cpa_commission?.amount
-          ? parseFloat(promOrder.cpa_commission.amount)
-          : undefined,
-        prosaleCommission: promOrder.prosale_commission?.value,
-        isCommissionRefunded: promOrder.cpa_commission?.is_refunded || false,
-      }
-
-      //Build BaseOrderCreateInput using helper
-
-      const baseOrderData = this.buildBaseOrderData({
-        orderId,
-        externalOrderId: promOrder.id.toString(),
-        source: Source.prom,
-        orderNumber: promOrder.id.toString(),
-        createdAt: new Date(promOrder.date_created),
-        lastModified: promOrder.date_modified
-          ? new Date(promOrder.date_modified)
-          : null,
-        customer: customerInfo,
-        recipient: recipientInfo,
-        delivery: deliveryInfo,
-        payment: paymentInfo,
-        financial: financialInfo,
-        items: orderItems,
-        statusName: promOrder.status_name,
-        clientNotes: promOrder.client_notes,
-        utmData: promOrder.utm,
-        orderSource: promOrder.source,
-        dontCallCustomer: promOrder.dont_call_customer_back || false,
-        rawOrderData: promOrder,
-      })
-
-      // 5. Convert to Prisma format
-      const prismaOrderData = this.convertBaseOrderToPrisma(baseOrderData)
-      // 2. Normalize before saving
-      const normalizedOrderData = this.normalizeOrderData(prismaOrderData)
-
-      // 3. Save with normalized data
-      const order = await prisma.orders.create({
-        data: normalizedOrderData,
-        include: { orderItems: true },
-      })
-
-      console.log(
-        `Created order ${orderId} with ${order.orderItems.length} items`
+    const orderItems: OrderItemInput[] = unifiedItems.map((item, index) => {
+      const promItem = promOrder.products![index]
+      const baseItem = this.convertUnifiedToOrderItem(
+        item,
+        promOrder.id.toString(),
+        promItem,
       )
 
-      // Prepare orderedProducts for sync
-      /*const orderedProducts: OrderItemForSync[] = order.orderItems.map((item) => ({
+      // Add Prom-specific fields
+      return {
+        ...baseItem,
+        productNameMultilang: promItem.name_multilang,
+        measureUnit: promItem.measure_unit || null,
+        cpaCommission: promItem.cpa_commission
+          ? parseFloat(promItem.cpa_commission.amount)
+          : null,
+      }
+    })
+
+    /* Build structured components */
+
+    // Customer information
+    const customerInfo: OrderCustomerInfo = {
+      clientId: promOrder.client_id?.toString(),
+      clientFirstName: promOrder.client_first_name,
+      clientLastName: promOrder.client_last_name,
+      clientSecondName: promOrder.client_second_name,
+      clientPhone: promOrder.phone,
+      clientEmail: promOrder.email,
+    }
+
+    // Delivery recipient (if different from client)
+    const recipientInfo: OrderRecipientInfo = {
+      recipientFirstName: promOrder.delivery_recipient?.first_name,
+      recipientLastName: promOrder.delivery_recipient?.last_name,
+      recipientSecondName: promOrder.delivery_recipient?.second_name,
+      recipientPhone: promOrder.delivery_recipient?.phone,
+    }
+
+    // Delivery information
+    const deliveryInfo: OrderDeliveryInfo = {
+      deliveryOptionName: mapToDeliveryOption(promOrder.delivery_option?.name),
+      deliveryAddress: promOrder.delivery_address,
+      deliveryCity:
+        promOrder.delivery_provider_data?.recipient_address.city_name,
+      deliveryCost,
+      deliveryProviderData: promOrder.delivery_provider_data,
+      trackingNumber: promOrder.delivery_provider_data?.declaration_number,
+    }
+
+    // Payment information
+    const paymentInfo: OrderPaymentInfoInternal = {
+      paymentOptionId: promOrder.payment_option?.id,
+      paymentOptionName: mapToPaymentOption(promOrder.payment_option?.name),
+      paymentData: promOrder.payment_data,
+      paymentStatus: promOrder.payment_data?.payment_status,
+    }
+
+    // Financial information
+    const financialInfo: OrderFinancialInfo = {
+      totalAmount,
+      fullPrice: promOrder.full_price
+        ? this.parsePrice(promOrder.full_price)
+        : null,
+      currency: 'UAH',
+      cpaCommission: promOrder.cpa_commission?.amount
+        ? parseFloat(promOrder.cpa_commission.amount)
+        : undefined,
+      prosaleCommission: promOrder.prosale_commission?.value,
+      isCommissionRefunded: promOrder.cpa_commission?.is_refunded || false,
+    }
+
+    //Build BaseOrderCreateInput using helper
+
+    const baseOrderData = this.buildBaseOrderData({
+      orderId,
+      externalOrderId: promOrder.id.toString(),
+      source: Source.prom,
+      orderNumber: promOrder.id.toString(),
+      createdAt: new Date(promOrder.date_created),
+      lastModified: promOrder.date_modified
+        ? new Date(promOrder.date_modified)
+        : null,
+      customer: customerInfo,
+      recipient: recipientInfo,
+      delivery: deliveryInfo,
+      payment: paymentInfo,
+      financial: financialInfo,
+      items: orderItems,
+      statusName: promOrder.status_name,
+      clientNotes: promOrder.client_notes,
+      utmData: promOrder.utm,
+      orderSource: promOrder.source,
+      dontCallCustomer: promOrder.dont_call_customer_back || false,
+      rawOrderData: promOrder,
+    })
+
+    // Convert to Prisma format
+    const prismaOrderData = this.convertBaseOrderToPrisma(baseOrderData)
+    //  Normalize before saving
+    const normalizedOrderData = this.normalizeOrderData(prismaOrderData)
+
+    // Save with normalized data
+    const order = await prisma.orders.create({
+      data: normalizedOrderData,
+      include: { orderItems: true },
+    })
+
+    console.log(
+      `Created order ${orderId} with ${order.orderItems.length} items`,
+    )
+
+    // Prepare orderedProducts for sync
+    /*const orderedProducts: OrderItemForSync[] = order.orderItems.map((item) => ({
         productId: item.sku || item.externalProductId,
         orderedQuantity: item.quantity,
       }))
@@ -672,172 +671,159 @@ class OrderService {
         )
       } */
 
-      return {
-        orderId,
-        success: true,
-        message: 'Order created successfully',
-      }
-    } catch (error) {
-      console.error(`Error creating order from Prom data:`, error)
-      const message =
-        error instanceof Error
-          ? error.message
-          : typeof error === 'string'
-          ? error
-          : String(error)
-
-      return {
-        orderId: '',
-        success: false,
-        message,
-      }
+    return {
+      orderId,
+      success: true,
+      message: 'Order created successfully',
     }
   }
 
   /**
    * Create orders in database from Rozetka order data
+   *
+   * @throws {AppError} When order validation fails or database errors occur
+   * @returns {OrderCreationResult} Success result with orderId
    */
   async createOrderFromRozetka(
-    rozetkaOrder: RozetkaOrder
+    rozetkaOrder: RozetkaOrder,
   ): Promise<OrderCreationResult> {
     const orderId = `rozetka_${rozetkaOrder.id}_${nanoid(8)}`
 
-    try {
-      if (!rozetkaOrder.id)
-        throw ErrorFactory.validationError('Missing Rozetka order ID')
+    if (!rozetkaOrder.id)
+      throw ErrorFactory.validationError('Missing Rozetka order ID')
 
-      // Parse financial data - Rozetka returns strings
-      const totalAmount = this.parsePrice(rozetkaOrder.cost)
-      const totalAmountWithDiscount = rozetkaOrder.cost_with_discount
-        ? this.parsePrice(rozetkaOrder.cost_with_discount)
-        : undefined
-      const deliveryCost = rozetkaOrder.delivery?.cost
-        ? this.parsePrice(rozetkaOrder.delivery.cost)
-        : 0
+    // Parse financial data - Rozetka returns strings
+    const totalAmount = this.parsePrice(rozetkaOrder.cost)
+    const totalAmountWithDiscount = rozetkaOrder.cost_with_discount
+      ? this.parsePrice(rozetkaOrder.cost_with_discount)
+      : undefined
+    const deliveryCost = rozetkaOrder.delivery?.cost
+      ? this.parsePrice(rozetkaOrder.delivery.cost)
+      : 0
 
-      // Convert Rozetka items to unified format
-      const unifiedItems: UnifiedOrderItem[] = await Promise.all(
-        (rozetkaOrder.purchases || []).map((item) =>
-          this.mapRozetkaItemToUnified(item)
-        )
-      )
+    // Convert Rozetka items to unified format
+    const unifiedItems: UnifiedOrderItem[] = await Promise.all(
+      (rozetkaOrder.purchases || []).map((item) =>
+        this.mapRozetkaItemToUnified(item),
+      ),
+    )
 
-      // Convert unified items to OrderItemInput
-      const orderItems: OrderItemInput[] = unifiedItems.map((item, index) =>
-        this.convertUnifiedToOrderItem(
-          item,
-          rozetkaOrder.id.toString(),
-          rozetkaOrder.purchases![index]
-        )
-      )
+    // Convert unified items to OrderItemInput
+    const orderItems: OrderItemInput[] = unifiedItems.map((item, index) =>
+      this.convertUnifiedToOrderItem(
+        item,
+        rozetkaOrder.id.toString(),
+        rozetkaOrder.purchases![index],
+      ),
+    )
 
-      // Parse user name from contact_fio (e.g., "Василенко Василь")
-      const contactFio = rozetkaOrder.user?.contact_fio || ''
-      const nameParts = contactFio.split(' ')
-      const clientLastName = nameParts[0] || '' // In Ukrainian format: LastName FirstName
-      const clientFirstName = nameParts[1] || ''
-      const clientSecondName = nameParts[2] || ''
+    // Parse user name from contact_fio (e.g., "Василенко Василь")
+    const contactFio = rozetkaOrder.user?.contact_fio || ''
+    const nameParts = contactFio.split(' ')
+    const clientLastName = nameParts[0] || '' // In Ukrainian format: LastName FirstName
+    const clientFirstName = nameParts[1] || ''
+    const clientSecondName = nameParts[2] || ''
 
-      // Parse dates - Rozetka format: "2019-07-25 11:49:32"
-      const createdAt = new Date(rozetkaOrder.created)
-      const lastModified = new Date(rozetkaOrder.changed)
+    // Parse dates - Rozetka format: "2019-07-25 11:49:32"
+    const createdAt = new Date(rozetkaOrder.created)
+    const lastModified = new Date(rozetkaOrder.changed)
 
-      /* Build structured components */
+    /* Build structured components */
 
-      // Customer information
-      const customerInfo: OrderCustomerInfo = {
-        clientId: rozetkaOrder.user?.id?.toString(),
-        clientFirstName,
-        clientLastName,
-        clientSecondName,
-        clientPhone: rozetkaOrder.user_phone,
-        clientEmail: null, // Rozetka does not provide email
-        clientFullName: contactFio,
-      }
+    // Customer information
+    const customerInfo: OrderCustomerInfo = {
+      clientId: rozetkaOrder.user?.id?.toString(),
+      clientFirstName,
+      clientLastName,
+      clientSecondName,
+      clientPhone: rozetkaOrder.user_phone,
+      clientEmail: null, // Rozetka does not provide email
+      clientFullName: contactFio,
+    }
 
-      // Delivery recipient (if different from client)
-      const recipientInfo: OrderRecipientInfo = {
-        recipientFirstName: rozetkaOrder.delivery?.recipient_first_name || '',
-        recipientLastName: rozetkaOrder.delivery?.recipient_last_name || '',
-        recipientSecondName: rozetkaOrder.delivery?.recipient_second_name || '',
-        recipientFullName: rozetkaOrder.delivery?.recipient_title,
-        recipientPhone: rozetkaOrder.delivery?.recipient_phone,
-      }
+    // Delivery recipient (if different from client)
+    const recipientInfo: OrderRecipientInfo = {
+      recipientFirstName: rozetkaOrder.delivery?.recipient_first_name || '',
+      recipientLastName: rozetkaOrder.delivery?.recipient_last_name || '',
+      recipientSecondName: rozetkaOrder.delivery?.recipient_second_name || '',
+      recipientFullName: rozetkaOrder.delivery?.recipient_title,
+      recipientPhone: rozetkaOrder.delivery?.recipient_phone,
+    }
 
-      // Delivery information
-      const deliveryInfo: OrderDeliveryInfo = {
-        deliveryOptionName: mapToDeliveryOption(
-          rozetkaOrder.delivery?.delivery_service_name
-        ),
-        deliveryCity: rozetkaOrder.delivery?.city?.name,
-        trackingNumber: rozetkaOrder.ttn,
-        deliveryCost,
-        deliveryProviderData:
-          rozetkaOrder.delivery as unknown as Prisma.InputJsonValue,
-      }
+    // Delivery information
+    const deliveryInfo: OrderDeliveryInfo = {
+      deliveryOptionName: mapToDeliveryOption(
+        rozetkaOrder.delivery?.delivery_service_name,
+      ),
+      deliveryCity: rozetkaOrder.delivery?.city?.name,
+      trackingNumber: rozetkaOrder.ttn,
+      deliveryCost,
+      deliveryProviderData:
+        rozetkaOrder.delivery as unknown as Prisma.InputJsonValue,
+    }
 
-      // Payment information
-      const paymentInfo: OrderPaymentInfoInternal = {
-        paymentOptionId: rozetkaOrder.payment?.payment_method_id,
-        paymentOptionName: mapToPaymentOption(
-          rozetkaOrder.payment?.payment_method_name
-        ),
-        paymentStatus: rozetkaOrder.payment?.payment_status.title,
-        paymentData: rozetkaOrder.payment,
-      }
+    // Payment information
+    const paymentInfo: OrderPaymentInfoInternal = {
+      paymentOptionId: rozetkaOrder.payment?.payment_method_id,
+      paymentOptionName: mapToPaymentOption(
+        rozetkaOrder.payment?.payment_method_name,
+      ),
+      paymentStatus: rozetkaOrder.payment?.payment_status.title,
+      paymentData: rozetkaOrder.payment,
+    }
 
-      // Financial information
-      const financialInfo: OrderFinancialInfo = {
-        totalAmount,
-        totalAmountWithDiscount,
-        fullPrice: rozetkaOrder.amount
-          ? this.parsePrice(String(rozetkaOrder.amount))
-          : null,
-        currency: 'UAH',
-      }
+    // Financial information
+    const financialInfo: OrderFinancialInfo = {
+      totalAmount,
+      totalAmountWithDiscount,
+      fullPrice: rozetkaOrder.amount
+        ? this.parsePrice(String(rozetkaOrder.amount))
+        : null,
+      currency: 'UAH',
+    }
 
-      // Build BaseOrderCreateInput
-      const baseOrderData = this.buildBaseOrderData({
-        orderId,
-        externalOrderId: rozetkaOrder.id.toString(),
-        source: Source.rozetka,
-        orderNumber: rozetkaOrder.id.toString(),
-        createdAt: new Date(rozetkaOrder.created),
-        lastModified: new Date(rozetkaOrder.changed),
-        customer: customerInfo,
-        recipient: recipientInfo,
-        delivery: deliveryInfo,
-        payment: paymentInfo,
-        financial: financialInfo,
-        items: orderItems,
-        statusName:
-          rozetkaOrder.status_data?.name_uk || rozetkaOrder.status_data?.name,
-        statusGroup: rozetkaOrder.status_group,
-        clientNotes: rozetkaOrder.comment,
-        sellerComment: rozetkaOrder.current_seller_comment,
-        sellerComments: rozetkaOrder.seller_comment,
-        isViewed: rozetkaOrder.is_viewed,
-        isFulfillment: rozetkaOrder.is_fulfillment || false,
-        canCopy: rozetkaOrder.can_copy || false,
-        rawOrderData: rozetkaOrder,
-      })
+    // Build BaseOrderCreateInput
+    const baseOrderData = this.buildBaseOrderData({
+      orderId,
+      externalOrderId: rozetkaOrder.id.toString(),
+      source: Source.rozetka,
+      orderNumber: rozetkaOrder.id.toString(),
+      createdAt: new Date(rozetkaOrder.created),
+      lastModified: new Date(rozetkaOrder.changed),
+      customer: customerInfo,
+      recipient: recipientInfo,
+      delivery: deliveryInfo,
+      payment: paymentInfo,
+      financial: financialInfo,
+      items: orderItems,
+      statusName:
+        rozetkaOrder.status_data?.name_uk || rozetkaOrder.status_data?.name,
+      statusGroup: rozetkaOrder.status_group,
+      clientNotes: rozetkaOrder.comment,
+      sellerComment: rozetkaOrder.current_seller_comment,
+      sellerComments: rozetkaOrder.seller_comment,
+      isViewed: rozetkaOrder.is_viewed,
+      isFulfillment: rozetkaOrder.is_fulfillment || false,
+      canCopy: rozetkaOrder.can_copy || false,
+      rawOrderData: rozetkaOrder,
+    })
 
-      // Convert and save
-      const prismaOrderData = this.convertBaseOrderToPrisma(baseOrderData)
-      // 2. Normalize before saving
-      const normalizedOrderData = this.normalizeOrderData(prismaOrderData)
-      // 3. Save with normalized data
-      const order = await prisma.orders.create({
-        data: normalizedOrderData,
-        include: { orderItems: true },
-      })
+    // Convert and save
+    const prismaOrderData = this.convertBaseOrderToPrisma(baseOrderData)
+    // 2. Normalize before saving
+    const normalizedOrderData = this.normalizeOrderData(prismaOrderData)
+    // 3. Save with normalized data
+    const order = await prisma.orders.create({
+      data: normalizedOrderData,
+      include: { orderItems: true },
+    })
 
-      console.log(
-        `Created Rozetka order ${orderId} with ${order.orderItems.length} items`
-      )
+    console.log(
+      `Created Rozetka order ${orderId} with ${order.orderItems.length} items`,
+    )
 
-      // Prepare orderedProducts for sync
-      /* const orderedProducts: OrderItemForSync[] = order.orderItems.map((item) => ({
+    // Prepare orderedProducts for sync
+    /* const orderedProducts: OrderItemForSync[] = order.orderItems.map((item) => ({
         productId: item.sku || item.externalProductId,
         orderedQuantity: item.quantity,
       }))
@@ -852,164 +838,220 @@ class OrderService {
         )
       }*/
 
-      return {
-        orderId,
-        success: true,
-        message: 'Order created successfully',
-      }
-    } catch (error: any) {
-      console.error('Error creating order from Rozetka data:', error)
-      const message =
-        error instanceof Error
-          ? error.message
-          : typeof error === 'string'
-          ? error
-          : String(error)
-
-      return {
-        orderId: '',
-        success: false,
-        message,
-      }
+    return {
+      orderId,
+      success: true,
+      message: 'Order created successfully',
     }
   }
 
   /**
    * Function for creating new order in database from data, passed from frontend
    * This can be used for manual order creation or from other sources
+   *
+   * @throws {AppError} When validation fails, product not found, or insufficient inventory
+   * @returns {OrderCreationResult} Success result with orderId
    */
   async createOrderFromCRM(
-    frontendOrderData: CRMOrderCreateInput
+    frontendOrderData: CRMOrderCreateInput,
   ): Promise<OrderCreationResult> {
     const orderId = `crm_${nanoid(8)}`
 
-    try {
-      // Extract and validate key data
-      const {
-        clientFirstName,
-        clientLastName,
-        clientSecondName,
-        clientPhone,
-        clientEmail,
-        recipientFirstName,
-        recipientLastName,
-        recipientSecondName,
-        recipientPhone,
-        deliveryAddress,
-        deliveryCity,
-        deliveryOptionName,
-        paymentOptionName,
-        items,
-        totalAmount,
-        deliveryCost,
-        clientNotes,
-        status = 'RECEIVED',
-        currency = 'UAH',
-      } = frontendOrderData
+    // Extract and validate key data
+    const {
+      clientFirstName,
+      clientLastName,
+      clientSecondName,
+      clientPhone,
+      clientEmail,
+      recipientFirstName,
+      recipientLastName,
+      recipientSecondName,
+      recipientPhone,
+      deliveryAddress,
+      deliveryCity,
+      deliveryOptionName,
+      paymentOptionName,
+      items,
+      totalAmount,
+      deliveryCost,
+      clientNotes,
+      status = 'RECEIVED',
+      currency = 'UAH',
+    } = frontendOrderData
 
-      if (!items || !Array.isArray(items) || items.length === 0) {
-        throw ErrorFactory.validationError(
-          'Order must contain at least one item'
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      throw ErrorFactory.validationError('Order must contain at least one item')
+    }
+
+    // INVENTORY VALIDATION
+    const inventoryIssues: string[] = []
+
+    for (const item of items) {
+      console.log('Validating item:', item)
+
+      let product = null
+
+      // Try to find product by SKU (primary lookup for CRM orders)
+      if (item.sku) {
+        product = await prisma.products.findFirst({
+          where: { sku: item.sku },
+          select: {
+            productId: true,
+            name: true,
+            sku: true,
+            stockQuantity: true,
+          },
+        })
+      }
+
+      // If not found by SKU, try by productId (if provided)
+      if (!product && item.productId) {
+        product = await prisma.products.findUnique({
+          where: { productId: item.productId },
+          select: {
+            productId: true,
+            name: true,
+            sku: true,
+            stockQuantity: true,
+          },
+        })
+      }
+
+      // If still not found, throw error
+      if (!product) {
+        const identifier = item.sku || item.productId || 'unknown'
+        throw ErrorFactory.badRequest(
+          `Product "${item.productName}" (${identifier}) does not exist in inventory. ` +
+            `Please add this product to your inventory before creating the order.`,
         )
       }
 
-      // 1. Convert to Unified Format
-      const unifiedItems: UnifiedOrderItem[] = await Promise.all(
-        items.map((item) => this.mapCRMItemToUnified(item))
+      console.log(`✓ Product found: ${product.name} (${product.sku})`)
+
+      // Check inventory availability
+      const requestedQuantity = Number(item.quantity || 1)
+      const availableQuantity = product.stockQuantity || 0
+
+      if (availableQuantity < requestedQuantity) {
+        inventoryIssues.push(
+          `"${product.name}" (${product.sku}): requested ${requestedQuantity}, but only ${availableQuantity} available`,
+        )
+      }
+    }
+
+    // If there are inventory issues, throw a clear error
+    // This will bubble up to the controller with status 400
+    if (inventoryIssues.length > 0) {
+      throw ErrorFactory.badRequest(
+        `Insufficient inventory for the following products:\n${inventoryIssues.join('\n')}`,
       )
+    }
 
-      // 2. Convert to Database Input using the shared helper
-      const orderItems: OrderItemInput[] = unifiedItems.map((item, index) => {
-        const baseItem = this.convertUnifiedToOrderItem(
-          item,
-          orderId,
-          items[index]
-        )
-        return {
-          ...baseItem,
-          measureUnit: items[index].measureUnit || null,
-        }
-      })
+    // ============================================
+    // PROCEED WITH ORDER CREATION
+    // ============================================
 
-      /* Build structured components */
+    // 1. Convert to Unified Format
+    const unifiedItems: UnifiedOrderItem[] = await Promise.all(
+      items.map((item) => this.mapCRMItemToUnified(item)),
+    )
 
-      // Customer information
-      const customerInfo: OrderCustomerInfo = {
-        clientFirstName: clientFirstName || '',
-        clientLastName: clientLastName || '',
-        clientSecondName: clientSecondName || '',
-        clientPhone: clientPhone || '',
-        clientEmail,
-        clientFullName: `${clientLastName || ''} ${clientFirstName || ''} ${
-          clientSecondName || ''
-        }`.trim(),
-      }
-
-      // Delivery recipient (if different from client)
-      const recipientInfo: OrderRecipientInfo = {
-        recipientFirstName,
-        recipientLastName,
-        recipientSecondName,
-        recipientPhone,
-        recipientFullName: `${recipientLastName || ''} ${
-          recipientFirstName || ''
-        } ${recipientSecondName || ''}`.trim(),
-      }
-
-      // Delivery information
-      const deliveryInfo: OrderDeliveryInfo = {
-        deliveryAddress,
-        deliveryCity,
-        deliveryOptionName: mapToDeliveryOption(deliveryOptionName),
-        deliveryCost: deliveryCost ? new Decimal(deliveryCost) : new Decimal(0),
-      }
-
-      // Payment information
-      const paymentInfo: OrderPaymentInfoInternal = {
-        paymentOptionName: mapToPaymentOption(paymentOptionName),
-      }
-
-      // Financial information
-      const financialInfo: OrderFinancialInfo = {
-        totalAmount: new Decimal(totalAmount),
-        fullPrice: new Decimal(totalAmount),
-        currency,
-      }
-
-      // Build BaseOrderCreateInput
-      const baseOrderData = this.buildBaseOrderData({
+    // 2. Convert to Database Input using the shared helper
+    const orderItems: OrderItemInput[] = unifiedItems.map((item, index) => {
+      const baseItem = this.convertUnifiedToOrderItem(
+        item,
         orderId,
-        externalOrderId: orderId,
-        source: Source.crm,
-        orderNumber: orderId,
-        createdAt: new Date(),
-        lastModified: new Date(),
-        customer: customerInfo,
-        recipient: recipientInfo,
-        delivery: deliveryInfo,
-        payment: paymentInfo,
-        financial: financialInfo,
-        items: orderItems,
-        status,
-        statusName: status,
-        clientNotes: clientNotes || null,
-        rawOrderData: frontendOrderData,
-      })
-
-      // 2. Normalize and save
-      const prismaOrderData = this.convertBaseOrderToPrisma(baseOrderData)
-      const normalizedOrderData = this.normalizeOrderData(prismaOrderData)
-
-      const order = await prisma.orders.create({
-        data: normalizedOrderData,
-        include: { orderItems: true },
-      })
-
-      console.log(
-        `Created CRM order ${orderId} with ${order.orderItems.length} items`
+        items[index],
       )
-      // Prepare orderedProducts for sync
-      /* const orderedProducts: OrderItemForSync[] = order.orderItems.map((item) => ({
+      const { productId, ...itemData } = baseItem
+
+      return {
+        ...(productId ? { productId } : {}), // Only include if not null
+        ...itemData,
+        measureUnit: items[index].measureUnit || null,
+      }
+    })
+
+    /* Build structured components */
+
+    // Customer information
+    const customerInfo: OrderCustomerInfo = {
+      clientFirstName: clientFirstName || '',
+      clientLastName: clientLastName || '',
+      clientSecondName: clientSecondName || '',
+      clientPhone: clientPhone || '',
+      clientEmail,
+      clientFullName: `${clientLastName || ''} ${clientFirstName || ''} ${
+        clientSecondName || ''
+      }`.trim(),
+    }
+
+    // Delivery recipient (if different from client)
+    const recipientInfo: OrderRecipientInfo = {
+      recipientFirstName,
+      recipientLastName,
+      recipientSecondName,
+      recipientPhone,
+      recipientFullName: `${recipientLastName || ''} ${
+        recipientFirstName || ''
+      } ${recipientSecondName || ''}`.trim(),
+    }
+
+    // Delivery information
+    const deliveryInfo: OrderDeliveryInfo = {
+      deliveryAddress,
+      deliveryCity,
+      deliveryOptionName: mapToDeliveryOption(deliveryOptionName),
+      deliveryCost: deliveryCost ? new Decimal(deliveryCost) : new Decimal(0),
+    }
+
+    // Payment information
+    const paymentInfo: OrderPaymentInfoInternal = {
+      paymentOptionName: mapToPaymentOption(paymentOptionName),
+    }
+
+    // Financial information
+    const financialInfo: OrderFinancialInfo = {
+      totalAmount: new Decimal(totalAmount),
+      fullPrice: new Decimal(totalAmount),
+      currency,
+    }
+
+    // Build BaseOrderCreateInput
+    const baseOrderData = this.buildBaseOrderData({
+      orderId,
+      externalOrderId: orderId,
+      source: Source.crm,
+      orderNumber: orderId,
+      createdAt: new Date(),
+      lastModified: new Date(),
+      customer: customerInfo,
+      recipient: recipientInfo,
+      delivery: deliveryInfo,
+      payment: paymentInfo,
+      financial: financialInfo,
+      items: orderItems,
+      status,
+      statusName: status,
+      clientNotes: clientNotes || null,
+      rawOrderData: frontendOrderData,
+    })
+
+    // 2. Normalize and save
+    const prismaOrderData = this.convertBaseOrderToPrisma(baseOrderData)
+    const normalizedOrderData = this.normalizeOrderData(prismaOrderData)
+
+    const order = await prisma.orders.create({
+      data: normalizedOrderData,
+      include: { orderItems: true },
+    })
+
+    console.log(
+      `Created CRM order ${orderId} with ${order.orderItems.length} items`,
+    )
+    // Prepare orderedProducts for sync
+    /* const orderedProducts: OrderItemForSync[] = order.orderItems.map((item) => ({
         productId: item.sku || item.externalProductId,
         orderedQuantity: item.quantity,
       }))
@@ -1024,25 +1066,10 @@ class OrderService {
         )
       }*/
 
-      return {
-        orderId,
-        success: true,
-        message: 'Order created successfully',
-      }
-    } catch (error: any) {
-      console.error('Error creating CRM order:', error)
-      const message =
-        error instanceof Error
-          ? error.message
-          : typeof error === 'string'
-          ? error
-          : String(error)
-
-      return {
-        orderId: '',
-        success: false,
-        message,
-      }
+    return {
+      orderId,
+      success: true,
+      message: 'Order created successfully',
     }
   }
 
@@ -1077,7 +1104,7 @@ class OrderService {
 
           if (existingOrder) {
             console.log(
-              `Order ${promOrder.id} already exists in database. Skipping.`
+              `Order ${promOrder.id} already exists in database. Skipping.`,
             )
             skipped++
             continue
@@ -1090,7 +1117,7 @@ class OrderService {
           if (error instanceof AppError) {
             console.error(
               `Skipped Prom order ${promOrder.id} due to AppError:`,
-              error.message
+              error.message,
             )
           } else {
             console.error(`Failed to create Prom order ${promOrder.id}:`, error)
@@ -1100,7 +1127,7 @@ class OrderService {
       }
 
       console.log(
-        `Prom orders processing complete: ${created} created, ${skipped} skipped, ${errors} errors`
+        `Prom orders processing complete: ${created} created, ${skipped} skipped, ${errors} errors`,
       )
       return { created, skipped, errors }
     } catch (error: any) {
@@ -1139,7 +1166,7 @@ class OrderService {
 
           if (existingOrder) {
             console.log(
-              `Rozetka order ${rozetkaOrder.id} already exists in database. Skipping.`
+              `Rozetka order ${rozetkaOrder.id} already exists in database. Skipping.`,
             )
             skipped++
             continue
@@ -1151,12 +1178,12 @@ class OrderService {
           if (error instanceof AppError) {
             console.error(
               `Skipped Rozetka order ${rozetkaOrder.id} due to AppError:`,
-              error.message
+              error.message,
             )
           } else {
             console.error(
               `Failed to create Rozetka order ${rozetkaOrder.id}:`,
-              error
+              error,
             )
           }
           errors++
@@ -1164,7 +1191,7 @@ class OrderService {
       }
 
       console.log(
-        `Rozetka orders: ${created} created, ${skipped} skipped, ${errors} errors`
+        `Rozetka orders: ${created} created, ${skipped} skipped, ${errors} errors`,
       )
       return { created, skipped, errors }
     } catch (error: any) {
@@ -1258,7 +1285,7 @@ class OrderService {
         console.log(
           `📈 Order ${
             currentOrder.orderNumber || orderId
-          } status changed to DELIVERED, creating sales records...`
+          } status changed to DELIVERED, creating sales records...`,
         )
 
         // Create sales records asynchronously (don't block the response)
@@ -1269,21 +1296,21 @@ class OrderService {
               console.log(
                 `✅ Successfully created ${
                   result.salesIds.length
-                } sales records for order ${result.orderNumber || orderId}`
+                } sales records for order ${result.orderNumber || orderId}`,
               )
             } else {
               console.error(
                 `⚠️ Failed to create sales records for order ${
                   result.orderNumber || orderId
                 }:`,
-                result.error
+                result.error,
               )
             }
           })
           .catch((error) => {
             console.error(
               `❌ Error in sales creation process for order ${orderId}:`,
-              error
+              error,
             )
           })
       }

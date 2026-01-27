@@ -287,7 +287,7 @@ console.log(formData)
                   <option value=''>Оберіть спосіб</option>
                   <option value='CashOnDelivery'>Післяплата</option>
                   <option value='IBAN'>IBAN</option>
-                  <option value='PromPayment'>Pром оплата</option>
+                  <option value='PromPayment'>Пром оплата</option>
                   <option value='RozetkaPay'>Rozetka Pay</option>
                 </select>
               </div>
@@ -430,7 +430,7 @@ console.log(formData)
               <button
                 type='submit'
                 disabled={isLoading || formData.items.length === 0}
-                className='flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                className='flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
               >
                 <Save size={20} />
                 {isLoading ? 'Створення...' : 'Створити замовлення'}
