@@ -39,7 +39,7 @@ export const getProductQuantity = async (productId: string) => {
 
 export const updatePromProduct = async (
   productId: string,
-  updates: PromUpdateParams
+  updates: PromUpdateParams,
 ) => {
   // Validate and convert productId to number
   const numericId = parseInt(productId, 10)
@@ -84,7 +84,7 @@ export const updatePromProduct = async (
     if (response.data.error) {
       console.error(
         `❌ Prom API returned error for product ${productId}:`,
-        response.data.error
+        response.data.error,
       )
       throw new Error(`Prom API error: ${response.data.error}`)
     }
@@ -93,10 +93,10 @@ export const updatePromProduct = async (
     if (response.data.errors && response.data.errors.length > 0) {
       console.error(
         `❌ Prom API returned errors for product ${productId}:`,
-        response.data.errors
+        response.data.errors,
       )
       throw new Error(
-        `Prom API errors: ${JSON.stringify(response.data.errors)}`
+        `Prom API errors: ${JSON.stringify(response.data.errors)}`,
       )
     }
 
@@ -108,7 +108,7 @@ export const updatePromProduct = async (
     } else if (response.data.processed_ids) {
       console.error(
         `❌ Product ${productId} was not in processed_ids:`,
-        response.data.processed_ids
+        response.data.processed_ids,
       )
       throw new Error(`Product ${productId} was not processed successfully`)
     }
@@ -119,18 +119,18 @@ export const updatePromProduct = async (
         data: error.response.data,
       })
       throw new Error(
-        `HTTP ${error.response.status}: ${JSON.stringify(error.response.data)}`
+        `HTTP ${error.response.status}: ${JSON.stringify(error.response.data)}`,
       )
     } else if (error.message) {
       console.error(
         `❌ Error updating Prom product ${productId}:`,
-        error.message
+        error.message,
       )
       throw error
     } else {
       console.error(
         `❌ Unknown error updating Prom product ${productId}:`,
-        error
+        error,
       )
       throw new Error('Unknown error occurred')
     }
@@ -138,7 +138,7 @@ export const updatePromProduct = async (
 }
 
 export const updateMultiplePromProducts = async (
-  products: PromBatchUpdate[]
+  products: PromBatchUpdate[],
 ) => {
   const headers = getHeaders()
   const url = `${productBaseUrl}/edit`
@@ -185,7 +185,7 @@ export const updateMultiplePromProducts = async (
     if (response.data.error) {
       console.error(
         `❌ Prom API returned error for batch update:`,
-        response.data.error
+        response.data.error,
       )
       throw new Error(`Prom API error: ${response.data.error}`)
     }
@@ -194,10 +194,10 @@ export const updateMultiplePromProducts = async (
     if (response.data.errors && response.data.errors.length > 0) {
       console.error(
         `❌ Prom API returned errors for batch update:`,
-        response.data.errors
+        response.data.errors,
       )
       throw new Error(
-        `Prom API errors: ${JSON.stringify(response.data.errors)}`
+        `Prom API errors: ${JSON.stringify(response.data.errors)}`,
       )
     }
 
@@ -206,7 +206,7 @@ export const updateMultiplePromProducts = async (
       const processedIds = response.data.processed_ids.map(String)
       const requestedIds = products.map((p) => p.productId)
       const notProcessed = requestedIds.filter(
-        (id) => !processedIds.includes(id)
+        (id) => !processedIds.includes(id),
       )
 
       if (notProcessed.length > 0) {
@@ -224,7 +224,7 @@ export const updateMultiplePromProducts = async (
         data: error.response.data,
       })
       throw new Error(
-        `HTTP ${error.response.status}: ${JSON.stringify(error.response.data)}`
+        `HTTP ${error.response.status}: ${JSON.stringify(error.response.data)}`,
       )
     } else if (error.message) {
       console.error(`❌ Error updating batch of Prom products:`, error.message)
@@ -248,7 +248,7 @@ export class PromClient {
 
   private async makeRequest<T>(
     endpoint: string,
-    params: Record<string, any> = {}
+    params: Record<string, any> = {},
   ): Promise<T> {
     try {
       const response = await axios.get(`${this.baseUrl}${endpoint}`, {
@@ -271,24 +271,23 @@ export class PromClient {
       limit?: number
       sort_dir?: string
       last_id?: number
-    } = {}
+    } = {},
   ): Promise<PromOrdersResponse> {
     return this.makeRequest<PromOrdersResponse>('/orders/list', params)
   }
 
   async getNewOrders(): Promise<PromOrder[]> {
-    const [pendingOrdersResponse, paidOrdersResponse, receivedOrdersResponse] =
-      await Promise.all([
-        this.getOrders({ status: 'pending' }),
-        this.getOrders({ status: 'paid' }),
-        this.getOrders({ status: 'received', limit: 1 }),
-      ])
+    const [pendingOrdersResponse, paidOrdersResponse] = await Promise.all([
+      this.getOrders({ status: 'pending' }),
+      this.getOrders({ status: 'paid' }),
+    ])
 
     const pendingOrders = pendingOrdersResponse.orders || []
     const paidOrders = paidOrdersResponse.orders || []
-    const receivedOrders = receivedOrdersResponse.orders || []
 
-    return [...pendingOrders, ...paidOrders, ...receivedOrders]
+    return [...pendingOrders, ...paidOrders]
+
+    /* FOR TESTING ONLY */
     /* const ordersResponse = await this.getOrders({ status: 'delivered' })
     return ordersResponse.orders || [] */
   }
@@ -304,7 +303,7 @@ function handleAxiosError(error: any, context: string): never {
       data: error.response.data,
     })
     throw new Error(
-      `HTTP ${error.response.status}: ${JSON.stringify(error.response.data)}`
+      `HTTP ${error.response.status}: ${JSON.stringify(error.response.data)}`,
     )
   } else if (error.message) {
     console.error(`❌ Error ${context}:`, error.message)

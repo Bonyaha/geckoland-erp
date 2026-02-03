@@ -25,11 +25,13 @@ import {
  * Maps marketplace delivery option names to DeliveryOption enum
  * Handles various formats from Prom, Rozetka, and CRM
  */
-export function mapToDeliveryOption(deliveryName: string | undefined | null): DeliveryOption | null {
+export function mapToDeliveryOption(
+  deliveryName: string | undefined | null,
+): DeliveryOption | null {
   if (!deliveryName) return null
-  
+
   const normalized = deliveryName.toLowerCase().trim()
-  
+
   // Map variations to enum values
   if (normalized.includes('nova') || normalized.includes('нова')) {
     return DeliveryOption.NovaPoshta
@@ -37,7 +39,7 @@ export function mapToDeliveryOption(deliveryName: string | undefined | null): De
   if (normalized.includes('ukr') || normalized.includes('укр')) {
     return DeliveryOption.UkrPoshta
   }
-  
+
   // If no match, return null (will be stored as null in DB)
   console.warn(`Unknown delivery option: ${deliveryName}`)
   return null
@@ -47,11 +49,13 @@ export function mapToDeliveryOption(deliveryName: string | undefined | null): De
  * Maps marketplace payment option names to PaymentOption enum
  * Handles various formats from Prom, Rozetka, and CRM
  */
-export function mapToPaymentOption(paymentName: string | undefined | null): PaymentOption | null {
+export function mapToPaymentOption(
+  paymentName: string | undefined | null,
+): PaymentOption | null {
   if (!paymentName) return null
-  
+
   const normalized = paymentName.toLowerCase().trim()
-  
+
   // Map variations to enum values
   if (normalized.includes('apple') || normalized === 'apple pay') {
     return PaymentOption.ApplePay
@@ -59,29 +63,39 @@ export function mapToPaymentOption(paymentName: string | undefined | null): Paym
   if (normalized.includes('google') || normalized === 'google pay') {
     return PaymentOption.GooglePay
   }
-  if (normalized.includes('rozetka') || normalized.includes('розетка')) {
+  if (
+    normalized.includes('rozetka') ||
+    normalized.includes('розетка') ||
+    normalized === 'Оплата карткою Visa/MasterCard (RozetkaPay)'
+  ) {
     return PaymentOption.RozetkaPay
   }
-  if (normalized === 'iban' || normalized.includes('ібан')) {
+  if (
+    normalized === 'оплата на рахунок продавця' ||
+    normalized.includes('передплата на картку продавця') ||
+    normalized.includes('на счет') || //
+    normalized.includes('на рахунок') || //
+    normalized === 'оплата на счет' || //
+    normalized === 'оплата по реквизитам'
+  ) {
     return PaymentOption.IBAN
   }
   if (normalized.includes('пром') || normalized.includes('prom')) {
     return PaymentOption.PromPayment
   }
   if (
-    normalized.includes('післяплата') || 
+    normalized.includes('післяплата') ||
     normalized.includes('pislyaplata') ||
     normalized.includes('cash on delivery') ||
     normalized.includes('cod')
   ) {
     return PaymentOption.CashOnDelivery
   }
-  
+
   // If no match, return null
   console.warn(`Unknown payment option: ${paymentName}`)
   return null
 }
-
 
 /**
  * ============================================
@@ -268,8 +282,10 @@ export interface OrderFinancialInfo {
  * Internal delivery info with enum type for deliveryOptionName
  * This is used internally in the service, after mapping from string
  */
-export interface OrderDeliveryInfo
-  extends Omit<OrderDeliveryInfoInput, 'deliveryCost' | 'deliveryOptionName'> {  
+export interface OrderDeliveryInfo extends Omit<
+  OrderDeliveryInfoInput,
+  'deliveryCost' | 'deliveryOptionName'
+> {
   deliveryCost?: Decimal | number
   deliveryOptionName?: DeliveryOption | null
 }
@@ -278,7 +294,10 @@ export interface OrderDeliveryInfo
  * Internal payment info with enum type for paymentOptionName
  * This is used internally in the service, after mapping from string
  */
-export interface OrderPaymentInfoInternal extends Omit<OrderPaymentInfo, 'paymentOptionName'> {
+export interface OrderPaymentInfoInternal extends Omit<
+  OrderPaymentInfo,
+  'paymentOptionName'
+> {
   paymentOptionName?: PaymentOption | null
 }
 
@@ -305,8 +324,9 @@ export interface OrderPaymentInfoInternal extends Omit<OrderPaymentInfo, 'paymen
  * }
  */
 export interface OrderItemInput {
-  orderItemId: string  
+  orderItemId: string
   productId?: string | null
+  product?: { connect: { productId: string } }
   sku?: string | null
   productName: string
   productNameMultilang?: any
@@ -742,7 +762,7 @@ export function isOrderSource(value: string): value is Source {
  * })
  */
 export function createOrderFilterParams(
-  params: Partial<OrderFilterParams> = {}
+  params: Partial<OrderFilterParams> = {},
 ): Required<OrderFilterParams> {
   return {
     page: params.page || 1,

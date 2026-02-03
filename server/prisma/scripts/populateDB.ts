@@ -174,12 +174,12 @@ async function enrichAndInsertProducts(products: any[]): Promise<void> {
     console.log('No products to process.')
     return
   }
+  //console.log('example of a product: ', products[0])
 
   console.log('Enriching products with Prom IDs and categories...')
   let enrichedProducts = await enrichWithPromIds(products)
-  enrichedProducts = await enrichWithPromCategoriesAndDescription(
-    enrichedProducts
-  )
+  enrichedProducts =
+    await enrichWithPromCategoriesAndDescription(enrichedProducts)
 
   console.log('Enriching products with Rozetka IDs and categories...')
   enrichedProducts = await enrichWithRozetkaIds(enrichedProducts)
@@ -194,7 +194,12 @@ async function enrichAndInsertProducts(products: any[]): Promise<void> {
       : null,
   }))
 
-  console.log('Clearing the Products table...')
+  //console.log('Clearing the Products table...')
+  // Delete related records first to avoid foreign key constraint violations
+  await prisma.sales.deleteMany({})
+  await prisma.purchases.deleteMany({})
+  await prisma.orderItems.deleteMany({})
+  // Now safe to delete products
   await prisma.products.deleteMany({})
 
   console.log('Populating the Products table...')
@@ -210,9 +215,10 @@ async function enrichAndInsertProducts(products: any[]): Promise<void> {
       console.error(`Failed to insert product ${product.name}:`, error)
     }
   }
+  //console.log('example of product id:', enrichedProducts[0]?.productId)  
 
   console.log(
-    `✅ Successfully inserted ${successCount} out of ${enrichedProducts.length} products.`
+    `✅ Successfully inserted ${successCount} out of ${enrichedProducts.length} products.`,
   )
 }
 

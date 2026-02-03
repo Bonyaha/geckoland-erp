@@ -280,11 +280,10 @@ class OrderService {
     orderId: string,
     rawItemData: any,
   ): OrderItemInput {
-    return {
+    const baseItem = {
       orderItemId: `item_${orderId}_${unifiedItem.externalProductId}_${nanoid(
         6,
       )}`,
-      productId: unifiedItem.productId /*  '4654075__n1gMr' */, // TEMP FIX FOR TESTING
       sku: unifiedItem.sku,
       productName: unifiedItem.name,
       productImage: unifiedItem.image,
@@ -293,6 +292,21 @@ class OrderService {
       unitPrice: new Decimal(unifiedItem.unitPrice),
       totalPrice: new Decimal(unifiedItem.totalPrice),
       rawItemData: rawItemData as unknown as Prisma.InputJsonValue,
+    }
+    if (unifiedItem.productId) {
+      // Product found in database - use Prisma relation
+      return {
+        ...baseItem,
+        product: {
+          connect: { productId: unifiedItem.productId },
+        },
+      }
+    } else {
+      // Product not found - use external ID as fallback
+      return {
+        ...baseItem,
+        productId: unifiedItem.externalProductId,
+      }
     }
   }
 

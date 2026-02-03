@@ -8,6 +8,7 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import crypto from 'crypto'
 import OrderService from '../../services/orders/orderService'
+import { gmailLogger } from '../../utils/gmailLogger'
 
 // Initialize order service
 const orderService = new OrderService()
@@ -23,7 +24,7 @@ const PROCESSED_MESSAGES_PATH = path.join(
   process.cwd(),
   'src',
   'storage',
-  'processed-messages.json'
+  'processed-messages.json',
 )
 
 // In-memory cache for recently processed messages (prevents duplicates within same session)
@@ -65,7 +66,7 @@ async function saveProcessedMessages(messageIds: Set<string>): Promise<void> {
   const recentIds = idsArray.slice(-1000)
   await fs.writeFile(
     PROCESSED_MESSAGES_PATH,
-    JSON.stringify({ messageIds: recentIds })
+    JSON.stringify({ messageIds: recentIds }),
   )
 }
 
@@ -103,23 +104,25 @@ async function saveLastHistoryId(historyId: string): Promise<void> {
 async function initializeLabelCache() {
   if (labelIdMap) return
 
-  console.log('Initializing label cache...')
+  gmailLogger.info('Initializing label cache...')
   const labelNames = ['Prom', 'Rozetka', 'Personal']
   const auth = await authorize()
   const gmail = google.gmail({ version: 'v1', auth })
   const response = await gmail.users.labels.list({ userId: 'me' })
   const labels = response.data.labels || []
 
+  //console.log('labels from response are: ', labels);
+
   labelIdMap = new Map()
   for (const labelName of labelNames) {
     const foundLabel = labels.find(
-      (l) => l.name?.toLowerCase() === labelName.toLowerCase()
+      (l) => l.name?.toLowerCase() === labelName.toLowerCase(),
     )
     if (foundLabel && foundLabel.id) {
       labelIdMap.set(foundLabel.id, labelName)
     }
   }
-  console.log('Label cache initialized:', labelIdMap)
+  gmailLogger.info('Label cache initialized', Object.fromEntries(labelIdMap))
 }
 
 /**
@@ -146,7 +149,7 @@ function getPartText(part: gmail_v1.Schema$MessagePart): string {
  */
 function createMessageFingerprint(
   subject: string,
-  internalDate: string
+  internalDate: string,
 ): string {
   return crypto
     .createHash('md5')
@@ -159,52 +162,52 @@ function createMessageFingerprint(
  */
 async function handleNewOrder(marketplace: string): Promise<void> {
   try {
-    console.log(`Processing new order from ${marketplace}...`)
+    gmailLogger.orderProcessingStart(marketplace)
 
     if (marketplace === 'Prom') {
       const result = await orderService.fetchAndCreateNewPromOrders()
-      console.log(`Prom order processing result:`, result)
+      gmailLogger.orderProcessingResult(marketplace, result)
 
       if (result.created > 0) {
-        console.log(
-          `Successfully created ${result.created} new orders from Prom`
+        gmailLogger.info(
+          `Successfully created ${result.created} new orders from Prom`,
         )
       } else if (result.skipped > 0) {
-        console.log(
-          `All ${result.skipped} orders from Prom were already processed`
+        gmailLogger.info(
+          `All ${result.skipped} orders from Prom were already processed`,
         )
       }
 
       if (result.errors > 0) {
-        console.warn(
-          `${result.errors} errors occurred while processing Prom orders`
+        gmailLogger.warn(
+          `${result.errors} errors occurred while processing Prom orders`,
         )
       }
     } else if (marketplace === 'Rozetka') {
       const result = await orderService.fetchAndCreateNewRozetkaOrders()
-      console.log(`Rozetka order processing result:`, result)
+      gmailLogger.orderProcessingResult(marketplace, result)
 
       if (result.created > 0) {
-        console.log(
-          `Successfully created ${result.created} new orders from Rozetka`
+        gmailLogger.info(
+          `Successfully created ${result.created} new orders from Rozetka`,
         )
       } else if (result.skipped > 0) {
-        console.log(
-          `All ${result.skipped} orders from Rozetka were already processed`
+        gmailLogger.info(
+          `All ${result.skipped} orders from Rozetka were already processed`,
         )
       }
 
       if (result.errors > 0) {
-        console.warn(
-          `${result.errors} errors occurred while processing Rozetka orders`
+        gmailLogger.warn(
+          `${result.errors} errors occurred while processing Rozetka orders`,
         )
       }
     } else if (marketplace === 'Website') {
-      console.log('Website order processing not yet implemented')
+      gmailLogger.info('Website order processing not yet implemented')
       // TODO: Implement Website order processing
     }
   } catch (error) {
-    console.error(`Error processing new order from ${marketplace}:`, error)
+    gmailLogger.orderProcessingError(marketplace, error)
     throw error
   }
 }
@@ -215,11 +218,13 @@ async function handleNewOrder(marketplace: string): Promise<void> {
 async function processMessage(
   messageId: string,
   gmail: gmail_v1.Gmail,
-  processedMessages: Set<string>
+  processedMessages: Set<string>,
 ): Promise<boolean> {
+  gmailLogger.debug(`Processing message ${messageId}`)
+
   // Check if already processed (both in-memory and persistent cache)
   if (recentlyProcessed.has(messageId) || processedMessages.has(messageId)) {
-    console.log(`Message ${messageId} already processed. Skipping.`)
+    gmailLogger.messageSkipped(messageId, 'Already processed')
     return false
   }
 
@@ -242,57 +247,93 @@ async function processMessage(
     recentlyProcessed.has(fingerprint) ||
     processedMessages.has(fingerprint)
   ) {
-    console.log(
-      `Message with fingerprint ${fingerprint} already processed. Skipping.`
-    )
+    gmailLogger.messageSkipped(messageId, 'Duplicate fingerprint.Skipping.')
     return false
   }
 
   // Check if the message has one of our target labels
   const relevantLabelId = labelIds.find((id) => labelIdMap!.has(id))
   if (!relevantLabelId) {
-    console.log(
-      `Message ${messageId} does not have a relevant label. Skipping.`
-    )
+    gmailLogger.messageSkipped(messageId, 'No relevant label. Skipping.')
     return false
   }
 
   const labelName = labelIdMap!.get(relevantLabelId)
-  console.log(`Processing new email with label: "${labelName}"`)
+  gmailLogger.messageProcessingStart(messageId, labelName!)
 
   const body = getPartText(payload)
 
-  console.log('--- New Email Received ---')
-  console.log('Subject:', subject)
-  console.log('Body Snippet:', body.substring(0, 200) + '...')
-  console.log('--------------------------')
+  // Log full email details
+  gmailLogger.emailDetails({
+    messageId,
+    labelName: labelName!,
+    subject,
+    body,
+    internalDate: internalDate || undefined,
+  })
 
   // Business logic for different labels
   if (labelName === 'Prom') {
-    if (
-      subject.includes('У вас нове замовлення') &&
-      body.includes('У вас нове замовлення')
-    ) {
-      console.log('New order detected on Prom! Processing...')
+    // Pattern 1: "+1 замовлення [NUMBER] вже в кабінеті"
+    const pattern1 = /\+\d+\s+замовлення\s+\d+\s+вже\s+в\s+кабінеті/i.test(
+      subject,
+    )
+
+    // Pattern 2: "У вас нове замовлення"
+    const pattern2 = subject.includes('У вас нове замовлення')
+
+    // Body should contain order reference
+    const bodyHasOrder =
+      body.includes('У вас нове замовлення') ||
+      body.includes('замовлення') ||
+      /замовлення\s+\d+/i.test(body)
+
+    const matched = (pattern1 || pattern2) && bodyHasOrder
+
+    // Log pattern matching results
+    gmailLogger.patternMatch('Prom', {
+      pattern1,
+      pattern2,
+      bodyHasOrder,
+      matched,
+    })
+    if (matched) {
+      gmailLogger.orderDetected('Prom', subject)
+
       try {
         await handleNewOrder('Prom')
       } catch (error) {
-        console.error('Failed to process new Prom order:', error)
-        // Don't throw error to continue processing other messages
+        gmailLogger.orderProcessingError('Prom', error)
       }
+    } else {
+      gmailLogger.info(
+        'Prom email received but not identified as order notification',
+      )
     }
   } else if (labelName === 'Rozetka') {
-    if (
-      subject.includes('Надійшло замовлення №') &&
-      body.includes('Вам надійшло нове замовлення!')
-    ) {
-      console.log('New order detected on Rozetka! Processing...')
+    const subjectMatch = subject.includes('Надійшло замовлення №')
+    const bodyMatch = body.includes('Вам надійшло нове замовлення!')
+    const matched = subjectMatch && bodyMatch
+
+    // Log pattern matching results
+    gmailLogger.patternMatch('Rozetka', {
+      pattern1: subjectMatch,
+      pattern2: bodyMatch,
+      matched,
+    })
+
+    if (matched) {
+      gmailLogger.orderDetected('Rozetka', subject)
       try {
         await handleNewOrder('Rozetka')
       } catch (error) {
-        console.error('Failed to process new Rozetka order:', error)
+        gmailLogger.orderProcessingError('Rozetka', error)
         // Don't throw error to continue processing other messages
       }
+    } else {
+      gmailLogger.info(
+        'Rozetka email received but not identified as order notification',
+      )
     }
   }
 
@@ -302,7 +343,7 @@ async function processMessage(
     id: messageId,
     requestBody: { removeLabelIds: ['UNREAD'] },
   })
-  console.log(`Message ${messageId} marked as read.`)
+  gmailLogger.messageMarkedRead(messageId)
 
   // Mark as processed (both message ID and fingerprint)
   recentlyProcessed.add(messageId)
@@ -317,19 +358,19 @@ async function processMessage(
  * Main processing function (extracted for queue handling)
  */
 async function processNotification(req: Request): Promise<void> {
-console.log('I am at processNotification function');
+  gmailLogger.info('Processing Gmail notification')
 
   await initializeLabelCache()
   if (!labelIdMap) throw new Error('Label cache is not initialized.')
 
   const pubSubMessage = req.body.message
   if (!pubSubMessage || !pubSubMessage.data) {
-    console.log('Received an invalid Pub/Sub message.')
+    gmailLogger.warn('Received an invalid Pub/Sub message')
     return
   }
 
   const decodedData = JSON.parse(
-    Buffer.from(pubSubMessage.data, 'base64').toString('utf-8')
+    Buffer.from(pubSubMessage.data, 'base64').toString('utf-8'),
   )
   const newHistoryId = decodedData.historyId
 
@@ -340,8 +381,8 @@ console.log('I am at processNotification function');
   // If this is the first ever notification
   if (!lastHistoryId) {
     await saveLastHistoryId(newHistoryId)
-    console.log(
-      'First run: Stored initial history ID. Will process new messages on the next notification.'
+    gmailLogger.info(
+      'First run: Stored initial history ID. Will process new messages on the next notification.',
     )
     // No emails are processed or logged in this case, ensuring non-labeled emails are ignored
     return
@@ -351,8 +392,8 @@ console.log('I am at processNotification function');
   const lastNum = parseInt(lastHistoryId, 10)
   const newNum = parseInt(newHistoryId, 10)
   if (isNaN(lastNum) || isNaN(newNum) || newNum <= lastNum) {
-    console.log(
-      `History ID ${newHistoryId} is not newer than last ${lastHistoryId}. Skipping.`
+    gmailLogger.info(
+      `History ID ${newHistoryId} is not newer than last ${lastHistoryId}. Skipping.`,
     )
     return
   }
@@ -369,12 +410,14 @@ console.log('I am at processNotification function');
 
   const historyRecords = historyResponse.data.history
   if (!historyRecords || historyRecords.length === 0) {
-    console.log('No new messages found in history since last check.')
+    gmailLogger.info('No new messages found in history since last check')
     await saveLastHistoryId(newHistoryId)
     return
   }
 
   let processedCount = 0
+  let skippedCount = 0
+  let errorCount = 0
   const uniqueMessageIds = new Set<string>()
 
   // Collect all unique message IDs first (deduplication at collection level)
@@ -387,7 +430,7 @@ console.log('I am at processNotification function');
 
       // Check if the message has a relevant label before adding to process
       const hasRelevantLabel = message.labelIds.some((id) =>
-        labelIdMap!.has(id)
+        labelIdMap!.has(id),
       )
       if (hasRelevantLabel) {
         uniqueMessageIds.add(message.id)
@@ -395,12 +438,12 @@ console.log('I am at processNotification function');
     }
   }
   if (uniqueMessageIds.size === 0) {
-    // Suppress logging for no relevant messages
+    gmailLogger.info('No relevant messages found to process')
     await saveLastHistoryId(newHistoryId)
     return
   }
 
-  console.log(`Found ${uniqueMessageIds.size} unique messages to process`)
+  gmailLogger.info(`Found ${uniqueMessageIds.size} unique messages to process`)
 
   // Process each unique message
   for (const messageId of uniqueMessageIds) {
@@ -408,18 +451,25 @@ console.log('I am at processNotification function');
       const wasProcessed = await processMessage(
         messageId,
         gmail,
-        processedMessages
+        processedMessages,
       )
       if (wasProcessed) {
         processedCount++
+      } else {
+        skippedCount++
       }
     } catch (error: any) {
+      errorCount++
       if (error.code === 404) {
         console.log(
-          `Message ${messageId} not found (possibly deleted). Skipping.`
+          `Message ${messageId} not found (possibly deleted). Skipping.`,
+        )
+        gmailLogger.messageSkipped(
+          messageId,
+          'Message not found (deleted).Skipping.',
         )
       } else {
-        console.error(`Error processing message ${messageId}:`, error)
+        gmailLogger.processingError(messageId, error)
       }
       // Continue processing other messages even if one fails
     }
@@ -429,9 +479,19 @@ console.log('I am at processNotification function');
   await saveProcessedMessages(processedMessages)
   await saveLastHistoryId(newHistoryId)
 
-  if (processedCount > 0) {
-    console.log(
-      `Successfully processed ${processedCount} new messages. History ID updated to: ${newHistoryId}`
+  // Log processing summary
+  const summary = {
+    totalMessages: uniqueMessageIds.size,
+    processed: processedCount,
+    skipped: skippedCount,
+    errors: errorCount,
+    duration: 0, // Will be set by caller
+  }
+
+  if (processedCount > 0 || errorCount > 0) {
+    gmailLogger.processingSummary(summary)
+    gmailLogger.info(
+      `Processed ${processedCount} messages, skipped ${skippedCount}, errors ${errorCount}.History ID updated to: ${newHistoryId}`,
     )
   }
 }
@@ -446,7 +506,7 @@ async function processQueue(): Promise<void> {
       try {
         await task()
       } catch (error) {
-        console.error('Error processing queued task:', error)
+        gmailLogger.criticalError('Queue processing', error)
       }
     }
   }
@@ -457,7 +517,7 @@ async function processQueue(): Promise<void> {
  * Main controller to handle incoming Pub/Sub notifications from Gmail
  */
 export const handleGmailNotification = async (req: Request, res: Response) => {
-console.log('I am at handleGmailNotification function');
+  gmailLogger.info('=== Gmail notification webhook triggered ===')
 
   const startTime = Date.now()
 
@@ -470,8 +530,8 @@ console.log('I am at handleGmailNotification function');
   if (isProcessing) {
     // If already processing, add to queue
     processingQueue.push(task)
-    console.log(
-      `⏳ Added notification to queue. Queue length: ${processingQueue.length}`
+    gmailLogger.info(
+      `⏳ Added notification to queue. Queue length: ${processingQueue.length}`,
     )
     return
   }
@@ -481,12 +541,12 @@ console.log('I am at handleGmailNotification function');
   try {
     await task()
     const duration = Date.now() - startTime
-    console.log(`✅ Notification processed successfully in ${duration}ms`)
+    gmailLogger.info(`✅ Notification processed successfully in ${duration}ms`)
   } catch (error) {
     const duration = Date.now() - startTime
-    console.error(
-      `❌ Error handling Gmail notification after ${duration}ms:`,
-      error
+    gmailLogger.criticalError(
+      `Notification processing after ${duration}ms`,
+      error,
     )
   } finally {
     // Process any queued items
