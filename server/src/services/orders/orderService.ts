@@ -869,6 +869,8 @@ class OrderService {
   async createOrderFromCRM(
     frontendOrderData: CRMOrderCreateInput,
   ): Promise<OrderCreationResult> {
+console.log('data from client: ', frontendOrderData);
+
     const orderId = `crm_${nanoid(8)}`
 
     // Extract and validate key data
@@ -905,6 +907,8 @@ class OrderService {
       console.log('Validating item:', item)
 
       let product = null
+
+console.log('product.id is: ', item.productId);
 
       // Try to find product by SKU (primary lookup for CRM orders)
       if (item.sku) {

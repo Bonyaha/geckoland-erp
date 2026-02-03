@@ -76,7 +76,8 @@ export function mapToPaymentOption(
     normalized.includes('на счет') || //
     normalized.includes('на рахунок') || //
     normalized === 'оплата на счет' || //
-    normalized === 'оплата по реквизитам'
+    normalized === 'оплата по реквизитам'||
+    normalized === 'iban' //
   ) {
     return PaymentOption.IBAN
   }
