@@ -610,10 +610,10 @@ export const syncAfterOrder = async (
     productId: string // App's internal product ID
     orderedQuantity: number // How many were ordered
   }>,
-  sourceMarketplace: 'prom' | 'rozetka' // Where the order came from
+  sourceMarketplace: 'prom' | 'rozetka' | 'crm' // Where the order came from
 ) => {
   console.log(
-    `🛒 Processing order sync for ${orderedProducts.length} products from ${sourceMarketplace}`
+    `🛒 Processing order sync for ${orderedProducts.length} products from ${sourceMarketplace}`,
   )
 
   // Track products that need updates
@@ -635,7 +635,7 @@ export const syncAfterOrder = async (
   // Process each ordered product
   for (const { productId, orderedQuantity } of orderedProducts) {
     console.log(
-      `Processing order for product ${productId}: ${orderedQuantity} units`
+      `Processing order for product ${productId}: ${orderedQuantity} units`,
     )
 
     const appProduct = await prisma.products.findUnique({
@@ -671,7 +671,7 @@ export const syncAfterOrder = async (
     // Compute master new quantity once
     const newMasterQuantity = Math.max(
       0,
-      appProduct.stockQuantity + quantityDelta
+      appProduct.stockQuantity + quantityDelta,
     )
 
     const update: {
@@ -689,7 +689,7 @@ export const syncAfterOrder = async (
       needsPromSync: false,
       needsRozetkaSync: false,
       newMasterQuantity,
-      syncStrategy, // default strategy
+      syncStrategy,
     }
 
     // Apply the order delta to the source marketplace
@@ -697,7 +697,7 @@ export const syncAfterOrder = async (
       update.newPromQuantity = Math.max(0, currentPromQuantity + quantityDelta)
 
       console.log(
-        `Prom order: ${currentPromQuantity} -> ${update.newPromQuantity} (${quantityDelta})`
+        `Prom order: ${currentPromQuantity} -> ${update.newPromQuantity} (${quantityDelta})`,
       )
 
       // For same_quantity strategy, sync to other marketplace
@@ -705,20 +705,45 @@ export const syncAfterOrder = async (
         update.needsRozetkaSync = true
         update.newRozetkaQuantity = newMasterQuantity
       }
-    } else {
+    } else if (sourceMarketplace === 'rozetka') {
       update.newRozetkaQuantity = Math.max(
         0,
-        currentRozetkaQuantity + quantityDelta
+        currentRozetkaQuantity + quantityDelta,
       )
 
       console.log(
-        `Rozetka order: ${currentRozetkaQuantity} -> ${update.newRozetkaQuantity} (${quantityDelta})`
+        `Rozetka order: ${currentRozetkaQuantity} -> ${update.newRozetkaQuantity} (${quantityDelta})`,
       )
 
       // For same_quantity strategy, sync to other marketplace
       if (syncStrategy === 'same_quantity' && externalIds?.prom) {
         update.needsPromSync = true
         update.newPromQuantity = newMasterQuantity
+      }
+    } else if (sourceMarketplace === 'crm') {
+      // CRM orders: update master quantity and marketplace quantities based on strategy
+      console.log(
+        `CRM order: master quantity ${appProduct.stockQuantity} -> ${newMasterQuantity} (${quantityDelta})`,
+      )
+
+      if (syncStrategy === 'same_quantity') {
+        // If marketplaces were in sync, reduce both by the same amount
+        if (externalIds?.prom) {
+          update.newPromQuantity = newMasterQuantity
+          update.needsPromSync = true
+        }
+        if (externalIds?.rozetka) {
+          update.newRozetkaQuantity = newMasterQuantity
+          update.needsRozetkaSync = true
+        }
+      } else {
+        // Different quantities: keep marketplace quantities unchanged
+        // (CRM order doesn't affect individual marketplace stock levels)
+        update.newPromQuantity = currentPromQuantity
+        update.newRozetkaQuantity = currentRozetkaQuantity
+        // Don't sync to marketplaces for different_quantity strategy
+        update.needsPromSync = false
+        update.needsRozetkaSync = false
       }
     }
 
@@ -727,7 +752,7 @@ export const syncAfterOrder = async (
 
   console.log(
     'Products to update after order processing:',
-    JSON.stringify(Array.from(productsToUpdate), null, 2)
+    JSON.stringify(Array.from(productsToUpdate), null, 2),
   )
 
   // Calculate new quantities for syncing based on strategy
@@ -844,11 +869,11 @@ export const syncAfterOrder = async (
 
   // Perform marketplace syncing for products that need it
   const productsNeedingSync = Array.from(productsToUpdate.values()).filter(
-    (update) => update.needsPromSync || update.needsRozetkaSync
+    (update) => update.needsPromSync || update.needsRozetkaSync,
   )
 
   console.log(
-    `Found ${productsNeedingSync.length} products needing marketplace sync`
+    `Found ${productsNeedingSync.length} products needing marketplace sync`,
   )
 
   /******************************************************************** */
@@ -964,12 +989,12 @@ export const syncAfterOrder = async (
     })
 
     console.log(
-      `✅ Cleared sync flags for ${productIds.length} products after order sync`
+      `✅ Cleared sync flags for ${productIds.length} products after order sync`,
     )
   }
 
   console.log(
-    `🎉 Order-based marketplace synchronization completed for ${sourceMarketplace}`
+    `🎉 Order-based marketplace synchronization completed for ${sourceMarketplace}`,
   )
 }
 

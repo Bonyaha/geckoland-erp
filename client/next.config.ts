@@ -12,6 +12,12 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'content.rozetka.com.ua',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'crm.h-profit.com',
         port: '',
         pathname: '/**',

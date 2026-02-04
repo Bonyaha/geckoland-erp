@@ -7,6 +7,8 @@ import { nanoid } from 'nanoid'
 //import { syncAfterOrder } from '../marketplaces/sync/marketplaceSyncService'
 import { ErrorFactory, AppError } from '../../middleware/errorHandler'
 import SalesService from '../sales/salesService'
+import { syncAfterOrder } from '../marketplaces/sync/syncMarketplaces'
+import {OrderItemForSync} from '../../types/orders'
 
 import {
   OrderSyncResult,
@@ -1069,20 +1071,20 @@ console.log('product.id is: ', item.productId);
       `Created CRM order ${orderId} with ${order.orderItems.length} items`,
     )
     // Prepare orderedProducts for sync
-    /* const orderedProducts: OrderItemForSync[] = order.orderItems.map((item) => ({
-        productId: item.sku || item.externalProductId,
+    const orderedProducts: OrderItemForSync[] = order.orderItems.map((item) => ({
+        productId: item.productId,
         orderedQuantity: item.quantity,
       }))
 
       try {
-          await syncAfterOrder(orderedProducts, 'сrm')
-        console.log(`✅ Synced inventory after Rozetka order ${orderId}`) 
+          await syncAfterOrder(orderedProducts, 'crm')
+        console.log(`✅ Synced inventory after CRM order ${orderId}`) 
       } catch (syncError) {
         console.error(
           `❌ Failed to sync inventory for order ${orderId}:`,
           syncError
         )
-      }*/
+      }
 
     return {
       orderId,
