@@ -11,22 +11,26 @@ import {
   CreateCRMOrderInput,
 } from '@/state/api'
 import {
-  Plus,
+  /* Plus, */
   Trash2,
   Save,
   X,
   Search,
   ChevronDown,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
+  CircleMinus,
+  CirclePlus,
 } from 'lucide-react'
 
-interface OrderItem {
+/* interface OrderItem {
   productId?: string
   productName: string
   sku?: string
   quantity: number
   unitPrice: number
-}
+} */
 
 const CreateOrderPage = () => {
   const router = useRouter()
@@ -77,13 +81,22 @@ const CreateOrderPage = () => {
     clientNotes: '',
   })
 
-  const [currentItem, setCurrentItem] = useState<OrderItem>({
+  /* const [currentItem, setCurrentItem] = useState<OrderItem>({
     productId: '',
     productName: '',
     sku: '',
     quantity: 1,
     unitPrice: 0,
   })
+ */
+  // Recalculate total amount whenever items change
+  useEffect(() => {
+    const total = formData.items.reduce(
+      (sum, item) => sum + (item.totalPrice || 0),
+      0,
+    )
+    setFormData((prev) => ({ ...prev, totalAmount: total }))
+  }, [formData.items])
 
   // Handlers
   const handleInputChange = (field: keyof CreateCRMOrderInput, value: any) => {
@@ -92,7 +105,7 @@ const CreateOrderPage = () => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleAddItem = () => {
+  /* const handleAddItem = () => {
     if (!currentItem.productName || currentItem.unitPrice <= 0) {
       alert('Будь ласка, заповніть назву товару та ціну')
       return
@@ -137,7 +150,7 @@ const CreateOrderPage = () => {
       items: prev.items.filter((_, i) => i !== index),
       totalAmount: prev.totalAmount - (removedItem.totalPrice || 0),
     }))
-  }
+  } */
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -153,7 +166,7 @@ const CreateOrderPage = () => {
     }
 
     try {
-console.log('Submitting order with data: ', formData);
+      console.log('Submitting order with data: ', formData)
       const result = await createOrder(formData).unwrap()
       alert(`Замовлення створено успішно! ID: ${result.orderId}`)
       router.push('/orders')
@@ -165,7 +178,7 @@ console.log('Submitting order with data: ', formData);
         }`,
       )
     }
-  }  
+  }
 
   //Logic for Checkboxes and Adding Multiple Items
   const toggleProductSelection = (product: Product) => {
@@ -199,6 +212,62 @@ console.log('Submitting order with data: ', formData);
     setSearchTerm('') // Clear search
   }
 
+  // Directly add product from dropdown to the list
+  /* const addProductToOrder = (product: Product) => {
+    const exists = formData.items.find(
+      (item) => item.productId === product.productId,
+    )
+    if (exists) {
+      updateItemQuantity(product.productId!, exists.quantity + 1)
+    } else {
+      const newItem = {
+        productId: product.productId,
+        productName: product.name,
+        sku: product.sku,
+        quantity: 1,
+        unitPrice: product.price,
+        totalPrice: product.price,
+      }
+      setFormData((prev) => ({ ...prev, items: [...prev.items, newItem] }))
+    }
+    setIsDropdownOpen(false)
+    setSearchTerm('')
+  } */
+
+  const updateItemQuantity = (productId: string, newQty: number) => {
+    const qty = Math.max(1, newQty)
+    setFormData((prev) => ({
+      ...prev,
+      items: prev.items.map((item) =>
+        item.productId === productId
+          ? { ...item, quantity: qty, totalPrice: qty * item.unitPrice }
+          : item,
+      ),
+    }))
+  }
+
+  const updateItemPrice = (productId: string, newPrice: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      items: prev.items.map((item) =>
+        item.productId === productId
+          ? {
+              ...item,
+              unitPrice: newPrice,
+              totalPrice: item.quantity * newPrice,
+            }
+          : item,
+      ),
+    }))
+  }
+
+  const removeItem = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index),
+    }))
+  }
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('uk-UA', {
       style: 'currency',
@@ -214,69 +283,54 @@ console.log('Submitting order with data: ', formData);
           <h1 className='text-3xl font-bold text-gray-900 mb-2'>
             Створити замовлення
           </h1>
-          <p className='text-gray-600'>Ручне створення замовлення в CRM</p>
         </div>
 
         <form onSubmit={handleSubmit} className='space-y-6'>
-          {/* Product Search Selector */}
-          <div className='bg-white rounded-lg shadow-sm p-6 mb-6 relative'>
-            <div className='flex items-center justify-between mb-4'>
-              <h2 className='text-xl font-semibold text-gray-900'>
-                Вибір товару
-              </h2>
-            </div>
-
-            <div className='relative'>
+          {/* Main Product Selection Area */}
+          <div className='bg-white rounded-lg shadow-sm p-6'>
+            <div className='relative mb-4'>
               <div
-                className={`flex items-center border rounded-lg px-3 py-2.5 transition-all bg-gray-50/50 ${
-                  isDropdownOpen
-                    ? 'border-blue-500 ring-2 ring-blue-100 bg-white'
-                    : 'border-gray-300'
-                }`}
-                /* onClick={() => setIsDropdownOpen(true)} */
+                className={`flex items-center border rounded-lg px-3 py-2.5 transition-all ${isDropdownOpen ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-300'}`}
               >
-                {/* Search Icon Used Here */}
                 <Search size={18} className='text-gray-400 mr-2' />
-
                 <input
                   type='text'
-                  className='w-full outline-none text-gray-700 bg-transparent placeholder:text-gray-400'
-                  placeholder='Пошук товару за назвою або артикулом...'
+                  className='w-full outline-none text-gray-700 bg-transparent'
+                  placeholder='Товар/артикул/бренд'
                   value={searchTerm}
                   onFocus={() => setIsDropdownOpen(true)}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
-
-                <div
-                  className='flex items-center border-l pl-2 ml-2 border-gray-200 cursor-pointer'
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)} // Toggle on chevron click
-                >
-                  {isFetching ? (
-                    <Loader2 size={18} className='animate-spin text-blue-500' />
-                  ) : (
-                    <ChevronDown
-                      size={18}
-                      className={`text-gray-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
-                    />
-                  )}
-                </div>
+                {isFetching ? (
+                  <Loader2
+                    size={18}
+                    className='text-blue-500 animate-spin mr-2'
+                  />
+                ) : (
+                  <ChevronDown
+                    size={18}
+                    className='text-gray-400 cursor-pointer'
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  />
+                )}
               </div>
 
-              {/* Dropdown Menu */}
+              {/* Search Dropdown */}
               {isDropdownOpen && (
                 <>
                   <div
                     className='fixed inset-0 z-40'
                     onClick={() => setIsDropdownOpen(false)}
                   ></div>
-                  <div className='absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-xl max-h-[600px] overflow-hidden flex flex-col'>
-                    {/* Top Header for Multi-select */}
+                  <div className='absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-96 overflow-hidden flex flex-col'>
+                    {/* Top Header for Multi-select - inside the dropdown menu div */}
                     {selectedProducts.length > 0 && (
                       <div className='p-2 bg-blue-50 border-b flex justify-between items-center'>
                         <span className='text-sm font-medium text-blue-700 ml-2'>
                           Обрано: {selectedProducts.length}
                         </span>
                         <button
+                          type='button'
                           onClick={addSelectedToOrder}
                           className='bg-blue-600 text-white text-xs px-3 py-1.5 rounded hover:bg-blue-700 transition-colors'
                         >
@@ -284,20 +338,21 @@ console.log('Submitting order with data: ', formData);
                         </button>
                       </div>
                     )}
-
                     <div className='overflow-y-auto flex-1'>
                       {products.length > 0 ? (
-                        products.map((product, index) => {
+                        products.map((product) => {
+                          // Check if this specific product is currently selected
                           const isChecked = selectedProducts.some(
                             (p) => p.productId === product.productId,
                           )
+
                           return (
                             <div
                               key={product.productId}
                               className={`flex items-start gap-3 p-3 border-b border-gray-100 last:border-0 transition-colors cursor-pointer ${isChecked ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}
                               onClick={() => toggleProductSelection(product)}
                             >
-                              {/* Checkbox */}
+                              {/* Checkbox UI */}
                               <div className='pt-1'>
                                 <input
                                   type='checkbox'
@@ -306,86 +361,165 @@ console.log('Submitting order with data: ', formData);
                                   className='w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer'
                                 />
                               </div>
-
-                              <div className='relative w-12 h-12 flex-shrink-0'>
-                                <Image
-                                  src={
-                                    product.mainImage ||
-                                    '/placeholder-product.png'
-                                  }
-                                  alt={product.name}
-                                  width={48}
-                                  height={48}
-                                  className='rounded object-cover border border-gray-100 bg-white'
-                                  priority={index < 5}
-                                />
-                              </div>
-
-                              <div className='flex-1 min-w-0'>
-                                <p className='text-sm font-medium text-gray-900 truncate'>
+                              <Image
+                                src={
+                                  product.mainImage ||
+                                  '/placeholder-product.png'
+                                }
+                                alt=''
+                                width={40}
+                                height={40}
+                                className='rounded object-cover'
+                              />
+                              <div className='flex-1'>
+                                <p className='text-sm font-medium'>
                                   {product.name}
                                 </p>
-                                <div className='flex justify-between items-center mt-1'>
-                                  <span className='text-xs text-gray-500 font-mono'>
-                                    {product.sku}
-                                  </span>
-                                  <div className='text-right'>
-                                    <span className='text-sm font-bold text-gray-900'>
-                                      {product.price} грн
-                                    </span>
-                                    <p
-                                      className={`text-[10px] font-medium ${product.stockQuantity > 0 ? 'text-green-600' : 'text-red-500'}`}
-                                    >
-                                      {product.stockQuantity > 0
-                                        ? `Залишок: ${product.stockQuantity}`
-                                        : 'Немає'}
-                                    </p>
-                                  </div>
-                                </div>
+                                <p className='text-xs text-gray-500'>
+                                  {product.sku} • {product.price} грн
+                                </p>
                               </div>
                             </div>
                           )
                         })
-                      ) : !isFetching ? (
-                        <div className='p-8 text-center text-gray-500 text-sm'>
-                          Товарів не знайдено за запитом &quot;{searchTerm}
-                          &quot;
-                        </div>
-                      ) : null}
-                      {/* Loading Indicator inside list */}
-                      {isFetching && (
-                        <div className='p-8 text-center text-gray-400 text-sm flex items-center justify-center gap-2'>
-                          <Loader2 size={16} className='animate-spin' />
-                          Оновлення списку...
+                      ) : (
+                        <div className='p-4 text-center text-gray-500'>
+                          Товарів не знайдено
                         </div>
                       )}
                     </div>
-                    {/* Pagination Footer */}
+
+                    {/* Dropdown Pagination Footer */}
                     {totalPages > 1 && (
-                      <div className='p-3 bg-gray-50 border-t flex justify-center items-center gap-1'>
-                        {Array.from(
-                          { length: totalPages },
-                          (_, i) => i + 1,
-                        ).map((pageNum) => (
-                          <button
-                            key={pageNum}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCurrentPage(pageNum)
-                            }}
-                            className={`w-8 h-8 text-xs font-medium rounded border transition-colors ${
-                              currentPage === pageNum
-                                ? 'bg-blue-600 text-white border-blue-600'
-                                : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'
-                            }`}
-                          >
-                            {pageNum}
-                          </button>
-                        ))}
+                      <div className='p-2 border-t bg-gray-50 flex items-center justify-between'>
+                        <button
+                          type='button'
+                          disabled={currentPage === 1}
+                          onClick={() =>
+                            setCurrentPage((p) => Math.max(1, p - 1))
+                          }
+                          className='p-1 disabled:opacity-30'
+                        >
+                          <ChevronLeft size={20} />
+                        </button>
+                        <span className='text-xs font-medium text-gray-600'>
+                          Сторінка {currentPage} з {totalPages}
+                        </span>
+                        <button
+                          type='button'
+                          disabled={currentPage === totalPages}
+                          onClick={() =>
+                            setCurrentPage((p) => Math.min(totalPages, p + 1))
+                          }
+                          className='p-1 disabled:opacity-30'
+                        >
+                          <ChevronRight size={20} />
+                        </button>
                       </div>
                     )}
                   </div>
                 </>
+              )}
+            </div>
+
+            {/* Added Products List */}
+            <div className='space-y-2'>
+              {formData.items.map((item, index) => (
+                <div
+                  key={item.productId}
+                  className='flex flex-wrap md:flex-nowrap items-center gap-4 p-3 border border-gray-200 rounded-lg bg-white shadow-sm'
+                >
+                  {/* Name and Stock Info */}
+                  <div className='flex-1 min-w-[250px]'>
+                    <p className='text-sm font-medium text-blue-600 leading-tight'>
+                      {item.productName}
+                      <span className='text-gray-400 ml-1 font-normal text-xs'>
+                        {item.sku}
+                      </span>
+                    </p>
+                    <p className='text-[11px] text-gray-500 mt-0.5'>
+                      (доступно 10 шт)
+                    </p>
+                  </div>
+
+                  {/* Quantity Controls */}
+                  <div className='flex items-center gap-1'>
+                    <button
+                      type='button'
+                      onClick={() =>
+                        updateItemQuantity(item.productId!, item.quantity - 1)
+                      }
+                      className='text-red-400 hover:text-red-600 transition-colors'
+                    >
+                      <CircleMinus size={22} strokeWidth={2.5} />
+                    </button>
+                    <div className='flex items-center border border-gray-300 rounded px-2 py-1 bg-white'>
+                      <input
+                        type='number'
+                        value={item.quantity}
+                        onChange={(e) =>
+                          updateItemQuantity(
+                            item.productId!,
+                            Number(e.target.value),
+                          )
+                        }
+                        className='w-10 text-center text-sm font-semibold focus:outline-none'
+                      />
+                      <span className='text-[10px] text-gray-400 font-medium ml-1'>
+                        шт
+                      </span>
+                    </div>
+                    <button
+                      type='button'
+                      onClick={() =>
+                        updateItemQuantity(item.productId!, item.quantity + 1)
+                      }
+                      className='text-green-500 hover:text-green-600 transition-colors'
+                    >
+                      <CirclePlus size={22} strokeWidth={2.5} />
+                    </button>
+                  </div>
+
+                  {/* Price Input */}
+                  <div className='flex items-center border border-gray-300 rounded px-2 py-1 bg-white min-w-[100px]'>
+                    <input
+                      type='number'
+                      value={item.unitPrice}
+                      onChange={(e) =>
+                        updateItemPrice(item.productId!, Number(e.target.value))
+                      }
+                      className='w-full text-right text-sm font-semibold focus:outline-none'
+                    />
+                    <span className='text-[10px] text-gray-400 font-medium ml-1'>
+                      грн.
+                    </span>
+                  </div>
+
+                  {/* Row Total */}
+                  <div className='flex items-center gap-2 min-w-[120px] justify-end'>
+                    <ChevronDown size={14} className='text-blue-500' />
+                    <span className='text-sm font-bold text-gray-700'>
+                      {(item.totalPrice || 0).toFixed(2)} грн.
+                    </span>
+                  </div>
+
+                  {/* Delete Button */}
+                  <button
+                    type='button'
+                    onClick={() => removeItem(index)}
+                    className='text-blue-500 hover:text-red-500 p-1 transition-colors'
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              ))}
+
+              {/* Summary Counter */}
+              {formData.items.length > 0 && (
+                <div className='text-right pt-2 text-gray-700 font-bold'>
+                  Усього: {formData.items.length} найм. (
+                  {formData.items.reduce((a, b) => a + b.quantity, 0)} од.)
+                </div>
               )}
             </div>
           </div>
@@ -540,114 +674,6 @@ console.log('Submitting order with data: ', formData);
                 </select>
               </div>
             </div>
-          </div>
-
-          {/* Order Items */}
-          <div className='bg-white rounded-lg shadow-sm p-6'>
-            <h2 className='text-xl font-semibold text-gray-900 mb-4'>Товари</h2>
-
-            {/* Add Item Form */}
-            <div className='bg-gray-50 p-4 rounded-lg mb-4'>
-              <div className='grid grid-cols-1 md:grid-cols-5 gap-3 items-end'>
-                <div className='md:col-span-2'>
-                  <label className='block text-sm font-medium text-gray-700 mb-1'>
-                    Назва товару <span className='text-red-500'>*</span>
-                  </label>
-                  <input
-                    type='text'
-                    value={currentItem.productName}
-                    onChange={(e) =>
-                      handleCurrentItemChange('productName', e.target.value)
-                    }
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg'
-                    placeholder='Назва товару'
-                  />
-                </div>
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-1'>
-                    SKU
-                  </label>
-                  <input
-                    type='text'
-                    value={currentItem.sku}
-                    onChange={(e) =>
-                      handleCurrentItemChange('sku', e.target.value)
-                    }
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg'
-                    placeholder='SKU'
-                  />
-                </div>
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-1'>
-                    Кількість
-                  </label>
-                  <input
-                    type='number'
-                    min='1'
-                    value={currentItem.quantity}
-                    onChange={(e) =>
-                      handleCurrentItemChange('quantity', e.target.value)
-                    }
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg'
-                  />
-                </div>
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-1'>
-                    Ціна
-                  </label>
-                  <input
-                    type='number'
-                    min='0'
-                    step='0.01'
-                    value={currentItem.unitPrice}
-                    onChange={(e) =>
-                      handleCurrentItemChange('unitPrice', e.target.value)
-                    }
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg'
-                  />
-                </div>
-              </div>
-              <button
-                type='button'
-                onClick={handleAddItem}
-                className='mt-3 flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700'
-              >
-                <Plus size={18} />
-                Додати товар
-              </button>
-            </div>
-
-            {/* Items List */}
-            {formData.items.length > 0 ? (
-              <div className='space-y-2'>
-                {formData.items.map((item, index) => (
-                  <div
-                    key={index}
-                    className='flex justify-between items-center p-3 bg-gray-50 rounded-lg'
-                  >
-                    <div className='flex-1'>
-                      <p className='font-medium text-gray-900'>
-                        {item.productName}
-                      </p>
-                      <p className='text-sm text-gray-600'>
-                        {item.sku && `SKU: ${item.sku} • `}
-                        {item.quantity} × {formatCurrency(item.unitPrice)} ={' '}
-                        {formatCurrency(item.totalPrice || 0)}
-                      </p>
-                    </div>
-                    <button
-                      type='button'
-                      onClick={() => handleRemoveItem(index)}
-                      className='text-red-600 hover:text-red-800 p-2 cursor-pointer'
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className='text-gray-500 text-center py-4'>Товари не додано</p>
-            )}
           </div>
 
           {/* Notes */}
