@@ -332,14 +332,11 @@ const OrdersPage = () => {
               {filteredOrders?.map((order) => (
                 <tr
                   key={order.orderId}
-                  className={`hover:bg-gray-50 cursor-pointer ${!order.isViewed ? 'bg-blue-50' : ''}`}
+                  className={`hover:bg-gray-50 cursor-pointer`}                  
                   onClick={() => setSelectedOrder(order)}
                 >
                   <td className='px-6 py-4 whitespace-nowrap'>
-                    <div className='flex items-center gap-2'>
-                      {!order.isViewed && (
-                        <div className='w-2 h-2 bg-blue-600 rounded-full shrink-0' />
-                      )}
+                    <div className='flex items-center gap-2'>                      
                       <div className='flex flex-col'>
                         <CopyableItem
                           value={

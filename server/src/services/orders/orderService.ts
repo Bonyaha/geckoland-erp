@@ -345,8 +345,7 @@ class OrderService {
     sellerComments?: any
     utmData?: any
     orderSource?: string | null
-    dontCallCustomer?: boolean
-    isViewed?: boolean
+    dontCallCustomer?: boolean    
     isFulfillment?: boolean
     canCopy?: boolean
     specialOfferData?: any
@@ -381,8 +380,7 @@ class OrderService {
       utmData: params.utmData,
       orderSource: params.orderSource,
 
-      dontCallCustomer: params.dontCallCustomer,
-      isViewed: params.isViewed,
+      dontCallCustomer: params.dontCallCustomer,      
       isFulfillment: params.isFulfillment,
       canCopy: params.canCopy,
 
@@ -465,8 +463,7 @@ class OrderService {
       orderSource: baseOrder.orderSource,
 
       // Flags
-      dontCallCustomer: baseOrder.dontCallCustomer,
-      isViewed: baseOrder.isViewed,
+      dontCallCustomer: baseOrder.dontCallCustomer,      
 
       // Raw data
       rawOrderData: baseOrder.rawOrderData as Prisma.InputJsonValue,
@@ -817,8 +814,7 @@ class OrderService {
       statusGroup: rozetkaOrder.status_group,
       clientNotes: rozetkaOrder.comment,
       sellerComment: rozetkaOrder.current_seller_comment,
-      sellerComments: rozetkaOrder.seller_comment,
-      isViewed: rozetkaOrder.is_viewed,
+      sellerComments: rozetkaOrder.seller_comment,      
       isFulfillment: rozetkaOrder.is_fulfillment || false,
       canCopy: rozetkaOrder.can_copy || false,
       rawOrderData: rozetkaOrder,

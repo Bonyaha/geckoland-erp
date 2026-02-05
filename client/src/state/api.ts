@@ -215,8 +215,7 @@ export interface Order {
   // Additional
   clientNotes?: string
   sellerComment?: string
-  orderSource?: string
-  isViewed: boolean
+  orderSource?: string  
 
   // Relations
   orderItems: OrderItem[]
@@ -291,8 +290,7 @@ export interface UpdateOrderInput {
   deliveryOptionName?: DeliveryOption
   paymentOptionName?: PaymentOption
   clientNotes?: string
-  sellerComment?: string
-  isViewed?: boolean
+  sellerComment?: string  
 }
 
 export interface OrderSyncResult {

@@ -109,8 +109,7 @@ model Orders {
   clientNotes             String?
   sellerComment           String?  
   orderSource             String?
-  dontCallCustomer        Boolean      @default(false)
-  isViewed                Boolean      @default(false)  
+  dontCallCustomer        Boolean      @default(false)   
   rawOrderData            Json?
   orderItems              OrderItems[]
   client                  Clients?     @relation(fields: [clientId], references: [clientId])

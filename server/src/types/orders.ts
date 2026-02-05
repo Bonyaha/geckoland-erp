@@ -411,8 +411,7 @@ export interface BaseOrderCreateInput {
   orderSource?: string | null
 
   // Flags
-  dontCallCustomer?: boolean
-  isViewed?: boolean
+  dontCallCustomer?: boolean  
   isFulfillment?: boolean
   canCopy?: boolean
 

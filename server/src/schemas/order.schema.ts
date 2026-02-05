@@ -116,8 +116,7 @@ export const updateOrderSchema = z.object({
     deliveryOptionName: z.enum(DeliveryOption).optional(),
     paymentOptionName: z.enum(PaymentOption).optional(),
     clientNotes: z.string().optional(),
-    sellerComment: z.string().optional(),
-    isViewed: z.boolean().optional(),
+    sellerComment: z.string().optional()    
   }),
 })
 
