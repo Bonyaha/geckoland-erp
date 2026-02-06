@@ -1,0 +1,9 @@
+{
+	"firstName": "Іван",
+	"lastName": "Петренко",
+	"phone": "+380507654321",
+	"email": "ivan.petrenko@example.com",
+	"address": "вул. Хрещатик, 1, кв. 10",
+	"deliveryOptionName": "NovaPoshta",
+	"reliability": "HIGH"
+}
