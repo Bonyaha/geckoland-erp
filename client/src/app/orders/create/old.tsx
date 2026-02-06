@@ -7,13 +7,11 @@ import { useRouter } from 'next/navigation'
 import {
   useCreateCRMOrderMutation,
   useGetProductsQuery,
-  useSearchClientsByPhoneQuery,
-  /* useGetOrCreateClientMutation */
   Product,
   CreateCRMOrderInput,
-  Client,
 } from '@/state/api'
 import {
+  /* Plus, */
   Trash2,
   Save,
   X,
@@ -24,41 +22,32 @@ import {
   ChevronRight,
   CircleMinus,
   CirclePlus,
-  UserPlus,
 } from 'lucide-react'
+
+/* interface OrderItem {
+  productId?: string
+  productName: string
+  sku?: string
+  quantity: number
+  unitPrice: number
+} */
 
 const CreateOrderPage = () => {
   const router = useRouter()
   const [createOrder, { isLoading }] = useCreateCRMOrderMutation()
-  //const [getOrCreateClient] = useGetOrCreateClientMutation()
 
-  // Product dropdown and search state
+  // Dropdown and search state
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([])
 
-  // Client search state
-  const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false)
-  const [clientSearchTerm, setClientSearchTerm] = useState('')
-  const [debouncedClientSearch, setDebouncedClientSearch] = useState('')
-  //const [selectedClient, setSelectedClient] = useState<Client | null>(null)
-
-  // Debounce logic for products
+  // Debounce logic
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300)
     return () => clearTimeout(timer)
   }, [searchTerm])
-
-  // Debounce logic for clients
-  useEffect(() => {
-    const timer = setTimeout(
-      () => setDebouncedClientSearch(clientSearchTerm),
-      300,
-    )
-    return () => clearTimeout(timer)
-  }, [clientSearchTerm])
 
   // Fetch products from API
   const { data: productsData, isFetching } = useGetProductsQuery({
@@ -67,20 +56,10 @@ const CreateOrderPage = () => {
     limit: 10,
   })
 
-  // Fetch clients by phone
-  const {
-    data: clientsData,
-    isFetching: isClientFetching,
-    /* refetch: refetchClients, */
-  } = useSearchClientsByPhoneQuery(debouncedClientSearch, {
-    skip: debouncedClientSearch.length < 3, // Only search if 3+ characters
-  })
-
   const products = productsData?.products || []
   const totalPages = productsData?.pagination?.pages || 1
-  const clients = clientsData || []
 
-  // Reset to page 1 when searching products
+  // Reset to page 1 when searching
   useEffect(() => {
     setCurrentPage(1)
   }, [debouncedSearch])
@@ -102,6 +81,14 @@ const CreateOrderPage = () => {
     clientNotes: '',
   })
 
+  /* const [currentItem, setCurrentItem] = useState<OrderItem>({
+    productId: '',
+    productName: '',
+    sku: '',
+    quantity: 1,
+    unitPrice: 0,
+  })
+ */
   // Recalculate total amount whenever items change
   useEffect(() => {
     const total = formData.items.reduce(
@@ -113,58 +100,57 @@ const CreateOrderPage = () => {
 
   // Handlers
   const handleInputChange = (field: keyof CreateCRMOrderInput, value: any) => {
+    //console.log('value is: ', value)
+
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  // Handle client selection
-  const handleClientSelect = (client: Client) => {
-    /* setSelectedClient(client) */
-    setClientSearchTerm(
-      `${client.lastName} ${client.firstName} (${client.phone})`,
-    )
-    setFormData((prev) => ({
-      ...prev,
-      clientFirstName: client.firstName,
-      clientLastName: client.lastName,
-      clientSecondName: client.secondName || '',
-      clientPhone: client.phone,
-      clientEmail: client.email || '',
-      deliveryAddress: client.address || '',
-      deliveryOptionName: client.deliveryOptionName || '',
-      paymentOptionName: client.paymentOptionName || '',
-    }))
-    setIsClientDropdownOpen(false)
-  }
-
-  // Handle manual client data change (when user types in fields)
-  const handleManualClientChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-
-    // If phone changes, clear selected client
-    if (field === 'clientPhone') {
-      /* setSelectedClient(null) */
-      setClientSearchTerm(value)
+  /* const handleAddItem = () => {
+    if (!currentItem.productName || currentItem.unitPrice <= 0) {
+      alert('Будь ласка, заповніть назву товару та ціну')
+      return
     }
-  }
 
-  // Create new client from search term
-  const handleCreateNewClient = () => {
-    // Parse search term to extract name and phone
-    const phoneMatch = clientSearchTerm.match(/\d{10,}/)
-    const phone = phoneMatch ? phoneMatch[0] : clientSearchTerm
+    const newItem = {
+      ...currentItem,
+      totalPrice: currentItem.quantity * currentItem.unitPrice,
+    }
 
     setFormData((prev) => ({
       ...prev,
-      clientPhone: phone,
-      clientFirstName: '',
-      clientLastName: '',
-      clientSecondName: '',
-      clientEmail: '',
+      items: [...prev.items, newItem],
+      totalAmount: prev.totalAmount + newItem.totalPrice,
     }))
 
-   /*  setSelectedClient(null) */
-    setIsClientDropdownOpen(false)
+    // Reset current item
+    setCurrentItem({
+      productId: '',
+      productName: '',
+      sku: '',
+      quantity: 1,
+      unitPrice: 0,
+    })
   }
+
+  const handleCurrentItemChange = (field: keyof OrderItem, value: string) => {
+    setCurrentItem((prev) => ({
+      ...prev,
+      [field]:
+        field === 'quantity' || field === 'unitPrice'
+          ? value === ''
+            ? ''
+            : Number(value) // Allow empty string in state
+          : value,
+    }))
+  }
+  const handleRemoveItem = (index: number) => {
+    const removedItem = formData.items[index]
+    setFormData((prev) => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index),
+      totalAmount: prev.totalAmount - (removedItem.totalPrice || 0),
+    }))
+  } */
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -194,7 +180,7 @@ const CreateOrderPage = () => {
     }
   }
 
-  // Logic for Checkboxes and Adding Multiple Items
+  //Logic for Checkboxes and Adding Multiple Items
   const toggleProductSelection = (product: Product) => {
     setSelectedProducts((prev) =>
       prev.find((p) => p.productId === product.productId)
@@ -221,10 +207,32 @@ const CreateOrderPage = () => {
         newItems.reduce((sum, item) => sum + item.totalPrice, 0),
     }))
 
-    setSelectedProducts([])
+    setSelectedProducts([]) // Clear selection
+    setIsDropdownOpen(false) // Close dropdown
+    setSearchTerm('') // Clear search
+  }
+
+  // Directly add product from dropdown to the list
+  /* const addProductToOrder = (product: Product) => {
+    const exists = formData.items.find(
+      (item) => item.productId === product.productId,
+    )
+    if (exists) {
+      updateItemQuantity(product.productId!, exists.quantity + 1)
+    } else {
+      const newItem = {
+        productId: product.productId,
+        productName: product.name,
+        sku: product.sku,
+        quantity: 1,
+        unitPrice: product.price,
+        totalPrice: product.price,
+      }
+      setFormData((prev) => ({ ...prev, items: [...prev.items, newItem] }))
+    }
     setIsDropdownOpen(false)
     setSearchTerm('')
-  }
+  } */
 
   const updateItemQuantity = (productId: string, newQty: number) => {
     const qty = Math.max(1, newQty)
@@ -315,6 +323,7 @@ const CreateOrderPage = () => {
                     onClick={() => setIsDropdownOpen(false)}
                   ></div>
                   <div className='absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-96 overflow-hidden flex flex-col'>
+                    {/* Top Header for Multi-select - inside the dropdown menu div */}
                     {selectedProducts.length > 0 && (
                       <div className='p-2 bg-blue-50 border-b flex justify-between items-center'>
                         <span className='text-sm font-medium text-blue-700 ml-2'>
@@ -332,6 +341,7 @@ const CreateOrderPage = () => {
                     <div className='overflow-y-auto flex-1'>
                       {products.length > 0 ? (
                         products.map((product) => {
+                          // Check if this specific product is currently selected
                           const isChecked = selectedProducts.some(
                             (p) => p.productId === product.productId,
                           )
@@ -342,11 +352,12 @@ const CreateOrderPage = () => {
                               className={`flex items-start gap-3 p-3 border-b border-gray-100 last:border-0 transition-colors cursor-pointer ${isChecked ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}
                               onClick={() => toggleProductSelection(product)}
                             >
+                              {/* Checkbox UI */}
                               <div className='pt-1'>
                                 <input
                                   type='checkbox'
                                   checked={isChecked}
-                                  onChange={() => {}}
+                                  onChange={() => {}} // Handled by parent div onClick
                                   className='w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer'
                                 />
                               </div>
@@ -378,6 +389,7 @@ const CreateOrderPage = () => {
                       )}
                     </div>
 
+                    {/* Dropdown Pagination Footer */}
                     {totalPages > 1 && (
                       <div className='p-2 border-t bg-gray-50 flex items-center justify-between'>
                         <button
@@ -417,6 +429,7 @@ const CreateOrderPage = () => {
                   key={item.productId}
                   className='flex flex-wrap md:flex-nowrap items-center gap-4 p-3 border border-gray-200 rounded-lg bg-white shadow-sm'
                 >
+                  {/* Name and Stock Info */}
                   <div className='flex-1 min-w-[250px]'>
                     <p className='text-sm font-medium text-blue-600 leading-tight'>
                       {item.productName}
@@ -429,6 +442,7 @@ const CreateOrderPage = () => {
                     </p>
                   </div>
 
+                  {/* Quantity Controls */}
                   <div className='flex items-center gap-1'>
                     <button
                       type='button'
@@ -466,6 +480,7 @@ const CreateOrderPage = () => {
                     </button>
                   </div>
 
+                  {/* Price Input */}
                   <div className='flex items-center border border-gray-300 rounded px-2 py-1 bg-white min-w-[100px]'>
                     <input
                       type='number'
@@ -480,6 +495,7 @@ const CreateOrderPage = () => {
                     </span>
                   </div>
 
+                  {/* Row Total */}
                   <div className='flex items-center gap-2 min-w-[120px] justify-end'>
                     <ChevronDown size={14} className='text-blue-500' />
                     <span className='text-sm font-bold text-gray-700'>
@@ -487,6 +503,7 @@ const CreateOrderPage = () => {
                     </span>
                   </div>
 
+                  {/* Delete Button */}
                   <button
                     type='button'
                     onClick={() => removeItem(index)}
@@ -497,6 +514,7 @@ const CreateOrderPage = () => {
                 </div>
               ))}
 
+              {/* Summary Counter */}
               {formData.items.length > 0 && (
                 <div className='text-right pt-2 text-gray-700 font-bold'>
                   Усього: {formData.items.length} найм. (
@@ -505,104 +523,11 @@ const CreateOrderPage = () => {
               )}
             </div>
           </div>
-
-          {/* Client Information with Dropdown */}
+          {/* Client Information */}
           <div className='bg-white rounded-lg shadow-sm p-6'>
             <h2 className='text-xl font-semibold text-gray-900 mb-4'>
               Інформація про клієнта
             </h2>
-
-            {/* Client Search Dropdown */}
-            <div className='relative mb-4'>
-              <label className='block text-sm font-medium text-gray-700 mb-1'>
-                Оберіть клієнта
-              </label>
-              <div
-                className={`flex items-center border rounded-lg px-3 py-2.5 transition-all ${
-                  isClientDropdownOpen
-                    ? 'border-blue-500 ring-2 ring-blue-100'
-                    : 'border-gray-300'
-                }`}
-              >
-                <Search size={18} className='text-gray-400 mr-2' />
-                <input
-                  type='text'
-                  className='w-full outline-none text-gray-700 bg-transparent'
-                  placeholder='Пошук по імені або телефону...'
-                  value={clientSearchTerm}
-                  onFocus={() => setIsClientDropdownOpen(true)}
-                  onChange={(e) => setClientSearchTerm(e.target.value)}
-                />
-                {isClientFetching ? (
-                  <Loader2
-                    size={18}
-                    className='text-blue-500 animate-spin mr-2'
-                  />
-                ) : (
-                  <ChevronDown
-                    size={18}
-                    className='text-gray-400 cursor-pointer'
-                    onClick={() =>
-                      setIsClientDropdownOpen(!isClientDropdownOpen)
-                    }
-                  />
-                )}
-              </div>
-
-              {/* Client Dropdown */}
-              {isClientDropdownOpen && (
-                <>
-                  <div
-                    className='fixed inset-0 z-40'
-                    onClick={() => setIsClientDropdownOpen(false)}
-                  ></div>
-                  <div className='absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-80 overflow-hidden flex flex-col'>
-                    <div className='overflow-y-auto flex-1'>
-                      {clients.length > 0 ? (
-                        clients.map((client) => (
-                          <div
-                            key={client.clientId}
-                            className='flex items-center gap-3 p-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 cursor-pointer transition-colors'
-                            onClick={() => handleClientSelect(client)}
-                          >
-                            <div className='flex-1'>
-                              <p className='text-sm font-medium text-gray-900'>
-                                {client.lastName} {client.firstName}{' '}
-                                {client.secondName || ''}
-                              </p>
-                              <p className='text-xs text-gray-500'>
-                                {client.phone}
-                                {client.email && ` • ${client.email}`}
-                              </p>
-                            </div>
-                          </div>
-                        ))
-                      ) : debouncedClientSearch.length >= 3 ? (
-                        <div className='p-4 text-center'>
-                          <p className='text-sm text-gray-500 mb-3'>
-                            Клієнта не знайдено
-                          </p>
-                          <button
-                            type='button'
-                            onClick={handleCreateNewClient}
-                            className='flex items-center gap-2 mx-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm'
-                          >
-                            <UserPlus size={16} />
-                            Створити: {clientSearchTerm}
-                          </button>
-                        </div>
-                      ) : (
-                        <div className='p-4 text-center text-sm text-gray-500'>
-                          Введіть мінімум 3 символи для пошуку
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Client Details Form */}
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               <div>
                 <label className='block text-sm font-medium text-gray-700 mb-1'>
@@ -613,7 +538,7 @@ const CreateOrderPage = () => {
                   required
                   value={formData.clientLastName}
                   onChange={(e) =>
-                    handleManualClientChange('clientLastName', e.target.value)
+                    handleInputChange('clientLastName', e.target.value)
                   }
                   className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                   placeholder='Іванов'
@@ -628,7 +553,7 @@ const CreateOrderPage = () => {
                   required
                   value={formData.clientFirstName}
                   onChange={(e) =>
-                    handleManualClientChange('clientFirstName', e.target.value)
+                    handleInputChange('clientFirstName', e.target.value)
                   }
                   className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                   placeholder='Іван'
@@ -642,7 +567,7 @@ const CreateOrderPage = () => {
                   type='text'
                   value={formData.clientSecondName}
                   onChange={(e) =>
-                    handleManualClientChange('clientSecondName', e.target.value)
+                    handleInputChange('clientSecondName', e.target.value)
                   }
                   className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                   placeholder='Іванович'
@@ -657,7 +582,7 @@ const CreateOrderPage = () => {
                   required
                   value={formData.clientPhone}
                   onChange={(e) =>
-                    handleManualClientChange('clientPhone', e.target.value)
+                    handleInputChange('clientPhone', e.target.value)
                   }
                   className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                   placeholder='+380501234567'
@@ -671,7 +596,7 @@ const CreateOrderPage = () => {
                   type='email'
                   value={formData.clientEmail}
                   onChange={(e) =>
-                    handleManualClientChange('clientEmail', e.target.value)
+                    handleInputChange('clientEmail', e.target.value)
                   }
                   className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                   placeholder='example@email.com'

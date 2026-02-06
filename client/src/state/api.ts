@@ -309,6 +309,56 @@ export interface OrderCheckSummary {
   }
 }
 
+// ================================
+//        CLIENT TYPES
+// ================================
+
+export interface Client {
+  clientId: string
+  firstName: string
+  lastName: string
+  secondName?: string
+  phone: string
+  email?: string
+  address?: string
+  deliveryOptionName?: string
+  paymentOptionName?: string
+  reliability?: string
+  totalOrders: number
+  totalSpent: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ClientsResponse {
+  success: boolean
+  data: {
+    clients: Client[]
+    pagination: {
+      page: number
+      limit: number
+      total: number
+      pages: number
+    }
+  }
+}
+
+export interface CreateClientInput {
+  firstName: string
+  lastName: string
+  secondName?: string
+  phone: string
+  email?: string
+  address?: string
+  deliveryOptionName?: string
+  paymentOptionName?: string
+  reliability?: string
+}
+
+export interface GetOrCreateClientResponse {
+  success: boolean
+  data: Client
+}
 
 export const api = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL }),
@@ -320,6 +370,7 @@ export const api = createApi({
     'Expenses',
     'Sales',
     'Orders',
+    'Clients',
   ],
   endpoints: (build) => ({
     getDashboardMetrics: build.query<DashboardMetrics, void>({
@@ -477,6 +528,47 @@ export const api = createApi({
       }),
       invalidatesTags: ['Orders'],
     }),
+    searchClientsByPhone: build.query<Client[], string>({
+      query: (phone) => ({
+        url: '/clients/search/phone',
+        params: { phone },
+      }),
+      providesTags: ['Clients'],
+    }),
+    getClients: build.query<
+      ClientsResponse,
+      { search?: string; page?: number; limit?: number } | void
+    >({
+      query: (params) => ({
+        url: '/clients',
+        params: params || {},
+      }),
+      providesTags: ['Clients'],
+    }),
+
+    getOrCreateClient: build.mutation<
+      GetOrCreateClientResponse,
+      CreateClientInput
+    >({
+      query: (clientData) => ({
+        url: '/clients/get-or-create',
+        method: 'POST',
+        body: clientData,
+      }),
+      invalidatesTags: ['Clients'],
+    }),
+
+    createClient: build.mutation<
+      { success: boolean; clientId: string; message: string },
+      CreateClientInput
+    >({
+      query: (clientData) => ({
+        url: '/clients',
+        method: 'POST',
+        body: clientData,
+      }),
+      invalidatesTags: ['Clients'],
+    }),
   }),
 })
 
@@ -498,4 +590,8 @@ export const {
   useFetchPromOrdersMutation,
   useSyncOrdersMutation,
   useCheckForNewOrdersMutation,
+  useSearchClientsByPhoneQuery,
+  useGetClientsQuery,
+  useGetOrCreateClientMutation,
+  useCreateClientMutation,
 } = api
