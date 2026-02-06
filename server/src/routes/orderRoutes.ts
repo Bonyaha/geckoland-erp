@@ -4,6 +4,7 @@ import { validate } from '../middleware/validation'
 import {
   fetchNewPromOrders,
   getOrders,
+  getCRMOrders,
   getOrderById,
   syncOrders,
   createCRMOrder,
@@ -39,6 +40,9 @@ router.post(
 
 // GET /orders - Get all orders with filtering and pagination
 router.get('/', validate(getOrdersQuerySchema), asyncHandler(getOrders))
+
+// GET /orders/crm - Get CRM orders specifically
+router.get('/crm', asyncHandler(getCRMOrders))
 
 // GET /orders/:orderId - Get specific order by ID
 router.get(

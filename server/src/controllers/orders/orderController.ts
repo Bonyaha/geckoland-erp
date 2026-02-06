@@ -132,6 +132,36 @@ export const getOrders = async (req: Request, res: Response): Promise<void> => {
 }
 
 /**
+ * Get CRM orders specifically
+ * @route GET /api/orders/crm
+ */
+export const getCRMOrders = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { page, limit } = req.query
+
+  // Create filter params specifically for CRM orders
+  const filterParams = createOrderFilterParams({
+    page: page ? parseInt(page as string) : 1,
+    limit: limit ? parseInt(limit as string) : 100, // Higher limit for Google Sheets
+    source: 'crm' as Source, // Filter only CRM orders
+  })
+
+  const result = await orderService.getOrders(filterParams)
+
+  if (!result) {
+    throw ErrorFactory.internal('Failed to fetch CRM orders')
+  }
+
+  res.status(200).json({
+    success: true,
+    data: result,
+  })
+}
+
+
+/**
  * Get a specific order by ID
  */
 export const getOrderById = async (
