@@ -132,7 +132,7 @@ export const getOrders = async (req: Request, res: Response): Promise<void> => {
 }
 
 /**
- * Get CRM orders specifically
+ * Get CRM orders specifically for google sheets
  * @route GET /api/orders/crm
  */
 export const getCRMOrders = async (
