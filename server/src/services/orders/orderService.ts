@@ -8,6 +8,7 @@ import { nanoid } from 'nanoid'
 import { ErrorFactory, AppError } from '../../middleware/errorHandler'
 import SalesService from '../sales/salesService'
 import { syncAfterOrder } from '../marketplaces/sync/syncMarketplaces'
+import clientService from '../clients/clientService'
 import {OrderItemForSync} from '../../types/orders'
 
 import {
@@ -963,6 +964,32 @@ console.log('product.id is: ', item.productId);
         `Insufficient inventory for the following products:\n${inventoryIssues.join('\n')}`,
       )
     }
+
+// ============================================
+  // CREATE OR GET CLIENT BEFORE ORDER CREATION
+  // ============================================
+  
+  console.log('📝 Creating or getting client before order creation...')
+  
+  try {
+    const client = await clientService.getOrCreateClient({
+      firstName: clientFirstName,
+      lastName: clientLastName,
+      secondName: clientSecondName,
+      phone: clientPhone,
+      email: clientEmail,
+      address: deliveryAddress,
+      deliveryOptionName: mapToDeliveryOption(deliveryOptionName),
+      paymentOptionName: mapToPaymentOption(paymentOptionName),
+    })
+    
+    console.log(`✅ Client ready: ${client.clientId} (${client.firstName} ${client.lastName})`)
+  } catch (clientError: any) {
+    console.error('❌ Failed to create/get client:', clientError)
+    throw ErrorFactory.internal(
+      `Failed to create client: ${clientError.message}`
+    )
+  }
 
     // ============================================
     // PROCEED WITH ORDER CREATION
