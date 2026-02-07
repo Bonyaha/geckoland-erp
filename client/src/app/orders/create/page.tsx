@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import {
   useCreateCRMOrderMutation,
   useGetProductsQuery,
-  useSearchClientsByPhoneQuery,
+  useSearchClientsAutocompleteQuery,
   /* useGetOrCreateClientMutation */
   Product,
   CreateCRMOrderInput,
@@ -67,18 +67,17 @@ const CreateOrderPage = () => {
     limit: 10,
   })
 
-  // Fetch clients by phone
-  const {
-    data: clientsData,
-    isFetching: isClientFetching,
-    /* refetch: refetchClients, */
-  } = useSearchClientsByPhoneQuery(debouncedClientSearch, {
-    skip: debouncedClientSearch.length < 3, // Only search if 3+ characters
-  })
+  // Fetch clients
+  const { data: clientsData, isFetching: isClientFetching } =
+    useSearchClientsAutocompleteQuery(debouncedClientSearch, {
+      skip: debouncedClientSearch.length < 3,
+    })
 
   const products = productsData?.products || []
   const totalPages = productsData?.pagination?.pages || 1
   const clients = clientsData || []
+
+console.log('clients: ', clients);
 
   // Reset to page 1 when searching products
   useEffect(() => {

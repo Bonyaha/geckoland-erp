@@ -546,6 +546,19 @@ export const api = createApi({
       providesTags: ['Clients'],
     }),
 
+    searchClientsAutocomplete: build.query<Client[], string>({
+      query: (searchTerm) => ({
+        url: '/clients',
+        params: {
+          search: searchTerm,
+          limit: 10, // Limit results for dropdown
+        },
+      }),
+      // Transform response to extract just the clients array
+      transformResponse: (response: ClientsResponse) => response.data.clients,
+      providesTags: ['Clients'],
+    }),
+
     getOrCreateClient: build.mutation<
       GetOrCreateClientResponse,
       CreateClientInput
@@ -592,6 +605,7 @@ export const {
   useCheckForNewOrdersMutation,
   useSearchClientsByPhoneQuery,
   useGetClientsQuery,
+  useSearchClientsAutocompleteQuery,
   useGetOrCreateClientMutation,
   useCreateClientMutation,
 } = api
