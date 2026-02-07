@@ -14,8 +14,8 @@ export const createClientSchema = z.object({
     phone: z.string().min(10, 'Valid phone number is required'),
     email: z.email().optional().nullable().or(z.literal('')),
     address: z.string().optional(),
-    deliveryOptionName: z.enum(DeliveryOption).optional(),
-    paymentOptionName: z.enum(PaymentOption).optional(),
+    deliveryOptionName: z.enum(DeliveryOption).optional().nullable(),
+    paymentOptionName: z.enum(PaymentOption).optional().nullable(),
     reliability: z.string().optional(),
   }),
 })
