@@ -77,7 +77,7 @@ const CreateOrderPage = () => {
   const totalPages = productsData?.pagination?.pages || 1
   const clients = clientsData || []
 
-console.log('clients: ', clients);
+console.log('products: ', products)
 
   // Reset to page 1 when searching products
   useEffect(() => {
@@ -209,7 +209,7 @@ console.log('clients: ', clients);
       productId: p.productId,
       productName: p.name,
       sku: p.sku,
-      quantity: 1,
+      quantity: p.stockQuantity,
       unitPrice: p.price,
       totalPrice: p.price,
     }))
@@ -426,7 +426,7 @@ console.log('clients: ', clients);
                       </span>
                     </p>
                     <p className='text-[11px] text-gray-500 mt-0.5'>
-                      (доступно 10 шт)
+                      (доступно {item.quantity} шт.)
                     </p>
                   </div>
 
