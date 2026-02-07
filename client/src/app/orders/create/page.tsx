@@ -148,21 +148,23 @@ console.log('clients: ', clients);
 
   // Create new client from search term
   const handleCreateNewClient = () => {
-    // Parse search term to extract name and phone
-    const phoneMatch = clientSearchTerm.match(/\d{10,}/)
-    const phone = phoneMatch ? phoneMatch[0] : clientSearchTerm
+    // Clear the search field and close dropdown
+    setClientSearchTerm('')
+    setIsClientDropdownOpen(false)
 
+    // Clear all client fields to allow manual entry
     setFormData((prev) => ({
       ...prev,
-      clientPhone: phone,
+      clientPhone: '',
       clientFirstName: '',
       clientLastName: '',
       clientSecondName: '',
       clientEmail: '',
+      deliveryAddress: '',
+      deliveryCity: '',
+      deliveryOptionName: '',
+      paymentOptionName: '',
     }))
-
-   /*  setSelectedClient(null) */
-    setIsClientDropdownOpen(false)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -215,7 +215,7 @@ export interface Order {
   // Additional
   clientNotes?: string
   sellerComment?: string
-  orderSource?: string  
+  orderSource?: string
 
   // Relations
   orderItems: OrderItem[]
@@ -290,7 +290,7 @@ export interface UpdateOrderInput {
   deliveryOptionName?: DeliveryOption
   paymentOptionName?: PaymentOption
   clientNotes?: string
-  sellerComment?: string  
+  sellerComment?: string
 }
 
 export interface OrderSyncResult {
@@ -449,6 +449,8 @@ export const api = createApi({
       query: () => '/expenses',
       providesTags: ['Expenses'],
     }),
+
+    // Orders endpoints
     // Get all orders with filtering and pagination
     getOrders: build.query<OrdersResponse, OrderQueryParams | void>({
       query: (params) => ({
@@ -528,13 +530,8 @@ export const api = createApi({
       }),
       invalidatesTags: ['Orders'],
     }),
-    searchClientsByPhone: build.query<Client[], string>({
-      query: (phone) => ({
-        url: '/clients/search/phone',
-        params: { phone },
-      }),
-      providesTags: ['Clients'],
-    }),
+
+    //Client endpoints
     getClients: build.query<
       ClientsResponse,
       { search?: string; page?: number; limit?: number } | void
@@ -558,30 +555,6 @@ export const api = createApi({
       transformResponse: (response: ClientsResponse) => response.data.clients,
       providesTags: ['Clients'],
     }),
-
-    getOrCreateClient: build.mutation<
-      GetOrCreateClientResponse,
-      CreateClientInput
-    >({
-      query: (clientData) => ({
-        url: '/clients/get-or-create',
-        method: 'POST',
-        body: clientData,
-      }),
-      invalidatesTags: ['Clients'],
-    }),
-
-    createClient: build.mutation<
-      { success: boolean; clientId: string; message: string },
-      CreateClientInput
-    >({
-      query: (clientData) => ({
-        url: '/clients',
-        method: 'POST',
-        body: clientData,
-      }),
-      invalidatesTags: ['Clients'],
-    }),
   }),
 })
 
@@ -602,10 +575,7 @@ export const {
   useUpdateOrderMutation,
   useFetchPromOrdersMutation,
   useSyncOrdersMutation,
-  useCheckForNewOrdersMutation,
-  useSearchClientsByPhoneQuery,
+  useCheckForNewOrdersMutation, 
   useGetClientsQuery,
-  useSearchClientsAutocompleteQuery,
-  useGetOrCreateClientMutation,
-  useCreateClientMutation,
+  useSearchClientsAutocompleteQuery,  
 } = api

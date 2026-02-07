@@ -241,29 +241,6 @@ class ClientService {
   }
 
   /**
-   * Search for clients by phone number
-   * Useful for quick lookup when creating orders
-   *
-   * @param phone - Phone number to search for
-   * @returns Array of matching clients
-   */
-  async searchByPhone(phone: string) {
-    const normalizedPhone = this.normalizePhone(phone)
-
-    const clients = await prisma.clients.findMany({
-      where: {
-        phone: {
-          contains: normalizedPhone,
-          mode: 'insensitive',
-        },
-      },
-      take: 10,
-    })
-
-    return clients
-  }
-
-  /**
    * Get or create a client based on phone number
    * Useful for order creation flow
    *

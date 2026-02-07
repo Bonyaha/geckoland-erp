@@ -30,6 +30,9 @@ export const createClient = async (
 /**
  * Get all clients with optional search and pagination
  * @route GET /api/clients
+ * @query search - Search term (searches firstName, lastName, secondName, phone, email)
+ * @query page - Page number (default: 1)
+ * @query limit - Items per page (default: 20)
  */
 export const getClients = async (
   req: Request,
@@ -91,28 +94,6 @@ export const updateClient = async (
   res.status(200).json({
     success: true,
     message: result.message,
-  })
-}
-
-/**
- * Search clients by phone number
- * @route GET /api/clients/search/phone
- */
-export const searchClientByPhone = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  const { phone } = req.query
-
-  if (!phone || typeof phone !== 'string') {
-    throw ErrorFactory.badRequest('Phone number is required')
-  }
-
-  const clients = await clientService.searchByPhone(phone)
-
-  res.status(200).json({
-    success: true,
-    data: clients,
   })
 }
 

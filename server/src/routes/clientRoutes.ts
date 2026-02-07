@@ -12,13 +12,13 @@ import {
   createClient,
   getClients,
   getClientById,
-  updateClient,
-  searchClientByPhone,
+  updateClient,  
   getOrCreateClient,
 } from '../controllers/clients/clientController'
 
 const router = Router()
 
+// POST routes
 /**
  * @route   POST /api/clients
  * @desc    Create a new client
@@ -37,14 +37,7 @@ router.post(
   asyncHandler(getOrCreateClient),
 )
 
-/**
- * @route   GET /api/clients/search/phone
- * @desc    Search clients by phone number
- * @access  Private
- * @query   phone - Phone number to search for
- */
-router.get('/search/phone', asyncHandler(searchClientByPhone))
-
+// GET routes
 /**
  * @route   GET /api/clients
  * @desc    Get all clients with optional search and pagination
@@ -66,6 +59,7 @@ router.get(
   asyncHandler(getClientById),
 )
 
+// PATCH routes
 /**
  * @route   PATCH /api/clients/:clientId
  * @desc    Update an existing client
