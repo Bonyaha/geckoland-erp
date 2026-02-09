@@ -9,7 +9,7 @@ import { ErrorFactory, AppError } from '../../middleware/errorHandler'
 import SalesService from '../sales/salesService'
 import { syncAfterOrder } from '../marketplaces/sync/syncMarketplaces'
 import clientService from '../clients/clientService'
-import {OrderItemForSync} from '../../types/orders'
+import { OrderItemForSync } from '../../types/orders'
 
 import {
   OrderSyncResult,
@@ -346,7 +346,7 @@ class OrderService {
     sellerComments?: any
     utmData?: any
     orderSource?: string | null
-    dontCallCustomer?: boolean    
+    dontCallCustomer?: boolean
     isFulfillment?: boolean
     canCopy?: boolean
     specialOfferData?: any
@@ -381,7 +381,7 @@ class OrderService {
       utmData: params.utmData,
       orderSource: params.orderSource,
 
-      dontCallCustomer: params.dontCallCustomer,      
+      dontCallCustomer: params.dontCallCustomer,
       isFulfillment: params.isFulfillment,
       canCopy: params.canCopy,
 
@@ -464,7 +464,7 @@ class OrderService {
       orderSource: baseOrder.orderSource,
 
       // Flags
-      dontCallCustomer: baseOrder.dontCallCustomer,      
+      dontCallCustomer: baseOrder.dontCallCustomer,
 
       // Raw data
       rawOrderData: baseOrder.rawOrderData as Prisma.InputJsonValue,
@@ -574,6 +574,35 @@ class OrderService {
           : null,
       }
     })
+
+    console.log('📝 Creating or getting client before Prom order creation...')
+
+    try {
+      const client = await clientService.getOrCreateClient({
+        firstName: promOrder.client_first_name,
+        lastName: promOrder.client_last_name,
+        secondName: promOrder.client_second_name,
+        phone: promOrder.phone,
+        email: promOrder.email,
+        address: promOrder.delivery_address,
+        deliveryOptionName: mapToDeliveryOption(
+          promOrder.delivery_option?.name,
+        ),
+        paymentOptionName: mapToPaymentOption(promOrder.payment_option?.name),
+      })
+
+      console.log(
+        `✅ Client ready: ${client.clientId} (${client.firstName} ${client.lastName})`,
+      )
+    } catch (clientError: any) {
+      console.error(
+        '❌ Failed to create/get client for Prom order:',
+        clientError,
+      )
+      throw ErrorFactory.internal(
+        `Failed to create client: ${clientError.message}`,
+      )
+    }
 
     /* Build structured components */
 
@@ -742,6 +771,39 @@ class OrderService {
     const createdAt = new Date(rozetkaOrder.created)
     const lastModified = new Date(rozetkaOrder.changed)
 
+    console.log(
+      '📝 Creating or getting client before Rozetka order creation...',
+    )
+
+    try {
+      const client = await clientService.getOrCreateClient({
+        firstName: clientFirstName,
+        lastName: clientLastName,
+        secondName: clientSecondName,
+        phone: rozetkaOrder.user_phone,
+        email: null, // Rozetka doesn't provide email
+        address: rozetkaOrder.delivery?.place_street,
+        deliveryOptionName: mapToDeliveryOption(
+          rozetkaOrder.delivery?.delivery_service_name,
+        ),
+        paymentOptionName: mapToPaymentOption(
+          rozetkaOrder.payment?.payment_method_name,
+        ),
+      })
+
+      console.log(
+        `✅ Client ready: ${client.clientId} (${client.firstName} ${client.lastName})`,
+      )
+    } catch (clientError: any) {
+      console.error(
+        '❌ Failed to create/get client for Rozetka order:',
+        clientError,
+      )
+      throw ErrorFactory.internal(
+        `Failed to create client: ${clientError.message}`,
+      )
+    }
+
     /* Build structured components */
 
     // Customer information
@@ -815,7 +877,7 @@ class OrderService {
       statusGroup: rozetkaOrder.status_group,
       clientNotes: rozetkaOrder.comment,
       sellerComment: rozetkaOrder.current_seller_comment,
-      sellerComments: rozetkaOrder.seller_comment,      
+      sellerComments: rozetkaOrder.seller_comment,
       isFulfillment: rozetkaOrder.is_fulfillment || false,
       canCopy: rozetkaOrder.can_copy || false,
       rawOrderData: rozetkaOrder,
@@ -868,7 +930,7 @@ class OrderService {
   async createOrderFromCRM(
     frontendOrderData: CRMOrderCreateInput,
   ): Promise<OrderCreationResult> {
-console.log('data from client: ', frontendOrderData);
+    console.log('data from client: ', frontendOrderData)
 
     const orderId = `crm_${nanoid(8)}`
 
@@ -907,7 +969,7 @@ console.log('data from client: ', frontendOrderData);
 
       let product = null
 
-console.log('product.id is: ', item.productId);
+      console.log('product.id is: ', item.productId)
 
       // Try to find product by SKU (primary lookup for CRM orders)
       if (item.sku) {
@@ -965,31 +1027,33 @@ console.log('product.id is: ', item.productId);
       )
     }
 
-// ============================================
-  // CREATE OR GET CLIENT BEFORE ORDER CREATION
-  // ============================================
-  
-  console.log('📝 Creating or getting client before order creation...')
-  
-  try {
-    const client = await clientService.getOrCreateClient({
-      firstName: clientFirstName,
-      lastName: clientLastName,
-      secondName: clientSecondName,
-      phone: clientPhone,
-      email: clientEmail,
-      address: deliveryAddress,
-      deliveryOptionName: mapToDeliveryOption(deliveryOptionName),
-      paymentOptionName: mapToPaymentOption(paymentOptionName),
-    })
-    
-    console.log(`✅ Client ready: ${client.clientId} (${client.firstName} ${client.lastName})`)
-  } catch (clientError: any) {
-    console.error('❌ Failed to create/get client:', clientError)
-    throw ErrorFactory.internal(
-      `Failed to create client: ${clientError.message}`
-    )
-  }
+    // ============================================
+    // CREATE OR GET CLIENT BEFORE ORDER CREATION
+    // ============================================
+
+    console.log('📝 Creating or getting client before order creation...')
+
+    try {
+      const client = await clientService.getOrCreateClient({
+        firstName: clientFirstName,
+        lastName: clientLastName,
+        secondName: clientSecondName,
+        phone: clientPhone,
+        email: clientEmail,
+        address: deliveryAddress,
+        deliveryOptionName: mapToDeliveryOption(deliveryOptionName),
+        paymentOptionName: mapToPaymentOption(paymentOptionName),
+      })
+
+      console.log(
+        `✅ Client ready: ${client.clientId} (${client.firstName} ${client.lastName})`,
+      )
+    } catch (clientError: any) {
+      console.error('❌ Failed to create/get client:', clientError)
+      throw ErrorFactory.internal(
+        `Failed to create client: ${clientError.message}`,
+      )
+    }
 
     // ============================================
     // PROCEED WITH ORDER CREATION
@@ -1094,20 +1158,22 @@ console.log('product.id is: ', item.productId);
       `Created CRM order ${orderId} with ${order.orderItems.length} items`,
     )
     // Prepare orderedProducts for sync
-    const orderedProducts: OrderItemForSync[] = order.orderItems.map((item) => ({
+    const orderedProducts: OrderItemForSync[] = order.orderItems.map(
+      (item) => ({
         productId: item.productId,
         orderedQuantity: item.quantity,
-      }))
+      }),
+    )
 
-      try {
-          await syncAfterOrder(orderedProducts, 'crm')
-        console.log(`✅ Synced inventory after CRM order ${orderId}`) 
-      } catch (syncError) {
-        console.error(
-          `❌ Failed to sync inventory for order ${orderId}:`,
-          syncError
-        )
-      }
+    try {
+      await syncAfterOrder(orderedProducts, 'crm')
+      console.log(`✅ Synced inventory after CRM order ${orderId}`)
+    } catch (syncError) {
+      console.error(
+        `❌ Failed to sync inventory for order ${orderId}:`,
+        syncError,
+      )
+    }
 
     return {
       orderId,
