@@ -31,10 +31,38 @@ class ClientService {
   }
 
   /**
+   * PRIVATE: Internal method to create client in database
+   * Shared logic used by both createClient and getOrCreateClient
+   */
+  private async _createClientInDatabase(
+    clientData: CreateClientInput,
+    normalizedPhone: string,
+  ) {
+    const client = await prisma.clients.create({
+      data: {
+        firstName: clientData.firstName,
+        lastName: clientData.lastName,
+        secondName: clientData.secondName || null,
+        phone: normalizedPhone,
+        email: clientData.email || null,
+        address: clientData.address || null,
+        deliveryOptionName: clientData.deliveryOptionName || null,
+        paymentOptionName: clientData.paymentOptionName || null,
+        reliability: clientData.reliability || null,
+      },
+    })
+
+    console.log(`✅ Created new client: ${client.clientId}`)
+    return client
+  }
+
+  /**
    * Create a new client in the database
+   * FAILS if client with same phone already exists
    *
    * @param clientData - Client information from frontend
    * @returns Created client result with clientId
+   * @throws {AppError} If client with phone already exists
    *
    * @example
    * const result = await clientService.createClient({
@@ -63,19 +91,10 @@ class ClientService {
       }
 
       // Create the client
-      const client = await prisma.clients.create({
-        data: {
-          firstName: clientData.firstName,
-          lastName: clientData.lastName,
-          secondName: clientData.secondName || null,
-          phone: normalizedPhone,
-          email: clientData.email || null,
-          address: clientData.address || null,
-          deliveryOptionName: clientData.deliveryOptionName || null,
-          paymentOptionName: clientData.paymentOptionName || null,
-          reliability: clientData.reliability || null,
-        },
-      })
+      const client = await this._createClientInDatabase(
+        clientData,
+        normalizedPhone,
+      )
 
       console.log(`✅ Created new client: ${client.clientId}`)
 
@@ -242,10 +261,21 @@ class ClientService {
 
   /**
    * Get or create a client based on phone number
-   * Useful for order creation flow
+   * IDEMPOTENT: Returns existing client if found, creates new if not
+   *
+   * This is the preferred method for order creation flows where you want
+   * to ensure a client exists without failing on duplicates.
    *
    * @param clientData - Client data (will create if not found)
-   * @returns Existing or newly created client
+   * @returns Existing or newly created client (full object)
+   *
+   * @example
+   * // Safe to call multiple times with same phone
+   * const client = await clientService.getOrCreateClient({
+   *   firstName: 'Іван',
+   *   lastName: 'Петренко',
+   *   phone: '0501234567'
+   * })
    */
   async getOrCreateClient(clientData: CreateClientInput) {
     const normalizedPhone = this.normalizePhone(clientData.phone)
@@ -255,30 +285,13 @@ class ClientService {
       where: { phone: normalizedPhone },
     })
 
-    // If not found, create new client
-    if (!client) {
-      console.log(`📝 Creating new client with phone: ${normalizedPhone}`)
-
-      client = await prisma.clients.create({
-        data: {
-          firstName: clientData.firstName,
-          lastName: clientData.lastName,
-          secondName: clientData.secondName || null,
-          phone: normalizedPhone,
-          email: clientData.email || null,
-          address: clientData.address || null,
-          deliveryOptionName: clientData.deliveryOptionName || null,
-          paymentOptionName: clientData.paymentOptionName || null,
-          reliability: clientData.reliability || null,
-        },
-      })
-
-      console.log(`✅ Created new client: ${client.clientId}`)
-    } else {
+    if (client) {
       console.log(`ℹ️ Found existing client: ${client.clientId}`)
+      return client
     }
-
-    return client
+    // Client not found, create new one using shared logic
+    console.log(`📝 Creating new client with phone: ${normalizedPhone}`)
+    return await this._createClientInDatabase(clientData, normalizedPhone)
   }
 }
 
