@@ -1361,8 +1361,10 @@ class OrderService {
     }
   }
 
-  /** Update order in database by ID
+  /**
+   * Update order in database by ID
    * Automatically creates Sales records when status changes to DELIVERED
+   * Also updates client statistics
    */
 
   async updateOrder(orderId: string, updates: Prisma.OrdersUpdateInput) {
@@ -1370,7 +1372,12 @@ class OrderService {
       // Get the current order state before update
       const currentOrder = await prisma.orders.findUnique({
         where: { orderId },
-        select: { status: true, orderNumber: true },
+        select: {
+          status: true,
+          orderNumber: true,
+          clientPhone: true,
+          totalAmount: true,
+        },
       })
 
       if (!currentOrder) {
@@ -1382,6 +1389,13 @@ class OrderService {
         updates.status === OrderStatus.DELIVERED &&
         currentOrder.status !== OrderStatus.DELIVERED
 
+      // Track if status is changing FROM DELIVERED to something else
+      const isChangingFromDelivered =
+        currentOrder.status === OrderStatus.DELIVERED &&
+        updates.status !== OrderStatus.DELIVERED &&
+        updates.status !== undefined
+
+
       // Update the order
       const updatedOrder = await prisma.orders.update({
         where: { orderId },
@@ -1389,10 +1403,10 @@ class OrderService {
         include: { orderItems: true },
       })
 
-      // If status changed to DELIVERED, create sales records
+      // If status changed to DELIVERED, create sales records and update client stats
       if (isChangingToDelivered) {
         console.log(
-          `📈 Order ${
+          `Order ${
             currentOrder.orderNumber || orderId
           } status changed to DELIVERED, creating sales records...`,
         )
@@ -1422,8 +1436,36 @@ class OrderService {
               error,
             )
           })
-      }
 
+        // Update client statistics
+        clientService
+          .updateClientStats(
+            currentOrder.clientPhone,
+            Number(currentOrder.totalAmount),
+            true, // increment
+          )
+          .catch((error) => {
+            console.error('Failed to update client stats on delivery:', error)
+          })
+      }
+      //If status changed FROM DELIVERED, decrement client stats
+      if (isChangingFromDelivered) {
+        console.log(
+          `⚠️ Order ${
+            currentOrder.orderNumber || orderId
+          } status changed FROM DELIVERED`,
+        )
+
+        clientService
+          .updateClientStats(
+            currentOrder.clientPhone,
+            Number(currentOrder.totalAmount),
+            false, // decrement
+          )
+          .catch((error) => {
+            console.error('Failed to decrement client stats:', error)
+          })
+      }
       return updatedOrder
     } catch (error: any) {
       if (error.code === 'P2025')

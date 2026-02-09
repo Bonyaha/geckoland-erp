@@ -293,6 +293,67 @@ class ClientService {
     console.log(`📝 Creating new client with phone: ${normalizedPhone}`)
     return await this._createClientInDatabase(clientData, normalizedPhone)
   }
+
+  /**
+   * Update client order statistics (totalOrders and totalSpent)
+   * Called after order creation or when order status changes to DELIVERED
+   *
+   * @param clientPhone - Client's phone number
+   * @param orderAmount - Order amount to add to totalSpent
+   * @param increment - Whether to increment (true) or decrement (false) order count
+   *
+   * @example
+   * // After creating a delivered order
+   * await clientService.updateClientStats('+380501234567', 1500.00, true)
+   *
+   * // After canceling an order
+   * await clientService.updateClientStats('+380501234567', 1500.00, false)
+   */
+  async updateClientStats(
+    clientPhone: string,
+    orderAmount: number,
+    increment: boolean = true,
+  ): Promise<void> {
+    try {
+      const normalizedPhone = this.normalizePhone(clientPhone)
+
+      // Find client by phone
+      const client = await prisma.clients.findUnique({
+        where: { phone: normalizedPhone },
+      })
+
+      if (!client) {
+        console.warn(
+          `⚠️ Client not found for phone: ${normalizedPhone}. Cannot update stats.`,
+        )
+        return
+      }
+
+      // Calculate new values
+      const orderDelta = increment ? 1 : -1
+      const amountDelta = increment ? orderAmount : -orderAmount
+
+      // Update client statistics
+      await prisma.clients.update({
+        where: { clientId: client.clientId },
+        data: {
+          totalOrders: {
+            increment: orderDelta,
+          },
+          totalSpent: {
+            increment: amountDelta,
+          },
+        },
+      })
+
+      console.log(
+        `✅ Updated client stats for ${normalizedPhone}: ${increment ? '+' : '-'}1 order, ${increment ? '+' : '-'}${orderAmount} spent`,
+      )
+    } catch (error: any) {
+      console.error('Failed to update client stats:', error)
+      // Don't throw - this is a non-critical operation
+    }
+  }
 }
 
 export default new ClientService()
