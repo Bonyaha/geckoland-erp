@@ -10,7 +10,7 @@ import {
   ChevronDown,
   ChevronUp,
   SlidersHorizontal,
-  User,
+  Users,
 } from 'lucide-react'
 import React, { useState } from 'react'
 import { useAppSelector } from '@/app/redux'
@@ -176,8 +176,8 @@ const Sidebar = () => {
           isCollapsed={isSidebarCollapsed}
         />
         <SidebarLink
-          href='/users'
-          icon={User}
+          href='/clients'
+          icon={Users}
           label='Клієнти'
           isCollapsed={isSidebarCollapsed}
         />
