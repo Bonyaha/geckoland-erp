@@ -2,10 +2,8 @@
 
 'use client'
 
-import { useState, useEffect /* useRef */ } from 'react'
-
+import { useState, useEffect} from 'react'
 import { useSearchParams } from 'next/navigation'
-
 import Image from 'next/image'
 
 import {
@@ -27,9 +25,7 @@ import {
   XCircle,
   Clock,
   ChevronLeft,
-  ChevronRight,
-
-  /* X */
+  ChevronRight, 
 } from 'lucide-react'
 
 import Toast from '@/app/(components)/Toast'
@@ -43,7 +39,6 @@ const OrdersPage = () => {
   const statusFromUrl = searchParams.get('status') as OrderStatus | null
 
   // State
-
   const [page, setPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>(
@@ -61,7 +56,6 @@ const OrdersPage = () => {
       setStatusFilter(statusFromUrl)
     } else {
       // If no status in URL, show all orders
-
       setStatusFilter('all')
     }
 
