@@ -4,17 +4,22 @@ import prisma from '../../config/database'
 import { novaPoshtaService } from '../../services/delivery/novaPoshtaService'
 import { OrderStatus } from '@prisma/client'
 import { ErrorFactory } from '../../middleware/errorHandler'
-import { OrderTrackingUpdateRequest, OrderTrackingResult } from '../../types/orders'
+import {
+  OrderTrackingUpdateRequest,
+  OrderTrackingResult,
+} from '../../types/orders'
 import SalesService from '../../services/sales/salesService'
+import OrderService from '../../services/orders/orderService'
 
 const salesService = new SalesService()
+const orderService = new OrderService()
 
 /**
  * Map Nova Poshta status to our OrderStatus enum
  */
 function mapNovaPoshtaStatusToOrderStatus(
   novaPoshtaStatus: string,
-  statusCode: string
+  statusCode: string,
 ): OrderStatus {
   const status = novaPoshtaStatus.toLowerCase()
 
@@ -97,7 +102,7 @@ function mapNovaPoshtaStatusToOrderStatus(
 
 export const updateOrderTrackingStatuses = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   console.log('🔄 Starting order tracking status update...')
 
@@ -161,7 +166,7 @@ export const updateOrderTrackingStatuses = async (
 
   // FIX: Filter nulls and narrow type correctly
   const trackingData: OrderTrackingUpdateRequest[] = rawTrackingData.filter(
-    (item): item is OrderTrackingUpdateRequest => item !== null
+    (item): item is OrderTrackingUpdateRequest => item !== null,
   )
 
   if (trackingData.length === 0) {
@@ -171,9 +176,8 @@ export const updateOrderTrackingStatuses = async (
   console.log('trackingData is: ', trackingData)
 
   // Get updated statuses from Nova Poshta
-  const updatedStatuses = await novaPoshtaService.getTrackingStatuses(
-    trackingData
-  )
+  const updatedStatuses =
+    await novaPoshtaService.getTrackingStatuses(trackingData)
   console.log('updatedStatuses is: ', updatedStatuses)
 
   // Update orders in database
@@ -182,7 +186,7 @@ export const updateOrderTrackingStatuses = async (
 
   for (const status of updatedStatuses) {
     const orderData = trackingData.find(
-      (o) => o.trackingNumber === status.trackingNumber
+      (o) => o.trackingNumber === status.trackingNumber,
     )
 
     if (!orderData) continue
@@ -191,58 +195,17 @@ export const updateOrderTrackingStatuses = async (
       // Map Nova Poshta status to our OrderStatus enum
       const mappedStatus = mapNovaPoshtaStatusToOrderStatus(
         status.status,
-        status.statusCode
+        status.statusCode,
       )
 
       // Update order status and tracking details
       if (mappedStatus !== orderData.currentStatus) {
-        await prisma.orders.update({
-          where: { orderId: orderData.orderId },
-          data: {
-            status: mappedStatus,
-            trackingNumber: status.trackingNumber,
-            lastModified: new Date(),
-          },
+        await orderService.updateOrder(orderData.orderId, {
+          status: mappedStatus,
+          trackingNumber: status.trackingNumber,
         })
 
-        updatedCount++
-
-        // If status changed to DELIVERED, create sales records
-        if (mappedStatus === OrderStatus.DELIVERED) {
-          console.log(
-            `📈 Order ${
-              orderData.orderNumber || orderData.orderId
-            } status changed to DELIVERED via tracking, creating sales records...`
-          )
-
-          // Create sales records asynchronously
-          salesService
-            .createSalesFromOrder(orderData.orderId)
-            .then((result) => {
-              if (result.success) {
-                console.log(
-                  `✅ Successfully created ${
-                    result.salesIds.length
-                  } sales records for order ${
-                    result.orderNumber || orderData.orderId
-                  }`
-                )
-              } else {
-                console.error(
-                  `⚠️ Failed to create sales records for order ${
-                    result.orderNumber || orderData.orderId
-                  }:`,
-                  result.error
-                )
-              }
-            })
-            .catch((error) => {
-              console.error(
-                `❌ Error in sales creation process for order ${orderData.orderId}:`,
-                error
-              )
-            })
-        }
+        updatedCount++        
 
         // Create typed tracking result
         updateResults.push({
@@ -260,11 +223,11 @@ export const updateOrderTrackingStatuses = async (
         })
 
         console.log(
-          `✅ Updated order ${orderData.orderNumber}: ${mappedStatus}`
+          `✅ Updated order ${orderData.orderNumber}: ${mappedStatus}`,
         )
       } else {
         console.log(
-          `ℹ️ Order ${orderData.orderNumber}: Status unchanged (${mappedStatus})`
+          `ℹ️ Order ${orderData.orderNumber}: Status unchanged (${mappedStatus})`,
         )
 
         // Still add to results for transparency
@@ -286,7 +249,7 @@ export const updateOrderTrackingStatuses = async (
     } catch (error: any) {
       console.error(
         `❌ Failed to update order ${orderData.orderId}:`,
-        error.message
+        error.message,
       )
       // Add error to results
       updateResults.push({
@@ -314,7 +277,7 @@ export const updateOrderTrackingStatuses = async (
   })
 
   console.log(
-    `✅ Tracking update complete: ${updatedCount}/${trackingData.length} orders updated`
+    `✅ Tracking update complete: ${updatedCount}/${trackingData.length} orders updated`,
   )
 }
 
@@ -366,7 +329,7 @@ export const getSingleOrderTracking = async (req: Request, res: Response) => {
   const phoneNumber = order.recipientPhone || order.clientPhone || ''
   const novaPoshtaStatus = await novaPoshtaService.getSingleTrackingStatus(
     trackingNumber,
-    phoneNumber
+    phoneNumber,
   )
 
   if (!novaPoshtaStatus) {
@@ -375,7 +338,7 @@ export const getSingleOrderTracking = async (req: Request, res: Response) => {
   // Map to our status and create tracking result
   const mappedStatus = mapNovaPoshtaStatusToOrderStatus(
     novaPoshtaStatus.status,
-    novaPoshtaStatus.statusCode
+    novaPoshtaStatus.statusCode,
   )
 
   const trackingResult: OrderTrackingResult = {
@@ -404,7 +367,7 @@ export const getSingleOrderTracking = async (req: Request, res: Response) => {
  */
 export const updateOrderTrackingNumber = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   const { orderId } = req.params
   const { trackingNumber } = req.body
@@ -414,23 +377,18 @@ export const updateOrderTrackingNumber = async (
   }
 
   // Update order with new tracking number
-  const updatedOrder = await prisma.orders.update({
-    where: { orderId },
-    data: {
-      trackingNumber: trackingNumber.trim(),
-      lastModified: new Date(),
-    },
-    select: {
-      orderId: true,
-      orderNumber: true,
-      trackingNumber: true,
-      status: true,
-    },
+  const updatedOrder = await orderService.updateOrder(orderId, {
+    trackingNumber: trackingNumber.trim(),
   })
 
   res.json({
     success: true,
     message: 'Tracking number updated successfully',
-    data: updatedOrder,
+    data: {
+      orderId: updatedOrder.orderId,
+      orderNumber: updatedOrder.orderNumber,
+      trackingNumber: updatedOrder.trackingNumber,
+      status: updatedOrder.status,
+    },
   })
 }
