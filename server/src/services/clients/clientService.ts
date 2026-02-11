@@ -46,10 +46,7 @@ class ClientService {
         secondName: clientData.secondName || null,
         phone: normalizedPhone,
         email: clientData.email || null,
-        address: clientData.address || null,
-        deliveryOptionName: clientData.deliveryOptionName || null,
-        paymentOptionName: clientData.paymentOptionName || null,
-        reliability: clientData.reliability || null,
+        address: clientData.address || null,        
       },
     })
 
@@ -229,13 +226,7 @@ class ClientService {
       }
       if (updates.email !== undefined) updateData.email = updates.email || null
       if (updates.address !== undefined)
-        updateData.address = updates.address || null
-      if (updates.deliveryOptionName !== undefined)
-        updateData.deliveryOptionName = updates.deliveryOptionName || null
-      if (updates.paymentOptionName !== undefined)
-        updateData.paymentOptionName = updates.paymentOptionName || null
-      if (updates.reliability !== undefined)
-        updateData.reliability = updates.reliability || null
+        updateData.address = updates.address || null      
 
       // Update the client
       await prisma.clients.update({

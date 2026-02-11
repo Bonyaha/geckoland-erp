@@ -1,4 +1,4 @@
-// server\src\services\orders\orderService.ts
+// server/src/services/orders/orderService.ts
 import prisma, { Source, Prisma, OrderStatus } from '../../config/database'
 import { Decimal } from '@prisma/client/runtime/library'
 import { PromClient, type PromOrder } from '../marketplaces/promClient'
@@ -584,11 +584,7 @@ class OrderService {
         secondName: promOrder.client_second_name,
         phone: promOrder.phone,
         email: promOrder.email,
-        address: promOrder.delivery_address,
-        deliveryOptionName: mapToDeliveryOption(
-          promOrder.delivery_option?.name,
-        ),
-        paymentOptionName: mapToPaymentOption(promOrder.payment_option?.name),
+        address: promOrder.delivery_address,        
       })
 
       console.log(
@@ -782,13 +778,7 @@ class OrderService {
         secondName: clientSecondName,
         phone: rozetkaOrder.user_phone,
         email: null, // Rozetka doesn't provide email
-        address: rozetkaOrder.delivery?.place_street,
-        deliveryOptionName: mapToDeliveryOption(
-          rozetkaOrder.delivery?.delivery_service_name,
-        ),
-        paymentOptionName: mapToPaymentOption(
-          rozetkaOrder.payment?.payment_method_name,
-        ),
+        address: rozetkaOrder.delivery?.place_street,        
       })
 
       console.log(
@@ -1040,9 +1030,7 @@ class OrderService {
         secondName: clientSecondName,
         phone: clientPhone,
         email: clientEmail,
-        address: deliveryAddress,
-        deliveryOptionName: mapToDeliveryOption(deliveryOptionName),
-        paymentOptionName: mapToPaymentOption(paymentOptionName),
+        address: deliveryAddress,        
       })
 
       console.log(
@@ -1443,6 +1431,7 @@ class OrderService {
             currentOrder.clientPhone,
             Number(currentOrder.totalAmount),
             true, // increment
+            true, // isSuccessful - for DELIVERED orders
           )
           .catch((error) => {
             console.error('Failed to update client stats on delivery:', error)
@@ -1461,6 +1450,7 @@ class OrderService {
             currentOrder.clientPhone,
             Number(currentOrder.totalAmount),
             false, // decrement
+            false, // isSuccessful - since it's no longer delivered
           )
           .catch((error) => {
             console.error('Failed to decrement client stats:', error)

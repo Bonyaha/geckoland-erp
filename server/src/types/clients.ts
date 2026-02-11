@@ -1,8 +1,5 @@
 // server/src/types/clients.ts
 
-import { DeliveryOption, PaymentOption } from '../config/database'
-import { Decimal } from '@prisma/client/runtime/library'
-
 /**
  * ============================================
  * CLIENT DOMAIN TYPES
@@ -97,20 +94,6 @@ export function createClientFilterParams(
     page: params.page || 1,
     limit: params.limit || 20,
   }
-}
-
-/**
- * Type guard to check if a delivery option is valid
- */
-export function isDeliveryOption(value: string): value is DeliveryOption {
-  return Object.values(DeliveryOption).includes(value as DeliveryOption)
-}
-
-/**
- * Type guard to check if a payment option is valid
- */
-export function isPaymentOption(value: string): value is PaymentOption {
-  return Object.values(PaymentOption).includes(value as PaymentOption)
 }
 
 /**
