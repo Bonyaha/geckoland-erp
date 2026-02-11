@@ -3,6 +3,7 @@ import { Router } from 'express';
 import {
   updateOrderTrackingStatuses,
   getSingleOrderTracking,
+  updateOrderTrackingNumber,
 } from '../controllers/orders/orderTrackingController';
 import { asyncHandler } from '../middleware/asyncHandler';
 
@@ -13,5 +14,8 @@ router.post('/update-all', asyncHandler(updateOrderTrackingStatuses))
 
 // Get tracking status for a single order
 router.get('/order/:orderId', asyncHandler(getSingleOrderTracking))
+
+// Update tracking status for a single order (NEW)
+router.patch('/order/:orderId', asyncHandler(updateOrderTrackingNumber))
 
 export default router;

@@ -291,6 +291,25 @@ export class PromClient {
     /* const ordersResponse = await this.getOrders({ status: 'delivered' })
     return ordersResponse.orders || [] */
   }
+  /**
+   * Fetch a single order by ID to get updated details including tracking number
+   */
+  async getOrderById(orderId: string): Promise<PromOrder | null> {
+    try {
+      const response = await this.makeRequest<PromOrdersResponse>(
+        `/orders/${orderId}`,
+      )
+
+      if (response.orders && response.orders.length > 0) {
+        return response.orders[0]
+      }
+
+      return null
+    } catch (error: any) {
+      console.error(`Failed to fetch Prom order ${orderId}:`, error.message)
+      return null
+    }
+  }
 }
 
 /**

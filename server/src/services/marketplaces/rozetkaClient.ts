@@ -206,7 +206,7 @@ export class RozetkaClient {
 
   private async makeRequest<T>(
     endpoint: string,
-    params: Record<string, any> = {}
+    params: Record<string, any> = {},
   ): Promise<T> {
     try {
       const accessToken = await rozetkaTokenManager.getValidToken()
@@ -245,7 +245,7 @@ export class RozetkaClient {
       page?: number
       sort?: string
       expand?: string
-    } = {}
+    } = {},
   ): Promise<RozetkaOrdersResponse> {
     // Convert boolean to number for API
     const apiParams: Record<string, any> = { ...params }
@@ -283,6 +283,33 @@ export class RozetkaClient {
     } catch (error: any) {
       console.error('❌ Error fetching new orders from Rozetka:', error.message)
       throw error
+    }
+  }
+  /**
+   * Fetch a single order by ID to get updated details including tracking number
+   */
+  async getOrderById(orderId: string): Promise<RozetkaOrder | null> {
+    try {
+      const accessToken = await rozetkaTokenManager.getValidToken()
+
+      const response = await axios.get(`${this.baseUrl}/orders/${orderId}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Language': 'uk',
+        },
+        params: {
+          expand: 'purchases,delivery,payment,user,status_data',
+        },
+      })
+
+      if (response.data.success && response.data.content) {
+        return response.data.content as RozetkaOrder
+      }
+
+      return null
+    } catch (error: any) {
+      console.error(`Failed to fetch Rozetka order ${orderId}:`, error.message)
+      return null
     }
   }
 }

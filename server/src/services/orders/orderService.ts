@@ -584,7 +584,7 @@ class OrderService {
         secondName: promOrder.client_second_name,
         phone: promOrder.phone,
         email: promOrder.email,
-        address: promOrder.delivery_address,        
+        address: promOrder.delivery_address,
       })
 
       console.log(
@@ -778,7 +778,7 @@ class OrderService {
         secondName: clientSecondName,
         phone: rozetkaOrder.user_phone,
         email: null, // Rozetka doesn't provide email
-        address: rozetkaOrder.delivery?.place_street,        
+        address: rozetkaOrder.delivery?.place_street,
       })
 
       console.log(
@@ -1030,7 +1030,7 @@ class OrderService {
         secondName: clientSecondName,
         phone: clientPhone,
         email: clientEmail,
-        address: deliveryAddress,        
+        address: deliveryAddress,
       })
 
       console.log(
@@ -1350,6 +1350,89 @@ class OrderService {
   }
 
   /**
+   * Fetch tracking number from marketplace and update order
+   */
+  async fetchAndUpdateTrackingNumber(orderId: string) {
+    console.log(`🔍 Fetching tracking number for order: ${orderId}`)
+
+    const order = await prisma.orders.findUnique({
+      where: { orderId },
+      select: {
+        orderId: true,
+        externalOrderId: true,
+        source: true,
+        orderNumber: true,
+        trackingNumber: true,
+      },
+    })
+
+    if (!order) {
+      throw ErrorFactory.notFound(`Order ${orderId} not found`)
+    }
+
+    if (order.trackingNumber) {
+      return {
+        success: true,
+        trackingNumber: order.trackingNumber,
+        alreadyExists: true,
+      }
+    }
+
+    if (order.source === Source.crm) {
+      throw ErrorFactory.badRequest(
+        'Cannot fetch tracking for CRM orders. Add manually.',
+      )
+    }
+
+    let trackingNumber: string | null = null
+
+    try {
+      if (order.source === Source.prom) {
+        const promOrder = await this.promClient.getOrderById(
+          order.externalOrderId,
+        )
+        if (!promOrder) {
+          throw ErrorFactory.notFound(`Order not found in Prom`)
+        }
+        trackingNumber =
+          promOrder.delivery_provider_data?.declaration_number ||
+          promOrder.delivery_provider_data?.ttn ||
+          null
+      } else if (order.source === Source.rozetka) {
+        const rozetkaOrder = await this.rozetkaClient.getOrderById(
+          order.externalOrderId,
+        )
+        if (!rozetkaOrder) {
+          throw ErrorFactory.notFound(`Order not found in Rozetka`)
+        }
+        trackingNumber = rozetkaOrder.ttn || null
+      }
+
+      if (!trackingNumber) {
+        return {
+          success: false,
+          trackingNumber: null,
+          notYetAvailable: true,
+        }
+      }
+
+      const updatedOrder = await this.updateOrder(orderId, {
+        trackingNumber: trackingNumber.trim(),
+      })
+
+      return {
+        success: true,
+        orderId: updatedOrder.orderId,
+        orderNumber: updatedOrder.orderNumber,
+        trackingNumber: updatedOrder.trackingNumber,
+      }
+    } catch (error: any) {
+      if (error instanceof AppError) throw error
+      throw ErrorFactory.internal(`Failed to fetch tracking: ${error.message}`)
+    }
+  }
+
+  /**
    * Update order in database by ID
    * Automatically creates Sales records when status changes to DELIVERED
    * Also updates client statistics
@@ -1382,7 +1465,6 @@ class OrderService {
         currentOrder.status === OrderStatus.DELIVERED &&
         updates.status !== OrderStatus.DELIVERED &&
         updates.status !== undefined
-
 
       // Update the order
       const updatedOrder = await prisma.orders.update({

@@ -3,7 +3,7 @@ import { Request, Response } from 'express'
 import prisma from '../../config/database'
 import { novaPoshtaService } from '../../services/delivery/novaPoshtaService'
 import { OrderStatus } from '@prisma/client'
-import { ErrorFactory } from '../../middleware/errorHandler'
+import { ErrorFactory, AppError } from '../../middleware/errorHandler'
 import {
   OrderTrackingUpdateRequest,
   OrderTrackingResult,
@@ -362,8 +362,12 @@ export const getSingleOrderTracking = async (req: Request, res: Response) => {
 }
 
 /**
- * Update tracking number for an existing order
- * This can be called from frontend to manually set/update tracking number
+ * Update order tracking number
+ * Supports TWO modes:
+ * 1. Manual update: Provide trackingNumber in body
+ * 2. Automatic fetch: Leave body empty to fetch from marketplace
+ * 
+ * @route PATCH /api/tracking/order/:orderId
  */
 export const updateOrderTrackingNumber = async (
   req: Request,
@@ -372,23 +376,70 @@ export const updateOrderTrackingNumber = async (
   const { orderId } = req.params
   const { trackingNumber } = req.body
 
-  if (!trackingNumber || typeof trackingNumber !== 'string') {
-    throw ErrorFactory.badRequest('Valid tracking number is required')
+  if (!orderId) {
+    throw ErrorFactory.badRequest('Order ID is required')
   }
 
-  // Update order with new tracking number
-  const updatedOrder = await orderService.updateOrder(orderId, {
-    trackingNumber: trackingNumber.trim(),
-  })
+  // MODE 1: Manual tracking number update (EXISTING BEHAVIOR)
+  if (trackingNumber && typeof trackingNumber === 'string') {
+    const updatedOrder = await orderService.updateOrder(orderId, {
+      trackingNumber: trackingNumber.trim(),
+    })
 
-  res.json({
-    success: true,
-    message: 'Tracking number updated successfully',
-    data: {
-      orderId: updatedOrder.orderId,
-      orderNumber: updatedOrder.orderNumber,
-      trackingNumber: updatedOrder.trackingNumber,
-      status: updatedOrder.status,
-    },
-  })
+    return res.json({
+      success: true,
+      message: 'Tracking number updated successfully',
+      data: {
+        orderId: updatedOrder.orderId,
+        orderNumber: updatedOrder.orderNumber,
+        trackingNumber: updatedOrder.trackingNumber,
+        status: updatedOrder.status,
+      },
+    })
+  }
+
+  // MODE 2: Automatic fetch from marketplace (NEW BEHAVIOR)
+  console.log(`🔄 Fetching tracking from marketplace for order: ${orderId}`)
+
+  try {
+    const result = await orderService.fetchAndUpdateTrackingNumber(orderId)
+
+    // Already has tracking
+    if (result.alreadyExists) {
+      return res.status(200).json({
+        success: true,
+        message: 'Order already has a tracking number',
+        data: {
+          orderId: result.orderId,
+          trackingNumber: result.trackingNumber,
+        },
+      })
+    }
+
+    // Not yet available on marketplace
+    if (result.notYetAvailable) {
+      return res.status(200).json({
+        success: false,
+        message: 'Tracking number not yet available on marketplace',
+        data: {
+          orderId: result.orderId,
+          trackingNumber: null,
+        },
+      })
+    }
+
+    // Success - tracking fetched
+    res.status(200).json({
+      success: true,
+      message: 'Tracking number fetched successfully',
+      data: {
+        orderId: result.orderId,
+        orderNumber: result.orderNumber,
+        trackingNumber: result.trackingNumber,
+      },
+    })
+  } catch (error: any) {
+    if (error instanceof AppError) throw error
+    throw ErrorFactory.internal('Failed to fetch tracking number')
+  }
 }
