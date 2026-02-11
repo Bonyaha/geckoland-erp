@@ -22,15 +22,19 @@ model Clients {
   secondName    String?
   phone         String   @unique
   email         String?
-  address       String?
-  deliveryOptionName  DeliveryOption? // Nova Poshta, UkrPoshta, etc.
-  paymentOptionName   PaymentOption?
-  reliability   String? 
+  address       String?  
+  reliability   Decimal  @default(100) @db.Decimal(5, 2) 
+  successfulOrders Int      @default(0)
   totalOrders   Int      @default(0)
   totalSpent    Decimal  @default(0) @db.Decimal(10, 2)
   createdAt     DateTime @default(now()) @db.Timestamptz(6)
   updatedAt     DateTime @updatedAt @db.Timestamptz(6)
   orders        Orders[]
+
+  @@index([phone])               // Fast lookup for getOrCreateClient
+  @@index([email])               // For filtering/searching by email
+  @@index([lastName, firstName]) // Name search optimization  
+  
 }
 
 model Products {
