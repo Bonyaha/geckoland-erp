@@ -314,7 +314,7 @@ class OrderService {
   }
 
   // ============================================
-  // NEW HELPER METHOD - BUILD BASE ORDER DATA
+  // HELPER METHOD - BUILD BASE ORDER DATA
   // ============================================
 
   /**
@@ -370,7 +370,7 @@ class OrderService {
       itemCount: params.items.length,
       totalQuantity: params.items.reduce((sum, item) => sum + item.quantity, 0),
 
-      status: (params.status as any) || 'DELIVERED',
+      status: (params.status as any) || 'RECEIVED',
       statusName: params.statusName,
       statusGroup: params.statusGroup,
 
