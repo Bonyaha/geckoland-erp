@@ -8,6 +8,7 @@ import {
   ClientQueryResult,
   ClientCreationResult,
   ClientUpdateResult,
+  calculateReliability,
 } from '../../types/clients'
 
 /**
@@ -313,6 +314,7 @@ class ClientService {
     clientPhone: string,
     orderAmount: number,
     increment: boolean = true,
+    isSuccessful: boolean = false,
   ): Promise<void> {
     try {
       const normalizedPhone = this.normalizePhone(clientPhone)
@@ -332,17 +334,23 @@ class ClientService {
       // Calculate new values
       const orderDelta = increment ? 1 : -1
       const amountDelta = increment ? orderAmount : -orderAmount
+const successDelta = isSuccessful ? (increment ? 1 : -1) : 0
+
+const newTotalOrders = Math.max(0, client.totalOrders + orderDelta)
+const newSuccessfulOrders = Math.max(0, client.successfulOrders + successDelta)
+
+const newReliability = calculateReliability(newTotalOrders, newSuccessfulOrders)
 
       // Update client statistics
       await prisma.clients.update({
         where: { clientId: client.clientId },
         data: {
-          totalOrders: {
-            increment: orderDelta,
-          },
+          totalOrders: newTotalOrders,
+          successfulOrders: newSuccessfulOrders,
           totalSpent: {
             increment: amountDelta,
           },
+          reliability: newReliability,
         },
       })
 

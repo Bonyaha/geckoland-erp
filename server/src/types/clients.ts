@@ -112,3 +112,14 @@ export function isDeliveryOption(value: string): value is DeliveryOption {
 export function isPaymentOption(value: string): value is PaymentOption {
   return Object.values(PaymentOption).includes(value as PaymentOption)
 }
+
+/**
+ * Calculates reliability percentage based on order history
+ * Formula: $reliability = \frac{successfulOrders}{totalOrders} \times 100$
+ */
+export function calculateReliability(totalOrders: number, successfulOrders: number): number {
+  if (totalOrders <= 0) return 100; // New clients start at 100%
+  
+  const percentage = (successfulOrders / totalOrders) * 100;
+  return Math.round(percentage * 100) / 100; // Rounds to 2 decimal places
+}
