@@ -1391,6 +1391,8 @@ class OrderService {
         const promOrder = await this.promClient.getOrderById(
           order.externalOrderId,
         )
+console.log('promOrder is: ', promOrder);
+
         if (!promOrder) {
           throw ErrorFactory.notFound(`Order not found in Prom`)
         }

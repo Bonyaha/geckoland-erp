@@ -10,6 +10,7 @@ import {
   useGetOrdersQuery,
   useUpdateOrderMutation,
   useCheckForNewOrdersMutation,
+  useFetchTrackingNumberMutation,
   Order,
   OrderStatus,
   OrderSource,
@@ -96,6 +97,10 @@ const OrdersPage = () => {
   })
 
   const [updateOrder] = useUpdateOrderMutation()
+
+const [fetchTrackingNumber, { isLoading: isFetchingTracking }] = 
+  useFetchTrackingNumberMutation();
+
   const [checkNewOrders, { isLoading: isChecking }] =
     useCheckForNewOrdersMutation()
 
@@ -212,6 +217,22 @@ const OrdersPage = () => {
       currency: 'UAH',
     }).format(amount)
   }
+
+const handleFetchTracking = async (orderId: string) => {
+  try {
+    const result = await fetchTrackingNumber(orderId).unwrap()
+    if (result.success) {
+      showToast(result.message || 'ТТН успішно отримано', 'success')
+      // The invalidation in api.ts will refresh the UI automatically
+    } else {
+      // Handles the 'not yet available' case
+      showToast(result.message || 'ТТН ще не доступний у маркетплейсі', 'info')
+    }
+  } catch (error: any) {
+    console.error('Failed to fetch tracking:', error)
+    showToast(error?.data?.message || 'Помилка при отриманні ТТН', 'error')
+  }
+}
 
   // Extract orders from the response
 
@@ -553,13 +574,31 @@ const OrdersPage = () => {
                     {selectedOrder.deliveryCity}
                   </p>
 
-                  {selectedOrder.trackingNumber && (
+                  {selectedOrder.trackingNumber ? (
                     <CopyableItem
                       value={selectedOrder.trackingNumber}
                       displayValue={`ТТН: ${selectedOrder.trackingNumber}`}
                       className='text-lg font-bold text-gray-900'
                       onCopy={handleCopy}
                     />
+                  ) : (
+                    /* Button appears only if tracking is missing and source is Prom/Rozetka */
+                    (selectedOrder.source === 'prom' ||
+                      selectedOrder.source === 'rozetka') && (
+                      <button
+                        onClick={() =>
+                          handleFetchTracking(selectedOrder.orderId)
+                        }
+                        disabled={isFetchingTracking}
+                        className='mt-2 flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 disabled:opacity-50 text-sm font-semibold transition-colors cursor-pointer'
+                      >
+                        <RefreshCw
+                          size={14}
+                          className={isFetchingTracking ? 'animate-spin' : ''}
+                        />
+                        Синхронізувати ТТН
+                      </button>
+                    )
                   )}
                 </div>
               </div>

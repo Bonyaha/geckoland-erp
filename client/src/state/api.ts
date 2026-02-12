@@ -496,6 +496,20 @@ export const api = createApi({
         { type: 'Orders', id: orderId },
       ],
     }),
+    fetchTrackingNumber: build.mutation<
+      { success: boolean; message: string; data: any },
+      string
+    >({
+      query: (orderId) => ({
+        url: `/tracking/order/${orderId}`,
+        method: 'PATCH',
+        body: {}, // Empty body triggers marketplace fetch logic
+      }),
+      invalidatesTags: (result, error, orderId) => [
+        { type: 'Orders', id: orderId },
+        'Orders',
+      ],
+    }),
 
     // Fetch new orders from Prom
     fetchPromOrders: build.mutation<
@@ -573,9 +587,10 @@ export const {
   useGetOrderByIdQuery,
   useCreateCRMOrderMutation,
   useUpdateOrderMutation,
+  useFetchTrackingNumberMutation,
   useFetchPromOrdersMutation,
   useSyncOrdersMutation,
-  useCheckForNewOrdersMutation, 
+  useCheckForNewOrdersMutation,
   useGetClientsQuery,
-  useSearchClientsAutocompleteQuery,  
+  useSearchClientsAutocompleteQuery,
 } = api

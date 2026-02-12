@@ -255,6 +255,8 @@ export class PromClient {
         headers: getHeaders(),
         params,
       })
+console.log('response is: ', response.data.order);
+
       return response.data as T
     } catch (error: any) {
       handleAxiosError(error, `GET ${endpoint}`)
@@ -296,14 +298,15 @@ export class PromClient {
    */
   async getOrderById(orderId: string): Promise<PromOrder | null> {
     try {
-      const response = await this.makeRequest<PromOrdersResponse>(
+console.log('fetching an order with id: ', orderId);
+
+      const response = await this.makeRequest<{ order: PromOrder }>(
         `/orders/${orderId}`,
       )
 
-      if (response.orders && response.orders.length > 0) {
-        return response.orders[0]
+      if (response.order) {
+        return response.order
       }
-
       return null
     } catch (error: any) {
       console.error(`Failed to fetch Prom order ${orderId}:`, error.message)
