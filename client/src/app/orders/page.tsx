@@ -223,7 +223,17 @@ const handleFetchTracking = async (orderId: string) => {
     const result = await fetchTrackingNumber(orderId).unwrap()
     if (result.success) {
       showToast(result.message || 'ТТН успішно отримано', 'success')
-      // The invalidation in api.ts will refresh the UI automatically
+
+      // Update the selected order with the new tracking number
+      if (selectedOrder && selectedOrder.orderId === orderId) {
+        setSelectedOrder({
+          ...selectedOrder,
+          trackingNumber: result.data.trackingNumber,
+        })
+      }
+
+      // The invalidation in api.ts will refresh the orders list
+      refetch()
     } else {
       // Handles the 'not yet available' case
       showToast(result.message || 'ТТН ще не доступний у маркетплейсі', 'info')
