@@ -636,7 +636,7 @@ class OrderService {
       paymentOptionId: promOrder.payment_option?.id,
       paymentOptionName: mapToPaymentOption(promOrder.payment_option?.name),
       paymentData: promOrder.payment_data,
-      paymentStatus: promOrder.payment_data?.payment_status,
+      paymentStatus: promOrder.payment_data?.status,
     }
 
     // Financial information
