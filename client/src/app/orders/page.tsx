@@ -389,7 +389,7 @@ const handleFetchTracking = async (orderId: string) => {
                 </th>
 
                 <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
-                  Дії
+                  Статус замовлення
                 </th>
               </tr>
             </thead>
