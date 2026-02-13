@@ -164,7 +164,6 @@ export const updateOrderTrackingStatuses = async (
     return mappedRequest
   })
 
-  // FIX: Filter nulls and narrow type correctly
   const trackingData: OrderTrackingUpdateRequest[] = rawTrackingData.filter(
     (item): item is OrderTrackingUpdateRequest => item !== null,
   )
@@ -267,18 +266,16 @@ export const updateOrderTrackingStatuses = async (
       })
     }
   }
+console.log(
+  `✅ Tracking update complete: ${updatedCount}/${trackingData.length} orders updated`,
+)
 
   res.json({
     success: true,
     message: `Updated ${updatedCount} out of ${trackingData.length} orders`,
     updated: updatedCount,
-    total: trackingData.length,
-    results: updateResults,
-  })
-
-  console.log(
-    `✅ Tracking update complete: ${updatedCount}/${trackingData.length} orders updated`,
-  )
+    total: trackingData.length,    
+  })  
 }
 
 /**

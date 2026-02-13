@@ -11,6 +11,7 @@ import {
   useUpdateOrderMutation,
   useCheckForNewOrdersMutation,
   useFetchTrackingNumberMutation,
+  useUpdateAllTrackingStatusesMutation,
   Order,
   OrderStatus,
   OrderSource,
@@ -98,8 +99,11 @@ const OrdersPage = () => {
 
   const [updateOrder] = useUpdateOrderMutation()
 
-const [fetchTrackingNumber, { isLoading: isFetchingTracking }] = 
-  useFetchTrackingNumberMutation();
+  const [fetchTrackingNumber, { isLoading: isFetchingTracking }] =
+    useFetchTrackingNumberMutation()
+
+  const [updateAllTrackingStatuses, { isLoading: isUpdatingStatuses }] =
+    useUpdateAllTrackingStatusesMutation()
 
   const [checkNewOrders, { isLoading: isChecking }] =
     useCheckForNewOrdersMutation()
@@ -120,6 +124,28 @@ const [fetchTrackingNumber, { isLoading: isFetchingTracking }] =
     }
   }
 
+  // ADD THIS NEW HANDLER
+  const handleUpdateTrackingStatuses = async () => {
+    try {
+      const result = await updateAllTrackingStatuses().unwrap()
+
+      if (result.success) {
+        showToast(
+          `Оновлено статуси: ${result.updated} з ${result.total} замовлень`,
+          'success',
+        )
+        refetch()
+      } else {
+        showToast('Помилка оновлення статусів', 'error')
+      }
+    } catch (error: any) {
+      console.error('Failed to update tracking statuses:', error)
+      showToast(
+        error?.data?.message || 'Помилка оновлення статусів відстеження',
+        'error',
+      )
+    }
+  }
   const handleCheckNewOrders = async () => {
     try {
       const result = await checkNewOrders().unwrap()
@@ -218,31 +244,34 @@ const [fetchTrackingNumber, { isLoading: isFetchingTracking }] =
     }).format(amount)
   }
 
-const handleFetchTracking = async (orderId: string) => {
-  try {
-    const result = await fetchTrackingNumber(orderId).unwrap()
-    if (result.success) {
-      showToast(result.message || 'ТТН успішно отримано', 'success')
+  const handleFetchTracking = async (orderId: string) => {
+    try {
+      const result = await fetchTrackingNumber(orderId).unwrap()
+      if (result.success) {
+        showToast(result.message || 'ТТН успішно отримано', 'success')
 
-      // Update the selected order with the new tracking number
-      if (selectedOrder && selectedOrder.orderId === orderId) {
-        setSelectedOrder({
-          ...selectedOrder,
-          trackingNumber: result.data.trackingNumber,
-        })
+        // Update the selected order with the new tracking number
+        if (selectedOrder && selectedOrder.orderId === orderId) {
+          setSelectedOrder({
+            ...selectedOrder,
+            trackingNumber: result.data.trackingNumber,
+          })
+        }
+
+        // The invalidation in api.ts will refresh the orders list
+        refetch()
+      } else {
+        // Handles the 'not yet available' case
+        showToast(
+          result.message || 'ТТН ще не доступний у маркетплейсі',
+          'info',
+        )
       }
-
-      // The invalidation in api.ts will refresh the orders list
-      refetch()
-    } else {
-      // Handles the 'not yet available' case
-      showToast(result.message || 'ТТН ще не доступний у маркетплейсі', 'info')
+    } catch (error: any) {
+      console.error('Failed to fetch tracking:', error)
+      showToast(error?.data?.message || 'Помилка при отриманні ТТН', 'error')
     }
-  } catch (error: any) {
-    console.error('Failed to fetch tracking:', error)
-    showToast(error?.data?.message || 'Помилка при отриманні ТТН', 'error')
   }
-}
 
   // Extract orders from the response
 
@@ -353,6 +382,17 @@ const handleFetchTracking = async (orderId: string) => {
           >
             <RefreshCw size={18} className={isChecking ? 'animate-spin' : ''} />
             Перевірити нові
+          </button>
+          <button
+            onClick={handleUpdateTrackingStatuses}
+            disabled={isUpdatingStatuses}
+            className='flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-base font-semibold cursor-pointer'
+          >
+            <Truck
+              size={18}
+              className={isUpdatingStatuses ? 'animate-spin' : ''}
+            />
+            Оновити статуси
           </button>
         </div>
       </div>

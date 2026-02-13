@@ -510,6 +510,22 @@ export const api = createApi({
         'Orders',
       ],
     }),
+    updateAllTrackingStatuses: build.mutation<
+      {
+        success: boolean
+        message: string
+        updated: number
+        total: number
+        results: any[]
+      },
+      void
+    >({
+      query: () => ({
+        url: '/tracking/update-all',
+        method: 'POST',
+      }),
+      invalidatesTags: ['Orders'],
+    }),
 
     // Fetch new orders from Prom
     fetchPromOrders: build.mutation<
@@ -588,6 +604,7 @@ export const {
   useCreateCRMOrderMutation,
   useUpdateOrderMutation,
   useFetchTrackingNumberMutation,
+  useUpdateAllTrackingStatusesMutation,
   useFetchPromOrdersMutation,
   useSyncOrdersMutation,
   useCheckForNewOrdersMutation,
