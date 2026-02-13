@@ -104,12 +104,12 @@ const Sidebar = () => {
           isSidebarCollapsed ? 'justify-center' : 'px-8'
         }`}
       >
-        <div className='bg-white p-1.5 rounded-lg flex items-center justify-center w-9 h-9'>
+        <div className='flex items-center justify-center w-9 h-9'>
           <Image
             src='/logo.png'
             alt='Logo'
-            width={24}
-            height={24}
+            width={36} // Increased from 24 to 36 to fill the container
+            height={36} // Increased from 24 to 36
             className='object-contain'
           />
         </div>
