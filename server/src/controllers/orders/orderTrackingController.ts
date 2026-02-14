@@ -10,6 +10,7 @@ import {
 } from '../../types/orders'
 import SalesService from '../../services/sales/salesService'
 import OrderService from '../../services/orders/orderService'
+import { trackingService } from '../../services/tracking/trackingService'
 
 const salesService = new SalesService()
 const orderService = new OrderService()
@@ -104,258 +105,58 @@ export const updateOrderTrackingStatuses = async (
   req: Request,
   res: Response,
 ) => {
-  console.log('🔄 Starting order tracking status update...')
+  try {
+    console.log('🔄 Starting order tracking status update...')
 
-  // Fetch all orders that have tracking numbers and are not delivered
-  const orders = await prisma.orders.findMany({
-    where: {
-      AND: [
-        // Has a tracking number
-        {
-          trackingNumber: {
-            not: {
-              equals: null,
-            },
-          },
-        },
-        {
-          trackingNumber: {
-            not: {
-              equals: '',
-            },
-          },
-        },
-        // Not in final status
-        {
-          status: {
-            notIn: ['DELIVERED', 'CANCELED', 'RETURN'],
-          },
-        },
-      ],
-    },
-    select: {
-      orderId: true,
-      orderNumber: true,
-      status: true,
-      clientPhone: true,
-      recipientPhone: true,
-      trackingNumber: true,
-    },
-  })
+    // Call the shared tracking service with '[API]' prefix for logs
+    const summary = await trackingService.updateAllTrackingStatuses('[API]')
 
-  if (orders.length === 0) {
-    throw ErrorFactory.notFound('No orders to update')
-  }
-
-  console.log(`Found ${orders.length} orders to check`)
-
-  // Extract tracking data from orders
-  const rawTrackingData = orders.map((order) => {
-    if (!order.trackingNumber) return null
-
-    // Convert Prisma null to undefined for strict TS compliance with interface
-    const mappedRequest: OrderTrackingUpdateRequest = {
-      orderId: order.orderId,
-      orderNumber: order.orderNumber || undefined, // Fix: converts null to undefined
-      trackingNumber: order.trackingNumber,
-      phoneNumber: order.recipientPhone || order.clientPhone || '',
-      currentStatus: order.status,
+    if (summary.totalChecked === 0) {
+      throw ErrorFactory.notFound('No orders to update')
     }
-    return mappedRequest
-  })
 
-  const trackingData: OrderTrackingUpdateRequest[] = rawTrackingData.filter(
-    (item): item is OrderTrackingUpdateRequest => item !== null,
-  )
-
-  if (trackingData.length === 0) {
-    throw ErrorFactory.notFound('No valid tracking numbers found')
+    res.json({
+      success: true,
+      message: `Updated ${summary.updated} out of ${summary.totalChecked} orders`,
+      updated: summary.updated,
+      total: summary.totalChecked,
+      unchanged: summary.unchanged,
+      errors: summary.errors,
+      duration: summary.duration,
+    })
+  } catch (error: any) {
+    if (error instanceof AppError) throw error
+    throw ErrorFactory.internal('Failed to update tracking statuses')
   }
-
-  console.log('trackingData is: ', trackingData)
-
-  // Get updated statuses from Nova Poshta
-  const updatedStatuses =
-    await novaPoshtaService.getTrackingStatuses(trackingData)
-  console.log('updatedStatuses is: ', updatedStatuses)
-
-  // Update orders in database
-  let updatedCount = 0
-  const updateResults: OrderTrackingResult[] = []
-
-  for (const status of updatedStatuses) {
-    const orderData = trackingData.find(
-      (o) => o.trackingNumber === status.trackingNumber,
-    )
-
-    if (!orderData) continue
-
-    try {
-      // Map Nova Poshta status to our OrderStatus enum
-      const mappedStatus = mapNovaPoshtaStatusToOrderStatus(
-        status.status,
-        status.statusCode,
-      )
-
-      // Update order status and tracking details
-      if (mappedStatus !== orderData.currentStatus) {
-        await orderService.updateOrder(orderData.orderId, {
-          status: mappedStatus,
-          trackingNumber: status.trackingNumber,
-        })
-
-        updatedCount++        
-
-        // Create typed tracking result
-        updateResults.push({
-          orderId: orderData.orderId,
-          orderNumber: orderData.orderNumber,
-          trackingNumber: status.trackingNumber,
-          newStatus: mappedStatus,
-          statusDetails: {
-            novaPoshtaStatus: status.status,
-            statusCode: status.statusCode,
-            previousStatus: orderData.currentStatus,
-          },
-          updatedAt: new Date(),
-          updated: true,
-        })
-
-        console.log(
-          `✅ Updated order ${orderData.orderNumber}: ${mappedStatus}`,
-        )
-      } else {
-        console.log(
-          `ℹ️ Order ${orderData.orderNumber}: Status unchanged (${mappedStatus})`,
-        )
-
-        // Still add to results for transparency
-        updateResults.push({
-          orderId: orderData.orderId,
-          orderNumber: orderData.orderNumber,
-          trackingNumber: status.trackingNumber,
-          newStatus: mappedStatus,
-          statusDetails: {
-            novaPoshtaStatus: status.status,
-            statusCode: status.statusCode,
-            unchanged: true,
-          },
-          updatedAt: new Date(),
-          updated: false,
-          reason: 'Status unchanged',
-        })
-      }
-    } catch (error: any) {
-      console.error(
-        `❌ Failed to update order ${orderData.orderId}:`,
-        error.message,
-      )
-      // Add error to results
-      updateResults.push({
-        orderId: orderData.orderId,
-        orderNumber: orderData.orderNumber,
-        trackingNumber: status.trackingNumber,
-        newStatus: orderData.currentStatus as OrderStatus,
-        statusDetails: {
-          error: error.message,
-          novaPoshtaStatus: status.status,
-        },
-        updatedAt: new Date(),
-        updated: false,
-        error: error.message,
-      })
-    }
-  }
-console.log(
-  `✅ Tracking update complete: ${updatedCount}/${trackingData.length} orders updated`,
-)
-
-  res.json({
-    success: true,
-    message: `Updated ${updatedCount} out of ${trackingData.length} orders`,
-    updated: updatedCount,
-    total: trackingData.length,    
-  })  
 }
 
 /**
  * Get tracking status for a single order
+ * 
+ * @route GET /api/tracking/order/:orderId
  */
 export const getSingleOrderTracking = async (req: Request, res: Response) => {
   const { orderId } = req.params
 
-  const order = await prisma.orders.findUnique({
-    where: { orderId },
-    select: {
-      orderId: true,
-      orderNumber: true,
-      status: true,
-      clientPhone: true,
-      recipientPhone: true,
-      deliveryProviderData: true,
-      deliveryAddress: true,
-    },
-  })
+  try {
+    const trackingResult = await trackingService.getSingleOrderTracking(orderId)
 
-  if (!order) {
-    throw ErrorFactory.notFound('Order not found')
-  }
-
-  // Extract tracking number
-  let trackingNumber = ''
-  if (
-    order.deliveryProviderData &&
-    typeof order.deliveryProviderData === 'object'
-  ) {
-    const data = order.deliveryProviderData as any
-    trackingNumber = data.trackingNumber || data.ttn || ''
-  }
-
-  if (!trackingNumber && order.deliveryAddress) {
-    const ttnMatch = order.deliveryAddress.match(/ТТН[:\s]*(\d+)/i)
-    if (ttnMatch) {
-      trackingNumber = ttnMatch[1]
+    res.json({
+      success: true,
+      data: trackingResult,
+    })
+  } catch (error: any) {
+    if (error.message === 'Order not found') {
+      throw ErrorFactory.notFound('Order not found')
     }
+    if (error.message === 'No tracking number found for this order') {
+      throw ErrorFactory.badRequest('No tracking number found for this order')
+    }
+    if (error.message === 'Tracking information not found') {
+      throw ErrorFactory.notFound('Tracking information not found')
+    }
+    throw ErrorFactory.internal('Failed to get tracking status')
   }
-
-  if (!trackingNumber) {
-    throw ErrorFactory.badRequest('No tracking number found for this order')
-  }
-
-  // Get tracking status
-  const phoneNumber = order.recipientPhone || order.clientPhone || ''
-  const novaPoshtaStatus = await novaPoshtaService.getSingleTrackingStatus(
-    trackingNumber,
-    phoneNumber,
-  )
-
-  if (!novaPoshtaStatus) {
-    throw ErrorFactory.notFound('Tracking information not found')
-  }
-  // Map to our status and create tracking result
-  const mappedStatus = mapNovaPoshtaStatusToOrderStatus(
-    novaPoshtaStatus.status,
-    novaPoshtaStatus.statusCode,
-  )
-
-  const trackingResult: OrderTrackingResult = {
-    orderId: order.orderId,
-    trackingNumber,
-    newStatus: mappedStatus,
-    statusDetails: {
-      novaPoshtaStatus: novaPoshtaStatus.status,
-      statusCode: novaPoshtaStatus.statusCode,
-      currentOrderStatus: order.status,
-      statusChanged: mappedStatus !== order.status,
-      rawData: novaPoshtaStatus,
-    },
-    updatedAt: new Date(),
-  }
-
-  res.json({
-    success: true,
-    data: trackingResult,
-  })
 }
 
 /**
@@ -363,7 +164,7 @@ export const getSingleOrderTracking = async (req: Request, res: Response) => {
  * Supports TWO modes:
  * 1. Manual update: Provide trackingNumber in body
  * 2. Automatic fetch: Leave body empty to fetch from marketplace
- * 
+ *
  * @route PATCH /api/tracking/order/:orderId
  */
 export const updateOrderTrackingNumber = async (

@@ -8,8 +8,12 @@ import cron from 'node-cron'
 import { config } from './config/environment'
 import { restartGmailWatch } from './services/gmail/gmailService'
 import routes from './routes/index'
+
+/* MIDDLEWARE IMPORTS */
 import { errorHandler, notFoundHandler, requestLogger } from './middleware'
 
+/* CRON JOBS */
+import { initializeCronJobs, stopAllCronJobs } from './jobs'
 
 /* CONFIGURATIONS */
 const app = express()
@@ -23,21 +27,19 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(cors())
 
-
 // Logging
-app.use(morgan('common'));
-app.use(requestLogger); // Custom enhanced logging
+app.use(morgan('common'))
+app.use(requestLogger) // Custom enhanced logging
 
 /* ROUTES */
 app.use('/', routes) // Mount all routes through central router
 
-
 /* ERROR HANDLING */
 // 404 handler (must be after all routes)
-app.use(notFoundHandler);
+app.use(notFoundHandler)
 
 // Global error handler (must be last)
-app.use(errorHandler);
+app.use(errorHandler)
 
 /* GMAIL WATCH RENEWAL SCHEDULER */
 // This schedule runs at 2:00 AM every day. This doesn't handle authentication - it only renews the Gmail watch subscription (which expires every 7 days).
@@ -48,7 +50,7 @@ cron.schedule('0 2 * * *', () => {
       if (result) {
         console.log(
           '✅ Gmail watch renewed successfully. Expires:',
-          new Date(parseInt(result.expiration || '0'))
+          new Date(parseInt(result.expiration || '0')),
         )
       } else {
         console.log('⏭️  Gmail watch not started - no valid token available')
@@ -57,28 +59,64 @@ cron.schedule('0 2 * * *', () => {
     .catch((error) => {
       console.error(
         '🤖 Failed to restart Gmail watch automatically:',
-        error.message
+        error.message,
       )
     })
 })
 
 /* SERVER */
 const port = config.app.port
-app.listen(port, '0.0.0.0', () => {
+const server = app.listen(port, '0.0.0.0', () => {
   console.log(`Server running on port ${port}`)
-  console.log(`📍 Environment: ${config.app.env}`)
+  console.log(`🌍 Environment: ${config.app.env}`)
 
-  // Also trigger a restart on server startup
-  console.log('Attempting to start/restart Gmail watch on server startup...')
-  restartGmailWatch()
-    .then((result) => {
-      if (result) {
-        console.log('✅ Initial Gmail watch started successfully')
-      } else {
-        console.log('⏭️  Gmail watch not started - authorization needed first')
-      }
-    })
-    .catch((err) => {
-      console.log('⏭️  Could not start initial watch:', err.message)
-    })
+  // Initialize all cron jobs after server starts
+  initializeCronJobs()
 })
+
+// Graceful shutdown handlers
+process.on('SIGTERM', async () => {
+  console.log('\n⚠️  SIGTERM signal received: closing HTTP server')
+  
+  // Stop all cron jobs first
+  stopAllCronJobs()
+  
+  // Then close the server
+  server.close(() => {
+    console.log('✅ HTTP server closed')
+    process.exit(0)
+  })
+})
+
+process.on('SIGINT', async () => {
+  console.log('\n⚠️  SIGINT signal received: closing HTTP server')
+  
+  // Stop all cron jobs first
+  stopAllCronJobs()
+  
+  // Then close the server
+  server.close(() => {
+    console.log('✅ HTTP server closed')
+    process.exit(0)
+  })
+})
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error)
+  
+  // Stop cron jobs and exit
+  stopAllCronJobs()
+  process.exit(1)
+})
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason)
+  
+  // Stop cron jobs and exit
+  stopAllCronJobs()
+  process.exit(1)
+})
+
+export default app

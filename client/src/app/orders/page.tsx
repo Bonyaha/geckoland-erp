@@ -124,7 +124,6 @@ const OrdersPage = () => {
     }
   }
 
-  // ADD THIS NEW HANDLER
   const handleUpdateTrackingStatuses = async () => {
     try {
       const result = await updateAllTrackingStatuses().unwrap()
