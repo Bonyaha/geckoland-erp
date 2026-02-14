@@ -10,6 +10,7 @@ import type {
   RozetkaOrderItem,
   RozetkaOrdersResponse,
 } from '../../types/marketplaces'
+import gmailLogger from '../../utils/gmailLogger'
 
 /**
  * ============ PRODUCT LOGIC ===============
@@ -218,6 +219,7 @@ export class RozetkaClient {
         },
         params,
       })
+gmailLogger.info('response from Rozetka is ', response.data)
       return response.data as T
     } catch (error: any) {
       handleAxiosError(error, `GET ${endpoint}`)

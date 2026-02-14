@@ -1,6 +1,7 @@
 //server\src\services\marketplaces\promClient.ts
 import axios from 'axios'
 import { config } from '../../config/environment'
+import { gmailLogger } from '../../utils/gmailLogger'
 import type {
   PromUpdateParams,
   PromProductUpdate,
@@ -255,7 +256,7 @@ export class PromClient {
         headers: getHeaders(),
         params,
       })
-console.log('response is: ', response.data.order);
+gmailLogger.info('response from Prom is: ', response.data.order)
 
       return response.data as T
     } catch (error: any) {
