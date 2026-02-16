@@ -256,7 +256,7 @@ export class PromClient {
         headers: getHeaders(),
         params,
       })
-gmailLogger.info('response from Prom is: ', response.data.order)
+      gmailLogger.info('response from Prom is: ', response.data)
 
       return response.data as T
     } catch (error: any) {
@@ -299,7 +299,7 @@ gmailLogger.info('response from Prom is: ', response.data.order)
    */
   async getOrderById(orderId: string): Promise<PromOrder | null> {
     try {
-console.log('fetching an order with id: ', orderId);
+      console.log('fetching an order with id: ', orderId)
 
       const response = await this.makeRequest<{ order: PromOrder }>(
         `/orders/${orderId}`,
