@@ -404,7 +404,10 @@ const OrdersPage = () => {
             <thead className='bg-gray-50 border-b border-gray-200'>
               <tr>
                 <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
-                  Замовлення
+                  Дата
+                </th>
+                <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
+                  № Зам-ня
                 </th>
 
                 <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
@@ -412,19 +415,13 @@ const OrdersPage = () => {
                 </th>
 
                 <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
-                  Товари
-                </th>
-
-                <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
                   Сума
                 </th>
-
+                <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
+                  Статус оплати
+                </th>
                 <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
                   Статус
-                </th>
-
-                <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
-                  Дата
                 </th>
 
                 <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
@@ -440,6 +437,9 @@ const OrdersPage = () => {
                   className={`hover:bg-gray-50 cursor-pointer`}
                   onClick={() => setSelectedOrder(order)}
                 >
+                  <td className='px-6 py-5 whitespace-nowrap text-base text-gray-500'>
+                    {formatDate(order.createdAt)}
+                  </td>
                   <td className='px-6 py-4 whitespace-nowrap'>
                     <div className='flex items-center gap-2'>
                       <div className='flex flex-col'>
@@ -471,21 +471,15 @@ const OrdersPage = () => {
                       onCopy={handleCopy}
                     />
                   </td>
-
-                  <td className='px-6 py-5 whitespace-nowrap text-base'>
-                    {order.itemCount} шт
-                  </td>
-
                   <td className='px-6 py-5 whitespace-nowrap text-base font-bold text-gray-900'>
                     {formatCurrency(order.totalAmount)}
+                  </td>
+                  <td className='px-6 py-5 whitespace-nowrap text-base'>
+                    {order.paymentStatus}
                   </td>
 
                   <td className='px-6 py-5 whitespace-nowrap'>
                     {getStatusBadge(order.status)}
-                  </td>
-
-                  <td className='px-6 py-5 whitespace-nowrap text-base text-gray-500'>
-                    {formatDate(order.createdAt)}
                   </td>
 
                   <td className='px-6 py-5 whitespace-nowrap'>

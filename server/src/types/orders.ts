@@ -472,8 +472,7 @@ export interface OrderItemForSync {
  * }
  */
 export interface UnifiedOrderItem {
-  productId?: string | null
-  externalProductId: string
+  productId?: string | null  
   sku?: string | null
   name: string
   quantity: number

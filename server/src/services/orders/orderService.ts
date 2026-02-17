@@ -144,7 +144,7 @@ class OrderService {
    */
   private async lookupProductId(
     sku: string | null | undefined,
-    externalProductId: string,
+    marketplaceProductId: string,
     source: Source,
   ): Promise<string | null> {
     try {
@@ -166,16 +166,24 @@ class OrderService {
 
       for (const product of products) {
         const externalIds = product.externalIds as any
-        const marketplaceId =
-          source === Source.prom ? externalIds?.prom : externalIds?.rozetka
 
-        if (marketplaceId === externalProductId) {
-          return product.productId
+        if (source === Source.prom) {
+          if (externalIds?.prom === marketplaceProductId) {
+            return product.productId
+          }
+        } else if (source === Source.rozetka) {
+          // For Rozetka, check both rz_item_id and item_id
+          if (
+            externalIds?.rozetka?.rz_item_id === marketplaceProductId ||
+            externalIds?.rozetka?.item_id === marketplaceProductId
+          ) {
+            return product.productId
+          }
         }
       }
 
       console.warn(
-        `Product not found for SKU: ${sku}, External ID: ${externalProductId}, Source: ${source}`,
+        `Product not found for SKU: ${sku}, Marketplace Product ID: ${marketplaceProductId}, Source: ${source}`,
       )
       return null
     } catch (error) {
@@ -193,17 +201,16 @@ class OrderService {
    */
   private async mapPromItemToUnified(promItem: any): Promise<UnifiedOrderItem> {
     const sku = promItem.sku || null
-    const externalProductId = promItem.id.toString()
+    const marketplaceProductId = promItem.id.toString()
 
     // Lookup the actual productId
     const productId = await this.lookupProductId(
       sku,
-      externalProductId,
+      marketplaceProductId,
       Source.prom,
     )
     return {
-      productId,
-      externalProductId: promItem.id.toString(),
+      productId,      
       sku: promItem.sku || null,
       name: promItem.name,
       quantity: promItem.quantity,
@@ -221,17 +228,16 @@ class OrderService {
     rozetkaItem: any,
   ): Promise<UnifiedOrderItem> {
     const sku = rozetkaItem.item?.article || null
-    const externalProductId = rozetkaItem.item_id.toString()
+    const marketplaceProductId = rozetkaItem.item_id.toString()
 
     // Lookup the actual productId
     const productId = await this.lookupProductId(
       sku,
-      externalProductId,
+      marketplaceProductId,
       Source.rozetka,
     )
     return {
-      productId,
-      externalProductId: rozetkaItem.item_id.toString(),
+      productId,      
       sku: rozetkaItem.item?.article || null,
       name: rozetkaItem.item_name,
       quantity: rozetkaItem.quantity,
@@ -252,20 +258,31 @@ class OrderService {
     const totalPrice = Number(crmItem.totalPrice || unitPrice * quantity)
 
     const sku = crmItem.sku || null
-    const externalProductId = crmItem.productId || crmItem.sku || nanoid(6)
-
     let productId = crmItem.productId || null
 
-    if (!productId && sku) {
-      // For CRM orders, check all sources since user might reference existing products
-      productId = await this.lookupProductId(sku, externalProductId, Source.crm)
+    // If productId is provided, verify it exists in database
+    if (productId) {
+      const existingProduct = await prisma.products.findUnique({
+        where: { productId },
+        select: { productId: true },
+      })
+      productId = existingProduct?.productId || null
     }
-    console.log('I am at mapCRMItemToUnified, productId is: ', productId)
 
+    if (!productId && sku) {
+      // If no productId but we have SKU, try to look it up
+      if (!productId && sku) {
+        const productBySku = await prisma.products.findFirst({
+          where: { sku },
+          select: { productId: true },
+        })
+        productId = productBySku?.productId || null
+      }
+      console.log('I am at mapCRMItemToUnified, productId is: ', productId)
+    }
     return {
       // For CRM, internal and external ID are often the same, or derived from SKU
-      productId,
-      externalProductId: crmItem.productId || crmItem.sku || nanoid(6),
+      productId,      
       sku: crmItem.sku || null,
       name: crmItem.productName,
       quantity: quantity,
@@ -275,6 +292,7 @@ class OrderService {
       url: null, // CRM usually doesn't have an external marketplace URL
     }
   }
+
   /**
    * Convert unified order item to OrderItemInput for database creation
    */
@@ -284,9 +302,7 @@ class OrderService {
     rawItemData: any,
   ): OrderItemInput {
     const baseItem = {
-      orderItemId: `item_${orderId}_${unifiedItem.externalProductId}_${nanoid(
-        6,
-      )}`,
+      orderItemId: `item_${orderId}_${unifiedItem.sku || nanoid(6)}_${nanoid(6)}`,
       sku: unifiedItem.sku,
       productName: unifiedItem.name,
       productImage: unifiedItem.image,
@@ -308,7 +324,7 @@ class OrderService {
       // Product not found - use external ID as fallback
       return {
         ...baseItem,
-        productId: unifiedItem.externalProductId,
+        productId: null,
       }
     }
   }
@@ -1187,7 +1203,7 @@ class OrderService {
       let created = 0
       let skipped = 0
       let errors = 0
-      console.log('example of order: ', newOrders[0])
+      console.log('new order is: ', newOrders[0])
 
       for (const promOrder of newOrders) {
         try {
@@ -1391,7 +1407,7 @@ class OrderService {
         const promOrder = await this.promClient.getOrderById(
           order.externalOrderId,
         )
-console.log('promOrder is: ', promOrder);
+        console.log('promOrder is: ', promOrder)
 
         if (!promOrder) {
           throw ErrorFactory.notFound(`Order not found in Prom`)
