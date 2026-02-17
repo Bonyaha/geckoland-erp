@@ -6,11 +6,8 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import { google } from 'googleapis'
 import type { OAuth2Client } from 'googleapis-common'
+import { config } from '../../config/environment'
 
-const CREDENTIALS_PATH = path.join(
-  process.cwd(),
-  'src/config/credentials/google-credentials.json',
-)
 const TOKEN_PATH = path.join(process.cwd(), 'src/config/credentials/gmail-token.json')
 const SCOPES = [
   'https://www.googleapis.com/auth/gmail.modify',
@@ -22,13 +19,11 @@ async function loadSavedCredentialsIfExist(): Promise<OAuth2Client | null> {
   try {
     const content = await fs.readFile(TOKEN_PATH)
     const credentials = JSON.parse(content.toString())
-    const { client_secret, client_id, redirect_uris } = (
-      await getClientSecrets()
-    ).web
+    
     const client = new google.auth.OAuth2(
-      client_id,
-      client_secret,
-      redirect_uris[0]
+      config.gmail.clientId,
+      config.gmail.clientSecret,
+      config.gmail.redirectUri,
     )
     client.setCredentials(credentials)
 
@@ -99,20 +94,12 @@ async function isTokenValid(client: OAuth2Client): Promise<boolean> {
   }
 }
 
-// Get client secrets from google-credentials.json
-async function getClientSecrets() {
-  const content = await fs.readFile(CREDENTIALS_PATH)
-  return JSON.parse(content.toString())
-}
-
 // Generate an auth URL for the user to visit
-export async function getAuthUrl(): Promise<string> {
-  const { client_secret, client_id, redirect_uris } = (await getClientSecrets())
-    .web
+export async function getAuthUrl(): Promise<string> { 
   const oAuth2Client = new google.auth.OAuth2(
-    client_id,
-    client_secret,
-    redirect_uris[0]
+    config.gmail.clientId,
+    config.gmail.clientSecret,
+    config.gmail.redirectUri,
   )
   return oAuth2Client.generateAuthUrl({
     access_type: 'offline', // This ensures we get a refresh token
@@ -122,13 +109,11 @@ export async function getAuthUrl(): Promise<string> {
 }
 
 // Save the token after user authorization
-export async function saveToken(code: string): Promise<OAuth2Client> {
-  const { client_secret, client_id, redirect_uris } = (await getClientSecrets())
-    .web
+export async function saveToken(code: string): Promise<OAuth2Client> {  
   const oAuth2Client = new google.auth.OAuth2(
-    client_id,
-    client_secret,
-    redirect_uris[0]
+    config.gmail.clientId,
+    config.gmail.clientSecret,
+    config.gmail.redirectUri,
   )
   const { tokens } = await oAuth2Client.getToken(code)
   oAuth2Client.setCredentials(tokens)

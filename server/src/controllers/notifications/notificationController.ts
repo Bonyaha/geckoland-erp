@@ -5,27 +5,16 @@ import { google } from 'googleapis'
 import { authorize } from '../../services/gmail/gmailService'
 import type { gmail_v1 } from 'googleapis'
 import { promises as fs } from 'fs'
-import path from 'path'
 import crypto from 'crypto'
 import OrderService from '../../services/orders/orderService'
 import { gmailLogger } from '../../utils/gmailLogger'
+import { config } from '../../config/environment'
 
 // Initialize order service
 const orderService = new OrderService()
 
-// --- ENHANCED: Paths and data structures ---
-const HISTORY_PATH = path.join(
-  process.cwd(),
-  'src',
-  'storage',
-  'gmail-history.json',
-)
-const PROCESSED_MESSAGES_PATH = path.join(
-  process.cwd(),
-  'src',
-  'storage',
-  'processed-messages.json',
-)
+const HISTORY_PATH = config.paths.historyFile
+const PROCESSED_MESSAGES_PATH = config.paths.processedMessagesFile
 
 // In-memory cache for recently processed messages (prevents duplicates within same session)
 const recentlyProcessed = new Set<string>()
