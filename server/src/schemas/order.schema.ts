@@ -5,6 +5,7 @@ import {
   OrderStatus,
   DeliveryOption,
   PaymentOption,
+  PaymentStatus,
 } from '../config/database'
 import { Decimal } from '@prisma/client/runtime/library'
 
@@ -58,7 +59,7 @@ const paymentInfoSchema = z.object({
   paymentOptionId: z.number().optional(),
   paymentOptionName: z.enum(PaymentOption).optional(),
   paymentData: z.any().optional(),
-  paymentStatus: z.string().optional(),
+  paymentStatus: z.enum(PaymentStatus).optional(),
 })
 
 // ============================================
@@ -115,8 +116,9 @@ export const updateOrderSchema = z.object({
     deliveryAddress: z.string().optional(),
     deliveryOptionName: z.enum(DeliveryOption).optional(),
     paymentOptionName: z.enum(PaymentOption).optional(),
+    paymentStatus: z.enum(PaymentStatus).optional(),
     clientNotes: z.string().optional(),
-    sellerComment: z.string().optional()    
+    sellerComment: z.string().optional(),
   }),
 })
 

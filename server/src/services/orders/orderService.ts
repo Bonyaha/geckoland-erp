@@ -32,6 +32,7 @@ import {
   OrderPaymentInfoInternal,
   mapToDeliveryOption,
   mapToPaymentOption,
+  mapToPaymentStatus,
 } from '../../types/orders'
 
 class OrderService {
@@ -652,7 +653,7 @@ class OrderService {
       paymentOptionId: promOrder.payment_option?.id,
       paymentOptionName: mapToPaymentOption(promOrder.payment_option?.name),
       paymentData: promOrder.payment_data,
-      paymentStatus: promOrder.payment_data?.status,
+      paymentStatus: mapToPaymentStatus(promOrder.payment_data?.status),
     }
 
     // Financial information
@@ -850,7 +851,9 @@ class OrderService {
       paymentOptionName: mapToPaymentOption(
         rozetkaOrder.payment?.payment_method_name,
       ),
-      paymentStatus: rozetkaOrder.payment?.payment_status.title,
+      paymentStatus: mapToPaymentStatus(
+        rozetkaOrder.payment?.payment_status?.title,
+      ),
       paymentData: rozetkaOrder.payment,
     }
 
@@ -1488,11 +1491,13 @@ class OrderService {
       const TERMINAL_FAILURE_STATUSES: OrderStatus[] = [
         OrderStatus.CANCELED,
         OrderStatus.RETURN,
-      ]      
+      ]
 
       const isChangingToFailure =
         TERMINAL_FAILURE_STATUSES.includes(updates.status as OrderStatus) &&
-        !TERMINAL_FAILURE_STATUSES.includes(currentOrder.status as OrderStatus) &&
+        !TERMINAL_FAILURE_STATUSES.includes(
+          currentOrder.status as OrderStatus,
+        ) &&
         currentOrder.status !== OrderStatus.DELIVERED // DELIVERED→CANCELED already handled by isChangingFromDelivered
 
       // Update the order

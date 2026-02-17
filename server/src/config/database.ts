@@ -1,5 +1,11 @@
 // src/config/database.ts
-import { PrismaClient, Source, OrderStatus, Prisma } from '@prisma/client'
+import {
+  PrismaClient,
+  Source,
+  OrderStatus,
+  Prisma,
+  PaymentStatus,
+} from '@prisma/client'
 
 // Declare global type for TypeScript
 declare global {
@@ -34,5 +40,5 @@ export enum PaymentOption {
   PromPayment = 'PromPayment',
   CashOnDelivery = 'CashOnDelivery',
 }
-export { Source, OrderStatus, Prisma }
+export { Source, OrderStatus, PaymentStatus, Prisma }
 export default prisma

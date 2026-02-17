@@ -6,6 +6,7 @@ import {
   Prisma,
   DeliveryOption,
   PaymentOption,
+  PaymentStatus,
 } from '../config/database'
 import { Decimal } from '@prisma/client/runtime/library'
 import {
@@ -76,7 +77,7 @@ export function mapToPaymentOption(
     normalized.includes('на счет') || //
     normalized.includes('на рахунок') || //
     normalized === 'оплата на счет' || //
-    normalized === 'оплата по реквизитам'||
+    normalized === 'оплата по реквизитам' ||
     normalized === 'iban' //
   ) {
     return PaymentOption.IBAN
@@ -98,6 +99,50 @@ export function mapToPaymentOption(
   return null
 }
 
+/*
+ * Maps marketplace payment status names to PaymentStatus enum
+ * Handles various formats from Prom, Rozetka, and CRM
+ */
+
+export function mapToPaymentStatus(
+  status: string | undefined | null,
+): PaymentStatus | null {
+  if (!status) return null
+
+  const normalized = status.toLowerCase().trim()
+
+  if (
+    ['paid', 'оплачено', 'payment_received', 'succeeded'].includes(normalized)
+  ) {
+    return PaymentStatus.PAID
+  }
+  if (
+    [
+      'unpaid',
+      'не оплачено',
+      'pending',
+      'awaiting_payment',
+      'created',
+    ].includes(normalized)
+  ) {
+    return PaymentStatus.UNPAID
+  }
+  if (
+    ['part_paid', 'part-paid', 'partial', 'partially_paid'].includes(normalized)
+  ) {
+    return PaymentStatus.PART_PAID
+  }
+  if (
+    ['cancelled', 'canceled', 'refunded', 'failed', 'скасовано'].includes(
+      normalized,
+    )
+  ) {
+    return PaymentStatus.CANCELLED
+  }
+
+  console.warn(`Unknown payment status: ${status}`)
+  return null
+}
 /**
  * ============================================
  * ORDER DOMAIN TYPES
@@ -297,9 +342,10 @@ export interface OrderDeliveryInfo extends Omit<
  */
 export interface OrderPaymentInfoInternal extends Omit<
   OrderPaymentInfo,
-  'paymentOptionName'
+  'paymentOptionName' | 'paymentStatus'
 > {
   paymentOptionName?: PaymentOption | null
+  paymentStatus?: PaymentStatus | null
 }
 
 /**
@@ -411,7 +457,7 @@ export interface BaseOrderCreateInput {
   orderSource?: string | null
 
   // Flags
-  dontCallCustomer?: boolean  
+  dontCallCustomer?: boolean
   isFulfillment?: boolean
   canCopy?: boolean
 
@@ -472,7 +518,7 @@ export interface OrderItemForSync {
  * }
  */
 export interface UnifiedOrderItem {
-  productId?: string | null  
+  productId?: string | null
   sku?: string | null
   name: string
   quantity: number

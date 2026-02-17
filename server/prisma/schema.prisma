@@ -98,7 +98,7 @@ model Orders {
   deliveryProviderData    Json?  
   paymentOptionName       PaymentOption?
   paymentData             Json?
-  paymentStatus           String?
+  paymentStatus           PaymentStatus?
   totalAmount             Decimal      @db.Decimal(10, 2)
   totalAmountWithDiscount Decimal?     @db.Decimal(10, 2)
   fullPrice               Decimal?     @db.Decimal(10, 2)
@@ -240,4 +240,11 @@ enum PaymentOption {
   IBAN
   PromPayment
   CashOnDelivery
+}
+
+enum PaymentStatus {
+  PAID
+  UNPAID
+  PART_PAID
+  CANCELLED
 }
