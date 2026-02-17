@@ -13,8 +13,15 @@ export function mapNovaPoshtaStatusToOrderStatus(
   novaPoshtaStatus: string,
   statusCode: string,
 ): OrderStatus {
+
+
   const status = novaPoshtaStatus.toLowerCase()
 
+console.log(
+  status.includes('відправлення у м.'),
+  'Checking for "відправлення у м." in status:',
+  novaPoshtaStatus,
+)
   // Code 9: Delivered (Видалено / Отримано)
   if (
     status.includes('одержано') ||
@@ -30,11 +37,12 @@ export function mapNovaPoshtaStatusToOrderStatus(
   // Code 6: En route to city with expected delivery date (Відправлення у місті YYYY, орієнтовна доставка до ВІДДІЛЕННЯ-ХХХ dd-mm)
   if (
     status.includes('прямує до міста') ||
-    status.includes('відправлення у місті') ||
+    status.includes('відправлення у м.') ||
     status.includes('орієнтовна доставка') ||
     status.includes('в дорозі') ||
     statusCode === '5' ||
-    statusCode === '6'
+    statusCode === '6' ||
+    statusCode === '4'
   ) {
     return OrderStatus.SHIPPED
   }
@@ -92,8 +100,8 @@ export function mapNovaPoshtaStatusToOrderStatus(
   if (
     statusCode === '1' ||
     statusCode === '2' ||
-    statusCode === '3' ||
-    statusCode === '4'
+    statusCode === '3'
+    
   ) {
     return OrderStatus.PREPARED
   }
