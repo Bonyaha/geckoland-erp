@@ -210,7 +210,7 @@ class OrderService {
       Source.prom,
     )
     return {
-      productId,      
+      productId,
       sku: promItem.sku || null,
       name: promItem.name,
       quantity: promItem.quantity,
@@ -237,7 +237,7 @@ class OrderService {
       Source.rozetka,
     )
     return {
-      productId,      
+      productId,
       sku: rozetkaItem.item?.article || null,
       name: rozetkaItem.item_name,
       quantity: rozetkaItem.quantity,
@@ -282,7 +282,7 @@ class OrderService {
     }
     return {
       // For CRM, internal and external ID are often the same, or derived from SKU
-      productId,      
+      productId,
       sku: crmItem.sku || null,
       name: crmItem.productName,
       quantity: quantity,
@@ -1484,6 +1484,17 @@ class OrderService {
         updates.status !== OrderStatus.DELIVERED &&
         updates.status !== undefined
 
+      // This covers: RECEIVED → CANCELED, PREPARED → CANCELED, SHIPPED → CANCELED, etc.
+      const TERMINAL_FAILURE_STATUSES: OrderStatus[] = [
+        OrderStatus.CANCELED,
+        OrderStatus.RETURN,
+      ]      
+
+      const isChangingToFailure =
+        TERMINAL_FAILURE_STATUSES.includes(updates.status as OrderStatus) &&
+        !TERMINAL_FAILURE_STATUSES.includes(currentOrder.status as OrderStatus) &&
+        currentOrder.status !== OrderStatus.DELIVERED // DELIVERED→CANCELED already handled by isChangingFromDelivered
+
       // Update the order
       const updatedOrder = await prisma.orders.update({
         where: { orderId },
@@ -1556,6 +1567,26 @@ class OrderService {
             console.error('Failed to decrement client stats:', error)
           })
       }
+      if (isChangingToFailure) {
+        console.log(
+          `Order ${currentOrder.orderNumber || orderId} status changed to ${updates.status} (non-delivery cancellation), updating client stats...`,
+        )
+
+        clientService
+          .updateClientStats(
+            currentOrder.clientPhone,
+            Number(currentOrder.totalAmount),
+            true, // increment totalOrders — the order did happen
+            false, // NOT successful — client didn't pay / refused
+          )
+          .catch((error) => {
+            console.error(
+              'Failed to update client stats on cancellation:',
+              error,
+            )
+          })
+      }
+
       return updatedOrder
     } catch (error: any) {
       if (error.code === 'P2025')
