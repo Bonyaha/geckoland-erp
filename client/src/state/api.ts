@@ -151,6 +151,8 @@ export type PaymentOption =
   | 'PromPayment'
   | 'CashOnDelivery'
 
+export type PaymentStatus = 'PAID' | 'UNPAID' | 'PART_PAID' | 'CANCELLED'
+
 export interface OrderItem {
   orderItemId: string
   productId?: string
@@ -198,7 +200,7 @@ export interface Order {
 
   // Payment
   paymentOptionName?: PaymentOption
-  paymentStatus?: string
+  paymentStatus?: PaymentStatus
 
   // Financial
   totalAmount: number

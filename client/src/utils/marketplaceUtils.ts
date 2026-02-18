@@ -62,7 +62,7 @@ export function hasRozetkaId(externalIds: any): externalIds is {
  * @returns Parsed external IDs object or null
  */
 export function parseExternalIds(
-  externalIds: string | Record<string, any> | undefined
+  externalIds: string | Record<string, any> | undefined,
 ): Record<string, any> | null {
   if (!externalIds) return null
 
@@ -75,4 +75,18 @@ export function parseExternalIds(
   }
 
   return externalIds
+}
+
+/*
+ * Maps internal payment status codes to user-friendly labels in Ukrainian. This is used to display the payment status in the UI based on the API response.
+ */
+
+export const getPaymentStatusLabel = (status?: string) => {
+  const statusMap: Record<string, string> = {
+    PAID: 'Оплачено',
+    UNPAID: 'Не оплачено',
+    PART_PAID: 'Частково оплачено',
+    CANCELLED: 'Скасовано',
+  }
+  return status ? statusMap[status] || status : '—'
 }

@@ -32,6 +32,7 @@ import {
 
 import Toast from '@/app/(components)/Toast'
 import { useToast } from '@/hooks/useToast'
+import { getPaymentStatusLabel } from '@/utils/marketplaceUtils'
 
 import CopyableItem from '@/app/(components)/CopyableItem'
 import CustomSelect from '@/app/(components)/CustomSelect'
@@ -475,7 +476,17 @@ const OrdersPage = () => {
                     {formatCurrency(order.totalAmount)}
                   </td>
                   <td className='px-6 py-5 whitespace-nowrap text-base'>
-                    {order.paymentStatus}
+                    <span
+                      className={`font-medium ${
+                        order.paymentStatus === 'PAID'
+                          ? 'text-green-600'
+                          : order.paymentStatus === 'UNPAID'
+                            ? 'text-red-600'
+                            : 'text-gray-700'
+                      }`}
+                    >
+                      {getPaymentStatusLabel(order.paymentStatus)}
+                    </span>
                   </td>
 
                   <td className='px-6 py-5 whitespace-nowrap'>
