@@ -16,7 +16,7 @@ async function updateTrackingStatuses() {
 }
 
 /**
- * Schedule the cron job to run every 3 hours
+ * Schedule the cron job to run every 6 hours
  *
  * Cron expression: '0 *\/3 * * *'
  * - '0' - at minute 0 (start of the hour)
