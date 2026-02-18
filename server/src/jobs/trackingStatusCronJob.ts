@@ -20,26 +20,23 @@ async function updateTrackingStatuses() {
  *
  * Cron expression: '0 *\/3 * * *'
  * - '0' - at minute 0 (start of the hour)
- * - '*\/3' - every 3 hours
+ * - '*\/6' - every 6 hours
  * - '* * *' - every day, every month, every day of week
  *
- * This will run at: 00:00, 03:00, 06:00, 09:00, 12:00, 15:00, 18:00, 21:00
+ * This will run at: 00:00, 06:00, 12:00, 18:00
  */
 export function startTrackingStatusCronJob() {
   // Schedule to run every 3 hours
-  const job = cron.schedule('0 */3 * * *', async () => {
+  const job = cron.schedule('0 */6 * * *', async () => {
     console.log('\n🕒 [CRON] Scheduled tracking status check triggered')
     await updateTrackingStatuses()
   })
 
-  console.log('✅ [CRON] Tracking status cron job initialized')
-  console.log(
-    '⏰ [CRON] Will run every 3 hours at: 00:00, 03:00, 06:00, 09:00, 12:00, 15:00, 18:00, 21:00',
-  )
+  console.log('✅ [CRON] Tracking status cron job initialized')  
 
   // Run immediately on startup (optional - you can remove this if you don't want it)
-  console.log('🚀 [CRON] Running initial tracking status check...')
-  updateTrackingStatuses()
+  //console.log('🚀 [CRON] Running initial tracking status check...')
+  //updateTrackingStatuses()
 
   return job
 }

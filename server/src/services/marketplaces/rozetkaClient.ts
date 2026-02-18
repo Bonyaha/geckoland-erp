@@ -219,7 +219,7 @@ export class RozetkaClient {
         },
         params,
       })
-gmailLogger.info('response from Rozetka is ', response.data)
+gmailLogger.info('response from Rozetka is ', response.data.content.orders)
       return response.data as T
     } catch (error: any) {
       handleAxiosError(error, `GET ${endpoint}`)
