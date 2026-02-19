@@ -487,6 +487,9 @@ const OrdersPage = () => {
                     >
                       {getPaymentStatusLabel(order.paymentStatus)}
                     </span>
+                    <div className='text-gray-500 text-sm'>
+                      ({order.paymentOptionName})
+                    </div>
                   </td>
 
                   <td className='px-6 py-5 whitespace-nowrap'>
