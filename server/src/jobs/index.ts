@@ -16,13 +16,16 @@ export function initializeCronJobs() {
   console.log('\n🚀 [CRON] Initializing all cron jobs...\n')
 
   try {
-    // 1. Start tracking status update cron job (every 3 hours)
+    // 1. Start tracking status update cron job (every 6 hours)
     const trackingJob = startTrackingStatusCronJob()
     activeCronJobs.push(trackingJob)
 
     // 2. Start Gmail watch renewal cron job (every 6 days)
-    const gmailJob = startGmailWatchCronJob()
-    activeCronJobs.push(gmailJob)
+    // Delay Gmail watch renewal to avoid competing with startup webhook processing
+    setTimeout(() => {
+      const gmailJob = startGmailWatchCronJob()
+      activeCronJobs.push(gmailJob)
+    }, 15000) // 15 second delay
 
     console.log(
       `\n✅ [CRON] All cron jobs initialized successfully (${activeCronJobs.length} jobs active)\n`,
@@ -62,7 +65,7 @@ export function getCronJobsStatus() {
       {
         name: 'Tracking Status Update',
         schedule:
-          'Every 3 hours (00:00, 03:00, 06:00, 09:00, 12:00, 15:00, 18:00, 21:00)',
+          'Every 6 hours (00:00, 06:00, 12:00, 18:00)',
         description:
           'Automatically checks and updates delivery tracking statuses from Nova Poshta',
         active: activeCronJobs.length > 0,

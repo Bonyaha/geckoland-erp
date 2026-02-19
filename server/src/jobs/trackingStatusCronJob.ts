@@ -18,7 +18,7 @@ async function updateTrackingStatuses() {
 /**
  * Schedule the cron job to run every 6 hours
  *
- * Cron expression: '0 *\/3 * * *'
+ * Cron expression: '0 *\/6 * * *'
  * - '0' - at minute 0 (start of the hour)
  * - '*\/6' - every 6 hours
  * - '* * *' - every day, every month, every day of week
@@ -32,11 +32,16 @@ export function startTrackingStatusCronJob() {
     await updateTrackingStatuses()
   })
 
-  console.log('✅ [CRON] Tracking status cron job initialized')  
+  console.log('✅ [CRON] Tracking status cron job initialized')
 
-  // Run immediately on startup (optional - you can remove this if you don't want it)
-  //console.log('🚀 [CRON] Running initial tracking status check...')
-  //updateTrackingStatuses()
+  // Run after 5 minutes on startup to avoid competing with Gmail webhook processing
+  const STARTUP_DELAY_MS = 5 * 60 * 1000
+  console.log(`⏳ [CRON] Initial tracking check will run in 5 minutes...`)
+
+  setTimeout(async () => {
+    console.log('\n🚀 [CRON] Running delayed initial tracking status check...')
+    await updateTrackingStatuses()
+  }, STARTUP_DELAY_MS)
 
   return job
 }

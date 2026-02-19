@@ -1,3 +1,4 @@
+// src/services/data-fetchers/rozetkaTokenCache.ts
 import axios from 'axios'
 import fs from 'fs'
 import path from 'path'
@@ -16,7 +17,7 @@ class RozetkaTokenManager {
 
   private readonly cacheFilePath = path.join(
     __dirname,
-    '.rozetka-token-cache.json'
+    '../../storage/.rozetka-token-cache.json',
   )
 
   constructor() {
@@ -27,7 +28,7 @@ class RozetkaTokenManager {
     try {
       if (fs.existsSync(this.cacheFilePath)) {
         const cacheData = JSON.parse(
-          fs.readFileSync(this.cacheFilePath, 'utf8')
+          fs.readFileSync(this.cacheFilePath, 'utf8'),
         )
         this.tokenCache = {
           token: cacheData.token,
@@ -49,7 +50,7 @@ class RozetkaTokenManager {
           token: this.tokenCache.token,
           expiresAt: this.tokenCache.expiresAt?.toISOString(),
         }),
-        'utf8'
+        'utf8',
       )
       console.log('💾 Saved Rozetka token cache to file')
     } catch (error) {
@@ -79,7 +80,7 @@ class RozetkaTokenManager {
     } catch (error: any) {
       console.error(
         '❌ Error fetching Rozetka access token:',
-        error.response?.data || error.message
+        error.response?.data || error.message,
       )
       throw new Error(`Failed to get access token: ${error.message}`)
     }

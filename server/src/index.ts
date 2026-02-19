@@ -4,9 +4,7 @@ import bodyParser from 'body-parser'
 import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
-import cron from 'node-cron'
 import { config } from './config/environment'
-import { restartGmailWatch } from './services/gmail/gmailService'
 import routes from './routes/index'
 
 /* MIDDLEWARE IMPORTS */
@@ -41,29 +39,6 @@ app.use(notFoundHandler)
 // Global error handler (must be last)
 app.use(errorHandler)
 
-/* GMAIL WATCH RENEWAL SCHEDULER */
-// This schedule runs at 2:00 AM every day. This doesn't handle authentication - it only renews the Gmail watch subscription (which expires every 7 days).
-cron.schedule('0 2 * * *', () => {
-  console.log('🤖 Running scheduled job to restart Gmail watch...')
-  restartGmailWatch()
-    .then((result) => {
-      if (result) {
-        console.log(
-          '✅ Gmail watch renewed successfully. Expires:',
-          new Date(parseInt(result.expiration || '0')),
-        )
-      } else {
-        console.log('⏭️  Gmail watch not started - no valid token available')
-      }
-    })
-    .catch((error) => {
-      console.error(
-        '🤖 Failed to restart Gmail watch automatically:',
-        error.message,
-      )
-    })
-})
-
 /* SERVER */
 const port = config.app.port
 const server = app.listen(port, '0.0.0.0', () => {
@@ -71,7 +46,10 @@ const server = app.listen(port, '0.0.0.0', () => {
   console.log(`🌍 Environment: ${config.app.env}`)
 
   // Initialize all cron jobs after server starts
-  initializeCronJobs()
+  // Give the server 10 seconds to stabilize before starting cron jobs
+  setTimeout(() => {
+    initializeCronJobs()
+  }, 10_000)
 })
 
 // Graceful shutdown handlers
