@@ -283,14 +283,34 @@ const CreateOrderPage = () => {
     )
   }
 
-  const updateItemPrice = (productId: string, newPrice: number) => {
+/* const updateItemQuantity = (productId: string, newQty: string | number) => {
+  // Convert to string first to handle the "empty" check safely
+  const valStr = newQty.toString()
+  const numericQty = valStr === '' ? 0 : parseInt(valStr) || 0
+
+  setOrderItems((prev) =>
+    prev.map((item) =>
+      item.productId === productId
+        ? {
+            ...item,
+            quantity: valStr as any, // Cast to any to allow string in numeric state
+            totalPrice: numericQty * Number(item.unitPrice || 0),
+          }
+        : item,
+    ),
+  )
+} */
+
+  const updateItemPrice = (productId: string, newPriceRaw: string) => {
+    const numericPrice = newPriceRaw === '' ? 0 : parseFloat(newPriceRaw) || 0
+
     setOrderItems((prev) =>
       prev.map((item) =>
         item.productId === productId
           ? {
               ...item,
-              unitPrice: newPrice,
-              totalPrice: item.quantity * newPrice,
+              unitPrice: newPriceRaw as any,
+              totalPrice: item.quantity * numericPrice,
             }
           : item,
       ),
@@ -515,6 +535,7 @@ const CreateOrderPage = () => {
                         <input
                           type='number'
                           value={item.quantity}
+                          onFocus={(e) => e.target.select()} // Selects the number on click for easy overwriting
                           onChange={(e) =>
                             updateItemQuantity(
                               item.productId!,
@@ -542,10 +563,11 @@ const CreateOrderPage = () => {
                       <input
                         type='number'
                         value={item.unitPrice}
+                        onFocus={(e) => e.target.select()} // Auto-selects 0 when clicked
                         onChange={(e) =>
                           updateItemPrice(
                             item.productId!,
-                            Number(e.target.value),
+                            e.target.value, // Pass raw string
                           )
                         }
                         className='w-full text-right text-sm font-semibold focus:outline-none'
