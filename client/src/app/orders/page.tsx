@@ -302,6 +302,8 @@ const OrdersPage = () => {
     }
   }
 
+console.log('orders are: ', filteredOrders);
+
   return (
     <div className='p-6 bg-gray-50 min-h-screen text-base'>
       {/* Toast Notification */}
@@ -310,7 +312,7 @@ const OrdersPage = () => {
         message={toast.message}
         type={toast.type}
         isVisible={toast.isVisible}
-        onClose={hideToast}
+        onClose={hideToast}        
       />
 
       {/* Header */}

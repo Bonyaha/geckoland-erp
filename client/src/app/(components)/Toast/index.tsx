@@ -79,7 +79,7 @@ const Toast = ({
         <span className='text-sm font-medium flex-1'>{message}</span>
         <button
           onClick={onClose}
-          className='text-gray-400 hover:text-white transition-colors ml-2'
+          className='text-gray-400 hover:text-white transition-colors ml-2 cursor-pointer'
         >
           <X size={18} />
         </button>

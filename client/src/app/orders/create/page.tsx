@@ -25,11 +25,20 @@ import {
   CircleMinus,
   CirclePlus,
   UserPlus,
+  AlertTriangle,
 } from 'lucide-react'
+
+import { useToast } from '@/hooks/useToast'
+import Toast from '@/app/(components)/Toast'
+
+type OrderItemWithStock = NonNullable<CreateCRMOrderInput['items']>[number] & {
+  stockQuantity: number
+}
 
 const CreateOrderPage = () => {
   const router = useRouter()
   const [createOrder, { isLoading }] = useCreateCRMOrderMutation()
+  const { toast, showToast, hideToast } = useToast()
   //const [getOrCreateClient] = useGetOrCreateClientMutation()
 
   // Product dropdown and search state
@@ -43,6 +52,10 @@ const CreateOrderPage = () => {
   const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false)
   const [clientSearchTerm, setClientSearchTerm] = useState('')
   const [debouncedClientSearch, setDebouncedClientSearch] = useState('')
+
+  //Separate state for order items (includes UI-only stockQuantity)
+  const [orderItems, setOrderItems] = useState<OrderItemWithStock[]>([])
+
   //const [selectedClient, setSelectedClient] = useState<Client | null>(null)
 
   // Debounce logic for products
@@ -77,15 +90,15 @@ const CreateOrderPage = () => {
   const totalPages = productsData?.pagination?.pages || 1
   const clients = clientsData || []
 
-console.log('products: ', products)
+  //console.log('products: ', products)
 
   // Reset to page 1 when searching products
   useEffect(() => {
     setCurrentPage(1)
   }, [debouncedSearch])
 
-  // Form state
-  const [formData, setFormData] = useState<CreateCRMOrderInput>({
+  // Form state (items excluded — managed separately in orderItems)
+  const [formData, setFormData] = useState<Omit<CreateCRMOrderInput, 'items'>>({
     clientFirstName: '',
     clientLastName: '',
     clientSecondName: '',
@@ -95,7 +108,6 @@ console.log('products: ', products)
     deliveryCity: '',
     deliveryOptionName: '',
     paymentOptionName: '',
-    items: [],
     totalAmount: 0,
     currency: 'UAH',
     clientNotes: '',
@@ -103,12 +115,12 @@ console.log('products: ', products)
 
   // Recalculate total amount whenever items change
   useEffect(() => {
-    const total = formData.items.reduce(
+    const total = orderItems.reduce(
       (sum, item) => sum + (item.totalPrice || 0),
       0,
     )
     setFormData((prev) => ({ ...prev, totalAmount: total }))
-  }, [formData.items])
+  }, [orderItems])
 
   // Handlers
   const handleInputChange = (field: keyof CreateCRMOrderInput, value: any) => {
@@ -170,7 +182,7 @@ console.log('products: ', products)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (formData.items.length === 0) {
+    if (orderItems.length === 0) {
       alert('Додайте хоча б один товар до замовлення')
       return
     }
@@ -180,17 +192,56 @@ console.log('products: ', products)
       return
     }
 
+    //Check for insufficient inventory
+    const itemsWithInsufficientStock = orderItems.filter(
+      (item) => item.quantity > item.stockQuantity,
+    )
+
+    if (itemsWithInsufficientStock.length > 0) {
+      // Build error message for toast
+      console.log('itemsWithInsufficientStock: ', itemsWithInsufficientStock)
+
+      const errorDetails = itemsWithInsufficientStock
+        .map(
+          (item) =>
+            `${item.productName} (${item.sku}): обрано ${item.quantity}, але на складі лише ${item.stockQuantity}`,
+        )
+        .join(' | ')
+
+      showToast('Недостатньо товару на складі: ' + errorDetails, 'error')
+      return
+    }
+
     try {
-      console.log('Submitting order with data: ', formData)
-      const result = await createOrder(formData).unwrap()
-      alert(`Замовлення створено успішно! ID: ${result.orderId}`)
+      // Strip stockQuantity before sending to API — it's a UI-only field
+      const payload: CreateCRMOrderInput = {
+        ...formData,
+        items: orderItems.map(({ stockQuantity: _s, ...rest }) => rest),
+      }
+      console.log('Submitting order with data: ', payload)
+      const result = await createOrder(payload).unwrap()
+      /* alert(`Замовлення створено успішно! ID: ${result.orderId}`) */
+      showToast(`Замовлення створено успішно! ID: ${result.orderId}`, 'success')
       router.push('/orders')
     } catch (error: any) {
       console.error('Failed to create order:', error)
-      alert(
-        `Помилка створення замовлення: ${
-          error.data?.message || 'Невідома помилка'
-        }`,
+      /* // Handle API error response
+      if (
+        error.data?.message &&
+        error.data.message.includes('Insufficient inventory')
+      ) {
+        // Try to parse error message for product details
+        alert(error.data.message)
+      } else {
+        alert(
+          `Помилка створення замовлення: ${
+            error.data?.message || 'Невідома помилка'
+          }`,
+        )
+      } */
+      showToast(
+        `Помилка створення замовлення: ${error.data?.message || 'Невідома помилка'}`,
+        'error',
       )
     }
   }
@@ -205,23 +256,17 @@ console.log('products: ', products)
   }
 
   const addSelectedToOrder = () => {
-    const newItems = selectedProducts.map((p) => ({
+    const newItems: OrderItemWithStock[] = selectedProducts.map((p) => ({
       productId: p.productId,
       productName: p.name,
       sku: p.sku,
-      quantity: p.stockQuantity,
+      quantity: 1,
+      stockQuantity: p.stockQuantity,
       unitPrice: p.price,
       totalPrice: p.price,
     }))
 
-    setFormData((prev) => ({
-      ...prev,
-      items: [...prev.items, ...newItems],
-      totalAmount:
-        prev.totalAmount +
-        newItems.reduce((sum, item) => sum + item.totalPrice, 0),
-    }))
-
+    setOrderItems((prev) => [...prev, ...newItems])
     setSelectedProducts([])
     setIsDropdownOpen(false)
     setSearchTerm('')
@@ -229,20 +274,18 @@ console.log('products: ', products)
 
   const updateItemQuantity = (productId: string, newQty: number) => {
     const qty = Math.max(1, newQty)
-    setFormData((prev) => ({
-      ...prev,
-      items: prev.items.map((item) =>
+    setOrderItems((prev) =>
+      prev.map((item) =>
         item.productId === productId
           ? { ...item, quantity: qty, totalPrice: qty * item.unitPrice }
           : item,
       ),
-    }))
+    )
   }
 
   const updateItemPrice = (productId: string, newPrice: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      items: prev.items.map((item) =>
+    setOrderItems((prev) =>
+      prev.map((item) =>
         item.productId === productId
           ? {
               ...item,
@@ -251,14 +294,11 @@ console.log('products: ', products)
             }
           : item,
       ),
-    }))
+    )
   }
 
   const removeItem = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      items: prev.items.filter((_, i) => i !== index),
-    }))
+    setOrderItems((prev) => prev.filter((_, i) => i !== index))
   }
 
   const formatCurrency = (amount: number) => {
@@ -266,6 +306,11 @@ console.log('products: ', products)
       style: 'currency',
       currency: 'UAH',
     }).format(amount)
+  }
+
+  //Check if an item has insufficient stock
+  const hasInsufficientStock = (item: OrderItemWithStock) => {
+    return item.stockQuantity === 0 || item.quantity > item.stockQuantity
   }
 
   return (
@@ -413,95 +458,125 @@ console.log('products: ', products)
 
             {/* Added Products List */}
             <div className='space-y-2'>
-              {formData.items.map((item, index) => (
-                <div
-                  key={item.productId}
-                  className='flex flex-wrap md:flex-nowrap items-center gap-4 p-3 border border-gray-200 rounded-lg bg-white shadow-sm'
-                >
-                  <div className='flex-1 min-w-[250px]'>
-                    <p className='text-sm font-medium text-blue-600 leading-tight'>
-                      {item.productName}
-                      <span className='text-gray-400 ml-1 font-normal text-xs'>
-                        {item.sku}
-                      </span>
-                    </p>
-                    <p className='text-[11px] text-gray-500 mt-0.5'>
-                      (доступно {item.quantity} шт.)
-                    </p>
-                  </div>
+              {orderItems.map((item, index) => {
+                const isOutOfStock = hasInsufficientStock(item)
 
-                  <div className='flex items-center gap-1'>
-                    <button
-                      type='button'
-                      onClick={() =>
-                        updateItemQuantity(item.productId!, item.quantity - 1)
-                      }
-                      className='text-red-400 hover:text-red-600 transition-colors'
-                    >
-                      <CircleMinus size={22} strokeWidth={2.5} />
-                    </button>
-                    <div className='flex items-center border border-gray-300 rounded px-2 py-1 bg-white'>
+                return (
+                  <div
+                    key={item.productId}
+                    className={`flex flex-wrap md:flex-nowrap items-center gap-4 p-3 border rounded-lg  shadow-sm ${
+                      isOutOfStock
+                        ? 'bg-red-50 border-red-200'
+                        : 'bg-white border-gray-200'
+                    }`}
+                  >
+                    {/* Name and Stock Info */}
+                    <div className='flex-1 min-w-[250px]'>
+                      <div className='flex items-center gap-2'>
+                        {isOutOfStock && (
+                          <AlertTriangle className='w-4 h-4 text-red-500 flex-shrink-0' />
+                        )}
+                        <p
+                          className={`text-sm font-medium leading-tight ${
+                            isOutOfStock ? 'text-red-700' : 'text-blue-600'
+                          }`}
+                        >
+                          {item.productName}
+                          <span className='text-gray-400 ml-1 font-normal text-xs'>
+                            {item.sku}
+                          </span>
+                        </p>
+                      </div>
+                      <p
+                        className={`text-[11px] mt-0.5 ${
+                          isOutOfStock
+                            ? 'text-red-600 font-bold'
+                            : 'text-gray-500'
+                        }`}
+                      >
+                        {item.stockQuantity === 0
+                          ? 'Немає на складі!'
+                          : `(доступно ${item.stockQuantity} шт)`}
+                      </p>
+                    </div>
+
+                    {/* Quantity Controls */}
+                    <div className='flex items-center gap-1'>
+                      <button
+                        type='button'
+                        onClick={() =>
+                          updateItemQuantity(item.productId!, item.quantity - 1)
+                        }
+                        className='text-red-400 hover:text-red-600 transition-colors cursor-pointer'
+                      >
+                        <CircleMinus size={22} strokeWidth={2.5} />
+                      </button>
+                      <div className='flex items-center border border-gray-300 rounded px-2 py-1 bg-white'>
+                        <input
+                          type='number'
+                          value={item.quantity}
+                          onChange={(e) =>
+                            updateItemQuantity(
+                              item.productId!,
+                              Number(e.target.value),
+                            )
+                          }
+                          className='w-10 text-center text-sm font-semibold focus:outline-none'
+                        />
+                        <span className='text-[10px] text-gray-400 font-medium ml-1'>
+                          шт
+                        </span>
+                      </div>
+                      <button
+                        type='button'
+                        onClick={() =>
+                          updateItemQuantity(item.productId!, item.quantity + 1)
+                        }
+                        className='text-green-500 hover:text-green-600 transition-colors cursor-pointer'
+                      >
+                        <CirclePlus size={22} strokeWidth={2.5} />
+                      </button>
+                    </div>
+
+                    <div className='flex items-center border border-gray-300 rounded px-2 py-1 bg-white min-w-[100px]'>
                       <input
                         type='number'
-                        value={item.quantity}
+                        value={item.unitPrice}
                         onChange={(e) =>
-                          updateItemQuantity(
+                          updateItemPrice(
                             item.productId!,
                             Number(e.target.value),
                           )
                         }
-                        className='w-10 text-center text-sm font-semibold focus:outline-none'
+                        className='w-full text-right text-sm font-semibold focus:outline-none'
                       />
                       <span className='text-[10px] text-gray-400 font-medium ml-1'>
-                        шт
+                        грн.
                       </span>
                     </div>
+
+                    <div className='flex items-center gap-2 min-w-[120px] justify-end'>
+                      <ChevronDown size={14} className='text-blue-500' />
+                      <span className='text-sm font-bold text-gray-700'>
+                        {(item.totalPrice || 0).toFixed(2)} грн.
+                      </span>
+                    </div>
+
                     <button
                       type='button'
-                      onClick={() =>
-                        updateItemQuantity(item.productId!, item.quantity + 1)
-                      }
-                      className='text-green-500 hover:text-green-600 transition-colors'
+                      onClick={() => removeItem(index)}
+                      className='text-blue-500 hover:text-red-500 p-1 transition-colors cursor-pointer'
                     >
-                      <CirclePlus size={22} strokeWidth={2.5} />
+                      <Trash2 size={18} />
                     </button>
                   </div>
+                )
+              })}
 
-                  <div className='flex items-center border border-gray-300 rounded px-2 py-1 bg-white min-w-[100px]'>
-                    <input
-                      type='number'
-                      value={item.unitPrice}
-                      onChange={(e) =>
-                        updateItemPrice(item.productId!, Number(e.target.value))
-                      }
-                      className='w-full text-right text-sm font-semibold focus:outline-none'
-                    />
-                    <span className='text-[10px] text-gray-400 font-medium ml-1'>
-                      грн.
-                    </span>
-                  </div>
-
-                  <div className='flex items-center gap-2 min-w-[120px] justify-end'>
-                    <ChevronDown size={14} className='text-blue-500' />
-                    <span className='text-sm font-bold text-gray-700'>
-                      {(item.totalPrice || 0).toFixed(2)} грн.
-                    </span>
-                  </div>
-
-                  <button
-                    type='button'
-                    onClick={() => removeItem(index)}
-                    className='text-blue-500 hover:text-red-500 p-1 transition-colors'
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              ))}
-
-              {formData.items.length > 0 && (
+              {orderItems.length > 0 && (
                 <div className='text-right pt-2 text-gray-700 font-bold'>
-                  Усього: {formData.items.length} найм. (
-                  {formData.items.reduce((a, b) => a + b.quantity, 0)} од.)
+                  Усього: {orderItems.length} найм. (
+                  {orderItems.reduce((a, b) => a + b.quantity, 0)} од.)
                 </div>
               )}
             </div>
@@ -779,7 +854,7 @@ console.log('products: ', products)
             <div className='flex gap-3'>
               <button
                 type='submit'
-                disabled={isLoading || formData.items.length === 0}
+                disabled={isLoading || orderItems.length === 0}
                 className='flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
               >
                 <Save size={20} />
@@ -796,6 +871,13 @@ console.log('products: ', products)
           </div>
         </form>
       </div>
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}
+        duration={10000}
+      />
     </div>
   )
 }
