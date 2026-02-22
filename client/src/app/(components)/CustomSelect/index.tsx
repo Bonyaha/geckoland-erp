@@ -1,3 +1,5 @@
+// client/src/app/(components)/CustomSelect.tsx
+
 import {
   Listbox,
   ListboxButton,
@@ -5,7 +7,7 @@ import {
   ListboxOptions,
   Transition,
 } from '@headlessui/react'
-import { Check, ChevronDown } from 'lucide-react'
+import { Check, ChevronDown, LucideIcon } from 'lucide-react'
 import { Fragment } from 'react'
 
 interface Option {
@@ -18,6 +20,8 @@ interface CustomSelectProps {
   onChange: (value: any) => void
   options: Option[]
   className?: string
+  isMinimal?: boolean
+  Icon?: LucideIcon
 }
 
 const CustomSelect = ({
@@ -25,20 +29,29 @@ const CustomSelect = ({
   onChange,
   options,
   className,
+  isMinimal = false,
 }: CustomSelectProps) => {
   const selectedOption =
     options.find((opt) => opt.value === value) || options[0]
 
   return (
-    // Wrapper remains without w-full to allow OrdersPage to control width
     <div className={`relative ${className}`}>
       <Listbox value={value} onChange={onChange}>
-        {/* Changed from Listbox.Button to ListboxButton */}
-        <ListboxButton className='relative w-full cursor-pointer rounded-lg border border-gray-300 bg-white py-3 pl-4 pr-10 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 text-base'>
+        <ListboxButton
+          className={`
+            relative w-full cursor-pointer text-left focus:outline-none transition-all flex items-center gap-1
+            ${
+              isMinimal
+                ? 'bg-transparent border-none shadow-none p-0 focus:ring-0 text-inherit font-bold rounded-full'
+                : 'rounded-lg border border-gray-300 bg-white py-3 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 text-base'
+            }
+          `}
+        >
           <span className='block truncate'>{selectedOption.label}</span>
-          <span className='pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2'>
-            <ChevronDown className='h-5 w-5 text-gray-400' aria-hidden='true' />
-          </span>
+          <ChevronDown
+            className={`${isMinimal ? 'h-3 w-3' : 'h-5 w-5 text-gray-400'}`}
+            aria-hidden='true'
+          />
         </ListboxButton>
 
         <Transition
@@ -47,15 +60,13 @@ const CustomSelect = ({
           leaveFrom='opacity-100'
           leaveTo='opacity-0'
         >
-          {/* Changed from Listbox.Options to ListboxOptions */}
-          <ListboxOptions className='absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50'>
+          <ListboxOptions className='absolute mt-1 max-h-60 min-w-[180px] w-max overflow-auto rounded-md bg-white py-1 text-base shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none z-[100] left-0'>
             {options.map((option) => (
-              /* Changed from Listbox.Option to ListboxOption */
               <ListboxOption
                 key={option.value}
                 className={({ focus }) =>
-                  `relative cursor-pointer select-none py-2 pl-10 pr-4 ${
-                    focus ? 'bg-blue-100 text-blue-900' : 'text-gray-900'
+                  `relative cursor-pointer select-none py-2.5 pl-10 pr-4 ${
+                    focus ? 'bg-blue-50 text-blue-900' : 'text-gray-900'
                   }`
                 }
                 value={option.value}
@@ -63,7 +74,7 @@ const CustomSelect = ({
                 {({ selected }) => (
                   <>
                     <span
-                      className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}
+                      className={`block truncate ${selected ? 'font-bold text-blue-600' : 'font-normal'}`}
                     >
                       {option.label}
                     </span>

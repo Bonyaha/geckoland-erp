@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect} from 'react'
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 
@@ -27,8 +27,7 @@ import {
   XCircle,
   Clock,
   ChevronLeft,
-  ChevronRight,
-  MoreVertical,
+  ChevronRight, 
 } from 'lucide-react'
 
 import Toast from '@/app/(components)/Toast'
@@ -51,20 +50,10 @@ const OrdersPage = () => {
 
   const [sourceFilter, setSourceFilter] = useState<OrderSource | 'all'>('all')
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
-  const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null) // State for Actions menu
-
   const { toast, showToast, hideToast } = useToast()
 
-  // Close menus when clicking outside
-  useEffect(() => {
-    const handleClickOutside = () => setActiveActionMenu(null)
-    if (activeActionMenu) {
-      document.addEventListener('click', handleClickOutside)
-    }
-    return () => document.removeEventListener('click', handleClickOutside)
-  }, [activeActionMenu])
-
   // Update status filter when URL changes
+
   useEffect(() => {
     if (statusFromUrl) {
       setStatusFilter(statusFromUrl)
@@ -72,11 +61,13 @@ const OrdersPage = () => {
       // If no status in URL, show all orders
       setStatusFilter('all')
     }
+
     // Reset to first page when status changes
+
     setPage(1)
   }, [statusFromUrl])
 
-  // Options for CustomSelect
+  // Define options for CustomSelect
   const statusOptions = [
     { value: 'all', label: 'Всі статуси' },
     { value: 'RECEIVED', label: 'Прийнято' },
@@ -137,6 +128,7 @@ const OrdersPage = () => {
   const handleUpdateTrackingStatuses = async () => {
     try {
       const result = await updateAllTrackingStatuses().unwrap()
+
       if (result.success) {
         showToast(
           `Оновлено статуси: ${result.updated} з ${result.total} замовлень`,
@@ -154,12 +146,11 @@ const OrdersPage = () => {
       )
     }
   }
-
   const handleCheckNewOrders = async () => {
     try {
       const result = await checkNewOrders().unwrap()
       showToast(
-        `Знайдено нових замовлень: Prom: ${result.prom.created}, Rozetka: ${result.rozetka.created}`,
+        `Знайдено нових замовлень: Prom: ${result.prom.created}, Rozetka: ${result.rozetka.created}, Всього: ${result.totals.created}`,
         'success',
       )
       refetch()
@@ -170,8 +161,9 @@ const OrdersPage = () => {
   }
 
   // Utility functions
-  const getStatusConfig = (status: OrderStatus) => {
-    const configs = {
+
+  const getStatusBadge = (status: OrderStatus) => {
+    const statusConfig = {
       RECEIVED: {
         label: 'Прийнято',
         color: 'bg-blue-100 text-blue-800',
@@ -189,7 +181,7 @@ const OrdersPage = () => {
       },
       AWAITING_PICKUP: {
         label: 'На відділенні',
-        color: 'bg-orange-100 text-orange-600',
+        color: 'bg-orange-100 text-orange-800',
         icon: Clock,
       },
       DELIVERED: {
@@ -208,21 +200,17 @@ const OrdersPage = () => {
         icon: XCircle,
       },
     }
-    return configs[status] || configs.RECEIVED
-  }
-
-  /* const getStatusBadge = (status: OrderStatus) => {
-    const config = getStatusConfig(status)
+    const config = statusConfig[status] || statusConfig.RECEIVED
     const Icon = config.icon
     return (
       <span
-        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${config.color}`}
+        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${config.color}`}
       >
-        <Icon size={14} />
+        <Icon size={12} />
         {config.label}
       </span>
     )
-  } */
+  }
 
   const getSourceBadge = (source: OrderSource) => {
     const sourceConfig = {
@@ -251,6 +239,7 @@ const OrdersPage = () => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('uk-UA', {
       style: 'currency',
+
       currency: 'UAH',
     }).format(amount)
   }
@@ -260,6 +249,7 @@ const OrdersPage = () => {
       const result = await fetchTrackingNumber(orderId).unwrap()
       if (result.success) {
         showToast(result.message || 'ТТН успішно отримано', 'success')
+
         // Update the selected order with the new tracking number
         if (selectedOrder && selectedOrder.orderId === orderId) {
           setSelectedOrder({
@@ -267,6 +257,7 @@ const OrdersPage = () => {
             trackingNumber: result.data.trackingNumber,
           })
         }
+
         // The invalidation in api.ts will refresh the orders list
         refetch()
       } else {
@@ -283,12 +274,15 @@ const OrdersPage = () => {
   }
 
   // Extract orders from the response
+
   const orders = ordersData?.data?.orders || []
   const pagination = ordersData?.data?.pagination
 
   // Filter orders by search term
+
   const filteredOrders = orders.filter((order) => {
     const searchLower = searchTerm.toLowerCase()
+
     return (
       order.orderNumber?.toLowerCase().includes(searchLower) ||
       order.clientPhone.includes(searchTerm) ||
@@ -296,45 +290,54 @@ const OrdersPage = () => {
     )
   })
 
-  const handleCopy = (value: string) =>
+  const handleCopy = (value: string) => {
     showToast(`Номер ${value} скопійовано`, 'success')
 
-  if (isLoading) {
-    return (
-      <div className='flex items-center justify-center h-screen'>
-        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600' />
-      </div>
-    )
+    if (isLoading) {
+      return (
+        <div className='flex items-center justify-center h-screen'>
+          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600' />
+        </div>
+      )
+    }
   }
+
+console.log('orders are: ', filteredOrders);
 
   return (
     <div className='p-6 bg-gray-50 min-h-screen text-base'>
       {/* Toast Notification */}
+
       <Toast
         message={toast.message}
         type={toast.type}
         isVisible={toast.isVisible}
-        onClose={hideToast}
+        onClose={hideToast}        
       />
 
       {/* Header */}
+
       <div className='mb-6'>
         <h1 className='text-3xl font-bold text-gray-900 mb-2'>Замовлення</h1>
+
         <p className='text-lg text-gray-600'>
           Всього: {pagination?.total || 0} замовлень
         </p>
       </div>
 
       {/* Filters and Actions */}
+
       <div className='bg-white rounded-lg shadow-sm p-4 mb-6'>
         <div className='flex flex-wrap gap-4 items-center'>
           {/* Search */}
+
           <div className='flex-1 min-w-[250px]'>
             <div className='relative'>
               <Search
                 className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400'
                 size={22}
               />
+
               <input
                 type='text'
                 placeholder='Пошук по номеру, телефону, імені...'
@@ -346,6 +349,7 @@ const OrdersPage = () => {
           </div>
 
           {/* Status Filter */}
+
           <div className='flex items-center gap-2'>
             <Filter size={20} className='text-gray-400' />
             <CustomSelect
@@ -360,6 +364,7 @@ const OrdersPage = () => {
           </div>
 
           {/* Source Filter */}
+
           <CustomSelect
             value={sourceFilter}
             onChange={(val) => {
@@ -371,6 +376,7 @@ const OrdersPage = () => {
           />
 
           {/* Actions */}
+
           <button
             onClick={handleCheckNewOrders}
             disabled={isChecking}
@@ -394,6 +400,7 @@ const OrdersPage = () => {
       </div>
 
       {/* Orders Table */}
+
       <div className='bg-white rounded-lg shadow-sm overflow-hidden'>
         <div className='overflow-x-auto'>
           <table className='w-full'>
@@ -405,20 +412,23 @@ const OrdersPage = () => {
                 <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
                   № Зам-ня
                 </th>
+
                 <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
                   Клієнт
                 </th>
+
                 <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
                   Сума
                 </th>
                 <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
-                  Оплата
+                  Статус оплати
                 </th>
                 <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
-                  Статус замовлення
+                  Статус
                 </th>
-                <th className='px-6 py-4 text-right text-sm font-bold text-gray-500 uppercase'>
-                  Дії
+
+                <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
+                  Статус замовлення
                 </th>
               </tr>
             </thead>
@@ -445,6 +455,7 @@ const OrdersPage = () => {
                           align='left'
                           onCopy={handleCopy}
                         />
+
                         <div className='text-xs text-gray-500 mt-1'>
                           {getSourceBadge(order.source)}
                         </div>
@@ -453,106 +464,56 @@ const OrdersPage = () => {
                   </td>
 
                   <td className='px-6 py-5 whitespace-nowrap'>
-                    {/* Requirement 2: Smaller font and removed boldness */}
-                    <div className='text-base font-normal text-gray-900'>
+                    <div className='text-lg font-bold text-gray-900'>
                       {order.clientFullName}
                     </div>
+
                     <CopyableItem
                       value={order.clientPhone}
-                      className='text-sm font-medium text-gray-600 mt-1'
+                      className='text-base font-medium text-gray-600 mt-1'
                       onCopy={handleCopy}
                     />
                   </td>
-
                   <td className='px-6 py-5 whitespace-nowrap text-base font-bold text-gray-900'>
                     {formatCurrency(order.totalAmount)}
                   </td>
-
                   <td className='px-6 py-5 whitespace-nowrap text-base'>
                     <span
-                      className={`font-medium ${order.paymentStatus === 'PAID' ? 'text-green-600' : order.paymentStatus === 'UNPAID' ? 'text-red-600' : 'text-gray-700'}`}
+                      className={`font-medium ${
+                        order.paymentStatus === 'PAID'
+                          ? 'text-green-600'
+                          : order.paymentStatus === 'UNPAID'
+                            ? 'text-red-600'
+                            : 'text-gray-700'
+                      }`}
                     >
                       {getPaymentStatusLabel(order.paymentStatus)}
                     </span>
                     <div className='text-gray-500 text-sm'>
                       ({order.paymentOptionName})
                     </div>
-                  </td>                  
-
-                  <td className='px-6 py-5 whitespace-nowrap'>
-                    {(() => {
-                      const config = getStatusConfig(order.status)
-                      const StatusIcon = config.icon
-
-                      return (                        
-                        <div
-                          onClick={(e) => e.stopPropagation()}
-                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full transition-all cursor-pointer ${config.color}`}
-                        >
-                          <StatusIcon size={14} className='shrink-0' />
-
-                          <CustomSelect
-                            value={order.status}
-                            onChange={(newStatus) =>
-                              handleStatusChange(
-                                order.orderId,
-                                newStatus as OrderStatus,
-                              )
-                            }
-                            options={statusOptions.filter(
-                              (opt) => opt.value !== 'all',
-                            )}
-                            isMinimal={true}
-                            // Added 'rounded-full' here to ensure the component wrapper is rounded
-                            className='text-xs rounded-full'
-                          />
-                        </div>
-                      )
-                    })()}
                   </td>
 
-                  {/* Requirement 3: Actions column */}
-                  <td className='px-6 py-5 whitespace-nowrap text-right'>
-                    <div
-                      className='relative inline-block text-left'
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        onClick={() =>
-                          setActiveActionMenu(
-                            activeActionMenu === order.orderId
-                              ? null
-                              : order.orderId,
+                  <td className='px-6 py-5 whitespace-nowrap'>
+                    {getStatusBadge(order.status)}
+                  </td>
+
+                  <td className='px-6 py-5 whitespace-nowrap'>
+                    {/* Inline Status Select */}
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <CustomSelect
+                        value={order.status}
+                        onChange={(newStatus) =>
+                          handleStatusChange(
+                            order.orderId,
+                            newStatus as OrderStatus,
                           )
                         }
-                        className='p-2 hover:bg-gray-100 rounded-full transition-colors'
-                      >
-                        <MoreVertical
-                          size={20}
-                          className='text-gray-500 cursor-pointer'
-                        />
-                      </button>
-
-                      {activeActionMenu === order.orderId && (
-                        <div className='absolute right-0 mt-2 w-48 rounded-md shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-[100] divide-y divide-gray-100'>
-                          <div className='py-1'>
-                            <button className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition-colors cursor-pointer'>
-                              Редагувати
-                            </button>
-                            <button className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition-colors cursor-pointer'>
-                              Копіювати продаж
-                            </button>
-                            <button className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition-colors cursor-pointer'>
-                              Додати витрату
-                            </button>
-                          </div>
-                          <div className='py-1'>
-                            <button className='flex items-center w-full px-4 py-2.5 text-sm text-red-600 font-medium hover:bg-red-50 transition-colors cursor-pointer'>
-                              Видалити
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                        options={statusOptions.filter(
+                          (opt) => opt.value !== 'all',
+                        )}
+                        className='w-[160px]'
+                      />
                     </div>
                   </td>
                 </tr>
@@ -562,11 +523,13 @@ const OrdersPage = () => {
         </div>
 
         {/* Pagination */}
+
         {pagination && pagination.pages > 1 && (
           <div className='flex items-center justify-between px-6 py-4 border-t border-gray-200'>
             <div className='text-sm text-gray-700'>
               Сторінка {pagination.page} з {pagination.pages}
             </div>
+
             <div className='flex gap-2'>
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -575,6 +538,7 @@ const OrdersPage = () => {
               >
                 <ChevronLeft size={20} />
               </button>
+
               <button
                 onClick={() =>
                   setPage((p) => Math.min(pagination.pages, p + 1))
@@ -589,10 +553,11 @@ const OrdersPage = () => {
         )}
       </div>
 
-      {/* Order Details Modal (Selected Order) */}
+      {/* Order Details Modal */}
+
       {selectedOrder && (
         <div
-          className='fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4'
+          className='fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'
           onClick={() => setSelectedOrder(null)}
         >
           <div
@@ -630,31 +595,44 @@ const OrdersPage = () => {
               </div>
 
               <div className='grid grid-cols-2 gap-8 mb-8'>
+                {/* Replace the old Client Info block with this */}
+
                 <div>
                   <h3 className='text-sm font-medium text-gray-500 mb-2'>
                     Клієнт
                   </h3>
+
                   <p className='text-gray-900 font-semibold mb-1'>
                     {selectedOrder.clientFullName}
                   </p>
+
                   <CopyableItem
                     value={selectedOrder.clientPhone}
                     className='text-lg font-bold text-gray-900'
                     align='left'
                     onCopy={handleCopy}
                   />
+
+                  {selectedOrder.clientEmail && (
+                    <p className='text-sm text-gray-600 mt-2'>
+                      {selectedOrder.clientEmail}
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <h3 className='text-sm font-bold text-gray-400 uppercase mb-2'>
                     Доставка
                   </h3>
+
                   <p className='text-lg font-bold text-gray-900'>
                     {selectedOrder.deliveryOptionName || 'Не вказано'}
                   </p>
+
                   <p className='text-base text-gray-600'>
                     {selectedOrder.deliveryCity}
                   </p>
+
                   {selectedOrder.trackingNumber ? (
                     <CopyableItem
                       value={selectedOrder.trackingNumber}
@@ -683,6 +661,8 @@ const OrdersPage = () => {
                   )}
                 </div>
               </div>
+
+              {/* Товари в модалці */}
 
               <div className='mb-8'>
                 <h3 className='text-sm font-bold text-gray-400 uppercase mb-4'>
@@ -728,6 +708,7 @@ const OrdersPage = () => {
               <div className='border-t pt-6'>
                 <div className='flex justify-between items-center text-2xl font-black'>
                   <span>Загалом:</span>
+
                   <span className='text-blue-600'>
                     {formatCurrency(selectedOrder.totalAmount)}
                   </span>
