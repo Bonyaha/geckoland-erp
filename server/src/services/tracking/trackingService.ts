@@ -140,6 +140,38 @@ class TrackingService {
             status.statusCode,
           )
 
+          // Guard: if Nova Poshta reports statusCode '1'
+          // ("Відправник самостійно створив цю накладну, але ще не надав до відправки")
+          // and the order is already in RECEIVED (Прийнято) or PREPARED (Зібрано),
+          // do NOT downgrade/change the status — leave it as-is.
+          const isNovaPoshtaNotYetShipped = status.statusCode === '1'
+          const isOrderInEarlyStage =
+            orderData.currentStatus === OrderStatus.RECEIVED ||
+            orderData.currentStatus === OrderStatus.PREPARED
+
+          if (isNovaPoshtaNotYetShipped && isOrderInEarlyStage) {
+            /* console.log(
+              `${logPrefix} ⏭️  Skipping order ${orderData.orderNumber}: Nova Poshta statusCode=1 but order is already '${orderData.currentStatus}' — preserving current status`,
+            ) */
+            updateResults.push({
+              orderId: orderData.orderId,
+              orderNumber: orderData.orderNumber,
+              trackingNumber: status.trackingNumber,
+              newStatus: orderData.currentStatus as OrderStatus,
+              statusDetails: {
+                novaPoshtaStatus: status.status,
+                statusCode: status.statusCode,
+                unchanged: true,
+                skippedReason:
+                  'Nova Poshta statusCode=1 does not override RECEIVED/PREPARED',
+              },
+              updatedAt: new Date(),
+              updated: false,
+              reason: 'Status unchanged',
+            })
+            continue
+          }
+
           // Update order status if it changed
           if (mappedStatus !== orderData.currentStatus) {
             await orderService.updateOrder(orderData.orderId, {

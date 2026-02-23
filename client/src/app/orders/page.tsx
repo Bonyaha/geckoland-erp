@@ -307,6 +307,8 @@ const OrdersPage = () => {
     )
   }
 
+//console.log('orders are: ', filteredOrders);
+
   return (
     <div className='p-6 bg-gray-50 min-h-screen text-base'>
       {/* Toast Notification */}

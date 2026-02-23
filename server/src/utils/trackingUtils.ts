@@ -13,15 +13,13 @@ export function mapNovaPoshtaStatusToOrderStatus(
   novaPoshtaStatus: string,
   statusCode: string,
 ): OrderStatus {
-
-
   const status = novaPoshtaStatus.toLowerCase()
 
-console.log(
-  status.includes('відправлення у м.'),
-  'Checking for "відправлення у м." in status:',
-  novaPoshtaStatus,
-)
+  console.log(
+    status.includes('відправлення у м.'),
+    'Checking for "відправлення у м." in status:',
+    novaPoshtaStatus,
+  )
   // Code 9: Delivered (Видалено / Отримано)
   if (
     status.includes('одержано') ||
@@ -93,16 +91,11 @@ console.log(
     return OrderStatus.RETURN
   }
 
-  // Code 1: Self-paced shipper is creating but not yet delivered (Відправник самостійно створює що накладну, але ще не надав до відправки)
+  // Code 1: Self-paced shipper is creating but not yet delivered (Відправник самостійно створив що накладну, але ще не надав до відправки)
   // Code 2: Removed (Видалено)
   // Code 3: Number not found (Номер не знайдено)
   // Code 4: Shipment in city XXXX (Відправлення у місті ХХХХ (статус для міжобласних відправлень))
-  if (
-    statusCode === '1' ||
-    statusCode === '2' ||
-    statusCode === '3'
-    
-  ) {
+  if (statusCode === '1' || statusCode === '2' || statusCode === '3') {
     return OrderStatus.PREPARED
   }
 
