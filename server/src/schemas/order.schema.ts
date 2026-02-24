@@ -105,20 +105,49 @@ export const createCRMOrderSchema = z.object({
 // ============================================
 // ORDER UPDATE SCHEMA
 // ============================================
+const updateOrderItemSchema = z.object({
+  orderItemId: z.string().optional(), // present for existing items
+  productId: z.string().optional().nullable(),
+  productName: z.string().min(1),
+  sku: z.string().optional().nullable(),
+  quantity: z.number().int().positive(),
+  unitPrice: z.number().nonnegative(),
+  totalPrice: z.number().nonnegative().optional(),
+})
+
 export const updateOrderSchema = z.object({
   params: z.object({
     orderId: z.string().min(1, 'Order ID is required'),
   }),
   body: z.object({
+    // Status & tracking
     status: z.enum(OrderStatus).optional(),
     statusName: z.string().optional(),
     trackingNumber: z.string().optional(),
+
+    // Delivery
     deliveryAddress: z.string().optional(),
+    deliveryCity: z.string().optional(),
     deliveryOptionName: z.enum(DeliveryOption).optional(),
+    deliveryCost: z.number().nonnegative().optional(),
+
+    // Payment
     paymentOptionName: z.enum(PaymentOption).optional(),
     paymentStatus: z.enum(PaymentStatus).optional(),
+
+    // Client info — now editable
+    clientFirstName: z.string().optional(),
+    clientLastName: z.string().optional(),
+    clientSecondName: z.string().optional(),
+    clientPhone: z.string().optional(),
+    clientEmail: z.email().optional().nullable().or(z.literal('')),
+
+    // Notes
     clientNotes: z.string().optional(),
     sellerComment: z.string().optional(),
+
+    // Order items — optional full replacement
+    items: z.array(updateOrderItemSchema).optional(),
   }),
 })
 

@@ -4,7 +4,6 @@ import { Decimal } from '@prisma/client/runtime/library'
 import { PromClient, type PromOrder } from '../marketplaces/promClient'
 import { RozetkaClient, type RozetkaOrder } from '../marketplaces/rozetkaClient'
 import { nanoid } from 'nanoid'
-//import { syncAfterOrder } from '../marketplaces/sync/marketplaceSyncService'
 import { ErrorFactory, AppError } from '../../middleware/errorHandler'
 import SalesService from '../sales/salesService'
 import { syncAfterOrder } from '../marketplaces/sync/syncMarketplaces'
@@ -1459,8 +1458,26 @@ class OrderService {
    * Also updates client statistics
    */
 
-  async updateOrder(orderId: string, updates: Prisma.OrdersUpdateInput) {
+  async updateOrder(
+    orderId: string,
+    updates: Prisma.OrdersUpdateInput & {
+      items?: Array<{
+        orderItemId?: string
+        productId?: string | null
+        productName: string
+        sku?: string | null
+        quantity: number
+        unitPrice: number
+        totalPrice?: number
+      }>
+    },
+  ) {
     try {
+      // ══════════════════════════════════════════════════════════════
+      // STEP 1: Extract items and get current order state
+      // ══════════════════════════════════════════════════════════════
+      const { items, ...scalarUpdates } = updates as any
+
       // Get the current order state before update
       const currentOrder = await prisma.orders.findUnique({
         where: { orderId },
@@ -1469,12 +1486,28 @@ class OrderService {
           orderNumber: true,
           clientPhone: true,
           totalAmount: true,
+          clientFirstName: true,
+          clientLastName: true,
+          clientSecondName: true,
+          orderItems: {
+            select: {
+              orderItemId: true,
+              productId: true,
+              sku: true,
+              quantity: true,
+              unitPrice: true,
+            },
+          },
         },
       })
 
       if (!currentOrder) {
         throw ErrorFactory.notFound(`Order ${orderId} not found`)
       }
+
+      //══════════════════════════════════════════════════════════
+      // STEP 2: Handle status change flags (existing logic)
+      // ═══════════════════════════════════════════════════════════
 
       // Track if status is changing to DELIVERED
       const isChangingToDelivered =
@@ -1500,12 +1533,276 @@ class OrderService {
         ) &&
         currentOrder.status !== OrderStatus.DELIVERED // DELIVERED→CANCELED already handled by isChangingFromDelivered
 
-      // Update the order
+      // ══════════════════════════════════════════════════════════════
+      // STEP 3: Recalculate clientFullName if name parts changed
+      // ══════════════════════════════════════════════════════════════
+      if (
+        scalarUpdates.clientFirstName !== undefined ||
+        scalarUpdates.clientLastName !== undefined ||
+        scalarUpdates.clientSecondName !== undefined
+      ) {
+        const firstName =
+          scalarUpdates.clientFirstName ?? currentOrder.clientFirstName
+        const lastName =
+          scalarUpdates.clientLastName ?? currentOrder.clientLastName
+        const secondName =
+          scalarUpdates.clientSecondName ?? currentOrder.clientSecondName
+
+        scalarUpdates.clientFullName = [lastName, firstName, secondName]
+          .filter(Boolean)
+          .join(' ')
+          .trim()
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // STEP 4: RECONCILIATION LOGIC (if items provided)
+      // ══════════════════════════════════════════════════════════════
+      let orderItemsUpdate: Prisma.OrdersUpdateInput['orderItems'] | undefined
+      let itemsDelta: OrderItemForSync[] = []
+
+      if (items && Array.isArray(items)) {
+        console.log(
+          '📦 Order items update detected - using reconciliation strategy',
+        )
+
+        // 4.1: Build maps for comparison
+        const existingItemsMap = new Map(
+          currentOrder.orderItems.map((item) => [
+            item.orderItemId,
+            {
+              productId: item.productId,
+              sku: item.sku,
+              quantity: item.quantity,
+              unitPrice: Number(item.unitPrice),
+            },
+          ]),
+        )
+        const incomingItemsMap = new Map(
+          items
+            .filter((item) => item.orderItemId) // Only items with IDs
+            .map((item) => [
+              item.orderItemId!,
+              {
+                productId: item.productId || null,
+                sku: item.sku || null,
+                quantity: item.quantity,
+                unitPrice: Number(item.unitPrice),
+              },
+            ]),
+        )
+
+        // 4.2: Identify actions
+
+        const itemsToUpdate: any[] = []
+        const itemsToCreate: any[] = []
+        const itemIdsToDelete: string[] = []
+
+        // Find items to UPDATE or DELETE
+        for (const [orderItemId, existingItem] of existingItemsMap.entries()) {
+          const incomingItem = incomingItemsMap.get(orderItemId)
+
+          if (incomingItem) {
+            // Item exists in both → UPDATE (if changed)
+            const hasChanges =
+              incomingItem.quantity !== existingItem.quantity ||
+              incomingItem.unitPrice !== existingItem.unitPrice ||
+              incomingItem.sku !== existingItem.sku
+
+            if (hasChanges) {
+              const productId = incomingItem.productId || existingItem.productId
+
+              // Resolve productId from SKU if needed
+              let resolvedProductId = productId
+              if (!resolvedProductId && incomingItem.sku) {
+                const found = await prisma.products.findFirst({
+                  where: { sku: incomingItem.sku },
+                  select: { productId: true },
+                })
+                resolvedProductId = found?.productId || null
+              }
+
+              const totalPrice = incomingItem.quantity * incomingItem.unitPrice
+
+              const updatePayload: any = {
+                where: { orderItemId },
+                data: {
+                  sku: incomingItem.sku,
+                  quantity: incomingItem.quantity,
+                  unitPrice: new Decimal(incomingItem.unitPrice),
+                  totalPrice: new Decimal(totalPrice),
+                },
+              }
+
+              // Handle productId update (connect/disconnect)
+              if (resolvedProductId !== existingItem.productId) {
+                if (resolvedProductId) {
+                  updatePayload.data.product = {
+                    connect: { productId: resolvedProductId },
+                  }
+                } else {
+                  updatePayload.data.productId = null
+                }
+              }
+
+              itemsToUpdate.push(updatePayload)
+
+              // Calculate inventory delta for this item
+              const quantityDelta =
+                incomingItem.quantity - existingItem.quantity
+              if (quantityDelta !== 0 && resolvedProductId) {
+                itemsDelta.push({
+                  productId: resolvedProductId,
+                  orderedQuantity: quantityDelta,
+                })
+              }
+            }
+          } else {
+            // Item exists in DB but NOT in incoming list → DELETE
+            itemIdsToDelete.push(orderItemId)
+
+            // Return stock for deleted items
+            if (existingItem.productId) {
+              itemsDelta.push({
+                productId: existingItem.productId,
+                orderedQuantity: -existingItem.quantity, // Negative = return to stock
+              })
+            }
+          }
+        }
+
+        // Find items to CREATE (new items without orderItemId)
+        for (const item of items) {
+          if (!item.orderItemId) {
+            // New item → CREATE
+            let resolvedProductId = item.productId || null
+            if (!resolvedProductId && item.sku) {
+              const found = await prisma.products.findFirst({
+                where: { sku: item.sku },
+                select: { productId: true },
+              })
+              resolvedProductId = found?.productId || null
+            }
+
+            const unitPrice = Number(item.unitPrice || 0)
+            const quantity = Number(item.quantity || 1)
+            const totalPrice = Number(item.totalPrice ?? unitPrice * quantity)
+
+            const baseItem = {
+              orderItemId: `item_${orderId}_${item.sku || nanoid(6)}_${nanoid(6)}`,
+              sku: item.sku || null,
+              productName: item.productName,
+              quantity,
+              unitPrice: new Decimal(unitPrice),
+              totalPrice: new Decimal(totalPrice),
+            }
+
+            if (resolvedProductId) {
+              itemsToCreate.push({
+                ...baseItem,
+                product: { connect: { productId: resolvedProductId } },
+              })
+
+              // Add to inventory delta (new item = reduce stock)
+              itemsDelta.push({
+                productId: resolvedProductId,
+                orderedQuantity: quantity,
+              })
+            } else {
+              itemsToCreate.push({
+                ...baseItem,
+                productId: null,
+              })
+            }
+          }
+        }
+
+        // ────────────────────────────────────────────────────────────
+        // 4.3: Build Prisma update instruction
+        // ────────────────────────────────────────────────────────────
+        orderItemsUpdate = {}
+
+        if (itemsToUpdate.length > 0) {
+          orderItemsUpdate.update = itemsToUpdate
+          console.log(`📝 Updating ${itemsToUpdate.length} existing items`)
+        }
+
+        if (itemsToCreate.length > 0) {
+          orderItemsUpdate.create = itemsToCreate
+          console.log(`🆕 Creating ${itemsToCreate.length} new items`)
+        }
+
+        if (itemIdsToDelete.length > 0) {
+          orderItemsUpdate.deleteMany = {
+            orderItemId: { in: itemIdsToDelete },
+          }
+          console.log(`🗑️ Deleting ${itemIdsToDelete.length} items`)
+        }
+
+        // ────────────────────────────────────────────────────────────
+        // 4.4: Recalculate order totals
+        // ────────────────────────────────────────────────────────────
+        const allFinalItems = [
+          // Existing items that weren't deleted
+          ...currentOrder.orderItems
+            .filter((item) => !itemIdsToDelete.includes(item.orderItemId))
+            .map((item) => {
+              const updated = incomingItemsMap.get(item.orderItemId)
+              return {
+                quantity: updated?.quantity ?? item.quantity,
+                unitPrice: updated?.unitPrice ?? Number(item.unitPrice),
+              }
+            }),
+          //New items to be added
+          ...itemsToCreate.map((item) => ({
+            quantity: item.quantity,
+            unitPrice: Number(item.unitPrice),
+          })),
+        ]
+        const newTotalAmount = allFinalItems.reduce(
+          (sum, item) => sum + item.quantity * item.unitPrice,
+          0,
+        )
+
+        scalarUpdates.totalAmount = new Decimal(newTotalAmount)
+        scalarUpdates.itemCount = allFinalItems.length
+        scalarUpdates.totalQuantity = allFinalItems.reduce(
+          (sum, item) => sum + item.quantity,
+          0,
+        )
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // STEP 5: Execute database update
+      // ══════════════════════════════════════════════════════════════
       const updatedOrder = await prisma.orders.update({
         where: { orderId },
-        data: updates,
+        data: {
+          ...scalarUpdates,
+          ...(orderItemsUpdate ? { orderItems: orderItemsUpdate } : {}),
+        },
         include: { orderItems: true },
       })
+
+      console.log(`✅ Order ${orderId} updated successfully`)
+
+      // ══════════════════════════════════════════════════════════════
+      // STEP 6: Sync inventory if items changed
+      // ══════════════════════════════════════════════════════════════
+      if (itemsDelta.length > 0) {
+        console.log('🔄 Syncing inventory after order item update...')
+        console.log('Inventory deltas:', itemsDelta)
+        try {
+          await syncAfterOrder(itemsDelta, 'crm')
+          console.log('✅ Inventory synced successfully after order update')
+        } catch (syncError) {
+          console.error('❌ Failed to sync inventory:', syncError)
+          // Don't throw - order was updated successfully, sync is secondary
+        }
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // STEP 7: Handle status changes
+      // ══════════════════════════════════════════════════════════════
 
       // If status changed to DELIVERED, create sales records and update client stats
       if (isChangingToDelivered) {

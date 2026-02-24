@@ -31,7 +31,7 @@ import Toast from '@/app/(components)/Toast'
 // ─── Types ─────────────────────────────────────────────────────────────────
 
 interface EditableOrderItem {
-  orderItemId?: string // existing items have this
+  orderItemId?: string
   productId?: string | null
   productName: string
   sku?: string | null
@@ -134,7 +134,7 @@ export default function EditOrderModal({
       quantity: item.quantity,
       unitPrice: Number(item.unitPrice),
       totalPrice: Number(item.totalPrice),
-      stockQuantity: 999, // We don't have live stock for existing items; set high so no false warnings
+      stockQuantity: 999, // high sentinel = no warning for existing items
     })),
   )
 
@@ -161,7 +161,7 @@ export default function EditOrderModal({
 
   // Populate client search field on mount
   useEffect(() => {
-    if (order.clientFullName || order.clientPhone) {
+    if (order.clientLastName || order.clientPhone) {
       setClientSearch(
         `${order.clientLastName ?? ''} ${order.clientFirstName ?? ''} (${order.clientPhone ?? ''})`.trim(),
       )
@@ -259,19 +259,42 @@ export default function EditOrderModal({
     }
 
     try {
-      // UpdateOrderInput only covers the fields exposed in updateOrderSchema
-      // We pass what the backend supports; for full item editing a separate
-      // endpoint would be needed – here we update the scalar order fields.
       await updateOrder({
         orderId: order.orderId,
         updates: {
+          // Status & tracking
           status: form.status,
           trackingNumber: form.trackingNumber || undefined,
+
+          // Delivery
           deliveryAddress: form.deliveryAddress || undefined,
+          deliveryCity: form.deliveryCity || undefined,
           deliveryOptionName: (form.deliveryOptionName as any) || undefined,
+
+          // Payment
           paymentOptionName: (form.paymentOptionName as any) || undefined,
+
+          // Client info — now fully sent
+          clientFirstName: form.clientFirstName || undefined,
+          clientLastName: form.clientLastName || undefined,
+          clientSecondName: form.clientSecondName || undefined,
+          clientPhone: form.clientPhone || undefined,
+          clientEmail: form.clientEmail || undefined,
+
+          // Notes
           clientNotes: form.clientNotes || undefined,
           sellerComment: form.sellerComment || undefined,
+
+          // Items — send the full list so the backend can diff/replace
+          items: orderItems.map((item) => ({
+            orderItemId: item.orderItemId,
+            productId: item.productId ?? null,
+            productName: item.productName,
+            sku: item.sku ?? null,
+            quantity: item.quantity,
+            unitPrice: Number(item.unitPrice),
+            totalPrice: Number(item.totalPrice),
+          })),
         },
       }).unwrap()
 
@@ -589,7 +612,7 @@ export default function EditOrderModal({
             </section>
 
             {/* ─────────────────────────────────────────── */}
-            {/* DISCOUNT / STATUS ROW                       */}
+            {/* STATUS / PAYMENT ROW                        */}
             {/* ─────────────────────────────────────────── */}
             <section className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
               <div>
@@ -655,7 +678,8 @@ export default function EditOrderModal({
                     onFocus={() => setIsClientDropdownOpen(true)}
                     onChange={(e) => {
                       setClientSearch(e.target.value)
-                      handleField('clientPhone', e.target.value)
+                      // Don't overwrite clientPhone here — let user pick from dropdown
+                      // or edit the phone field directly below
                     }}
                   />
                   {isClientFetching ? (

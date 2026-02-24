@@ -38,6 +38,8 @@ import { getPaymentStatusLabel } from '@/utils/marketplaceUtils'
 import CopyableItem from '@/app/(components)/CopyableItem'
 import CustomSelect from '@/app/(components)/CustomSelect'
 
+import EditOrderModal from './(components)/EditOrderModal'
+
 const OrdersPage = () => {
   const searchParams = useSearchParams()
   const statusFromUrl = searchParams.get('status') as OrderStatus | null
@@ -52,6 +54,8 @@ const OrdersPage = () => {
   const [sourceFilter, setSourceFilter] = useState<OrderSource | 'all'>('all')
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null) // State for Actions menu
+
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null)
 
   const { toast, showToast, hideToast } = useToast()
 
@@ -307,7 +311,7 @@ const OrdersPage = () => {
     )
   }
 
-//console.log('orders are: ', filteredOrders);
+  //console.log('orders are: ', filteredOrders);
 
   return (
     <div className='p-6 bg-gray-50 min-h-screen text-base'>
@@ -318,7 +322,6 @@ const OrdersPage = () => {
         isVisible={toast.isVisible}
         onClose={hideToast}
       />
-
       {/* Header */}
       <div className='mb-6'>
         <h1 className='text-3xl font-bold text-gray-900 mb-2'>Замовлення</h1>
@@ -326,7 +329,6 @@ const OrdersPage = () => {
           Всього: {pagination?.total || 0} замовлень
         </p>
       </div>
-
       {/* Filters and Actions */}
       <div className='bg-white rounded-lg shadow-sm p-4 mb-6'>
         <div className='flex flex-wrap gap-4 items-center'>
@@ -394,7 +396,6 @@ const OrdersPage = () => {
           </button>
         </div>
       </div>
-
       {/* Orders Table */}
       <div className='bg-white rounded-lg shadow-sm overflow-hidden'>
         <div className='overflow-x-auto'>
@@ -479,14 +480,14 @@ const OrdersPage = () => {
                     <div className='text-gray-500 text-sm'>
                       ({order.paymentOptionName})
                     </div>
-                  </td>                  
+                  </td>
 
                   <td className='px-6 py-5 whitespace-nowrap'>
                     {(() => {
                       const config = getStatusConfig(order.status)
                       const StatusIcon = config.icon
 
-                      return (                        
+                      return (
                         <div
                           onClick={(e) => e.stopPropagation()}
                           className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full transition-all cursor-pointer ${config.color}`}
@@ -538,7 +539,10 @@ const OrdersPage = () => {
                       {activeActionMenu === order.orderId && (
                         <div className='absolute right-0 mt-2 w-48 rounded-md shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-[100] divide-y divide-gray-100'>
                           <div className='py-1'>
-                            <button className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition-colors cursor-pointer'>
+                            <button
+                              className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition-colors cursor-pointer'
+                              onClick={() => setEditingOrder(order)}
+                            >
                               Редагувати
                             </button>
                             <button className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition-colors cursor-pointer'>
@@ -590,7 +594,6 @@ const OrdersPage = () => {
           </div>
         )}
       </div>
-
       {/* Order Details Modal (Selected Order) */}
       {selectedOrder && (
         <div
@@ -738,6 +741,14 @@ const OrdersPage = () => {
             </div>
           </div>
         </div>
+      )}
+      {/* Edit Order Modal */}
+      {editingOrder && (
+        <EditOrderModal
+          order={editingOrder}
+          onClose={() => setEditingOrder(null)}
+          onSuccess={() => setEditingOrder(null)}
+        />
       )}
     </div>
   )

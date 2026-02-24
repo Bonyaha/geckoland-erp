@@ -285,14 +285,42 @@ export interface CreateCRMOrderInput {
 }
 
 export interface UpdateOrderInput {
+  // Status & tracking
   status?: OrderStatus
   statusName?: string
   trackingNumber?: string
+
+  // Delivery
   deliveryAddress?: string
+  deliveryCity?: string
   deliveryOptionName?: DeliveryOption
+  deliveryCost?: number
+
+  // Payment
   paymentOptionName?: PaymentOption
+  paymentStatus?: PaymentStatus
+
+  // Client info — now fully editable
+  clientFirstName?: string
+  clientLastName?: string
+  clientSecondName?: string
+  clientPhone?: string
+  clientEmail?: string
+
+  // Notes
   clientNotes?: string
   sellerComment?: string
+
+  // Items — full replacement list
+  items?: Array<{
+    orderItemId?: string
+    productId?: string | null
+    productName: string
+    sku?: string | null
+    quantity: number
+    unitPrice: number
+    totalPrice?: number
+  }>
 }
 
 export interface OrderSyncResult {
