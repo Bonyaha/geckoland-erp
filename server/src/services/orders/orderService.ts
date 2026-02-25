@@ -837,7 +837,7 @@ class OrderService {
       deliveryOptionName: mapToDeliveryOption(
         rozetkaOrder.delivery?.delivery_service_name,
       ),
-      deliveryCity: rozetkaOrder.delivery?.city?.name,
+      deliveryCity: rozetkaOrder.delivery?.city?.name_ua,
       trackingNumber: rozetkaOrder.ttn,
       deliveryCost,
       deliveryProviderData:
@@ -1337,6 +1337,8 @@ class OrderService {
    */
   async getOrders(params: OrderFilterParams = {}): Promise<OrderQueryResult> {
     const { page = 1, limit = 50, source, status } = params
+//console.log('I am in orderService/getOrders');
+
     if (page < 1 || limit < 1)
       throw ErrorFactory.validationError('Invalid pagination parameters')
     const skip = (page - 1) * limit
@@ -1355,6 +1357,10 @@ class OrderService {
       }),
       prisma.orders.count({ where }),
     ])
+/* console.log(
+  'example order from backend is: ',
+  orders.find((o) => o.orderId === 'rozetka_884407961_M6Nh7eyM'),
+) */
 
     return {
       orders,

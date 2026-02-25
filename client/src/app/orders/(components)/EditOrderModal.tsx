@@ -529,7 +529,7 @@ export default function EditOrderModal({
                         <button
                           type='button'
                           onClick={() => updateQty(idx, item.quantity - 1)}
-                          className='text-red-400 hover:text-red-600 transition-colors'
+                          className='text-red-400 hover:text-red-600 transition-colors cursor-pointer'
                         >
                           <CircleMinus size={20} strokeWidth={2.5} />
                         </button>
@@ -550,7 +550,7 @@ export default function EditOrderModal({
                         <button
                           type='button'
                           onClick={() => updateQty(idx, item.quantity + 1)}
-                          className='text-green-500 hover:text-green-600 transition-colors'
+                          className='text-green-500 hover:text-green-600 transition-colors cursor-pointer'
                         >
                           <CirclePlus size={20} strokeWidth={2.5} />
                         </button>
@@ -582,7 +582,7 @@ export default function EditOrderModal({
                       <button
                         type='button'
                         onClick={() => removeItem(idx)}
-                        className='text-blue-400 hover:text-red-500 p-1 transition-colors'
+                        className='text-blue-400 hover:text-red-500 p-1 transition-colors cursor-pointer'
                       >
                         <Trash2 size={16} />
                       </button>
@@ -898,14 +898,14 @@ export default function EditOrderModal({
             <button
               onClick={handleSubmit}
               disabled={isSaving}
-              className='flex-1 flex items-center justify-center gap-2 py-3 bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+              className='flex-1 flex items-center justify-center gap-2 py-3 bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
             >
               <Save size={18} />
               {isSaving ? 'Збереження...' : 'Редагувати'}
             </button>
             <button
               onClick={onClose}
-              className='px-5 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors'
+              className='px-5 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer'
             >
               <X size={18} />
             </button>
