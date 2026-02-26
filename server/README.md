@@ -16,3 +16,5 @@ Follow these steps to set up and seed the database:
    ```bash
    npm run seed
    ```
+
+### Implemented .cron-initialized file for preventing nodemon running cron jobs on every code change. Now cron jobs run only on server srart up
