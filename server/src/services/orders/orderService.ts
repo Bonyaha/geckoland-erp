@@ -1357,10 +1357,6 @@ class OrderService {
       }),
       prisma.orders.count({ where }),
     ])
-/* console.log(
-  'example order from backend is: ',
-  orders.find((o) => o.orderId === 'rozetka_884407961_M6Nh7eyM'),
-) */
 
     return {
       orders,

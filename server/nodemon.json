@@ -7,7 +7,9 @@
 		"src/config/credentials/gmail-token.json",
 		"src/storage/rozetkaTokenCache.json",
 		"node_modules/**/*",
-		"dist/**/*"
+		"dist/**/*",
+		"logs/**/*",
+		".cron-initialized"
 	],
 	"ext": "ts,js,json",
 	"exec": "ts-node src/index.ts"
