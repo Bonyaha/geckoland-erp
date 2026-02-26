@@ -468,7 +468,7 @@ const OrdersPage = () => {
                   </td>
 
                   <td className='px-6 py-5 whitespace-nowrap text-base font-bold text-gray-900'>
-                    {formatCurrency(order.totalAmount)}
+                    {formatCurrency(order.totalAmountWithDiscount || order.totalAmount)}
                   </td>
 
                   <td className='px-6 py-5 whitespace-nowrap text-base'>
@@ -734,7 +734,7 @@ const OrdersPage = () => {
                 <div className='flex justify-between items-center text-2xl font-black'>
                   <span>Загалом:</span>
                   <span className='text-blue-600'>
-                    {formatCurrency(selectedOrder.totalAmount)}
+                    {formatCurrency(selectedOrder.totalAmountWithDiscount || selectedOrder.totalAmount)}
                   </span>
                 </div>
               </div>
