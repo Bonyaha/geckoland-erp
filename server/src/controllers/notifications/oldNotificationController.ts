@@ -1,5 +1,9 @@
 // server/src/controllers/notificationController.ts
 // This is the webhook that Google Pub/Sub will call.
+
+/* THIS IS OLD FILE. IT WAS SAVED FOR SAFETY AND FOR POSSIBLE BACKROLL 
+* DELETE THIS FILE AFTER CONFIRMING THAT NEW IMPLEMENTATION WORKS FINE
+*/
 import { Request, Response } from 'express'
 import { google } from 'googleapis'
 import { authorize } from '../../services/gmail/gmailService'
@@ -358,37 +362,9 @@ async function processNotification(req: Request): Promise<void> {
     return
   }
 
-  // Decode and parse the message data with error handling
-  let decodedData: any
-  try {
-    const decodedString = Buffer.from(pubSubMessage.data, 'base64').toString(
-      'utf-8',
-    )
-
-    // Check if decoded string is empty or whitespace
-    if (!decodedString || decodedString.trim() === '') {
-      gmailLogger.warn(
-        'Pub/Sub message data is empty after base64 decode - likely a test ping',
-      )
-      return
-    }
-
-    decodedData = JSON.parse(decodedString)
-  } catch (error: any) {
-    // This is common for test pings from Google - log as info, not error
-    gmailLogger.info('Received invalid Pub/Sub message (likely test/ping)', {
-      error: error.message,
-      rawData: pubSubMessage.data?.substring(0, 100), // First 100 chars for debugging
-    })
-    return
-  }
-
-  // Validate that we have historyId
-  if (!decodedData.historyId) {
-    gmailLogger.warn('Pub/Sub message missing historyId', decodedData)
-    return
-  }
-
+  const decodedData = JSON.parse(
+    Buffer.from(pubSubMessage.data, 'base64').toString('utf-8'),
+  )
   const newHistoryId = decodedData.historyId
 
   // Load processed messages and last history ID
