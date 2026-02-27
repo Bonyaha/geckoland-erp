@@ -1,9 +1,9 @@
 // server/src/controllers/notificationController.ts
 // This is the webhook that Google Pub/Sub will call.
 
-/* THIS IS OLD FILE. IT WAS SAVED FOR SAFETY AND FOR POSSIBLE BACKROLL 
-* DELETE THIS FILE AFTER CONFIRMING THAT NEW IMPLEMENTATION WORKS FINE
-*/
+/* THIS IS OLD FILE. IT WAS SAVED FOR SAFETY AND FOR POSSIBLE BACKROLL
+ * DELETE THIS FILE AFTER CONFIRMING THAT NEW IMPLEMENTATION WORKS FINE
+ */
 import { Request, Response } from 'express'
 import { google } from 'googleapis'
 import { authorize } from '../../services/gmail/gmailService'
@@ -31,10 +31,14 @@ const processingQueue: Array<() => Promise<void>> = []
 /**
  * Load processed message IDs from persistent storage
  */
-async function loadProcessedMessages(): Promise<Set<string>> {
+async function loadProcessedMessages(): Promise<Set<string>> {  
   try {
     const content = await fs.readFile(PROCESSED_MESSAGES_PATH)
-    const data = JSON.parse(content.toString())
+    const raw = content.toString().trim()
+    if (!raw) return new Set<string>()
+
+    const data = JSON.parse(raw)
+    
     return new Set(data.messageIds || [])
   } catch (error: unknown) {
     if (
@@ -43,6 +47,10 @@ async function loadProcessedMessages(): Promise<Set<string>> {
       'code' in error &&
       (error as any).code === 'ENOENT'
     ) {
+      return new Set<string>()
+    }
+    if (error instanceof SyntaxError) {
+      console.warn('processed-messages.json is corrupted, starting fresh')
       return new Set<string>()
     }
     throw error
@@ -69,7 +77,12 @@ async function saveProcessedMessages(messageIds: Set<string>): Promise<void> {
 async function loadLastHistoryId(): Promise<string | null> {
   try {
     const content = await fs.readFile(HISTORY_PATH)
-    const data = JSON.parse(content.toString())
+    const raw = content.toString().trim()
+    if (!raw) return null // Handle empty file
+
+    const data = JSON.parse(raw)
+    console.log('Loaded last history ID: ', data)
+
     return data.historyId
   } catch (error: unknown) {
     if (
@@ -78,6 +91,10 @@ async function loadLastHistoryId(): Promise<string | null> {
       'code' in error &&
       (error as any).code === 'ENOENT'
     ) {
+      return null
+    }
+    if (error instanceof SyntaxError) {
+      console.warn('gmail-history.json is corrupted, starting fresh')
       return null
     }
     throw error
@@ -361,6 +378,7 @@ async function processNotification(req: Request): Promise<void> {
     gmailLogger.warn('Received an invalid Pub/Sub message')
     return
   }
+  console.log('Received Pub/Sub message: ', pubSubMessage)
 
   const decodedData = JSON.parse(
     Buffer.from(pubSubMessage.data, 'base64').toString('utf-8'),
@@ -369,6 +387,8 @@ async function processNotification(req: Request): Promise<void> {
 
   // Load processed messages and last history ID
   const processedMessages = await loadProcessedMessages()
+  console.log('Loaded processed messages: ', processedMessages)
+
   const lastHistoryId = await loadLastHistoryId()
 
   // If this is the first ever notification
