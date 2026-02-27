@@ -219,7 +219,10 @@ export class RozetkaClient {
         },
         params,
       })
-gmailLogger.info('response from Rozetka is ', response.data.content.orders)
+      gmailLogger.info(
+        'response from Rozetka is ',
+        response.data.content.orders,
+      )
       return response.data as T
     } catch (error: any) {
       handleAxiosError(error, `GET ${endpoint}`)
@@ -287,6 +290,47 @@ gmailLogger.info('response from Rozetka is ', response.data.content.orders)
       throw error
     }
   }
+
+  /**
+   * Fetch payment status for a specific order using the dedicated endpoint
+   * Note: Rozetka caches this endpoint for 5 minutes
+   */
+  async getOrderPaymentStatus(orderId: string): Promise<{
+    order_id: number
+    status_payment_id: number
+    name: string
+    title: string
+    value?: number
+    payment_invoice_id: number | null
+    created_at: string
+  } | null> {
+    try {
+      const accessToken = await rozetkaTokenManager.getValidToken()
+
+      const response = await axios.get(
+        `${this.baseUrl}/orders/status-payment/${orderId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Language': 'uk',
+          },
+        },
+      )
+
+      if (response.data.success && response.data.content) {
+        return response.data.content
+      }
+
+      return null
+    } catch (error: any) {
+      console.error(
+        `Failed to fetch Rozetka payment status for order ${orderId}:`,
+        error.message,
+      )
+      return null
+    }
+  }
+
   /**
    * Fetch a single order by ID to get updated details including tracking number
    */
