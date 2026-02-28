@@ -371,9 +371,8 @@ export interface OrderPaymentInfoInternal extends Omit<
  * }
  */
 export interface OrderItemInput {
-  orderItemId: string
-  productId?: string | null
-  product?: { connect: { productId: string } }
+  orderItemId: string  
+  product: { connect: { productId: string } }
   sku?: string | null
   productName: string
   productNameMultilang?: any
@@ -518,7 +517,7 @@ export interface OrderItemForSync {
  * }
  */
 export interface UnifiedOrderItem {
-  productId?: string | null
+  productId: string
   sku?: string | null
   name: string
   quantity: number

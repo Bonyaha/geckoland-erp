@@ -140,13 +140,13 @@ class OrderService {
 
   /**
    * Lookup productId from database by SKU or external product ID
-   * This ensures OrderItems get linked to Products table
+   * THROWS an AppError if the product is not found — all orders must have matching products.
    */
   private async lookupProductId(
     sku: string | null | undefined,
     marketplaceProductId: string,
     source: Source,
-  ): Promise<string | null> {
+  ): Promise<string> {
     try {
       // First try to find by SKU if available
       if (sku) {
@@ -158,7 +158,7 @@ class OrderService {
       }
 
       // Then try by external ID in the externalIds JSON field
-      // The externalIds structure is: { prom: "123", rozetka: "456" }
+      //
       const products = await prisma.products.findMany({
         where: { source },
         select: { productId: true, externalIds: true },
@@ -182,13 +182,16 @@ class OrderService {
         }
       }
 
-      console.warn(
-        `Product not found for SKU: ${sku}, Marketplace Product ID: ${marketplaceProductId}, Source: ${source}`,
+      // Product not found — throw so the order is rejected
+      throw ErrorFactory.badRequest(
+        `Product not found in inventory for SKU: "${sku || 'N/A'}", Marketplace Product ID: ${marketplaceProductId} (${source}). ` +
+          `Please sync your products from ${source} before processing orders.`,
       )
-      return null
     } catch (error) {
+      // Re-throw AppErrors as-is, wrap unexpected errors
+      if (error instanceof AppError) throw error
       console.error('Error looking up product:', error)
-      return null
+      throw ErrorFactory.internal(`Failed to look up product: ${sku}`)
     }
   }
 
@@ -204,6 +207,7 @@ class OrderService {
     const marketplaceProductId = promItem.id.toString()
 
     // Lookup the actual productId
+//Will throw if product not found in DB
     const productId = await this.lookupProductId(
       sku,
       marketplaceProductId,
@@ -231,6 +235,7 @@ class OrderService {
     const marketplaceProductId = rozetkaItem.item_id.toString()
 
     // Lookup the actual productId
+// Will throw if product not found in DB
     const productId = await this.lookupProductId(
       sku,
       marketplaceProductId,
@@ -269,27 +274,34 @@ class OrderService {
       productId = existingProduct?.productId || null
     }
 
+// If no productId but we have SKU, try to look it up
     if (!productId && sku) {
-      // If no productId but we have SKU, try to look it up
-      if (!productId && sku) {
         const productBySku = await prisma.products.findFirst({
           where: { sku },
           select: { productId: true },
         })
         productId = productBySku?.productId || null
       }
-      console.log('I am at mapCRMItemToUnified, productId is: ', productId)
+
+      // CRM items are validated earlier in createOrderFromCRM (inventory check),
+    // so productId should always be resolved by this point.
+    // This is a safety net in case mapCRMItemToUnified is called from elsewhere.
+    if (!productId) {
+      const identifier = sku || 'unknown'
+      throw ErrorFactory.badRequest(
+        `Product "${crmItem.productName}" (${identifier}) does not exist in inventory.`,
+      )
     }
-    return {
-      // For CRM, internal and external ID are often the same, or derived from SKU
+    
+    return {      
       productId,
       sku: crmItem.sku || null,
       name: crmItem.productName,
-      quantity: quantity,
-      unitPrice: unitPrice,
-      totalPrice: totalPrice,
+      quantity,
+      unitPrice,
+      totalPrice,
       image: crmItem.productImage || null,
-      url: null, // CRM usually doesn't have an external marketplace URL
+      url: null,
     }
   }
 
@@ -301,7 +313,7 @@ class OrderService {
     orderId: string,
     rawItemData: any,
   ): OrderItemInput {
-    const baseItem = {
+    return {
       orderItemId: `item_${orderId}_${unifiedItem.sku || nanoid(6)}_${nanoid(6)}`,
       sku: unifiedItem.sku,
       productName: unifiedItem.name,
@@ -311,24 +323,12 @@ class OrderService {
       unitPrice: new Decimal(unifiedItem.unitPrice),
       totalPrice: new Decimal(unifiedItem.totalPrice),
       rawItemData: rawItemData as unknown as Prisma.InputJsonValue,
-    }
-    if (unifiedItem.productId) {
-      // Product found in database - use Prisma relation
-      return {
-        ...baseItem,
         product: {
           connect: { productId: unifiedItem.productId },
         },
       }
-    } else {
-      // Product not found - use external ID as fallback
-      return {
-        ...baseItem,
-        productId: null,
-      }
     }
-  }
-
+  
   // ============================================
   // HELPER METHOD - BUILD BASE ORDER DATA
   // ============================================
@@ -1077,11 +1077,9 @@ class OrderService {
         orderId,
         items[index],
       )
-      const { productId, ...itemData } = baseItem
 
       return {
-        ...(productId ? { productId } : {}), // Only include if not null
-        ...itemData,
+        ...baseItem,
         measureUnit: items[index].measureUnit || null,
       }
     })
@@ -1337,7 +1335,7 @@ class OrderService {
    */
   async getOrders(params: OrderFilterParams = {}): Promise<OrderQueryResult> {
     const { page = 1, limit = 50, source, status } = params
-//console.log('I am in orderService/getOrders');
+    //console.log('I am in orderService/getOrders');
 
     if (page < 1 || limit < 1)
       throw ErrorFactory.validationError('Invalid pagination parameters')
@@ -1508,7 +1506,7 @@ class OrderService {
       }
 
       //══════════════════════════════════════════════════════════
-      // STEP 2: Handle status change flags (existing logic)
+      // STEP 2: Handle status change flags
       // ═══════════════════════════════════════════════════════════
 
       // Track if status is changing to DELIVERED
@@ -1710,10 +1708,10 @@ class OrderService {
                 orderedQuantity: quantity,
               })
             } else {
-              itemsToCreate.push({
-                ...baseItem,
-                productId: null,
-              })
+              // Product not found — skip creation and warn
+              console.warn(
+                `⚠️ Skipping new order item "${item.productName}" (${item.sku || 'no SKU'}): product not found in inventory.`,
+              )
             }
           }
         }

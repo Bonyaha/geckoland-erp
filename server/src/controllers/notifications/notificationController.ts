@@ -377,8 +377,7 @@ async function processNotification(req: Request): Promise<void> {
   if (!pubSubMessage || !pubSubMessage.data) {
     gmailLogger.warn('Received an invalid Pub/Sub message')
     return
-  }
-  console.log('Received Pub/Sub message: ', pubSubMessage)
+  }  
 
   const decodedData = JSON.parse(
     Buffer.from(pubSubMessage.data, 'base64').toString('utf-8'),
@@ -386,8 +385,7 @@ async function processNotification(req: Request): Promise<void> {
   const newHistoryId = decodedData.historyId
 
   // Load processed messages and last history ID
-  const processedMessages = await loadProcessedMessages()
-  console.log('Loaded processed messages: ', processedMessages)
+  const processedMessages = await loadProcessedMessages()  
 
   const lastHistoryId = await loadLastHistoryId()
 
