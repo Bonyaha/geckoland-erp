@@ -94,16 +94,16 @@ function cleanupCronFlag(): void {
 
 const server = app.listen(port, '0.0.0.0', () => {
   console.log(`Server running on port ${port}`)
-  console.log(`🌍 Environment: ${config.app.env}`) 
+  console.log(`🌍 Environment: ${config.app.env}`)
 
   // Only initialize cron jobs once, even across nodemon reloads
   if (!isCronAlreadyInitialized()) {
     console.log(
       '🔄 First start of dev session - will initialize cron jobs in 10 seconds',
     )
+    markCronInitialized()
     setTimeout(() => {
       initializeCronJobs()
-      markCronInitialized()
       console.log('✅ Cron jobs initialized successfully')
     }, 10_000)
   } else {
