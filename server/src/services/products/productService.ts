@@ -763,13 +763,6 @@ if (productsNeedingSyncUpdate.length > 0) {
    * 5. Reduced Set/Map operations
    */
 
-  // Optimized version of syncNewProductsFromMarketplaces
-  // Key improvements:
-  // 1. Reduced database queries
-  // 2. More efficient filtering logic
-  // 3. Parallel operations where possible
-  // 4. Early returns for common cases
-
   async syncNewProductsFromMarketplaces(): Promise<ProductSyncResult> {
     const result: ProductSyncResult = {
       success: true,
@@ -912,6 +905,7 @@ if (productsNeedingSyncUpdate.length > 0) {
     }
 
     console.log(`📊 New products: ${promCreateOperations.length} Prom-sourced`)
+    console.log('SKUs:', promCreateOperations.map((p) => p.sku).join(', '))
 
     // OPTIMIZATION 6: Execute batch creates in parallel (not sequentially)
     const createPromises: Promise<any>[] = []

@@ -20,6 +20,7 @@ import {
 const router = Router()
 
 router.post('/sync/marketplaces', asyncHandler(syncNewProductsFromMarketplaces))
+
 router.patch(
   '/batch',
   validate(updateBatchProductSchema),
