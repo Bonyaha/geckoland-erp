@@ -130,6 +130,10 @@ export interface User {
   email: string
 }
 
+// ================================
+//        ORDERS TYPES
+// ================================
+
 export type OrderSource = 'prom' | 'rozetka' | 'crm'
 
 export type OrderStatus =
@@ -337,6 +341,18 @@ export interface OrderCheckSummary {
     skipped: number
     errors: number
   }
+}
+
+export interface SyncPaymentStatusesResult {
+  checked: number
+  updated: number
+  errors: number
+  updatedOrders: Array<{
+    orderId: string
+    orderNumber: string
+    before: string
+    after: string
+  }>
 }
 
 // ================================
@@ -591,6 +607,18 @@ export const api = createApi({
       invalidatesTags: ['Orders'],
     }),
 
+    // Sync payment statuses for UNPAID orders
+    syncPaymentStatuses: build.mutation<
+      { success: boolean; message: string; data: SyncPaymentStatusesResult },
+      void
+    >({
+      query: () => ({
+        url: '/orders/sync-payment-statuses',
+        method: 'POST',
+      }),
+      invalidatesTags: ['Orders'],
+    }),
+
     //Client endpoints
     getClients: build.query<
       ClientsResponse,
@@ -638,6 +666,7 @@ export const {
   useFetchPromOrdersMutation,
   useSyncOrdersMutation,
   useCheckForNewOrdersMutation,
+  useSyncPaymentStatusesMutation,
   useGetClientsQuery,
   useSearchClientsAutocompleteQuery,
 } = api

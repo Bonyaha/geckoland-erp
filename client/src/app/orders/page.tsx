@@ -12,6 +12,7 @@ import {
   useCheckForNewOrdersMutation,
   useFetchTrackingNumberMutation,
   useUpdateAllTrackingStatusesMutation,
+  useSyncPaymentStatusesMutation,
   Order,
   OrderStatus,
   OrderSource,
@@ -29,6 +30,7 @@ import {
   ChevronLeft,
   ChevronRight,
   MoreVertical,
+  CreditCard,
 } from 'lucide-react'
 
 import Toast from '@/app/(components)/Toast'
@@ -122,6 +124,10 @@ const OrdersPage = () => {
   const [checkNewOrders, { isLoading: isChecking }] =
     useCheckForNewOrdersMutation()
 
+const [syncPaymentStatuses, { isLoading: isSyncingPayments }] =
+  useSyncPaymentStatusesMutation()
+
+
   // Handlers
   const handleStatusChange = async (
     orderId: string,
@@ -172,6 +178,23 @@ const OrdersPage = () => {
       showToast('Помилка перевірки нових замовлень', 'error')
     }
   }
+
+const handleSyncPaymentStatuses = async () => {
+  try {
+    const result = await syncPaymentStatuses().unwrap()
+    const { checked, updated, errors } = result.data
+    showToast(
+      `Оплати перевірено: ${checked}, оновлено: ${updated}${errors > 0 ? `, помилок: ${errors}` : ''}`,
+      updated > 0 ? 'success' : 'info',
+    )
+    if (updated > 0) refetch()
+  } catch (error: any) {
+    showToast(
+      error?.data?.message || 'Помилка синхронізації статусів оплати',
+      'error',
+    )
+  }
+}
 
   // Utility functions
   const getStatusConfig = (status: OrderStatus) => {
@@ -394,6 +417,17 @@ const OrdersPage = () => {
             />
             Оновити статуси
           </button>
+          <button
+            onClick={handleSyncPaymentStatuses}
+            disabled={isSyncingPayments}
+            className='flex items-center gap-2 px-6 py-3 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 text-base font-semibold cursor-pointer'
+          >
+            <CreditCard
+              size={18}
+              className={isSyncingPayments ? 'animate-spin' : ''}
+            />
+            Перевірити оплати
+          </button>
         </div>
       </div>
       {/* Orders Table */}
@@ -468,7 +502,9 @@ const OrdersPage = () => {
                   </td>
 
                   <td className='px-6 py-5 whitespace-nowrap text-base font-bold text-gray-900'>
-                    {formatCurrency(order.totalAmountWithDiscount || order.totalAmount)}
+                    {formatCurrency(
+                      order.totalAmountWithDiscount || order.totalAmount,
+                    )}
                   </td>
 
                   <td className='px-6 py-5 whitespace-nowrap text-base'>
@@ -734,7 +770,10 @@ const OrdersPage = () => {
                 <div className='flex justify-between items-center text-2xl font-black'>
                   <span>Загалом:</span>
                   <span className='text-blue-600'>
-                    {formatCurrency(selectedOrder.totalAmountWithDiscount || selectedOrder.totalAmount)}
+                    {formatCurrency(
+                      selectedOrder.totalAmountWithDiscount ||
+                        selectedOrder.totalAmount,
+                    )}
                   </span>
                 </div>
               </div>

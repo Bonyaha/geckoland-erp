@@ -108,7 +108,7 @@
     },
     "name": "Кальцій із д3 для рептилій та амфібій, геконів, еублефарів, агам, бананоїдів, фельзум, хамелеонів, черепах Repti Calcium with d3 Zoo Med 85 г",
     "price": "613",
-    "stockQuantity": 2,
+    "stockQuantity": 1,
     "available": true,
     "priceOld": "650",
     "pricePromo": "597",
@@ -333,8 +333,8 @@
     },
     "name": "Вітаміни та кальцій комплекс для рептилій геконів, еублефарів, агам, хамелеонів, черепах Calcium Plus REPASHY 30 г",
     "price": "379",
-    "stockQuantity": 0,
-    "available": false,
+    "stockQuantity": 1,
+    "available": true,
     "priceOld": "300",
     "pricePromo": "234",
     "updatedPrice": null,
@@ -1431,8 +1431,8 @@
     },
     "name": "Комплекс Кальцій і вітаміни для рептилій та амфібій, геконів, еублефарів, агам, бананоїдів, фельзум, хамелеонів Zoo Med 20 г",
     "price": "216",
-    "stockQuantity": 0,
-    "available": false,
+    "stockQuantity": 5,
+    "available": true,
     "priceOld": "250",
     "pricePromo": "216",
     "updatedPrice": null,
@@ -1531,7 +1531,7 @@
     },
     "name": "Кокосовий субстрат в таблетці дрібний для тераріума, рептилій, змій, геконів, павуків 1 л",
     "price": "46",
-    "stockQuantity": 2,
+    "stockQuantity": 1,
     "available": true,
     "priceOld": "55",
     "pricePromo": "35",
@@ -1981,7 +1981,7 @@
     },
     "name": "Аргентинські таргани кормові ( Blaptica Dubia ) - Живий корм для рептилій, птахів, їжаків, комахоїдних тварин 3-4 см 20 шт.",
     "price": "118",
-    "stockQuantity": 2,
+    "stockQuantity": 1,
     "available": true,
     "priceOld": null,
     "pricePromo": null,
@@ -2131,7 +2131,7 @@
     },
     "name": "Зофобас, зоофобус ( Zophobas morio ) - Живі кормові комахи для рептилій, птахів, їжаків, павуків, комахоїдних тварин 100 шт.",
     "price": "263",
-    "stockQuantity": 2,
+    "stockQuantity": 1,
     "available": true,
     "priceOld": null,
     "pricePromo": "211",
@@ -2181,8 +2181,8 @@
     },
     "name": "Борошняний хробак, мучник ( Tenebrio molitor ) - Живі кормові комахи для рептилій, птахів, їжаків, павуків, комахоїдних тварин 100 шт.",
     "price": "81",
-    "stockQuantity": 0,
-    "available": false,
+    "stockQuantity": 3,
+    "available": true,
     "priceOld": "100",
     "pricePromo": null,
     "updatedPrice": null,
@@ -2206,7 +2206,7 @@
     },
     "name": "Зофобас, зоофобус ( Zophobas morio ) - Живі кормові комахи для рептилій, птахів, їжаків, павуків, комахоїдних тварин 20 шт.",
     "price": "76",
-    "stockQuantity": 3,
+    "stockQuantity": 5,
     "available": true,
     "priceOld": "100",
     "pricePromo": null,
@@ -2724,7 +2724,7 @@
   },
   {
     "productId": "427867229",
-    "sku": "200Z-QJ-405",
+    "sku": "200T-PG-880",
     "externalIds": {
       "prom": null,
       "rozetka": "119594422"
@@ -2905,7 +2905,7 @@
       "rozetka": "120989446"
     },
     "name": "Аргентинські таргани ( Blaptica Dubia ) - Живі Кормові комахи для рептилій, птахів, їжаків, геконів, комахоїдних тварин 0,5-1 см 50 шт.",
-    "price": "100",
+    "price": "183",
     "stockQuantity": 0,
     "available": false,
     "priceOld": "200",
@@ -3998,53 +3998,7 @@
     "source": "rozetka"
   },
   {
-    "productId": "null",
-    "sku": "805N-QC-665",
-    "externalIds": {
-      "prom": null,
-      "rozetka": "163801795"
-    },
-    "name": "Коряга 36*25*16см в тераріум / акваріум натуральна Декорація гілка для геконів і змій",
-    "price": "734",
-    "stockQuantity": 0,
-    "available": false,
-    "priceOld": "800",
-    "pricePromo": "704",
-    "updatedPrice": null,
-    "mainImage": "https://seller.rozetka.com.ua/assets/images/no-image.svg",
-    "images": [],
-    "dateModified": null,
-    "categoryData": {
-      "id": 4626414,
-      "title": "Декорації для акваріумів та тераріумів"
-    },
-    "source": "rozetka"
-  },
-  {
-    "productId": "null",
-    "sku": "1500D-FA-060",
-    "externalIds": {
-      "prom": null,
-      "rozetka": "163801796"
-    },
-    "name": "Світильник 25см термостійкий для лампи в тераріум рептилій теплової / уф / освітлення Тримач для гекона, змії, черепахи",
-    "price": "492",
-    "stockQuantity": 0,
-    "available": false,
-    "priceOld": "700",
-    "pricePromo": null,
-    "updatedPrice": null,
-    "mainImage": "https://seller.rozetka.com.ua/assets/images/no-image.svg",
-    "images": [],
-    "dateModified": null,
-    "categoryData": {
-      "id": 3441361,
-      "title": "Освітлення для акваріумів і тераріумів"
-    },
-    "source": "rozetka"
-  },
-  {
-    "productId": "null",
+    "productId": "579781756",
     "sku": "925H-IO-311",
     "externalIds": {
       "prom": null,
@@ -4057,9 +4011,11 @@
     "priceOld": "200",
     "pricePromo": "113",
     "updatedPrice": null,
-    "mainImage": "https://seller.rozetka.com.ua/assets/images/no-image.svg",
-    "images": [],
-    "dateModified": null,
+    "mainImage": "https://content1.rozetka.com.ua/goods/images/preview/654701248.jpg",
+    "images": [
+      "https://content1.rozetka.com.ua/goods/images/preview/654701248.jpg"
+    ],
+    "dateModified": "2026-03-02T06:17:54.000Z",
     "categoryData": {
       "id": 3429671,
       "title": "Корм для рептилій"
@@ -4067,7 +4023,32 @@
     "source": "rozetka"
   },
   {
-    "productId": "null",
+    "productId": "579781759",
+    "sku": "805N-QC-665",
+    "externalIds": {
+      "prom": null,
+      "rozetka": "163801795"
+    },
+    "name": "Коряга 36*25*16см в тераріум / акваріум натуральна Декорація гілка для геконів і змій",
+    "price": "734",
+    "stockQuantity": 0,
+    "available": false,
+    "priceOld": "800",
+    "pricePromo": "704",
+    "updatedPrice": null,
+    "mainImage": "https://content2.rozetka.com.ua/goods/images/preview/654701403.jpg",
+    "images": [
+      "https://content2.rozetka.com.ua/goods/images/preview/654701403.jpg"
+    ],
+    "dateModified": "2026-03-02T06:17:54.000Z",
+    "categoryData": {
+      "id": 4626414,
+      "title": "Декорації для акваріумів та тераріумів"
+    },
+    "source": "rozetka"
+  },
+  {
+    "productId": "579781762",
     "sku": "925W-LR-562",
     "externalIds": {
       "prom": null,
@@ -4080,9 +4061,11 @@
     "priceOld": "200",
     "pricePromo": null,
     "updatedPrice": null,
-    "mainImage": "https://seller.rozetka.com.ua/assets/images/no-image.svg",
-    "images": [],
-    "dateModified": null,
+    "mainImage": "https://content1.rozetka.com.ua/goods/images/preview/654701406.jpg",
+    "images": [
+      "https://content1.rozetka.com.ua/goods/images/preview/654701406.jpg"
+    ],
+    "dateModified": "2026-03-02T06:17:54.000Z",
     "categoryData": {
       "id": 3429671,
       "title": "Корм для рептилій"
@@ -4090,99 +4073,7 @@
     "source": "rozetka"
   },
   {
-    "productId": "null",
-    "sku": "130W-NK-723",
-    "externalIds": {
-      "prom": null,
-      "rozetka": "163801800"
-    },
-    "name": "Таргани 50шт + Мучник 20шт + Зофобас 10шт Набір кормових комах для геконів, ящірок, їжаків, павуків, птахів",
-    "price": "338",
-    "stockQuantity": 0,
-    "available": false,
-    "priceOld": "400",
-    "pricePromo": "297",
-    "updatedPrice": null,
-    "mainImage": "https://seller.rozetka.com.ua/assets/images/no-image.svg",
-    "images": [],
-    "dateModified": null,
-    "categoryData": {
-      "id": 3429671,
-      "title": "Корм для рептилій"
-    },
-    "source": "rozetka"
-  },
-  {
-    "productId": "null",
-    "sku": "925G-WK-001",
-    "externalIds": {
-      "prom": null,
-      "rozetka": "163801801"
-    },
-    "name": "Мучник сушений 50г Борошняний хробак Смаколик сухий корм для рептилій, амфібій, їжаків, сурікатів, жаб, черепах, риб, геконів",
-    "price": "161",
-    "stockQuantity": 0,
-    "available": false,
-    "priceOld": "200",
-    "pricePromo": "154",
-    "updatedPrice": null,
-    "mainImage": "https://seller.rozetka.com.ua/assets/images/no-image.svg",
-    "images": [],
-    "dateModified": null,
-    "categoryData": {
-      "id": 3429671,
-      "title": "Корм для рептилій"
-    },
-    "source": "rozetka"
-  },
-  {
-    "productId": "null",
-    "sku": "1100O-QV-818",
-    "externalIds": {
-      "prom": null,
-      "rozetka": "163801803"
-    },
-    "name": "Міні світильник в акваріум до 10л від юсб AquaLighter Pico Tablet чорний Освітлення для тераріума",
-    "price": "547",
-    "stockQuantity": 0,
-    "available": false,
-    "priceOld": "600",
-    "pricePromo": "493",
-    "updatedPrice": null,
-    "mainImage": "https://seller.rozetka.com.ua/assets/images/no-image.svg",
-    "images": [],
-    "dateModified": null,
-    "categoryData": {
-      "id": 3441361,
-      "title": "Освітлення для акваріумів і тераріумів"
-    },
-    "source": "rozetka"
-  },
-  {
-    "productId": "null",
-    "sku": "1500G-EP-872",
-    "externalIds": {
-      "prom": null,
-      "rozetka": "163801802"
-    },
-    "name": "Світильник 20*14см для лампи в тераріум рептилій теплової / уф / освітлення Плафон для гекона, змії, черепахи",
-    "price": "879",
-    "stockQuantity": 0,
-    "available": false,
-    "priceOld": "1000",
-    "pricePromo": null,
-    "updatedPrice": null,
-    "mainImage": "https://seller.rozetka.com.ua/assets/images/no-image.svg",
-    "images": [],
-    "dateModified": null,
-    "categoryData": {
-      "id": 3441361,
-      "title": "Освітлення для акваріумів і тераріумів"
-    },
-    "source": "rozetka"
-  },
-  {
-    "productId": "null",
+    "productId": "579781765",
     "sku": "805P-EV-061",
     "externalIds": {
       "prom": null,
@@ -4195,9 +4086,11 @@
     "priceOld": "600",
     "pricePromo": null,
     "updatedPrice": null,
-    "mainImage": "https://seller.rozetka.com.ua/assets/images/no-image.svg",
-    "images": [],
-    "dateModified": null,
+    "mainImage": "https://content1.rozetka.com.ua/goods/images/preview/654701421.jpg",
+    "images": [
+      "https://content1.rozetka.com.ua/goods/images/preview/654701421.jpg"
+    ],
+    "dateModified": "2026-03-02T06:17:54.000Z",
     "categoryData": {
       "id": 4626414,
       "title": "Декорації для акваріумів та тераріумів"
@@ -4205,7 +4098,57 @@
     "source": "rozetka"
   },
   {
-    "productId": "null",
+    "productId": "579781768",
+    "sku": "1500D-FA-060",
+    "externalIds": {
+      "prom": null,
+      "rozetka": "163801796"
+    },
+    "name": "Світильник 25см термостійкий для лампи в тераріум рептилій теплової / уф / освітлення Тримач для гекона, змії, черепахи",
+    "price": "492",
+    "stockQuantity": 0,
+    "available": false,
+    "priceOld": "700",
+    "pricePromo": null,
+    "updatedPrice": null,
+    "mainImage": "https://content2.rozetka.com.ua/goods/images/preview/654701427.jpg",
+    "images": [
+      "https://content2.rozetka.com.ua/goods/images/preview/654701427.jpg"
+    ],
+    "dateModified": "2026-03-02T06:17:54.000Z",
+    "categoryData": {
+      "id": 3441361,
+      "title": "Освітлення для акваріумів і тераріумів"
+    },
+    "source": "rozetka"
+  },
+  {
+    "productId": "579781771",
+    "sku": "130W-NK-723",
+    "externalIds": {
+      "prom": null,
+      "rozetka": "163801800"
+    },
+    "name": "Таргани 50шт + Мучник 20шт + Зофобас 10шт Набір кормових комах для геконів, ящірок, їжаків, павуків, птахів",
+    "price": "338",
+    "stockQuantity": 0,
+    "available": false,
+    "priceOld": "400",
+    "pricePromo": "297",
+    "updatedPrice": null,
+    "mainImage": "https://content1.rozetka.com.ua/goods/images/preview/654701435.jpg",
+    "images": [
+      "https://content1.rozetka.com.ua/goods/images/preview/654701435.jpg"
+    ],
+    "dateModified": "2026-03-02T06:17:55.000Z",
+    "categoryData": {
+      "id": 3429671,
+      "title": "Корм для рептилій"
+    },
+    "source": "rozetka"
+  },
+  {
+    "productId": "579781774",
     "sku": "805V-NB-104",
     "externalIds": {
       "prom": null,
@@ -4218,12 +4161,135 @@
     "priceOld": "700",
     "pricePromo": null,
     "updatedPrice": null,
+    "mainImage": "https://content1.rozetka.com.ua/goods/images/preview/654701437.jpg",
+    "images": [
+      "https://content1.rozetka.com.ua/goods/images/preview/654701437.jpg"
+    ],
+    "dateModified": "2026-03-02T06:17:55.000Z",
+    "categoryData": {
+      "id": 4626414,
+      "title": "Декорації для акваріумів та тераріумів"
+    },
+    "source": "rozetka"
+  },
+  {
+    "productId": "579781777",
+    "sku": "925G-WK-001",
+    "externalIds": {
+      "prom": null,
+      "rozetka": "163801801"
+    },
+    "name": "Мучник сушений 50г Борошняний хробак Смаколик сухий корм для рептилій, амфібій, їжаків, сурікатів, жаб, черепах, риб, геконів",
+    "price": "161",
+    "stockQuantity": 0,
+    "available": false,
+    "priceOld": "200",
+    "pricePromo": "154",
+    "updatedPrice": null,
+    "mainImage": "https://content2.rozetka.com.ua/goods/images/preview/654701458.jpg",
+    "images": [
+      "https://content2.rozetka.com.ua/goods/images/preview/654701458.jpg"
+    ],
+    "dateModified": "2026-03-02T06:17:55.000Z",
+    "categoryData": {
+      "id": 3429671,
+      "title": "Корм для рептилій"
+    },
+    "source": "rozetka"
+  },
+  {
+    "productId": "579781780",
+    "sku": "1100O-QV-818",
+    "externalIds": {
+      "prom": null,
+      "rozetka": "163801803"
+    },
+    "name": "Міні світильник в акваріум до 10л від юсб AquaLighter Pico Tablet чорний Освітлення для тераріума",
+    "price": "547",
+    "stockQuantity": 0,
+    "available": false,
+    "priceOld": "600",
+    "pricePromo": "493",
+    "updatedPrice": null,
+    "mainImage": "https://content1.rozetka.com.ua/goods/images/preview/654701469.jpg",
+    "images": [
+      "https://content1.rozetka.com.ua/goods/images/preview/654701469.jpg"
+    ],
+    "dateModified": "2026-03-02T06:17:55.000Z",
+    "categoryData": {
+      "id": 3441361,
+      "title": "Освітлення для акваріумів і тераріумів"
+    },
+    "source": "rozetka"
+  },
+  {
+    "productId": "579781783",
+    "sku": "1500G-EP-872",
+    "externalIds": {
+      "prom": null,
+      "rozetka": "163801802"
+    },
+    "name": "Світильник 20*14см для лампи в тераріум рептилій теплової / уф / освітлення Плафон для гекона, змії, черепахи",
+    "price": "879",
+    "stockQuantity": 0,
+    "available": false,
+    "priceOld": "1000",
+    "pricePromo": null,
+    "updatedPrice": null,
+    "mainImage": "https://content2.rozetka.com.ua/goods/images/preview/654701470.jpg",
+    "images": [
+      "https://content2.rozetka.com.ua/goods/images/preview/654701470.jpg"
+    ],
+    "dateModified": "2026-03-02T06:17:55.000Z",
+    "categoryData": {
+      "id": 3441361,
+      "title": "Освітлення для акваріумів і тераріумів"
+    },
+    "source": "rozetka"
+  },
+  {
+    "productId": "null",
+    "sku": "200B-MD-142",
+    "externalIds": {
+      "prom": null,
+      "rozetka": "163989242"
+    },
+    "name": "Термокилимок 14*15см з регулятором теплий килим для тераріуму, тварин. рептилій, геконів, змій, павуків",
+    "price": "368",
+    "stockQuantity": 0,
+    "available": false,
+    "priceOld": "400",
+    "pricePromo": null,
+    "updatedPrice": null,
     "mainImage": "https://seller.rozetka.com.ua/assets/images/no-image.svg",
     "images": [],
     "dateModified": null,
     "categoryData": {
-      "id": 4626414,
-      "title": "Декорації для акваріумів та тераріумів"
+      "id": 80247,
+      "title": "Інфрачервоні обігрівачі"
+    },
+    "source": "rozetka"
+  },
+  {
+    "productId": "null",
+    "sku": "200G-VE-399",
+    "externalIds": {
+      "prom": null,
+      "rozetka": "163989241"
+    },
+    "name": "Термокилимок 28*28см з регулятором теплий килим для тераріуму, тварин. рептилій, геконів, змій, павуків",
+    "price": "597",
+    "stockQuantity": 0,
+    "available": false,
+    "priceOld": "700",
+    "pricePromo": null,
+    "updatedPrice": null,
+    "mainImage": "https://seller.rozetka.com.ua/assets/images/no-image.svg",
+    "images": [],
+    "dateModified": null,
+    "categoryData": {
+      "id": 80247,
+      "title": "Інфрачервоні обігрівачі"
     },
     "source": "rozetka"
   }

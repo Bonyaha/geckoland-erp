@@ -223,3 +223,20 @@ export const checkForNewOrders = async (
   }
   res.status(200).json(summary)
 }
+
+/**
+ * Sync payment statuses for all UNPAID Prom/Rozetka orders
+ * @route POST /api/orders/sync-payment-statuses
+ */
+export const syncPaymentStatuses = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const result = await orderService.syncUnpaidOrdersPaymentStatus()
+
+  res.status(200).json({
+    success: true,
+    message: `Payment sync complete: ${result.updated} updated out of ${result.checked} checked`,
+    data: result,
+  })
+}

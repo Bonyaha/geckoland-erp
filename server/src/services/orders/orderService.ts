@@ -1,5 +1,5 @@
 // server/src/services/orders/orderService.ts
-import prisma, { Source, Prisma, OrderStatus } from '../../config/database'
+import prisma, { Source, Prisma, OrderStatus,PaymentStatus } from '../../config/database'
 import { Decimal } from '@prisma/client/runtime/library'
 import { PromClient, type PromOrder } from '../marketplaces/promClient'
 import { RozetkaClient, type RozetkaOrder } from '../marketplaces/rozetkaClient'
@@ -207,7 +207,7 @@ class OrderService {
     const marketplaceProductId = promItem.id.toString()
 
     // Lookup the actual productId
-//Will throw if product not found in DB
+    //Will throw if product not found in DB
     const productId = await this.lookupProductId(
       sku,
       marketplaceProductId,
@@ -235,7 +235,7 @@ class OrderService {
     const marketplaceProductId = rozetkaItem.item_id.toString()
 
     // Lookup the actual productId
-// Will throw if product not found in DB
+    // Will throw if product not found in DB
     const productId = await this.lookupProductId(
       sku,
       marketplaceProductId,
@@ -274,16 +274,16 @@ class OrderService {
       productId = existingProduct?.productId || null
     }
 
-// If no productId but we have SKU, try to look it up
+    // If no productId but we have SKU, try to look it up
     if (!productId && sku) {
-        const productBySku = await prisma.products.findFirst({
-          where: { sku },
-          select: { productId: true },
-        })
-        productId = productBySku?.productId || null
-      }
+      const productBySku = await prisma.products.findFirst({
+        where: { sku },
+        select: { productId: true },
+      })
+      productId = productBySku?.productId || null
+    }
 
-      // CRM items are validated earlier in createOrderFromCRM (inventory check),
+    // CRM items are validated earlier in createOrderFromCRM (inventory check),
     // so productId should always be resolved by this point.
     // This is a safety net in case mapCRMItemToUnified is called from elsewhere.
     if (!productId) {
@@ -292,8 +292,8 @@ class OrderService {
         `Product "${crmItem.productName}" (${identifier}) does not exist in inventory.`,
       )
     }
-    
-    return {      
+
+    return {
       productId,
       sku: crmItem.sku || null,
       name: crmItem.productName,
@@ -323,12 +323,12 @@ class OrderService {
       unitPrice: new Decimal(unifiedItem.unitPrice),
       totalPrice: new Decimal(unifiedItem.totalPrice),
       rawItemData: rawItemData as unknown as Prisma.InputJsonValue,
-        product: {
-          connect: { productId: unifiedItem.productId },
-        },
-      }
+      product: {
+        connect: { productId: unifiedItem.productId },
+      },
     }
-  
+  }
+
   // ============================================
   // HELPER METHOD - BUILD BASE ORDER DATA
   // ============================================
@@ -1925,6 +1925,140 @@ class OrderService {
       throw ErrorFactory.internal('Manual order check failed')
     }
   }
+
+  /**
+   * Sync payment statuses for all UNPAID orders from Prom and Rozetka.
+   * Fetches fresh payment data from each marketplace and updates the DB
+   * if the payment status has changed.
+   *
+   * @returns Summary of how many orders were checked, updated, and failed
+   */
+  async syncUnpaidOrdersPaymentStatus(): Promise<{
+    checked: number
+    updated: number
+    errors: number
+    updatedOrders: Array<{
+      orderId: string
+      orderNumber: string | null
+      oldStatus: string
+      newStatus: string
+    }>
+  }> {
+    console.log('🔄 Starting payment status sync for UNPAID orders...')
+
+    // Fetch all UNPAID orders from Prom and Rozetka (exclude CRM)
+    const unpaidOrders = await prisma.orders.findMany({
+      where: {
+        paymentStatus: PaymentStatus.UNPAID,
+        status: OrderStatus.RECEIVED,
+        source: {
+          in: [Source.prom, Source.rozetka],
+        },
+      },
+      select: {
+        orderId: true,
+        externalOrderId: true,
+        orderNumber: true,
+        source: true,
+        paymentStatus: true,
+      },
+    })
+
+    console.log(`Found ${unpaidOrders.length} UNPAID orders to check`)
+
+    let updated = 0
+    let errors = 0
+    const updatedOrders: Array<{
+      orderId: string
+      orderNumber: string | null
+      oldStatus: string
+      newStatus: string
+    }> = []
+
+    for (const order of unpaidOrders) {
+      try {
+        let newPaymentStatus: PaymentStatus | null = null
+
+        if (order.source === Source.prom) {
+          // For Prom: fetch the full order and extract payment status
+          const promOrder = await this.promClient.getOrderById(
+            order.externalOrderId,
+          )
+
+          if (!promOrder) {
+            console.warn(
+              `Prom order ${order.externalOrderId} not found on marketplace`,
+            )
+            errors++
+            continue
+          }
+
+          newPaymentStatus = mapToPaymentStatus(promOrder.payment_data?.status)
+        } else if (order.source === Source.rozetka) {
+          // For Rozetka: use the dedicated payment status endpoint
+          const paymentData = await this.rozetkaClient.getOrderPaymentStatus(
+            order.externalOrderId,
+          )
+
+          if (!paymentData) {
+            console.warn(
+              `Rozetka payment status not available for order ${order.externalOrderId}`,
+            )
+            errors++
+            continue
+          }
+
+          // Map Rozetka payment status name to our PaymentStatus enum
+          newPaymentStatus =
+            mapToPaymentStatus(paymentData.name) ??
+            mapToPaymentStatus(paymentData.title)
+        }
+
+        // Only update if status actually changed and is no longer UNPAID
+        if (newPaymentStatus && newPaymentStatus !== PaymentStatus.UNPAID) {
+          await prisma.orders.update({
+            where: { orderId: order.orderId },
+            data: { paymentStatus: newPaymentStatus },
+          })
+
+          console.log(
+            `✅ Order ${order.orderNumber || order.orderId}: payment status ${order.paymentStatus} → ${newPaymentStatus}`,
+          )
+
+          updatedOrders.push({
+            orderId: order.orderId,
+            orderNumber: order.orderNumber,
+            oldStatus: order.paymentStatus ?? 'UNPAID',
+            newStatus: newPaymentStatus,
+          })
+
+          updated++
+        } else {
+          console.log(
+            `⏭️  Order ${order.orderNumber || order.orderId}: still UNPAID, skipping`,
+          )
+        }
+      } catch (error: any) {
+        console.error(
+          `❌ Failed to sync payment status for order ${order.orderId}:`,
+          error.message,
+        )
+        errors++
+      }
+    }
+
+    console.log(
+      `✅ Payment sync complete: ${updated} updated, ${errors} errors out of ${unpaidOrders.length} checked`,
+    )
+
+    return {
+      checked: unpaidOrders.length,
+      updated,
+      errors,
+      updatedOrders,
+    }
+  }
+
 }
 
 export default OrderService

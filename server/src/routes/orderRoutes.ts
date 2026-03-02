@@ -10,6 +10,7 @@ import {
   createCRMOrder,
   updateOrder,
   checkForNewOrders,
+  syncPaymentStatuses,
 } from '../controllers/orders/orderController'
 import {
   getOrdersQuerySchema,
@@ -37,6 +38,8 @@ router.post(
   validate(createCRMOrderSchema),
   asyncHandler(createCRMOrder)
 )
+// POST /orders/sync-payment-statuses - Sync payment statuses for UNPAID orders
+router.post('/sync-payment-statuses', asyncHandler(syncPaymentStatuses))
 
 // GET /orders - Get all orders with filtering and pagination
 router.get('/', validate(getOrdersQuerySchema), asyncHandler(getOrders))
