@@ -416,18 +416,7 @@ const handleSyncPaymentStatuses = async () => {
               className={isUpdatingStatuses ? 'animate-spin' : ''}
             />
             Оновити статуси
-          </button>
-          <button
-            onClick={handleSyncPaymentStatuses}
-            disabled={isSyncingPayments}
-            className='flex items-center gap-2 px-6 py-3 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 text-base font-semibold cursor-pointer'
-          >
-            <CreditCard
-              size={18}
-              className={isSyncingPayments ? 'animate-spin' : ''}
-            />
-            Перевірити оплати
-          </button>
+          </button>          
         </div>
       </div>
       {/* Orders Table */}
@@ -448,8 +437,33 @@ const handleSyncPaymentStatuses = async () => {
                 <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
                   Сума
                 </th>
+                {/* UPDATED: Payment Column Header with Fixed Tooltip */}
                 <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
-                  Оплата
+                  <div className='flex items-center gap-2'>
+                    <span>Оплата</span>
+                    <div className='relative group flex items-center'>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleSyncPaymentStatuses()
+                        }}
+                        disabled={isSyncingPayments}
+                        className='p-1.5 hover:bg-gray-200 rounded-full transition-colors cursor-pointer disabled:opacity-50'
+                      >
+                        <RefreshCw
+                          size={14}
+                          className={`${isSyncingPayments ? 'animate-spin text-violet-600' : 'text-gray-400 group-hover:text-violet-600'}`}
+                        />
+                      </button>
+
+                      {/* Fixed Tooltip: Positioned 'top-full' to avoid clipping */}
+                      <div className='invisible group-hover:visible absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-[11px] font-medium rounded-lg whitespace-nowrap shadow-xl z-[100] normal-case tracking-normal'>
+                        Перевірити неоплачені статуси
+                        {/* Tooltip Arrow pointing UP */}
+                        <div className='absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-gray-900' />
+                      </div>
+                    </div>
+                  </div>
                 </th>
                 <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
                   Статус замовлення
