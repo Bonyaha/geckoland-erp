@@ -436,22 +436,29 @@ const Products = () => {
       {/* TOP SEARCH BAR */}
       <div className='mb-6'>
         <div className='flex items-center border-2 border-gray-200 rounded bg-white shadow-sm'>
-          <button
-            type='button'
-            onClick={isSyncing ? undefined : handleMarketplaceSync}
-            title={
-              isSyncing ? 'Синхронізація...' : 'Синхронізація з маркетплейсами'
-            }
-            className='m-2 focus:outline-none cursor-pointer' // Moved margin here to preserve layout
-          >
-            <RefreshCw
-              className={`w-5 h-5 transition-colors ${
-                isSyncing
-                  ? 'text-blue-600 animate-spin'
-                  : 'text-gray-400 hover:text-gray-600'
-              }`}
-            />
-          </button>
+          <div className='relative group flex items-center'>
+            <button
+              type='button'
+              onClick={isSyncing ? undefined : handleMarketplaceSync}
+              className='m-2 focus:outline-none cursor-pointer'
+            >
+              <RefreshCw
+                className={`w-5 h-5 transition-colors ${
+                  isSyncing
+                    ? 'text-blue-600 animate-spin'
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
+              />
+            </button>
+
+            {/* Tooltip with Delay and Side-shift fix */}
+            <div className='opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-200 pointer-events-none absolute top-full left-0 mt-2 px-3 py-2 bg-gray-900 text-white text-[11px] font-medium rounded-lg whitespace-nowrap shadow-xl z-[100] normal-case tracking-normal'>
+              Завантажити нові товари
+              {/* Arrow shifted to align with the icon center */}
+              <div className='absolute bottom-full left-4 border-4 border-transparent border-b-gray-900' />
+            </div>
+          </div>
+
           <div className='h-6 w-px bg-gray-300 mx-1'></div>
           <SearchIcon className='w-5 h-5 text-gray-400 m-2' />
           <input

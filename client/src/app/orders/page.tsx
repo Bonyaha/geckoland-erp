@@ -435,8 +435,7 @@ const handleSyncPaymentStatuses = async () => {
                 </th>
                 <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
                   Сума
-                </th>
-                {/* UPDATED: Payment Column Header with Fixed Tooltip */}
+                </th>                
                 <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
                   <div className='flex items-center gap-2'>
                     <span>Оплата</span>
@@ -453,9 +452,7 @@ const handleSyncPaymentStatuses = async () => {
                           size={14}
                           className={`${isSyncingPayments ? 'animate-spin text-violet-600' : 'text-gray-400 group-hover:text-violet-600'}`}
                         />
-                      </button>
-
-                      {/* Fixed Tooltip: Positioned 'top-full' to avoid clipping */}
+                      </button>                      
                       <div className='invisible group-hover:visible absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-[11px] font-medium rounded-lg whitespace-nowrap shadow-xl z-[100] normal-case tracking-normal'>
                         Перевірити неоплачені статуси
                         {/* Tooltip Arrow pointing UP */}
