@@ -30,7 +30,6 @@ import {
   ChevronLeft,
   ChevronRight,
   MoreVertical,
-  CreditCard,
 } from 'lucide-react'
 
 import Toast from '@/app/(components)/Toast'
