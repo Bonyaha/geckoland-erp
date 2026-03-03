@@ -23,3 +23,6 @@ src/storage/
 # Telethon session files
 *.session
 *.session-journal
+
+# Prisma data folder
+prisma/data/
