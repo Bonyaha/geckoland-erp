@@ -1,9 +1,6 @@
 // server/src/controllers/notificationController.ts
 // This is the webhook that Google Pub/Sub will call.
 
-/* THIS IS OLD FILE. IT WAS SAVED FOR SAFETY AND FOR POSSIBLE BACKROLL
- * DELETE THIS FILE AFTER CONFIRMING THAT NEW IMPLEMENTATION WORKS FINE
- */
 import { Request, Response } from 'express'
 import { google } from 'googleapis'
 import { authorize } from '../../services/gmail/gmailService'

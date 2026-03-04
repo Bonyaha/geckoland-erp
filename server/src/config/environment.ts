@@ -55,6 +55,7 @@ const envSchema = z.looseObject({
   GMAIL_REDIRECT_URI: z.url({
     message: 'GMAIL_REDIRECT_URI must be a valid URL',
   }),
+  GOOGLE_PUBSUB_TOPIC: z.string().min(1, 'GOOGLE_PUBSUB_TOPIC is required'),
 
   // JWT Configuration
   JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),
@@ -137,6 +138,7 @@ export const config = {
     clientId: env.GMAIL_CLIENT_ID,
     clientSecret: env.GMAIL_CLIENT_SECRET,
     redirectUri: env.GMAIL_REDIRECT_URI,
+    pubSubTopic: env.GOOGLE_PUBSUB_TOPIC,
   },
   paths: {
     root: process.cwd(),
@@ -153,8 +155,20 @@ export const config = {
       'storage',
       'processed-messages.json',
     ),
+    gmailTokenFile: path.join(
+      process.cwd(),
+      'src',
+      'config',
+      'credentials',
+      'gmail-token.json',
+    ),
   },
 } as const
+
+export const GMAIL_SCOPES = [
+  'https://www.googleapis.com/auth/gmail.modify',
+  'https://www.googleapis.com/auth/gmail.readonly',
+]
 
 // Log successful initialization (only in development)
 if (isDevelopment) {

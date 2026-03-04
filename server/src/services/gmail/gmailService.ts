@@ -6,13 +6,9 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import { google } from 'googleapis'
 import type { OAuth2Client } from 'googleapis-common'
-import { config } from '../../config/environment'
+import { config, GMAIL_SCOPES } from '../../config/environment'
 
-const TOKEN_PATH = path.join(process.cwd(), 'src/config/credentials/gmail-token.json')
-const SCOPES = [
-  'https://www.googleapis.com/auth/gmail.modify',
-  'https://www.googleapis.com/auth/gmail.readonly',
-]
+const TOKEN_PATH = config.paths.gmailTokenFile
 
 // Load saved credentials, if they exist
 async function loadSavedCredentialsIfExist(): Promise<OAuth2Client | null> {
@@ -51,6 +47,7 @@ async function loadSavedCredentialsIfExist(): Promise<OAuth2Client | null> {
 
     return client
   } catch (err) {
+console.log('No saved Gmail credentials found.')
     return null
   }
 }
@@ -59,9 +56,11 @@ async function loadSavedCredentialsIfExist(): Promise<OAuth2Client | null> {
 async function isTokenValid(client: OAuth2Client): Promise<boolean> {
   const gmail = google.gmail({ version: 'v1', auth: client })
   try {
+console.log('Testing Gmail token validity...')
     await gmail.users.getProfile({ userId: 'me' })
     return true
   } catch (error: any) {
+console.error('Gmail token validation error:', error.message)
     // Check if it's an auth error
     if (
       error.response?.status === 401 ||
@@ -104,7 +103,7 @@ export async function getAuthUrl(): Promise<string> {
   return oAuth2Client.generateAuthUrl({
     access_type: 'offline', // This ensures we get a refresh token
     prompt: 'consent', // Forces consent screen to ensure refresh token
-    scope: SCOPES,
+    scope: GMAIL_SCOPES,
   })
 }
 
@@ -145,6 +144,7 @@ async function clearInvalidToken(): Promise<void> {
 // Check if token exists
 export async function hasValidToken(): Promise<boolean> {
   const client = await loadSavedCredentialsIfExist()
+console.log('client loaded for token check:', !!client)
   if (!client) return false
   return await isTokenValid(client)
 }
@@ -218,7 +218,7 @@ export async function restartGmailWatch() {
   if (!hasToken) {
     console.log('❌ No valid Gmail token found. Skipping Gmail watch restart.')
     console.log(
-      '🔗 To enable Gmail notifications, please authorize by visiting: GET /auth/gmail/auth'
+      '🔗 To enable Gmail notifications, please authorize by visiting: curl http://localhost:8001/api/gmail/auth',
     )
     return null
   }
@@ -257,9 +257,7 @@ export async function restartGmailWatch() {
 export async function startGmailWatch() {
   const auth = await authorize()
   const gmail = google.gmail({ version: 'v1', auth })
-
-  const TOPIC_NAME = 'projects/inventorysync-1/topics/gmail-notifications' // <-- IMPORTANT: This must be your Project ID
-
+  
   try {
     // Get label IDs for Prom and Rozetka
     // Replace these with your actual label names
@@ -274,7 +272,7 @@ export async function startGmailWatch() {
     const res = await gmail.users.watch({
       userId: 'me',
       requestBody: {
-        topicName: TOPIC_NAME,
+        topicName: config.gmail.pubSubTopic,
         labelIds: watchLabels,
         labelFilterBehavior: 'INCLUDE', // Only watch emails with these labels
         // Note: Gmail watch will still trigger for all events (messageAdded, labelsAdded, labelsRemoved, etc.)
