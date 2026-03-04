@@ -30,6 +30,7 @@ import {
   ChevronLeft,
   ChevronRight,
   MoreVertical,
+X
 } from 'lucide-react'
 
 import Toast from '@/app/(components)/Toast'
@@ -356,18 +357,34 @@ const handleSyncPaymentStatuses = async () => {
         <div className='flex flex-wrap gap-4 items-center'>
           {/* Search */}
           <div className='flex-1 min-w-[250px]'>
-            <div className='relative'>
+            <div className='relative flex items-center'>
               <Search
-                className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400'
-                size={22}
+                className='absolute left-3 text-gray-400 pointer-events-none'
+                size={20}
               />
               <input
                 type='text'
                 placeholder='Пошук по номеру, телефону, імені...'
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className='w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-base'
+                className='w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-base transition-all'
               />
+
+              {/* Clear Button (X Icon) */}
+              {searchTerm && (
+                <button
+                  type='button'
+                  onClick={() => {
+                    setSearchTerm('')
+                    setPage(1)
+                  }}
+                  /* hover:bg-gray-100 and rounded-full create the circular background effect */
+                  className='absolute right-2 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all flex items-center justify-center cursor-pointer'
+                  aria-label='Очистити пошук'
+                >
+                  <X size={20} />             
+                </button>
+              )}
             </div>
           </div>
 
@@ -415,7 +432,7 @@ const handleSyncPaymentStatuses = async () => {
               className={isUpdatingStatuses ? 'animate-spin' : ''}
             />
             Оновити статуси
-          </button>          
+          </button>
         </div>
       </div>
       {/* Orders Table */}
@@ -435,7 +452,7 @@ const handleSyncPaymentStatuses = async () => {
                 </th>
                 <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
                   Сума
-                </th>                
+                </th>
                 <th className='px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase'>
                   <div className='flex items-center gap-2'>
                     <span>Оплата</span>
@@ -452,7 +469,7 @@ const handleSyncPaymentStatuses = async () => {
                           size={14}
                           className={`${isSyncingPayments ? 'animate-spin text-violet-600' : 'text-gray-400 group-hover:text-violet-600'}`}
                         />
-                      </button>                      
+                      </button>
                       <div className='invisible group-hover:visible absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-[11px] font-medium rounded-lg whitespace-nowrap shadow-xl z-[100] normal-case tracking-normal'>
                         Перевірити неоплачені статуси
                         {/* Tooltip Arrow pointing UP */}
