@@ -22,6 +22,7 @@ import {
   ArrowUpDown,
   ChevronUp,
   ChevronDown,
+  X,
 } from 'lucide-react'
 //import Image from 'next/image'
 import { useState, useEffect, useMemo } from 'react'
@@ -435,15 +436,17 @@ const Products = () => {
     <div className='mx-auto pb-5 w-full'>
       {/* TOP SEARCH BAR */}
       <div className='mb-6'>
-        <div className='flex items-center border-2 border-gray-200 rounded bg-white shadow-sm'>
+        {/* Container made smaller with rounded-full and max-width */}
+        <div className='flex items-center border border-gray-300 rounded-lg bg-white shadow-sm max-w-md px-1 py-0.5'>
+          {/* Sync Button Section */}
           <div className='relative group flex items-center'>
             <button
               type='button'
               onClick={isSyncing ? undefined : handleMarketplaceSync}
-              className='m-2 focus:outline-none cursor-pointer'
+              className='p-2 focus:outline-none cursor-pointer'
             >
               <RefreshCw
-                className={`w-5 h-5 transition-colors ${
+                className={`w-4 h-4 transition-colors ${
                   isSyncing
                     ? 'text-blue-600 animate-spin'
                     : 'text-gray-400 hover:text-gray-600'
@@ -451,25 +454,44 @@ const Products = () => {
               />
             </button>
 
-            {/* Tooltip with Delay and Side-shift fix */}
             <div className='opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-200 pointer-events-none absolute top-full left-0 mt-2 px-3 py-2 bg-gray-900 text-white text-[11px] font-medium rounded-lg whitespace-nowrap shadow-xl z-[100] normal-case tracking-normal'>
               Завантажити нові товари
-              {/* Arrow shifted to align with the icon center */}
               <div className='absolute bottom-full left-4 border-4 border-transparent border-b-gray-900' />
             </div>
           </div>
 
-          <div className='h-6 w-px bg-gray-300 mx-1'></div>
-          <SearchIcon className='w-5 h-5 text-gray-400 m-2' />
-          <input
-            className='w-full py-2 px-2 rounded bg-white outline-none text-gray-700'
-            placeholder='Пошук за назвою, ID або SKU...'
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value)
-              setCurrentPage(1) // Reset to first page on search
-            }}
-          />
+          {/* Vertical Divider */}
+          <div className='h-4 w-px bg-gray-300 mx-1'></div>
+
+          {/* Search Input Area */}
+          <div className='relative flex items-center flex-1'>
+            <SearchIcon className='w-5 h-5 text-gray-400 ml-2 mr-1 flex-shrink-0' />
+            <input
+              className='w-full py-1.5 px-1 bg-transparent outline-none text-gray-700 text-sm'
+              placeholder='Пошук за назвою, ID або SKU...'
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value)
+                setCurrentPage(1)
+              }}
+            />
+
+            {/* Interactive X Button */}
+            {searchTerm && (
+              <button
+                type='button'
+                onClick={() => {
+                  setSearchTerm('')
+                  setCurrentPage(1)
+                }}
+                className='mr-1 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all flex items-center justify-center cursor-pointer'
+                aria-label='Очистити пошук'
+              >
+                {/* X icon set to w-5 h-5 to match SearchIcon */}
+                <X className='w-5 h-5' />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* FILTERS & PAGINATION */}
