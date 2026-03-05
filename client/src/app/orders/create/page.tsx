@@ -111,18 +111,27 @@ const CreateOrderPage = () => {
         )
       }
 
-      // Pre-populate items with stockQuantity sentinel (999 = no warning)
+      // Pre-populate items - stock quantities will be updated from fetched products
       if (Array.isArray(prefill.items) && prefill.items.length > 0) {
         const items: OrderItemWithStock[] = prefill.items.map((item: any) => ({
           productId: item.productId ?? undefined,
           productName: item.productName,
           sku: item.sku ?? undefined,
           quantity: item.quantity ?? 1,
-          stockQuantity: 999, // sentinel — we don't know current stock
+          stockQuantity: 0, // Will be updated when products are fetched
           unitPrice: item.unitPrice ?? 0,
           totalPrice: item.totalPrice ?? item.unitPrice ?? 0,
         }))
         setOrderItems(items)
+
+        // Trigger a search for all SKUs to fetch stock data
+        const skus = items
+          .map((i) => i.sku)
+          .filter(Boolean)
+          .join(' ')
+        if (skus) {
+          setPrefilledSkus(skus)
+        }
       }
     } catch (e) {
       console.error('Failed to parse order prefill', e)
@@ -151,6 +160,20 @@ const CreateOrderPage = () => {
     limit: 10,
   })
 
+  // Fetch stock for prefilled items using their SKUs
+  const [prefilledSkus, setPrefilledSkus] = useState<string>('')
+
+  const { data: prefilledProductsData } = useGetProductsQuery(
+    {
+      search: prefilledSkus,
+      page: 1,
+      limit: 50, // Higher limit to catch all prefilled items
+    },
+    {
+      skip: !prefilledSkus, // Only run when we have SKUs to search
+    },
+  )
+
   // Fetch clients
   const { data: clientsData, isFetching: isClientFetching } =
     useSearchClientsAutocompleteQuery(debouncedClientSearch, {
@@ -167,6 +190,33 @@ const CreateOrderPage = () => {
   useEffect(() => {
     setCurrentPage(1)
   }, [debouncedSearch])
+
+  // Update stock quantities for order items when products data changes
+  useEffect(() => {
+    // Merge both product data sources
+    const allProducts = [
+      ...(productsData?.products || []),
+      ...(prefilledProductsData?.products || []),
+    ]
+
+    if (allProducts.length === 0 || orderItems.length === 0) return
+
+    setOrderItems((prevItems) =>
+      prevItems.map((item) => {
+        const product = allProducts.find(
+          (p) => p.productId === item.productId || p.sku === item.sku,
+        )
+        // Update stock if we found the product
+        if (product) {
+          return {
+            ...item,
+            stockQuantity: product.stockQuantity,
+          }
+        }
+        return item
+      }),
+    )
+  }, [productsData, prefilledProductsData, orderItems.length])
 
   // Recalculate total amount whenever items change
   useEffect(() => {
@@ -233,6 +283,70 @@ const CreateOrderPage = () => {
       paymentOptionName: '',
     }))
   }
+
+  // Add product to order
+  /* const handleAddProduct = (product: Product) => {
+    const existingItem = orderItems.find(
+      (item) => item.productId === product.productId,
+    )
+
+    if (existingItem) {
+      // Increment quantity
+      setOrderItems((prev) =>
+        prev.map((item) =>
+          item.productId === product.productId
+            ? {
+                ...item,
+                quantity: item.quantity + 1,
+                totalPrice: (item.quantity + 1) * item.unitPrice,
+              }
+            : item,
+        ),
+      )
+    } else {
+      // Add new item
+      const newItem: OrderItemWithStock = {
+        productId: product.productId,
+        productName: product.name,
+        sku: product.sku || undefined,
+        quantity: 1,
+        stockQuantity: product.stockQuantity,
+        unitPrice: product.price,
+        totalPrice: product.price,
+      }
+      setOrderItems((prev) => [...prev, newItem])
+    }
+
+    // Clear search and close dropdown
+    setSearchTerm('')
+    setIsDropdownOpen(false)
+  } */
+
+  // Update item quantity
+  /* const handleQuantityChange = (productId: string, delta: number) => {
+    setOrderItems((prev) =>
+      prev
+        .map((item) => {
+          if (item.productId === productId) {
+            const newQuantity = Math.max(0, item.quantity + delta)
+            return {
+              ...item,
+              quantity: newQuantity,
+              totalPrice: newQuantity * item.unitPrice,
+            }
+          }
+          return item
+        })
+        .filter((item) => item.quantity > 0), // Remove items with 0 quantity
+    )
+  } */
+
+  // Remove item
+  /* const handleRemoveItem = (productId: string) => {
+    setOrderItems((prev) =>
+      prev.filter((item) => item.productId !== productId),
+    )
+  } */
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -564,11 +678,9 @@ const CreateOrderPage = () => {
                             : 'text-gray-500'
                         }`}
                       >
-                        {item.stockQuantity === 999
-                          ? '' // copied items — don't show stock warning unless verified
-                          : item.stockQuantity === 0
-                            ? 'Немає на складі!'
-                            : `(доступно ${item.stockQuantity} шт)`}
+                        {item.stockQuantity === 0
+                          ? 'Немає на складі!'
+                          : `(доступно ${item.stockQuantity} шт)`}
                       </p>
                     </div>
 
