@@ -305,6 +305,14 @@ export const gmailLogger = {
   },
 
   /**
+   * Log generic error
+   */
+  error(message: string, data?: any) {
+    writeLog('ERROR', message, data)
+    console.error(`❌ ${message}`, data || '')
+  },
+
+  /**
    * Log debug info
    */
   debug(message: string, data?: any) {

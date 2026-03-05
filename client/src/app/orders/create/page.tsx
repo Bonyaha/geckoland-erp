@@ -26,6 +26,7 @@ import {
   CirclePlus,
   UserPlus,
   AlertTriangle,
+  Copy,
 } from 'lucide-react'
 
 import { useToast } from '@/hooks/useToast'
@@ -53,10 +54,80 @@ const CreateOrderPage = () => {
   const [clientSearchTerm, setClientSearchTerm] = useState('')
   const [debouncedClientSearch, setDebouncedClientSearch] = useState('')
 
-  //Separate state for order items (includes UI-only stockQuantity)
+  // Order items
   const [orderItems, setOrderItems] = useState<OrderItemWithStock[]>([])
 
   //const [selectedClient, setSelectedClient] = useState<Client | null>(null)
+
+  // Prefill banner
+  const [isPrefilled, setIsPrefilled] = useState(false)
+
+  // Form state (items excluded — managed separately in orderItems)
+  const [formData, setFormData] = useState<Omit<CreateCRMOrderInput, 'items'>>({
+    clientFirstName: '',
+    clientLastName: '',
+    clientSecondName: '',
+    clientPhone: '',
+    clientEmail: '',
+    deliveryAddress: '',
+    deliveryCity: '',
+    deliveryOptionName: '',
+    paymentOptionName: '',
+    totalAmount: 0,
+    currency: 'UAH',
+    clientNotes: '',
+  })
+
+  // ── Read prefill from sessionStorage (Copy Sale) ──────────────────────────
+  useEffect(() => {
+    const raw = sessionStorage.getItem('order_prefill')
+    if (!raw) return
+
+    try {
+      const prefill = JSON.parse(raw)
+      sessionStorage.removeItem('order_prefill') // consume once
+
+      setIsPrefilled(true)
+
+      setFormData((prev) => ({
+        ...prev,
+        clientFirstName: prefill.clientFirstName ?? prev.clientFirstName,
+        clientLastName: prefill.clientLastName ?? prev.clientLastName,
+        clientSecondName: prefill.clientSecondName ?? prev.clientSecondName,
+        clientPhone: prefill.clientPhone ?? prev.clientPhone,
+        clientEmail: prefill.clientEmail ?? prev.clientEmail,
+        deliveryAddress: prefill.deliveryAddress ?? prev.deliveryAddress,
+        deliveryCity: prefill.deliveryCity ?? prev.deliveryCity,
+        deliveryOptionName:
+          prefill.deliveryOptionName ?? prev.deliveryOptionName,
+        paymentOptionName: prefill.paymentOptionName ?? prev.paymentOptionName,
+        clientNotes: prefill.clientNotes ?? prev.clientNotes,
+      }))
+
+      // Pre-populate client search display
+      if (prefill.clientLastName || prefill.clientPhone) {
+        setClientSearchTerm(
+          `${prefill.clientLastName ?? ''} ${prefill.clientFirstName ?? ''} (${prefill.clientPhone ?? ''})`.trim(),
+        )
+      }
+
+      // Pre-populate items with stockQuantity sentinel (999 = no warning)
+      if (Array.isArray(prefill.items) && prefill.items.length > 0) {
+        const items: OrderItemWithStock[] = prefill.items.map((item: any) => ({
+          productId: item.productId ?? undefined,
+          productName: item.productName,
+          sku: item.sku ?? undefined,
+          quantity: item.quantity ?? 1,
+          stockQuantity: 999, // sentinel — we don't know current stock
+          unitPrice: item.unitPrice ?? 0,
+          totalPrice: item.totalPrice ?? item.unitPrice ?? 0,
+        }))
+        setOrderItems(items)
+      }
+    } catch (e) {
+      console.error('Failed to parse order prefill', e)
+    }
+  }, [])
 
   // Debounce logic for products
   useEffect(() => {
@@ -96,22 +167,6 @@ const CreateOrderPage = () => {
   useEffect(() => {
     setCurrentPage(1)
   }, [debouncedSearch])
-
-  // Form state (items excluded — managed separately in orderItems)
-  const [formData, setFormData] = useState<Omit<CreateCRMOrderInput, 'items'>>({
-    clientFirstName: '',
-    clientLastName: '',
-    clientSecondName: '',
-    clientPhone: '',
-    clientEmail: '',
-    deliveryAddress: '',
-    deliveryCity: '',
-    deliveryOptionName: '',
-    paymentOptionName: '',
-    totalAmount: 0,
-    currency: 'UAH',
-    clientNotes: '',
-  })
 
   // Recalculate total amount whenever items change
   useEffect(() => {
@@ -199,7 +254,7 @@ const CreateOrderPage = () => {
 
     if (itemsWithInsufficientStock.length > 0) {
       // Build error message for toast
-      console.log('itemsWithInsufficientStock: ', itemsWithInsufficientStock)
+      /* console.log('itemsWithInsufficientStock: ', itemsWithInsufficientStock) */
 
       const errorDetails = itemsWithInsufficientStock
         .map(
@@ -220,25 +275,11 @@ const CreateOrderPage = () => {
       }
       console.log('Submitting order with data: ', payload)
       const result = await createOrder(payload).unwrap()
-      /* alert(`Замовлення створено успішно! ID: ${result.orderId}`) */
+
       showToast(`Замовлення створено успішно! ID: ${result.orderId}`, 'success')
       router.push('/orders')
     } catch (error: any) {
       console.error('Failed to create order:', error)
-      /* // Handle API error response
-      if (
-        error.data?.message &&
-        error.data.message.includes('Insufficient inventory')
-      ) {
-        // Try to parse error message for product details
-        alert(error.data.message)
-      } else {
-        alert(
-          `Помилка створення замовлення: ${
-            error.data?.message || 'Невідома помилка'
-          }`,
-        )
-      } */
       showToast(
         `Помилка створення замовлення: ${error.data?.message || 'Невідома помилка'}`,
         'error',
@@ -283,7 +324,7 @@ const CreateOrderPage = () => {
     )
   }
 
-/* const updateItemQuantity = (productId: string, newQty: string | number) => {
+  /* const updateItemQuantity = (productId: string, newQty: string | number) => {
   // Convert to string first to handle the "empty" check safely
   const valStr = newQty.toString()
   const numericQty = valStr === '' ? 0 : parseInt(valStr) || 0
@@ -341,6 +382,15 @@ const CreateOrderPage = () => {
           <h1 className='text-3xl font-bold text-gray-900 mb-2'>
             Створити замовлення
           </h1>
+
+          {/* Prefill banner */}
+          {isPrefilled && (
+            <div className='flex items-center gap-2 mt-2 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700 w-fit'>
+              <Copy size={15} />
+              Дані скопійовано з попереднього замовлення. Перевірте та
+              відредагуйте за потреби.
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className='space-y-6'>
@@ -514,9 +564,11 @@ const CreateOrderPage = () => {
                             : 'text-gray-500'
                         }`}
                       >
-                        {item.stockQuantity === 0
-                          ? 'Немає на складі!'
-                          : `(доступно ${item.stockQuantity} шт)`}
+                        {item.stockQuantity === 999
+                          ? '' // copied items — don't show stock warning unless verified
+                          : item.stockQuantity === 0
+                            ? 'Немає на складі!'
+                            : `(доступно ${item.stockQuantity} шт)`}
                       </p>
                     </div>
 
@@ -885,7 +937,7 @@ const CreateOrderPage = () => {
               <button
                 type='button'
                 onClick={() => router.push('/orders')}
-                className='px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50'
+                className='px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors'
               >
                 <X size={20} />
               </button>

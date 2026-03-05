@@ -9,6 +9,7 @@ import {
   syncOrders,
   createCRMOrder,
   updateOrder,
+  deleteOrder,
   checkForNewOrders,
   syncPaymentStatuses,
 } from '../controllers/orders/orderController'
@@ -59,6 +60,13 @@ router.patch(
   '/:orderId',
   validate(updateOrderSchema),
   asyncHandler(updateOrder)
+)
+
+// DELETE /orders/:orderId - Delete an order
+router.delete(
+  '/:orderId',
+  validate(orderIdParamSchema),
+  asyncHandler(deleteOrder)
 )
 
 export default router

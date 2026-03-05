@@ -279,21 +279,65 @@ export class PromClient {
     return this.makeRequest<PromOrdersResponse>('/orders/list', params)
   }
 
+  /**
+   * Fetches new orders from Prom with retry logic to handle race conditions
+   * @returns Combined array of pending and paid orders
+   */
+
   async getNewOrders(): Promise<PromOrder[]> {
-    const [pendingOrdersResponse, paidOrdersResponse] = await Promise.all([
-      this.getOrders({ status: 'pending' }),
-      this.getOrders({ status: 'paid' }),
-    ])
+    try {
+      // First attempt: parallel queries for pending and paid
 
-    const pendingOrders = pendingOrdersResponse.orders || []
-    const paidOrders = paidOrdersResponse.orders || []
+      const [pendingOrdersResponse, paidOrdersResponse] = await Promise.all([
+        this.getOrders({ status: 'pending' }),
+        this.getOrders({ status: 'paid' }),
+      ])
 
-    return [...pendingOrders, ...paidOrders]
+      const pendingOrders = pendingOrdersResponse.orders || []
+      const paidOrders = paidOrdersResponse.orders || []
 
+      const totalOrders = [...pendingOrders, ...paidOrders]
+
+      gmailLogger.info(
+        `Prom getNewOrders: Found ${pendingOrders.length} pending + ${paidOrders.length} paid = ${totalOrders.length} total`,
+      )
+      // If we got results, return them
+      if (totalOrders.length > 0) {
+        return totalOrders
+      }
+
+      // If both queries returned empty, wait and retry once
+      // (handles race condition when order transitions between statuses)
+      gmailLogger.warn(
+        'Prom returned no orders in first attempt. Waiting 2s and retrying...',
+      )
+
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+
+      // Retry with fresh queries
+      const [retryPending, retryPaid] = await Promise.all([
+        this.getOrders({ status: 'pending' }),
+        this.getOrders({ status: 'paid' }),
+      ])
+
+      const retryPendingOrders = retryPending.orders || []
+      const retryPaidOrders = retryPaid.orders || []
+      const retryTotal = [...retryPendingOrders, ...retryPaidOrders]
+
+      gmailLogger.info(
+        `Prom retry: Found ${retryPendingOrders.length} pending + ${retryPaidOrders.length} paid = ${retryTotal.length} total`,
+      )
+
+      return retryTotal
+    } catch (error: any) {
+      gmailLogger.error('Failed to fetch new orders from Prom:', error.message)
+      throw error
+    }
     /* FOR TESTING ONLY */
     /* const ordersResponse = await this.getOrders({ status: 'delivered' })
     return ordersResponse.orders || [] */
   }
+
   /**
    * Fetch a single order by ID to get updated details including tracking number
    */

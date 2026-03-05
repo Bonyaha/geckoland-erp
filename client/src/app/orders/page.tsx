@@ -3,7 +3,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 
 import {
@@ -13,6 +13,7 @@ import {
   useFetchTrackingNumberMutation,
   useUpdateAllTrackingStatusesMutation,
   useSyncPaymentStatusesMutation,
+  useDeleteOrderMutation,
   Order,
   OrderStatus,
   OrderSource,
@@ -30,7 +31,9 @@ import {
   ChevronLeft,
   ChevronRight,
   MoreVertical,
-X
+  X,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react'
 
 import Toast from '@/app/(components)/Toast'
@@ -42,9 +45,73 @@ import CustomSelect from '@/app/(components)/CustomSelect'
 
 import EditOrderModal from './(components)/EditOrderModal'
 
+interface DeleteConfirmModalProps {
+  order: Order
+  onConfirm: () => void
+  onCancel: () => void
+  isDeleting: boolean
+}
+
+const DeleteConfirmModal = ({
+  order,
+  onConfirm,
+  onCancel,
+  isDeleting,
+}: DeleteConfirmModalProps) => (
+  <div
+    className='fixed inset-0 bg-black/50 z-[300] flex items-center justify-center p-4'
+    onClick={onCancel}
+  >
+    <div
+      className='bg-white rounded-xl shadow-2xl w-full max-w-md p-6'
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Icon + title */}
+      <div className='flex items-center gap-3 mb-4'>
+        <div className='flex items-center justify-center w-10 h-10 rounded-full bg-red-100 shrink-0'>
+          <AlertTriangle className='w-5 h-5 text-red-600' />
+        </div>
+        <div>
+          <h3 className='text-base font-bold text-gray-900'>
+            Видалити замовлення?
+          </h3>
+          <p className='text-sm text-gray-500 mt-0.5'>
+            #{order.orderNumber || order.externalOrderId} —{' '}
+            {order.clientFullName}
+          </p>
+        </div>
+      </div>
+
+      <p className='text-sm text-gray-600 mb-6'>
+        Цю дію неможливо скасувати. Замовлення та всі його позиції будуть
+        видалені назавжди.
+      </p>
+
+      <div className='flex gap-3'>
+        <button
+          onClick={onConfirm}
+          disabled={isDeleting}
+          className='flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm'
+        >
+          <Trash2 size={15} />
+          {isDeleting ? 'Видалення...' : 'Видалити'}
+        </button>
+        <button
+          onClick={onCancel}
+          disabled={isDeleting}
+          className='flex-1 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm cursor-pointer'
+        >
+          Скасувати
+        </button>
+      </div>
+    </div>
+  </div>
+)
+
 const OrdersPage = () => {
   const searchParams = useSearchParams()
   const statusFromUrl = searchParams.get('status') as OrderStatus | null
+  const router = useRouter()
 
   // State
   const [page, setPage] = useState(1)
@@ -56,8 +123,8 @@ const OrdersPage = () => {
   const [sourceFilter, setSourceFilter] = useState<OrderSource | 'all'>('all')
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null) // State for Actions menu
-
   const [editingOrder, setEditingOrder] = useState<Order | null>(null)
+  const [deletingOrder, setDeletingOrder] = useState<Order | null>(null)
 
   const { toast, showToast, hideToast } = useToast()
 
@@ -124,9 +191,10 @@ const OrdersPage = () => {
   const [checkNewOrders, { isLoading: isChecking }] =
     useCheckForNewOrdersMutation()
 
-const [syncPaymentStatuses, { isLoading: isSyncingPayments }] =
-  useSyncPaymentStatusesMutation()
+  const [syncPaymentStatuses, { isLoading: isSyncingPayments }] =
+    useSyncPaymentStatusesMutation()
 
+  const [deleteOrder, { isLoading: isDeleteLoading }] = useDeleteOrderMutation()
 
   // Handlers
   const handleStatusChange = async (
@@ -179,22 +247,110 @@ const [syncPaymentStatuses, { isLoading: isSyncingPayments }] =
     }
   }
 
-const handleSyncPaymentStatuses = async () => {
-  try {
-    const result = await syncPaymentStatuses().unwrap()
-    const { checked, updated, errors } = result.data
-    showToast(
-      `Оплати перевірено: ${checked}, оновлено: ${updated}${errors > 0 ? `, помилок: ${errors}` : ''}`,
-      updated > 0 ? 'success' : 'info',
-    )
-    if (updated > 0) refetch()
-  } catch (error: any) {
-    showToast(
-      error?.data?.message || 'Помилка синхронізації статусів оплати',
-      'error',
-    )
+  const handleSyncPaymentStatuses = async () => {
+    try {
+      const result = await syncPaymentStatuses().unwrap()
+      const { checked, updated, errors } = result.data
+      showToast(
+        `Оплати перевірено: ${checked}, оновлено: ${updated}${errors > 0 ? `, помилок: ${errors}` : ''}`,
+        updated > 0 ? 'success' : 'info',
+      )
+      if (updated > 0) refetch()
+    } catch (error: any) {
+      showToast(
+        error?.data?.message || 'Помилка синхронізації статусів оплати',
+        'error',
+      )
+    }
   }
-}
+
+  const handleFetchTracking = async (orderId: string) => {
+    try {
+      const result = await fetchTrackingNumber(orderId).unwrap()
+      if (result.success) {
+        showToast(result.message || 'ТТН успішно отримано', 'success')
+        // Update the selected order with the new tracking number
+        if (selectedOrder && selectedOrder.orderId === orderId) {
+          setSelectedOrder({
+            ...selectedOrder,
+            trackingNumber: result.data.trackingNumber,
+          })
+        }
+        // The invalidation in api.ts will refresh the orders list
+        refetch()
+      } else {
+        // Handles the 'not yet available' case
+        showToast(
+          result.message || 'ТТН ще не доступний у маркетплейсі',
+          'info',
+        )
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch tracking:', error)
+      showToast(error?.data?.message || 'Помилка при отриманні ТТН', 'error')
+    }
+  }
+
+  // ── Copy Sale ────────────────────────────────────────────────────────────────
+  // Navigates to /orders/create with pre-filled query params derived from the order.
+  // The create page already reads formData from state; we pass data via sessionStorage
+  // so there's no need to change the create page routing logic.
+
+  const handleCopySale = (order: Order) => {
+    setActiveActionMenu(null)
+
+    // Build a pre-fill object that matches CreateCRMOrderInput shape
+    const prefill = {
+      clientFirstName: order.clientFirstName ?? '',
+      clientLastName: order.clientLastName ?? '',
+      clientSecondName: order.clientSecondName ?? '',
+      clientPhone: order.clientPhone ?? '',
+      clientEmail: order.clientEmail ?? '',
+      deliveryAddress: order.deliveryAddress ?? '',
+      deliveryCity: order.deliveryCity ?? '',
+      deliveryOptionName: order.deliveryOptionName ?? '',
+      paymentOptionName: order.paymentOptionName ?? '',
+      clientNotes: order.clientNotes ?? '',
+      // Copy items — strip orderItemId so they're treated as new
+      items: (order.orderItems ?? []).map((item) => ({
+        productId: item.productId ?? undefined,
+        productName: item.productName,
+        sku: item.sku ?? undefined,
+        quantity: item.quantity,
+        unitPrice: Number(item.unitPrice),
+        totalPrice: Number(item.totalPrice),
+      })),
+    }
+
+    // Store in sessionStorage so the create page can pick it up
+    sessionStorage.setItem('order_prefill', JSON.stringify(prefill))
+    router.push('/orders/create')
+  }
+
+  // ── Delete ───────────────────────────────────────────────────────────────────
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingOrder) return
+    try {
+      await deleteOrder(deletingOrder.orderId).unwrap()
+      showToast(
+        `Замовлення #${deletingOrder.orderNumber || deletingOrder.externalOrderId} видалено`,
+        'success',
+      )
+      setDeletingOrder(null)
+      // Close the detail modal if it was showing the deleted order
+      if (selectedOrder?.orderId === deletingOrder.orderId) {
+        setSelectedOrder(null)
+      }
+      refetch()
+    } catch (error: any) {
+      showToast(
+        error?.data?.message || 'Помилка при видаленні замовлення',
+        'error',
+      )
+      setDeletingOrder(null)
+    }
+  }
 
   // Utility functions
   const getStatusConfig = (status: OrderStatus) => {
@@ -282,32 +438,8 @@ const handleSyncPaymentStatuses = async () => {
     }).format(amount)
   }
 
-  const handleFetchTracking = async (orderId: string) => {
-    try {
-      const result = await fetchTrackingNumber(orderId).unwrap()
-      if (result.success) {
-        showToast(result.message || 'ТТН успішно отримано', 'success')
-        // Update the selected order with the new tracking number
-        if (selectedOrder && selectedOrder.orderId === orderId) {
-          setSelectedOrder({
-            ...selectedOrder,
-            trackingNumber: result.data.trackingNumber,
-          })
-        }
-        // The invalidation in api.ts will refresh the orders list
-        refetch()
-      } else {
-        // Handles the 'not yet available' case
-        showToast(
-          result.message || 'ТТН ще не доступний у маркетплейсі',
-          'info',
-        )
-      }
-    } catch (error: any) {
-      console.error('Failed to fetch tracking:', error)
-      showToast(error?.data?.message || 'Помилка при отриманні ТТН', 'error')
-    }
-  }
+  const handleCopy = (value: string) =>
+    showToast(`Номер ${value} скопійовано`, 'success')
 
   // Extract orders from the response
   const orders = ordersData?.data?.orders || []
@@ -322,9 +454,6 @@ const handleSyncPaymentStatuses = async () => {
       order.clientFullName?.toLowerCase().includes(searchLower)
     )
   })
-
-  const handleCopy = (value: string) =>
-    showToast(`Номер ${value} скопійовано`, 'success')
 
   if (isLoading) {
     return (
@@ -345,6 +474,7 @@ const handleSyncPaymentStatuses = async () => {
         isVisible={toast.isVisible}
         onClose={hideToast}
       />
+
       {/* Header */}
       <div className='mb-6'>
         <h1 className='text-3xl font-bold text-gray-900 mb-2'>Замовлення</h1>
@@ -352,6 +482,7 @@ const handleSyncPaymentStatuses = async () => {
           Всього: {pagination?.total || 0} замовлень
         </p>
       </div>
+
       {/* Filters and Actions */}
       <div className='bg-white rounded-lg shadow-sm p-4 mb-6'>
         <div className='flex flex-wrap gap-4 items-center'>
@@ -382,7 +513,7 @@ const handleSyncPaymentStatuses = async () => {
                   className='absolute right-2 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all flex items-center justify-center cursor-pointer'
                   aria-label='Очистити пошук'
                 >
-                  <X size={20} />             
+                  <X size={20} />
                 </button>
               )}
             </div>
@@ -435,6 +566,7 @@ const handleSyncPaymentStatuses = async () => {
           </button>
         </div>
       </div>
+
       {/* Orders Table */}
       <div className='bg-white rounded-lg shadow-sm overflow-hidden'>
         <div className='overflow-x-auto'>
@@ -517,7 +649,6 @@ const handleSyncPaymentStatuses = async () => {
                   </td>
 
                   <td className='px-6 py-5 whitespace-nowrap'>
-                    {/* Requirement 2: Smaller font and removed boldness */}
                     <div className='text-base font-normal text-gray-900'>
                       {order.clientFullName}
                     </div>
@@ -577,7 +708,7 @@ const handleSyncPaymentStatuses = async () => {
                     })()}
                   </td>
 
-                  {/* Requirement 3: Actions column */}
+                  {/* Actions column */}
                   <td className='px-6 py-5 whitespace-nowrap text-right'>
                     <div
                       className='relative inline-block text-left'
@@ -608,7 +739,10 @@ const handleSyncPaymentStatuses = async () => {
                             >
                               Редагувати
                             </button>
-                            <button className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition-colors cursor-pointer'>
+                            <button
+                              className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition-colors cursor-pointer'
+                              onClick={() => handleCopySale(order)}
+                            >                              
                               Копіювати продаж
                             </button>
                             <button className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition-colors cursor-pointer'>
@@ -616,7 +750,14 @@ const handleSyncPaymentStatuses = async () => {
                             </button>
                           </div>
                           <div className='py-1'>
-                            <button className='flex items-center w-full px-4 py-2.5 text-sm text-red-600 font-medium hover:bg-red-50 transition-colors cursor-pointer'>
+                            <button
+                              className='flex items-center w-full px-4 py-2.5 text-sm text-red-600 font-medium hover:bg-red-50 transition-colors cursor-pointer'
+                              onClick={() => {
+                                setActiveActionMenu(null)
+                                setDeletingOrder(order)
+                              }}
+                            >
+                              <Trash2 size={14} />
                               Видалити
                             </button>
                           </div>
@@ -804,16 +945,45 @@ const handleSyncPaymentStatuses = async () => {
                   </span>
                 </div>
               </div>
+              {/* Action buttons inside detail modal */}
+              <div className='flex gap-3 mt-6 pt-4 border-t border-gray-100'>
+                <button
+                  onClick={() => handleCopySale(selectedOrder)}
+                  className='flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium cursor-pointer'
+                >                  
+                  Копіювати продаж
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedOrder(null)
+                    setDeletingOrder(selectedOrder)
+                  }}
+                  className='flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium cursor-pointer'
+                >
+                  <Trash2 size={15} />
+                  Видалити
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
+
       {/* Edit Order Modal */}
       {editingOrder && (
         <EditOrderModal
           order={editingOrder}
           onClose={() => setEditingOrder(null)}
           onSuccess={() => setEditingOrder(null)}
+        />
+      )}
+      {/* Delete Confirmation Modal */}
+      {deletingOrder && (
+        <DeleteConfirmModal
+          order={deletingOrder}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setDeletingOrder(null)}
+          isDeleting={isDeleteLoading}
         />
       )}
     </div>

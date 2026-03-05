@@ -619,6 +619,17 @@ export const api = createApi({
       invalidatesTags: ['Orders'],
     }),
 
+    deleteOrder: build.mutation<{ success: boolean; message: string }, string>({
+      query: (orderId) => ({
+        url: `/orders/${orderId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, orderId) => [
+        'Orders',
+        { type: 'Orders', id: orderId },
+      ],
+    }),
+
     //Client endpoints
     getClients: build.query<
       ClientsResponse,
@@ -667,6 +678,7 @@ export const {
   useSyncOrdersMutation,
   useCheckForNewOrdersMutation,
   useSyncPaymentStatusesMutation,
+  useDeleteOrderMutation,
   useGetClientsQuery,
   useSearchClientsAutocompleteQuery,
 } = api

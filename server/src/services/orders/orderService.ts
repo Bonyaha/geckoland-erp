@@ -1898,6 +1898,25 @@ class OrderService {
   }
 
   /**
+   * Delete an order by ID (cascades to orderItems via Prisma schema)
+   */
+  async deleteOrder(orderId: string): Promise<void> {
+    const existing = await prisma.orders.findUnique({
+      where: { orderId },
+      select: { orderId: true },
+    })
+
+    if (!existing) {
+      throw ErrorFactory.notFound(`Order ${orderId} not found`)
+    }
+
+    // OrderItems are cascade-deleted via the Prisma schema onDelete: Cascade
+    await prisma.orders.delete({ where: { orderId } })
+
+    console.log(`🗑️ Order ${orderId} deleted`)
+  }
+
+  /**
    * Manually triggers a check for new orders from all marketplaces.
    * This can be called from a frontend button.
    */
@@ -2058,7 +2077,6 @@ class OrderService {
       updatedOrders,
     }
   }
-
 }
 
 export default OrderService

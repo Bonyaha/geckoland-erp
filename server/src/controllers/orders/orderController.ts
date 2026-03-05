@@ -92,6 +92,28 @@ export const updateOrder = async (
 }
 
 /**
+ * Delete order by ID
+ * @route DELETE /api/orders/:orderId
+ */
+export const deleteOrder = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { orderId } = req.params
+
+  if (!orderId) {
+    throw ErrorFactory.badRequest('Order ID is required')
+  }
+
+  await orderService.deleteOrder(orderId)
+
+  res.status(200).json({
+    success: true,
+    message: `Order ${orderId} deleted successfully`,
+  })
+}
+
+/**
  * Get orders with filtering and pagination
  */
 export const getOrders = async (req: Request, res: Response): Promise<void> => {
