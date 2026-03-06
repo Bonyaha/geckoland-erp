@@ -38,31 +38,11 @@ type OrderItemWithStock = NonNullable<CreateCRMOrderInput['items']>[number] & {
 
 const CreateOrderPage = () => {
   const router = useRouter()
-  const [createOrder, { isLoading }] = useCreateCRMOrderMutation()
   const { toast, showToast, hideToast } = useToast()
-  //const [getOrCreateClient] = useGetOrCreateClientMutation()
 
-  // Product dropdown and search state
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [selectedProducts, setSelectedProducts] = useState<Product[]>([])
-
-  // Client search state
-  const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false)
-  const [clientSearchTerm, setClientSearchTerm] = useState('')
-  const [debouncedClientSearch, setDebouncedClientSearch] = useState('')
-
-  // Order items
-  const [orderItems, setOrderItems] = useState<OrderItemWithStock[]>([])
-
-  //const [selectedClient, setSelectedClient] = useState<Client | null>(null)
-
-  // Prefill banner
-  const [isPrefilled, setIsPrefilled] = useState(false)
-
-  // Form state (items excluded — managed separately in orderItems)
+  // ═══════════════════════════════════════════════════════════════════════════
+  // STATE - Form Data(items excluded — managed separately in orderItems)
+  // ═══════════════════════════════════════════════════════════════════════════
   const [formData, setFormData] = useState<Omit<CreateCRMOrderInput, 'items'>>({
     clientFirstName: '',
     clientLastName: '',
@@ -78,14 +58,79 @@ const CreateOrderPage = () => {
     clientNotes: '',
   })
 
-  // ── Read prefill from sessionStorage (Copy Sale) ──────────────────────────
+  // Order items
+  const [orderItems, setOrderItems] = useState<OrderItemWithStock[]>([])
+
+  // Prefill banner
+  const [isPrefilled, setIsPrefilled] = useState(false)
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // STATE - Product Search & Selection
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Product dropdown and search state
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>([])
+  const [prefilledSkus, setPrefilledSkus] = useState<string>('')
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // STATE - Client Search & Selection
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Client search state
+  const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false)
+  const [clientSearchTerm, setClientSearchTerm] = useState('')
+  const [debouncedClientSearch, setDebouncedClientSearch] = useState('')
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // API QUERIES & MUTATIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+  const [createOrder, { isLoading }] = useCreateCRMOrderMutation()
+
+  // Fetch products from API(for manual search)
+  const { data: productsData, isFetching } = useGetProductsQuery({
+    search: debouncedSearch,
+    page: currentPage,
+    limit: 10,
+  })
+
+  // Fetch stock for prefilled items using their SKUs
+  const { data: prefilledProductsData } = useGetProductsQuery(
+    {
+      search: prefilledSkus,
+      page: 1,
+      limit: 50, // Higher limit to catch all prefilled items
+    },
+    {
+      skip: !prefilledSkus, // Only run when we have SKUs to search
+    },
+  )
+
+  // Fetch clients
+  const { data: clientsData, isFetching: isClientFetching } =
+    useSearchClientsAutocompleteQuery(debouncedClientSearch, {
+      skip: debouncedClientSearch.length < 3,
+    })
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // COMPUTED VALUES
+  // ═══════════════════════════════════════════════════════════════════════════
+  const products = productsData?.products || []
+  const totalPages = productsData?.pagination?.pages || 1
+  const clients = clientsData || []
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EFFECTS - Prefill from sessionStorage (Copy Sale)
+  // ═══════════════════════════════════════════════════════════════════════════
   useEffect(() => {
     const raw = sessionStorage.getItem('order_prefill')
     if (!raw) return
 
     try {
       const prefill = JSON.parse(raw)
-console.log('prefill is: ',prefill);
+      //console.log('prefill is: ',prefill);
 
       sessionStorage.removeItem('order_prefill') // consume once
 
@@ -140,6 +185,9 @@ console.log('prefill is: ',prefill);
     }
   }, [])
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EFFECTS - Debouncing
+  // ═══════════════════════════════════════════════════════════════════════════
   // Debounce logic for products
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300)
@@ -155,57 +203,24 @@ console.log('prefill is: ',prefill);
     return () => clearTimeout(timer)
   }, [clientSearchTerm])
 
-  // Fetch products from API
-  const { data: productsData, isFetching } = useGetProductsQuery({
-    search: debouncedSearch,
-    page: currentPage,
-    limit: 10,
-  })
-
-  // Fetch stock for prefilled items using their SKUs
-  const [prefilledSkus, setPrefilledSkus] = useState<string>('')
-
-  const { data: prefilledProductsData } = useGetProductsQuery(
-    {
-      search: prefilledSkus,
-      page: 1,
-      limit: 50, // Higher limit to catch all prefilled items
-    },
-    {
-      skip: !prefilledSkus, // Only run when we have SKUs to search
-    },
-  )
-
-  // Fetch clients
-  const { data: clientsData, isFetching: isClientFetching } =
-    useSearchClientsAutocompleteQuery(debouncedClientSearch, {
-      skip: debouncedClientSearch.length < 3,
-    })
-
-  const products = productsData?.products || []
-  const totalPages = productsData?.pagination?.pages || 1
-  const clients = clientsData || []
-
-  //console.log('products: ', products)
-
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EFFECTS - Product Search Pagination
+  // ═══════════════════════════════════════════════════════════════════════════
   // Reset to page 1 when searching products
   useEffect(() => {
     setCurrentPage(1)
   }, [debouncedSearch])
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EFFECTS - Stock Quantity Updates
+  // ═══════════════════════════════════════════════════════════════════════════
   // Update stock quantities for order items when products data changes
   useEffect(() => {
-    // Merge both product data sources
-    const allProducts = [
-      ...(productsData?.products || []),
-      ...(prefilledProductsData?.products || []),
-    ]
-
-    if (allProducts.length === 0 || orderItems.length === 0) return
+    if (!prefilledProductsData?.products || orderItems.length === 0) return
 
     setOrderItems((prevItems) =>
       prevItems.map((item) => {
-        const product = allProducts.find(
+        const product = prefilledProductsData.products.find(
           (p) => p.productId === item.productId || p.sku === item.sku,
         )
         // Update stock if we found the product
@@ -218,8 +233,11 @@ console.log('prefill is: ',prefill);
         return item
       }),
     )
-  }, [productsData, prefilledProductsData, orderItems.length])
+  }, [prefilledProductsData, orderItems.length])
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EFFECTS - Total Amount Calculation
+  // ═══════════════════════════════════════════════════════════════════════════
   // Recalculate total amount whenever items change
   useEffect(() => {
     const total = orderItems.reduce(
@@ -229,12 +247,16 @@ console.log('prefill is: ',prefill);
     setFormData((prev) => ({ ...prev, totalAmount: total }))
   }, [orderItems])
 
-  // Handlers
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HANDLERS - Form Input
+  // ═══════════════════════════════════════════════════════════════════════════
   const handleInputChange = (field: keyof CreateCRMOrderInput, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  // Handle client selection
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HANDLERS - Client Selection
+  // ═══════════════════════════════════════════════════════════════════════════
   const handleClientSelect = (client: Client) => {
     /* setSelectedClient(client) */
     setClientSearchTerm(
@@ -286,70 +308,72 @@ console.log('prefill is: ',prefill);
     }))
   }
 
-  // Add product to order
-  /* const handleAddProduct = (product: Product) => {
-    const existingItem = orderItems.find(
-      (item) => item.productId === product.productId,
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HANDLERS - Product Selection
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Logic for Checkboxes and Adding Multiple Items
+  const toggleProductSelection = (product: Product) => {
+    setSelectedProducts((prev) =>
+      prev.find((p) => p.productId === product.productId)
+        ? prev.filter((p) => p.productId !== product.productId)
+        : [...prev, product],
     )
+  }
 
-    if (existingItem) {
-      // Increment quantity
-      setOrderItems((prev) =>
-        prev.map((item) =>
-          item.productId === product.productId
-            ? {
-                ...item,
-                quantity: item.quantity + 1,
-                totalPrice: (item.quantity + 1) * item.unitPrice,
-              }
-            : item,
-        ),
-      )
-    } else {
-      // Add new item
-      const newItem: OrderItemWithStock = {
-        productId: product.productId,
-        productName: product.name,
-        sku: product.sku || undefined,
-        quantity: 1,
-        stockQuantity: product.stockQuantity,
-        unitPrice: product.price,
-        totalPrice: product.price,
-      }
-      setOrderItems((prev) => [...prev, newItem])
-    }
+  const addSelectedToOrder = () => {
+    const newItems: OrderItemWithStock[] = selectedProducts.map((p) => ({
+      productId: p.productId,
+      productName: p.name,
+      sku: p.sku,
+      quantity: 1,
+      stockQuantity: p.stockQuantity,
+      unitPrice: p.price,
+      totalPrice: p.price,
+    }))
 
-    // Clear search and close dropdown
-    setSearchTerm('')
+    setOrderItems((prev) => [...prev, ...newItems])
+    setSelectedProducts([])
     setIsDropdownOpen(false)
-  } */
+    setSearchTerm('')
+  }
 
-  // Update item quantity
-  /* const handleQuantityChange = (productId: string, delta: number) => {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HANDLERS - Order Items Management
+  // ═══════════════════════════════════════════════════════════════════════════
+  const updateItemQuantity = (productId: string, newQty: number) => {
+    const qty = Math.max(1, newQty)
     setOrderItems((prev) =>
-      prev
-        .map((item) => {
-          if (item.productId === productId) {
-            const newQuantity = Math.max(0, item.quantity + delta)
-            return {
+      prev.map((item) =>
+        item.productId === productId
+          ? { ...item, quantity: qty, totalPrice: qty * item.unitPrice }
+          : item,
+      ),
+    )
+  }
+
+  const updateItemPrice = (productId: string, newPriceRaw: string) => {
+    const numericPrice = newPriceRaw === '' ? 0 : parseFloat(newPriceRaw) || 0
+
+    setOrderItems((prev) =>
+      prev.map((item) =>
+        item.productId === productId
+          ? {
               ...item,
-              quantity: newQuantity,
-              totalPrice: newQuantity * item.unitPrice,
+              unitPrice: newPriceRaw as any,
+              totalPrice: item.quantity * numericPrice,
             }
-          }
-          return item
-        })
-        .filter((item) => item.quantity > 0), // Remove items with 0 quantity
+          : item,
+      ),
     )
-  } */
+  }
 
-  // Remove item
-  /* const handleRemoveItem = (productId: string) => {
-    setOrderItems((prev) =>
-      prev.filter((item) => item.productId !== productId),
-    )
-  } */
+  const removeItem = (index: number) => {
+    setOrderItems((prev) => prev.filter((_, i) => i !== index))
+  }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HANDLERS - Form Submission
+  // ═════════════════════════════════════════════════════════════════════════════════
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -403,81 +427,9 @@ console.log('prefill is: ',prefill);
     }
   }
 
-  // Logic for Checkboxes and Adding Multiple Items
-  const toggleProductSelection = (product: Product) => {
-    setSelectedProducts((prev) =>
-      prev.find((p) => p.productId === product.productId)
-        ? prev.filter((p) => p.productId !== product.productId)
-        : [...prev, product],
-    )
-  }
-
-  const addSelectedToOrder = () => {
-    const newItems: OrderItemWithStock[] = selectedProducts.map((p) => ({
-      productId: p.productId,
-      productName: p.name,
-      sku: p.sku,
-      quantity: 1,
-      stockQuantity: p.stockQuantity,
-      unitPrice: p.price,
-      totalPrice: p.price,
-    }))
-
-    setOrderItems((prev) => [...prev, ...newItems])
-    setSelectedProducts([])
-    setIsDropdownOpen(false)
-    setSearchTerm('')
-  }
-
-  const updateItemQuantity = (productId: string, newQty: number) => {
-    const qty = Math.max(1, newQty)
-    setOrderItems((prev) =>
-      prev.map((item) =>
-        item.productId === productId
-          ? { ...item, quantity: qty, totalPrice: qty * item.unitPrice }
-          : item,
-      ),
-    )
-  }
-
-  /* const updateItemQuantity = (productId: string, newQty: string | number) => {
-  // Convert to string first to handle the "empty" check safely
-  const valStr = newQty.toString()
-  const numericQty = valStr === '' ? 0 : parseInt(valStr) || 0
-
-  setOrderItems((prev) =>
-    prev.map((item) =>
-      item.productId === productId
-        ? {
-            ...item,
-            quantity: valStr as any, // Cast to any to allow string in numeric state
-            totalPrice: numericQty * Number(item.unitPrice || 0),
-          }
-        : item,
-    ),
-  )
-} */
-
-  const updateItemPrice = (productId: string, newPriceRaw: string) => {
-    const numericPrice = newPriceRaw === '' ? 0 : parseFloat(newPriceRaw) || 0
-
-    setOrderItems((prev) =>
-      prev.map((item) =>
-        item.productId === productId
-          ? {
-              ...item,
-              unitPrice: newPriceRaw as any,
-              totalPrice: item.quantity * numericPrice,
-            }
-          : item,
-      ),
-    )
-  }
-
-  const removeItem = (index: number) => {
-    setOrderItems((prev) => prev.filter((_, i) => i !== index))
-  }
-
+  // ═══════════════════════════════════════════════════════════════════════════
+  // UTILITY FUNCTIONS
+  // ═══════════════════════════════════════════════════════════════════════════
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('uk-UA', {
       style: 'currency',
@@ -490,6 +442,9 @@ console.log('prefill is: ',prefill);
     return item.stockQuantity === 0 || item.quantity > item.stockQuantity
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════════════════════════════════════
   return (
     <div className='p-6 bg-gray-50 min-h-screen'>
       <div className='max-w-4xl mx-auto'>
