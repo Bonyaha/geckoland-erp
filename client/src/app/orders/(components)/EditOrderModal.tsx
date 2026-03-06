@@ -27,6 +27,7 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import Toast from '@/app/(components)/Toast'
+import { PAYMENT_OPTIONS } from '@/utils/marketplaceUtils' 
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -55,13 +56,13 @@ const DELIVERY_OPTIONS = [
   { value: 'UkrPoshta', label: 'Укрпошта' },
 ]
 
-const PAYMENT_OPTIONS = [
+/* const PAYMENT_OPTIONS = [
   { value: '', label: 'Оберіть спосіб' },
   { value: 'CashOnDelivery', label: 'Післяплата' },
   { value: 'IBAN', label: 'IBAN' },
   { value: 'PromPayment', label: 'Пром оплата' },
   { value: 'RozetkaPay', label: 'Rozetka Pay' },
-]
+] */
 
 const ORDER_STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
   { value: 'RECEIVED', label: 'Прийнято' },

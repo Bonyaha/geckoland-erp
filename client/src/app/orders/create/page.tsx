@@ -85,6 +85,8 @@ const CreateOrderPage = () => {
 
     try {
       const prefill = JSON.parse(raw)
+console.log('prefill is: ',prefill);
+
       sessionStorage.removeItem('order_prefill') // consume once
 
       setIsPrefilled(true)

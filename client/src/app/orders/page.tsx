@@ -38,7 +38,7 @@ import {
 
 import Toast from '@/app/(components)/Toast'
 import { useToast } from '@/hooks/useToast'
-import { getPaymentStatusLabel } from '@/utils/marketplaceUtils'
+import { getPaymentStatusLabel,getPaymentOptionLabel } from '@/utils/marketplaceUtils'
 
 import CopyableItem from '@/app/(components)/CopyableItem'
 import CustomSelect from '@/app/(components)/CustomSelect'
@@ -672,7 +672,7 @@ const OrdersPage = () => {
                       {getPaymentStatusLabel(order.paymentStatus)}
                     </span>
                     <div className='text-gray-500 text-sm'>
-                      ({order.paymentOptionName})
+                      ({getPaymentOptionLabel(order.paymentOptionName)})
                     </div>
                   </td>
 
@@ -742,7 +742,7 @@ const OrdersPage = () => {
                             <button
                               className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition-colors cursor-pointer'
                               onClick={() => handleCopySale(order)}
-                            >                              
+                            >
                               Копіювати продаж
                             </button>
                             <button className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition-colors cursor-pointer'>
@@ -950,7 +950,7 @@ const OrdersPage = () => {
                 <button
                   onClick={() => handleCopySale(selectedOrder)}
                   className='flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium cursor-pointer'
-                >                  
+                >
                   Копіювати продаж
                 </button>
                 <button
