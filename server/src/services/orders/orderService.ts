@@ -1192,18 +1192,20 @@ class OrderService {
 
   /**
    * Fetch new orders from Prom and create them in database
+   * @param specificOrderId - Optional order ID extracted from Gmail notification subject
    */
-  async fetchAndCreateNewPromOrders(): Promise<OrderSyncResult> {
+  async fetchAndCreateNewPromOrders(
+    specificOrderId?: number,
+  ): Promise<OrderSyncResult> {
     console.log('Fetching new orders from Prom...')
 
     try {
-      const newOrders = await this.promClient.getNewOrders()
+      const newOrders = await this.promClient.getNewOrders(specificOrderId)
       console.log(`Found ${newOrders.length} pending orders from Prom`)
 
       let created = 0
       let skipped = 0
-      let errors = 0
-      console.log('new order is: ', newOrders[0])
+      let errors = 0      
 
       for (const promOrder of newOrders) {
         try {

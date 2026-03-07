@@ -28,14 +28,14 @@ const processingQueue: Array<() => Promise<void>> = []
 /**
  * Load processed message IDs from persistent storage
  */
-async function loadProcessedMessages(): Promise<Set<string>> {  
+async function loadProcessedMessages(): Promise<Set<string>> {
   try {
     const content = await fs.readFile(PROCESSED_MESSAGES_PATH)
     const raw = content.toString().trim()
     if (!raw) return new Set<string>()
 
     const data = JSON.parse(raw)
-    
+
     return new Set(data.messageIds || [])
   } catch (error: unknown) {
     if (
@@ -167,12 +167,16 @@ function createMessageFingerprint(
 /**
  * Handle new order creation from different marketplaces
  */
-async function handleNewOrder(marketplace: string): Promise<void> {
+async function handleNewOrder(
+  marketplace: string,
+  specificOrderId?: number,
+): Promise<void> {
   try {
     gmailLogger.orderProcessingStart(marketplace)
 
     if (marketplace === 'Prom') {
-      const result = await orderService.fetchAndCreateNewPromOrders()
+      const result =
+        await orderService.fetchAndCreateNewPromOrders(specificOrderId)
       gmailLogger.orderProcessingResult(marketplace, result)
 
       if (result.created > 0) {
@@ -297,18 +301,23 @@ async function processMessage(
 
     const matched = (pattern1 || pattern2) && bodyHasOrder
 
-    // Log pattern matching results
-    gmailLogger.patternMatch('Prom', {
-      pattern1,
-      pattern2,
-      bodyHasOrder,
-      matched,
-    })
     if (matched) {
       gmailLogger.orderDetected('Prom', subject)
 
+      // Extract order ID from subject like "+1 замовлення 392536106 вже в кабінеті"
+      const orderIdMatch = subject.match(/замовлення\s+(\d+)/i)
+      const specificOrderId = orderIdMatch
+        ? parseInt(orderIdMatch[1], 10)
+        : undefined
+
+      if (specificOrderId) {
+        gmailLogger.info(
+          `Extracted Prom order ID from subject: ${specificOrderId}`,
+        )
+      }
+
       try {
-        await handleNewOrder('Prom')
+        await handleNewOrder('Prom', specificOrderId)
       } catch (error) {
         gmailLogger.orderProcessingError('Prom', error)
       }
@@ -374,7 +383,7 @@ async function processNotification(req: Request): Promise<void> {
   if (!pubSubMessage || !pubSubMessage.data) {
     gmailLogger.warn('Received an invalid Pub/Sub message')
     return
-  }  
+  }
 
   const decodedData = JSON.parse(
     Buffer.from(pubSubMessage.data, 'base64').toString('utf-8'),
@@ -382,7 +391,7 @@ async function processNotification(req: Request): Promise<void> {
   const newHistoryId = decodedData.historyId
 
   // Load processed messages and last history ID
-  const processedMessages = await loadProcessedMessages()  
+  const processedMessages = await loadProcessedMessages()
 
   const lastHistoryId = await loadLastHistoryId()
 

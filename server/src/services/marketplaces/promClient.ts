@@ -280,59 +280,88 @@ export class PromClient {
   }
 
   /**
-   * Fetches new orders from Prom with retry logic to handle race conditions
-   * @returns Combined array of pending and paid orders
+   * Fetches new orders from Prom with retry logic to handle race conditions.
+   *
+   * Strategy:
+   * 1. If a specific orderId is provided (extracted from the Gmail subject),
+   *    attempt to fetch it directly via GET /orders/:id first. This bypasses
+   *    the list-endpoint propagation delay that Prom has after order creation.
+   * 2. Fall back to the list endpoint (pending + paid) if direct fetch fails
+   *    or no orderId was provided.
+   * 3. If the list returns empty, retry with increasing delays up to 3 times.
+   *
+   * @param specificOrderId - Optional Prom order ID parsed from the notification email subject
    */
 
-  async getNewOrders(): Promise<PromOrder[]> {
+  async getNewOrders(specificOrderId?: number): Promise<PromOrder[]> {
     try {
-      // First attempt: parallel queries for pending and paid
+      // ── FAST PATH: fetch the specific order directly ──────────────────
+      if (specificOrderId) {
+        gmailLogger.info(
+          `server/src/services/marketplaces/promClient.ts: trying direct fetch for order #${specificOrderId}`,
+        )
+        const directOrder = await this.getOrderById(specificOrderId.toString())
+        if (directOrder) {
+          const isActionable =
+            directOrder.status === 'pending' || directOrder.status === 'paid'
 
-      const [pendingOrdersResponse, paidOrdersResponse] = await Promise.all([
-        this.getOrders({ status: 'pending' }),
-        this.getOrders({ status: 'paid' }),
-      ])
+          if (isActionable) {
+            gmailLogger.info(
+              `Prom getNewOrders: direct fetch succeeded for order #${specificOrderId} (status: ${directOrder.status})`,
+            )
+            return [directOrder]
+          }
 
-      const pendingOrders = pendingOrdersResponse.orders || []
-      const paidOrders = paidOrdersResponse.orders || []
-
-      const totalOrders = [...pendingOrders, ...paidOrders]
-
-      gmailLogger.info(
-        `Prom getNewOrders: Found ${pendingOrders.length} pending + ${paidOrders.length} paid = ${totalOrders.length} total`,
-      )
-      // If we got results, return them
-      if (totalOrders.length > 0) {
-        return totalOrders
+          gmailLogger.info(
+            `Prom getNewOrders: order #${specificOrderId} has status "${directOrder.status}" — not actionable, falling back to list`,
+          )
+        } else {
+          gmailLogger.warn(
+            `Prom getNewOrders: direct fetch returned null for order #${specificOrderId}, falling back to list`,
+          )
+        }
       }
 
-      // If both queries returned empty, wait and retry once
-      // (handles race condition when order transitions between statuses)
+      // ── FALLBACK: list endpoint with increasing delays ────────────────
+      const RETRY_DELAYS_MS = [0, 5000, 15000, 30000] // 0s, 5s, 15s, 30s
+
+      for (let attempt = 0; attempt < RETRY_DELAYS_MS.length; attempt++) {
+        const delay = RETRY_DELAYS_MS[attempt]
+
+        if (delay > 0) {
+          gmailLogger.warn(
+            `Prom getNewOrders: list empty on attempt ${attempt}. Waiting ${delay / 1000}s before retry...`,
+          )
+          await new Promise((resolve) => setTimeout(resolve, delay))
+        }
+
+        const [pendingResponse, paidResponse] = await Promise.all([
+          this.getOrders({ status: 'pending' }),
+          this.getOrders({ status: 'paid' }),
+        ])
+
+        const pendingOrders = pendingResponse.orders || []
+        const paidOrders = paidResponse.orders || []
+        const totalOrders = [...pendingOrders, ...paidOrders]
+
+        gmailLogger.info(
+          `Prom getNewOrders attempt ${attempt + 1}: Found ${pendingOrders.length} pending + ${paidOrders.length} paid = ${totalOrders.length} total`,
+        )
+
+        if (totalOrders.length > 0) {
+          return totalOrders
+        }
+      }
+
       gmailLogger.warn(
-        'Prom returned no orders in first attempt. Waiting 2s and retrying...',
+        `Prom getNewOrders: all attempts exhausted, returning empty`,
       )
-
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      // Retry with fresh queries
-      const [retryPending, retryPaid] = await Promise.all([
-        this.getOrders({ status: 'pending' }),
-        this.getOrders({ status: 'paid' }),
-      ])
-
-      const retryPendingOrders = retryPending.orders || []
-      const retryPaidOrders = retryPaid.orders || []
-      const retryTotal = [...retryPendingOrders, ...retryPaidOrders]
-
-      gmailLogger.info(
-        `Prom retry: Found ${retryPendingOrders.length} pending + ${retryPaidOrders.length} paid = ${retryTotal.length} total`,
-      )
-
-      return retryTotal
+      return []
     } catch (error: any) {
       gmailLogger.error('Failed to fetch new orders from Prom:', error.message)
       throw error
     }
+
     /* FOR TESTING ONLY */
     /* const ordersResponse = await this.getOrders({ status: 'delivered' })
     return ordersResponse.orders || [] */
