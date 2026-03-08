@@ -12,6 +12,7 @@ import {
   deleteOrder,
   checkForNewOrders,
   syncPaymentStatuses,
+  getOrderCounts,
 } from '../controllers/orders/orderController'
 import {
   getOrdersQuerySchema,
@@ -47,6 +48,9 @@ router.get('/', validate(getOrdersQuerySchema), asyncHandler(getOrders))
 
 // GET /orders/crm - Get CRM orders specifically
 router.get('/crm', asyncHandler(getCRMOrders))
+
+//GET /orders/counts — returns counts grouped by status
+router.get('/counts', asyncHandler(getOrderCounts))
 
 // GET /orders/:orderId - Get specific order by ID
 router.get(

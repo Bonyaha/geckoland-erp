@@ -262,3 +262,19 @@ export const syncPaymentStatuses = async (
     data: result,
   })
 }
+
+/**
+ * Get order counts grouped by status
+ * @route GET /api/orders/counts
+ */
+export const getOrderCounts = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const counts = await orderService.getOrderCounts()
+
+  res.status(200).json({
+    success: true,
+    data: counts,
+  })
+}

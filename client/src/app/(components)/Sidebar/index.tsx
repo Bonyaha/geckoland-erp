@@ -20,13 +20,13 @@ import { setIsSidebarCollapsed } from '@/state'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useOrderCounts } from '@/hooks/useOrderCounts' 
 
 interface SidebarLinkProps {
   href: string
   icon: LucideIcon
   label: string
   isCollapsed: boolean
-  badgeCount?: number
   hasSubmenu?: boolean
   isOpen?: boolean
   onToggle?: () => void
@@ -37,7 +37,6 @@ const SidebarLink = ({
   icon: Icon,
   label,
   isCollapsed,
-  badgeCount,
   hasSubmenu,
   isOpen,
   onToggle,
@@ -51,6 +50,7 @@ const SidebarLink = ({
   const linkRef = useRef<HTMLDivElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+const orderCounts = useOrderCounts() 
 
   useEffect(() => {
     if (linkRef.current) {
@@ -60,8 +60,7 @@ const SidebarLink = ({
   }, [showTooltip])
 
   // Check if this is the Orders link with submenu
-  const isOrdersLink =
-    href === '/orders' && badgeCount !== undefined && isCollapsed
+  const isOrdersLink = href === '/orders' && isCollapsed
 
   const handleMouseEnter = () => {
     if (isCollapsed) {
@@ -123,15 +122,9 @@ const SidebarLink = ({
         )}
       </div>
 
-      {!isCollapsed && (
+      {!isCollapsed && hasSubmenu && (
         <div className='flex items-center gap-2'>
-          {badgeCount !== undefined && badgeCount > 0 && (
-            <span className='bg-white text-[#45455c] text-[11px] font-semibold px-2 py-0.5 rounded-md min-w-[24px] text-center'>
-              {badgeCount}
-            </span>
-          )}
-          {hasSubmenu &&
-            (isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />)}
+          {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </div>
       )}
     </div>
@@ -180,42 +173,36 @@ const SidebarLink = ({
 
           {/* Submenu items */}
           <div className='py-1'>
-            <Link
+            <SubmenuTooltipItem
               href='/orders'
-              className='block px-3 py-1.5 hover:bg-gray-700 transition-colors'
-            >
-              Всі замовлення
-            </Link>
-            <Link
+              label='Всі замовлення'
+              count={orderCounts.all}
+            />
+            <SubmenuTooltipItem
               href='/orders?status=RECEIVED'
-              className='block px-3 py-1.5 hover:bg-gray-700 transition-colors'
-            >
-              Нові
-            </Link>
-            <Link
+              label='Нові'
+              count={orderCounts.RECEIVED}
+            />
+            <SubmenuTooltipItem
               href='/orders?status=PREPARED'
-              className='block px-3 py-1.5 hover:bg-gray-700 transition-colors'
-            >
-              Зібрані
-            </Link>
-            <Link
+              label='Зібрані'
+              count={orderCounts.PREPARED}
+            />
+            <SubmenuTooltipItem
               href='/orders?status=SHIPPED'
-              className='block px-3 py-1.5 hover:bg-gray-700 transition-colors'
-            >
-              Відправлені
-            </Link>
-            <Link
+              label='Відправлені'
+              count={orderCounts.SHIPPED}
+            />
+            <SubmenuTooltipItem
               href='/orders?status=DELIVERED'
-              className='block px-3 py-1.5 hover:bg-gray-700 transition-colors'
-            >
-              Доставлені
-            </Link>
-            <Link
+              label='Доставлені'
+              count={orderCounts.DELIVERED}
+            />
+            <SubmenuTooltipItem
               href='/orders?status=CANCELED'
-              className='block px-3 py-1.5 hover:bg-gray-700 transition-colors'
-            >
-              Скасовані
-            </Link>
+              label='Скасовані'
+              count={orderCounts.CANCELED}
+            />
             <Link
               href='/orders/create'
               className='block px-3 py-1.5 hover:bg-gray-700 transition-colors'
@@ -232,12 +219,59 @@ const SidebarLink = ({
   )
 }
 
+// Small helper for tooltip submenu rows with optional badge
+const SubmenuTooltipItem = ({
+  href,
+  label,
+  count,
+}: {
+  href: string
+  label: string
+  count: number
+}) => (
+  <Link
+    href={href}
+    className='flex items-center justify-between px-3 py-1.5 hover:bg-gray-700 transition-colors'
+  >
+    <span>{label}</span>
+    {count > 0 && (
+      <span className='ml-2 bg-white text-[#45455c] text-[10px] font-bold px-1.5 py-0.5 rounded min-w-[20px] text-center'>
+        {count}
+      </span>
+    )}
+  </Link>
+)
+
+// Submenu item shown in the expanded sidebar
+const SubmenuItem = ({
+  href,
+  label,
+  count,
+}: {
+  href: string
+  label: string
+  count?: number
+}) => (
+  <Link
+    href={href}
+    className='flex items-center justify-between py-2 text-[14px] text-[#b8b8c8] hover:text-white transition-colors'
+  >
+    <span>{label}</span>
+    {count !== undefined && count > 0 && (
+      <span className='bg-white text-[#45455c] text-[11px] font-semibold px-2 py-0.5 rounded-md min-w-[24px] text-center'>
+        {count}test
+      </span>
+    )}
+  </Link>
+)
+
 const Sidebar = () => {
   const dispatch = useAppDispatch()
   const isSidebarCollapsed = useAppSelector(
     (state) => state.global.isSidebarCollapsed,
   )
   const [isOrdersOpen, setIsOrdersOpen] = useState(true)
+const orderCounts = useOrderCounts()
 
   const toggleSidebar = () => {
     dispatch(setIsSidebarCollapsed(!isSidebarCollapsed))
@@ -287,56 +321,44 @@ const Sidebar = () => {
           icon={ShoppingCart}
           label='Замовлення'
           isCollapsed={isSidebarCollapsed}
-          badgeCount={5}
           hasSubmenu={!isSidebarCollapsed}
           isOpen={isOrdersOpen}
           onToggle={() => setIsOrdersOpen(!isOrdersOpen)}
         />
 
         {!isSidebarCollapsed && isOrdersOpen && (
-          <div className='ml-12 space-y-1 mt-1 transition-all duration-300'>
-            <Link
+          <div className='ml-12 space-y-1 mt-1 transition-all duration-300 pr-4'>
+            <SubmenuItem
               href='/orders'
-              className='block py-2 text-[14px] text-[#b8b8c8] hover:text-white transition-colors'
-            >
-              Всі замовлення
-            </Link>
-            <Link
+              label='Всі замовлення'
+              count={orderCounts.all}
+            />
+            <SubmenuItem
               href='/orders?status=RECEIVED'
-              className='block py-2 text-[14px] text-[#b8b8c8] hover:text-white transition-colors'
-            >
-              Нові
-            </Link>
-            <Link
+              label='Нові'
+              count={orderCounts.RECEIVED}
+            />
+            <SubmenuItem
               href='/orders?status=PREPARED'
-              className='block py-2 text-[14px] text-[#b8b8c8] hover:text-white transition-colors'
-            >
-              Зібрані
-            </Link>
-            <Link
+              label='Зібрані'
+              count={orderCounts.PREPARED}
+            />
+            <SubmenuItem
               href='/orders?status=SHIPPED'
-              className='block py-2 text-[14px] text-[#b8b8c8] hover:text-white transition-colors'
-            >
-              Відправлені
-            </Link>
-            <Link
+              label='Відправлені'
+              count={orderCounts.SHIPPED}
+            />
+            <SubmenuItem
               href='/orders?status=DELIVERED'
-              className='block py-2 text-[14px] text-[#b8b8c8] hover:text-white transition-colors'
-            >
-              Доставлені
-            </Link>
-            <Link
+              label='Доставлені'
+              count={orderCounts.DELIVERED}
+            />
+            <SubmenuItem
               href='/orders?status=CANCELED'
-              className='block py-2 text-[14px] text-[#b8b8c8] hover:text-white transition-colors'
-            >
-              Скасовані
-            </Link>
-            <Link
-              href='/orders/create'
-              className='block py-2 text-[14px] text-[#b8b8c8] hover:text-white transition-colors'
-            >
-              Створити замовлення
-            </Link>
+              label='Скасовані'
+              count={orderCounts.CANCELED}
+            />
+            <SubmenuItem href='/orders/create' label='Створити замовлення' />
           </div>
         )}
 

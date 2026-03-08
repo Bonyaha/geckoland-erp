@@ -496,13 +496,32 @@ export const api = createApi({
       providesTags: ['Expenses'],
     }),
 
-    // Orders endpoints
+    /* ORDERS ENDPOINTS */
     // Get all orders with filtering and pagination
     getOrders: build.query<OrdersResponse, OrderQueryParams | void>({
       query: (params) => ({
         url: '/orders',
         params: params || {},
       }),
+      providesTags: ['Orders'],
+    }),
+    getOrderCounts: build.query<
+      {
+        success: boolean
+        data: {
+          all: number
+          RECEIVED: number
+          PREPARED: number
+          SHIPPED: number
+          AWAITING_PICKUP: number
+          DELIVERED: number
+          CANCELED: number
+          RETURN: number
+        }
+      },
+      void
+    >({
+      query: () => '/orders/counts',
       providesTags: ['Orders'],
     }),
 
@@ -669,6 +688,7 @@ export const {
   useBatchUpdateProductMutation,
   useSyncProductsFromMarketplacesMutation,
   useGetOrdersQuery,
+useGetOrderCountsQuery,
   useGetOrderByIdQuery,
   useCreateCRMOrderMutation,
   useUpdateOrderMutation,

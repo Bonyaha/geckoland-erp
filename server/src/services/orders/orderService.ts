@@ -1,5 +1,10 @@
 // server/src/services/orders/orderService.ts
-import prisma, { Source, Prisma, OrderStatus,PaymentStatus } from '../../config/database'
+import prisma, {
+  Source,
+  Prisma,
+  OrderStatus,
+  PaymentStatus,
+} from '../../config/database'
 import { Decimal } from '@prisma/client/runtime/library'
 import { PromClient, type PromOrder } from '../marketplaces/promClient'
 import { RozetkaClient, type RozetkaOrder } from '../marketplaces/rozetkaClient'
@@ -1205,7 +1210,7 @@ class OrderService {
 
       let created = 0
       let skipped = 0
-      let errors = 0      
+      let errors = 0
 
       for (const promOrder of newOrders) {
         try {
@@ -1366,6 +1371,44 @@ class OrderService {
         total,
         pages: Math.ceil(total / limit),
       },
+    }
+  }
+
+/**
+   * Get order counts grouped by status in a single DB query
+   * Used by the sidebar to display per-status badges
+   */
+  async getOrderCounts(): Promise<{
+    all: number
+    RECEIVED: number
+    PREPARED: number
+    SHIPPED: number
+    AWAITING_PICKUP: number
+    DELIVERED: number
+    CANCELED: number
+    RETURN: number
+  }> {
+    const grouped = await prisma.orders.groupBy({
+      by: ['status'],
+      _count: { _all: true },
+    })
+
+    const map: Record<string, number> = {}
+    for (const row of grouped) {
+      map[row.status] = row._count._all
+    }
+
+    const total = Object.values(map).reduce((sum, n) => sum + n, 0)
+
+    return {
+      all: total,
+      RECEIVED: map['RECEIVED'] ?? 0,
+      PREPARED: map['PREPARED'] ?? 0,
+      SHIPPED: map['SHIPPED'] ?? 0,
+      AWAITING_PICKUP: map['AWAITING_PICKUP'] ?? 0,
+      DELIVERED: map['DELIVERED'] ?? 0,
+      CANCELED: map['CANCELED'] ?? 0,
+      RETURN: map['RETURN'] ?? 0,
     }
   }
 
