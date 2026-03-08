@@ -14,7 +14,7 @@ import {
   SlidersHorizontal,
   Users,
 } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from '@/app/redux'
 import { setIsSidebarCollapsed } from '@/state'
 import { usePathname } from 'next/navigation'
@@ -46,9 +46,66 @@ const SidebarLink = ({
   const isActive =
     pathname === href || (pathname === '/' && href === '/dashboard')
 
-  const content = (
+  const [showTooltip, setShowTooltip] = useState(false)
+  const [tooltipY, setTooltipY] = useState(0)
+  const linkRef = useRef<HTMLDivElement>(null)
+  const tooltipRef = useRef<HTMLDivElement>(null)
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  useEffect(() => {
+    if (linkRef.current) {
+      const rect = linkRef.current.getBoundingClientRect()
+      setTooltipY(rect.top + rect.height / 2)
+    }
+  }, [showTooltip])
+
+  // Check if this is the Orders link with submenu
+  const isOrdersLink =
+    href === '/orders' && badgeCount !== undefined && isCollapsed
+
+  const handleMouseEnter = () => {
+    if (isCollapsed) {
+      // Clear any pending hide timeout
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current)
+        hideTimeoutRef.current = null
+      }
+      setShowTooltip(true)
+    }
+  }
+
+  const handleMouseLeave = () => {
+    // Add a small delay before hiding to allow mouse to reach tooltip
+    hideTimeoutRef.current = setTimeout(() => {
+      setShowTooltip(false)
+    }, 100)
+  }
+
+  const handleTooltipMouseEnter = () => {
+    // Clear hide timeout when mouse enters tooltip
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current)
+      hideTimeoutRef.current = null
+    }
+  }
+
+  const handleTooltipMouseLeave = () => {
+    setShowTooltip(false)
+  }
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const linkContent = (
     <div
-      className={`cursor-pointer flex items-center relative ${
+      ref={linkRef}
+      className={`cursor-pointer flex items-center ${
         isCollapsed ? 'justify-center py-4' : 'justify-between px-6 py-3'
       } transition-all duration-200 rounded-lg mx-2 ${
         isActive
@@ -56,6 +113,8 @@ const SidebarLink = ({
           : 'text-[#b8b8c8] hover:text-white hover:bg-[#52526a]'
       }`}
       onClick={hasSubmenu ? onToggle : undefined}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div className='flex items-center gap-3'>
         <Icon className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'}`} />
@@ -78,7 +137,99 @@ const SidebarLink = ({
     </div>
   )
 
-  return hasSubmenu ? content : <Link href={href}>{content}</Link>
+  return (
+    <>
+      {/* Main link - only wrap in Link if not a submenu item */}
+      {hasSubmenu ? linkContent : <Link href={href}>{linkContent}</Link>}
+
+      {/* TOOLTIP: Simple tooltip for non-Orders links */}
+      {isCollapsed && showTooltip && !isOrdersLink && (
+        <div
+          className='fixed left-[84px] px-3 py-2 bg-gray-800 text-white text-sm rounded-md whitespace-nowrap z-[9999] shadow-xl transition-opacity duration-150'
+          style={{
+            top: `${tooltipY}px`, // Positioned at the calculated Y
+            transform: 'translateY(-50%)', // Centered vertically
+            opacity: showTooltip ? 1 : 0, // Fade in
+          }}
+          onMouseEnter={handleTooltipMouseEnter}
+          onMouseLeave={handleTooltipMouseLeave}
+        >
+          {label}
+          {/* Arrow pointing to the icon */}
+          <div className='absolute top-1/2 -left-1.5 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-800'></div>
+        </div>
+      )}
+
+      {/* SUBMENU TOOLTIP: For Orders link when collapsed */}
+      {isCollapsed && showTooltip && isOrdersLink && (
+        <div
+          ref={tooltipRef}
+          className='fixed left-[84px] py-2 bg-gray-800 text-white text-sm rounded-md z-[9999] shadow-xl min-w-[200px] transition-opacity duration-150'
+          style={{
+            top: `${tooltipY}px`,
+            transform: 'translateY(-50%)',
+            opacity: showTooltip ? 1 : 0,
+          }}
+          onMouseEnter={handleTooltipMouseEnter}
+          onMouseLeave={handleTooltipMouseLeave}
+        >
+          {/* Header */}
+          <div className='px-3 py-1 font-semibold border-b border-gray-700 mb-1'>
+            {label}
+          </div>
+
+          {/* Submenu items */}
+          <div className='py-1'>
+            <Link
+              href='/orders'
+              className='block px-3 py-1.5 hover:bg-gray-700 transition-colors'
+            >
+              Всі замовлення
+            </Link>
+            <Link
+              href='/orders?status=RECEIVED'
+              className='block px-3 py-1.5 hover:bg-gray-700 transition-colors'
+            >
+              Нові
+            </Link>
+            <Link
+              href='/orders?status=PREPARED'
+              className='block px-3 py-1.5 hover:bg-gray-700 transition-colors'
+            >
+              Зібрані
+            </Link>
+            <Link
+              href='/orders?status=SHIPPED'
+              className='block px-3 py-1.5 hover:bg-gray-700 transition-colors'
+            >
+              Відправлені
+            </Link>
+            <Link
+              href='/orders?status=DELIVERED'
+              className='block px-3 py-1.5 hover:bg-gray-700 transition-colors'
+            >
+              Доставлені
+            </Link>
+            <Link
+              href='/orders?status=CANCELED'
+              className='block px-3 py-1.5 hover:bg-gray-700 transition-colors'
+            >
+              Скасовані
+            </Link>
+            <Link
+              href='/orders/create'
+              className='block px-3 py-1.5 hover:bg-gray-700 transition-colors'
+            >
+              Створити замовлення
+            </Link>
+          </div>
+
+          {/* Arrow pointing to the icon */}
+          <div className='absolute top-1/2 -left-1.5 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-800'></div>
+        </div>
+      )}
+    </>
+  )
 }
 
 const Sidebar = () => {
@@ -94,7 +245,7 @@ const Sidebar = () => {
 
   const sidebarClassNames = `fixed flex flex-col ${
     isSidebarCollapsed ? 'w-0 md:w-20' : 'w-64'
-  } bg-[#45455c] transition-all duration-300 overflow-hidden h-full shadow-md z-40 border-r border-[#52526a]`
+  } bg-[#45455c] transition-all duration-300 h-full shadow-md z-40 border-r border-[#52526a]`
 
   return (
     <div className={sidebarClassNames}>
@@ -108,8 +259,8 @@ const Sidebar = () => {
           <Image
             src='/logo.png'
             alt='Logo'
-            width={36} // Increased from 24 to 36 to fill the container
-            height={36} // Increased from 24 to 36
+            width={36}
+            height={36}
             className='object-contain'
           />
         </div>
@@ -122,7 +273,7 @@ const Sidebar = () => {
       )}
 
       {/* NAV LINKS */}
-      <div className='flex-grow mt-8 space-y-1'>
+      <div className='flex-grow mt-8 space-y-1 overflow-y-auto'>
         <SidebarLink
           href='/dashboard'
           icon={Home}
@@ -219,27 +370,29 @@ const Sidebar = () => {
       </div>
 
       {/* FOOTER */}
-      {!isSidebarCollapsed ? (
-        <div className='px-8'>
-          <button
-            onClick={toggleSidebar}
-            className='flex items-center gap-2 text-[#b8b8c8] hover:text-white transition-colors text-[14px] cursor-pointer'
-          >
-            <ArrowLeft className='w-4 h-4' />
-            <span>Приховати</span>
-          </button>
-        </div>
-      ) : (
-        <div className='flex justify-center'>
-          <button
-            onClick={toggleSidebar}
-            className='p-3 text-[#b8b8c8] hover:text-white hover:bg-[#52526a] rounded-lg transition-colors cursor-pointer'
-            title='Розгорнути'
-          >
-            <ArrowRight className='w-5 h-5' />
-          </button>
-        </div>
-      )}
+      <div className='pb-6'>
+        {!isSidebarCollapsed ? (
+          <div className='px-8'>
+            <button
+              onClick={toggleSidebar}
+              className='flex items-center gap-2 text-[#b8b8c8] hover:text-white transition-colors text-[14px] cursor-pointer'
+            >
+              <ArrowLeft className='w-4 h-4' />
+              <span>Приховати</span>
+            </button>
+          </div>
+        ) : (
+          <div className='flex justify-center'>
+            <button
+              onClick={toggleSidebar}
+              className='p-3 text-[#b8b8c8] hover:text-white hover:bg-[#52526a] rounded-lg transition-colors cursor-pointer'
+              title='Розгорнути'
+            >
+              <ArrowRight className='w-5 h-5' />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
