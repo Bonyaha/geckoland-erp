@@ -16,7 +16,12 @@ import {
   RozetkaUpdateParams,
 } from '../rozetkaClient'
 import { normalizeQuantity } from '../../../utils/helpers/normalizeQuantity'
-import type { ProductSyncEntry } from '../../../types/marketplaces'
+import type {
+  ProductSyncEntry,
+  ProductExternalIds,
+  SyncStrategy,
+} from '../../../types/marketplaces'
+import { gmailLogger} from '../../../utils/gmailLogger'
 
 // Update quantities for all products in app's database
 const updateAllMarketplaceQuantities = async () => {
@@ -613,24 +618,11 @@ export const syncAfterOrder = async (
   sourceMarketplace: 'prom' | 'rozetka' | 'crm' // Where the order came from
 ) => {
   console.log(
-    `🛒 Processing order sync for ${orderedProducts.length} products from ${sourceMarketplace}`,
+    `Processing order sync for ${orderedProducts.length} products from ${sourceMarketplace}`,
   )
 
   // Track products that need updates
-  const productsToUpdate = new Map<
-    string,
-    {
-      productId: string
-      promQuantityDelta?: number
-      rozetkaQuantityDelta?: number
-      newPromQuantity?: number
-      newRozetkaQuantity?: number
-      needsPromSync: boolean
-      needsRozetkaSync: boolean
-      newMasterQuantity: number
-      syncStrategy: 'same_quantity' | 'different_quantity'
-    }
-  >()
+  const productsToUpdate = new Map<string, ProductSyncEntry>()
 
   // Process each ordered product
   for (const { productId, orderedQuantity } of orderedProducts) {
@@ -647,16 +639,10 @@ export const syncAfterOrder = async (
       continue
     }
 
-    const externalIds = appProduct.externalIds as {
-      prom?: string
-      rozetka?: {
-        rz_item_id: string
-        item_id: string
-      }
-    }
+    const externalIds = appProduct.externalIds as ProductExternalIds
 
     // Calculate quantity delta (negative because items were ordered/sold)
-    const quantityDelta = -orderedQuantity
+    const masterQuantityDelta = -orderedQuantity
 
     const currentPromQuantity =
       appProduct.promQuantity ?? appProduct.stockQuantity
@@ -664,90 +650,91 @@ export const syncAfterOrder = async (
       appProduct.rozetkaQuantity ?? appProduct.stockQuantity
 
     // Decide sync strategy
-    const syncStrategy =
+    const syncStrategy: SyncStrategy =
       currentPromQuantity === currentRozetkaQuantity
         ? 'same_quantity'
         : 'different_quantity'
+
     // Compute master new quantity once
     const newMasterQuantity = Math.max(
       0,
-      appProduct.stockQuantity + quantityDelta,
+      appProduct.stockQuantity + masterQuantityDelta,
     )
 
-    const update: {
-      productId: string
-      promQuantityDelta?: number
-      rozetkaQuantityDelta?: number
-      newPromQuantity?: number
-      newRozetkaQuantity?: number
-      needsPromSync: boolean
-      needsRozetkaSync: boolean
-      newMasterQuantity: number
-      syncStrategy: 'same_quantity' | 'different_quantity'
-    } = {
+    const entry: ProductSyncEntry = {
       productId: appProduct.productId,
+      // Snapshot of current DB state
+      stockQuantity: appProduct.stockQuantity,
+      promQuantity: appProduct.promQuantity ?? null,
+      rozetkaQuantity: appProduct.rozetkaQuantity ?? null,
+      // externalIds stored here — eliminates redundant findUnique in sync section
+      externalIds,
+      masterQuantityDelta,
+      newMasterQuantity,
       needsPromSync: false,
       needsRozetkaSync: false,
-      newMasterQuantity,
       syncStrategy,
     }
 
     // Apply the order delta to the source marketplace
     if (sourceMarketplace === 'prom') {
-      update.newPromQuantity = Math.max(0, currentPromQuantity + quantityDelta)
+      entry.newPromQuantity = Math.max(
+        0,
+        currentPromQuantity + masterQuantityDelta,
+      )
 
       console.log(
-        `Prom order: ${currentPromQuantity} -> ${update.newPromQuantity} (${quantityDelta})`,
+        `Prom order: ${currentPromQuantity} -> ${entry.newPromQuantity} (${masterQuantityDelta})`,
       )
 
       // For same_quantity strategy, sync to other marketplace
       if (syncStrategy === 'same_quantity' && externalIds?.rozetka) {
-        update.needsRozetkaSync = true
-        update.newRozetkaQuantity = newMasterQuantity
+        entry.needsRozetkaSync = true
+        entry.newRozetkaQuantity = newMasterQuantity
       }
     } else if (sourceMarketplace === 'rozetka') {
-      update.newRozetkaQuantity = Math.max(
+      entry.newRozetkaQuantity = Math.max(
         0,
-        currentRozetkaQuantity + quantityDelta,
+        currentRozetkaQuantity + masterQuantityDelta,
       )
 
       console.log(
-        `Rozetka order: ${currentRozetkaQuantity} -> ${update.newRozetkaQuantity} (${quantityDelta})`,
+        `Rozetka order: ${currentRozetkaQuantity} -> ${entry.newRozetkaQuantity} (${masterQuantityDelta})`,
       )
 
       // For same_quantity strategy, sync to other marketplace
       if (syncStrategy === 'same_quantity' && externalIds?.prom) {
-        update.needsPromSync = true
-        update.newPromQuantity = newMasterQuantity
+        entry.needsPromSync = true
+        entry.newPromQuantity = newMasterQuantity
       }
     } else if (sourceMarketplace === 'crm') {
       // CRM orders: update master quantity and marketplace quantities based on strategy
       console.log(
-        `CRM order: master quantity ${appProduct.stockQuantity} -> ${newMasterQuantity} (${quantityDelta})`,
+        `CRM order: master quantity ${appProduct.stockQuantity} -> ${newMasterQuantity} (${masterQuantityDelta})`,
       )
 
       if (syncStrategy === 'same_quantity') {
         // If marketplaces were in sync, reduce both by the same amount
         if (externalIds?.prom) {
-          update.newPromQuantity = newMasterQuantity
-          update.needsPromSync = true
+          entry.newPromQuantity = newMasterQuantity
+          entry.needsPromSync = true
         }
         if (externalIds?.rozetka) {
-          update.newRozetkaQuantity = newMasterQuantity
-          update.needsRozetkaSync = true
+          entry.newRozetkaQuantity = newMasterQuantity
+          entry.needsRozetkaSync = true
         }
       } else {
         // Different quantities: keep marketplace quantities unchanged
         // (CRM order doesn't affect individual marketplace stock levels)
-        update.newPromQuantity = currentPromQuantity
-        update.newRozetkaQuantity = currentRozetkaQuantity
+        entry.newPromQuantity = currentPromQuantity
+        entry.newRozetkaQuantity = currentRozetkaQuantity
         // Don't sync to marketplaces for different_quantity strategy
-        update.needsPromSync = false
-        update.needsRozetkaSync = false
+        entry.needsPromSync = false
+        entry.needsRozetkaSync = false
       }
     }
 
-    productsToUpdate.set(appProduct.productId, update)
+    productsToUpdate.set(appProduct.productId, entry)
   }
 
   console.log(
@@ -755,109 +742,29 @@ export const syncAfterOrder = async (
     JSON.stringify(Array.from(productsToUpdate), null, 2),
   )
 
-  // Calculate new quantities for syncing based on strategy
-  /* for (const [productId, update] of productsToUpdate) {
-    const appProduct = await prisma.products.findUnique({
-      where: { productId: productId },
-    })
-
-    if (!appProduct) continue
-
-    console.log(
-      `Processing sync strategy for product ${productId}: ${update.syncStrategy}`
-    )
-
-    if (update.syncStrategy === 'same_quantity') {
-      // SAME QUANTITY STRATEGY: Both marketplaces should have the same final quantity
-      const newMasterQuantity = Math.max(
-        0,
-        appProduct.stockQuantity + update.masterQuantityDelta
-      )
-
-      console.log(
-        `Same quantity strategy: Master quantity ${appProduct.stockQuantity} + ${update.masterQuantityDelta} = ${newMasterQuantity}`
-      )
-
-      // Both marketplaces should sync to the new master quantity
-      if (
-        sourceMarketplace === 'prom' &&
-        update.promQuantityDelta !== undefined
-      ) {
-        update.newRozetkaQuantity = newMasterQuantity // Sync Rozetka to master
-        update.needsRozetkaSync = true
-      }
-
-      if (
-        sourceMarketplace === 'rozetka' &&
-        update.rozetkaQuantityDelta !== undefined
-      ) {
-        update.newPromQuantity = newMasterQuantity // Sync Prom to master
-        update.needsPromSync = true
-      }
-    } else {
-      // DIFFERENT QUANTITY STRATEGY: Only update the marketplace where order came from
-      if (sourceMarketplace === 'prom') {
-        // Keep Rozetka quantity unchanged
-        const currentRozetkaQuantity =
-          appProduct.rozetkaQuantity ?? appProduct.stockQuantity
-        update.newRozetkaQuantity = currentRozetkaQuantity
-        update.needsRozetkaSync = false
-
-        console.log(
-          `Different quantities - Prom order, keeping Rozetka unchanged at ${currentRozetkaQuantity}`
-        )
-      } else if (sourceMarketplace === 'rozetka') {
-        // Keep Prom quantity unchanged
-        const currentPromQuantity =
-          appProduct.promQuantity ?? appProduct.stockQuantity
-        update.newPromQuantity = currentPromQuantity
-        update.needsPromSync = false
-
-        console.log(
-          `Different quantities - Rozetka order, keeping Prom unchanged at ${currentPromQuantity}`
-        )
-      }
-    }
-  }
-  console.log(
-    `productsToUpdate after finalizing quantities:`,
-    JSON.stringify(Array.from(productsToUpdate), null, 2)
-  ) */
-
   // Update database with new quantities
-  for (const [productId, update] of productsToUpdate) {
-    /* const appProduct = await prisma.products.findUnique({
-      where: { productId: productId },
-    })
-
-    if (!appProduct) continue
-
-    const newMasterQuantity = Math.max(
-      0,
-      appProduct.stockQuantity + update.masterQuantityDelta
-    ) */
-
+  for (const [productId, entry] of productsToUpdate) {
     const updateData: any = {
-      stockQuantity: update.newMasterQuantity,
-      available: update.newMasterQuantity > 0,
+      stockQuantity: entry.newMasterQuantity,
+      available: (entry.newMasterQuantity ?? 0) > 0,
       lastSynced: new Date(),
     }
 
     // Update marketplace-specific quantities
-    if (update.newPromQuantity !== undefined) {
-      updateData.promQuantity = update.newPromQuantity
+    if (entry.newPromQuantity !== undefined) {
+      updateData.promQuantity = entry.newPromQuantity
       updateData.lastPromSync = new Date()
     }
 
-    if (update.newRozetkaQuantity !== undefined) {
-      updateData.rozetkaQuantity = update.newRozetkaQuantity
+    if (entry.newRozetkaQuantity !== undefined) {
+      updateData.rozetkaQuantity = entry.newRozetkaQuantity
       updateData.lastRozetkaSync = new Date()
     }
 
     // Set sync flags
-    updateData.needsPromSync = update.needsPromSync
-    updateData.needsRozetkaSync = update.needsRozetkaSync
-    updateData.needsSync = update.needsPromSync || update.needsRozetkaSync
+    updateData.needsPromSync = entry.needsPromSync
+    updateData.needsRozetkaSync = entry.needsRozetkaSync
+    updateData.needsSync = entry.needsPromSync || entry.needsRozetkaSync
 
     console.log(`Updating product ${productId}:`, updateData)
 
@@ -867,20 +774,24 @@ export const syncAfterOrder = async (
     })
   }
 
-  // Perform marketplace syncing for products that need it
+  // Collect products that require an outbound marketplace API call
   const productsNeedingSync = Array.from(productsToUpdate.values()).filter(
-    (update) => update.needsPromSync || update.needsRozetkaSync,
+    (entry) => entry.needsPromSync || entry.needsRozetkaSync,
   )
 
   console.log(
     `Found ${productsNeedingSync.length} products needing marketplace sync`,
   )
 
+  gmailLogger.info(
+    `Order sync for ${sourceMarketplace}: ${productsNeedingSync.length} products need marketplace updates`,
+    { products: productsNeedingSync },
+  )
   /******************************************************************** */
   /* For now I disabled updating marketplaces until I am 100% sure everything works correctly */
   /********************************************************************* */
 
-  /*if (productsNeedingSync.length === 0) {
+  if (productsNeedingSync.length === 0) {
     console.log('No marketplace sync needed')
     return
   }
@@ -892,48 +803,36 @@ export const syncAfterOrder = async (
     updates: RozetkaUpdateParams
   }> = []
 
-  for (const update of productsNeedingSync) {
-    const appProduct = await prisma.products.findUnique({
-      where: { productId: update.productId },
-    })
-
-    if (!appProduct) continue
-
-    const externalIds = appProduct.externalIds as {
-      prom?: string
-      rozetka?: {
-        rz_item_id: string
-        item_id: string
-      }
-    }
+  for (const entry of productsNeedingSync) {
+    const { externalIds } = entry
 
     // Collect Prom updates
     if (
-      update.needsPromSync &&
+      entry.needsPromSync &&
       externalIds?.prom &&
-      update.newPromQuantity !== undefined
+      entry.newPromQuantity !== undefined
     ) {
       console.log(
-        `Preparing Prom sync for product ${update.productId} with quantity ${update.newPromQuantity}`
+        `Preparing Prom sync for product ${entry.productId} with quantity ${entry.newPromQuantity}`
       )
       promUpdates.push({
         productId: externalIds.prom,
-        quantity: update.newPromQuantity,
+        quantity: entry.newPromQuantity,
       })
     }
 
     // Collect Rozetka updates
     if (
-      update.needsRozetkaSync &&
-      externalIds?.rozetka &&
-      update.newRozetkaQuantity !== undefined
+      entry.needsRozetkaSync &&
+      externalIds?.rozetka?.item_id &&
+      entry.newRozetkaQuantity !== undefined
     ) {
       console.log(
-        `Preparing Rozetka sync for product ${update.productId} with quantity ${update.newRozetkaQuantity}`
+        `Preparing Rozetka sync for product ${entry.productId} with quantity ${entry.newRozetkaQuantity}`
       )
       rozetkaUpdates.push({
         productId: externalIds.rozetka.item_id,
-        updates: { quantity: update.newRozetkaQuantity },
+        updates: { quantity: entry.newRozetkaQuantity },
       })
     }
   }
@@ -945,13 +844,16 @@ export const syncAfterOrder = async (
     console.log(
       `🚀 Batch updating ${promUpdates.length} Prom products after order`
     )
+gmailLogger.info(
+  `I am going to update ${promUpdates.length} Prom products after order synchronization for ${sourceMarketplace}`,promUpdates
+)
     // If you have updateMultiplePromProducts, use it here
     // syncPromises.push(updateMultiplePromProducts(promUpdates))
 
     // Otherwise, use individual updates
-    for (const { productId, quantity } of promUpdates) {
+    /* for (const { productId, quantity } of promUpdates) {
       syncPromises.push(updatePromProduct(productId, { quantity }))
-    }
+    } */
   }
 
   // Batch update Rozetka products
@@ -959,11 +861,15 @@ export const syncAfterOrder = async (
     console.log(
       `🚀 Batch updating ${rozetkaUpdates.length} Rozetka products after order`
     )
-    syncPromises.push(updateMultipleRozetkaProducts(rozetkaUpdates))
+gmailLogger.info(
+  `I am going to update ${rozetkaUpdates.length} Rozetka products after order synchronization for ${sourceMarketplace}`,rozetkaUpdates
+)
+    // If you have updateMultipleRozetkaProducts, use it here
+    //syncPromises.push(updateMultipleRozetkaProducts(rozetkaUpdates))
   }
 
   // Execute all updates
-  if (syncPromises.length > 0) {
+ /*  if (syncPromises.length > 0) {
     try {
       await Promise.all(syncPromises)
       console.log('✅ All order-based sync updates completed successfully')
@@ -971,10 +877,10 @@ export const syncAfterOrder = async (
       console.error('❌ Some order-based sync updates failed:', error)
       throw error
     }
-  } */
+  }  */
 
   // Clear sync flags for products that were processed
-  const productIds = productsNeedingSync.map((update) => update.productId)
+  const productIds = productsNeedingSync.map((entry) => entry.productId)
 
   if (productIds.length > 0) {
     await prisma.products.updateMany({
