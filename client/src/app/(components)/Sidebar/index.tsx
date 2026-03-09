@@ -194,6 +194,11 @@ const orderCounts = useOrderCounts()
               count={orderCounts.SHIPPED}
             />
             <SubmenuTooltipItem
+              href='/orders?status=AWAITING_PICKUP'
+              label='На відділенні'
+              count={orderCounts.AWAITING_PICKUP}
+            />
+            <SubmenuTooltipItem
               href='/orders?status=DELIVERED'
               label='Доставлені'
               count={orderCounts.DELIVERED}
@@ -259,7 +264,7 @@ const SubmenuItem = ({
     <span>{label}</span>
     {count !== undefined && count > 0 && (
       <span className='bg-white text-[#45455c] text-[11px] font-semibold px-2 py-0.5 rounded-md min-w-[24px] text-center'>
-        {count}test
+        {count}
       </span>
     )}
   </Link>
@@ -347,6 +352,11 @@ const orderCounts = useOrderCounts()
               href='/orders?status=SHIPPED'
               label='Відправлені'
               count={orderCounts.SHIPPED}
+            />
+            <SubmenuItem
+              href='/orders?status=AWAITING_PICKUP'
+              label='На відділенні'
+              count={orderCounts.AWAITING_PICKUP}
             />
             <SubmenuItem
               href='/orders?status=DELIVERED'

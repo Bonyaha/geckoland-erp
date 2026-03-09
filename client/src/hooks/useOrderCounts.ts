@@ -23,9 +23,12 @@ const DEFAULT_COUNTS: OrderCounts = {
   RETURN: 0,
 }
 
+const ONE_HOUR = 60 * 60 * 1000
+
 export function useOrderCounts(): OrderCounts {
   const { data } = useGetOrderCountsQuery(undefined, {
-    pollingInterval: 60_000, // refresh every 60s
+    pollingInterval: ONE_HOUR, // refresh every 1 hour     
+    refetchOnReconnect: true, // refetch when network reconnects
   })
 
   return data?.data ?? DEFAULT_COUNTS

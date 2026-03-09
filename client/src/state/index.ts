@@ -1,3 +1,4 @@
+// client/src/state/index.ts
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 export interface InitialStateTypes {
