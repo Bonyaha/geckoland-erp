@@ -22,6 +22,7 @@ import type {
   SyncStrategy,
 } from '../../../types/marketplaces'
 import { gmailLogger} from '../../../utils/gmailLogger'
+import { gmail } from 'googleapis/build/src/apis/gmail'
 
 // Update quantities for all products in app's database
 const updateAllMarketplaceQuantities = async () => {
@@ -648,7 +649,10 @@ export const syncAfterOrder = async (
       appProduct.promQuantity ?? appProduct.stockQuantity
     const currentRozetkaQuantity =
       appProduct.rozetkaQuantity ?? appProduct.stockQuantity
-
+gmailLogger.info(
+  `Order sync for product ${productId}: currentPromQuantity=${currentPromQuantity}, currentRozetkaQuantity=${currentRozetkaQuantity}, masterQuantityDelta=${masterQuantityDelta}`,
+  { productId, currentPromQuantity, currentRozetkaQuantity, masterQuantityDelta }
+)
     // Decide sync strategy
     const syncStrategy: SyncStrategy =
       currentPromQuantity === currentRozetkaQuantity
@@ -864,12 +868,11 @@ gmailLogger.info(
 gmailLogger.info(
   `I am going to update ${rozetkaUpdates.length} Rozetka products after order synchronization for ${sourceMarketplace}`,rozetkaUpdates
 )
-    // If you have updateMultipleRozetkaProducts, use it here
-    //syncPromises.push(updateMultipleRozetkaProducts(rozetkaUpdates))
+    syncPromises.push(updateMultipleRozetkaProducts(rozetkaUpdates))
   }
 
   // Execute all updates
- /*  if (syncPromises.length > 0) {
+  if (syncPromises.length > 0) {
     try {
       await Promise.all(syncPromises)
       console.log('✅ All order-based sync updates completed successfully')
@@ -877,7 +880,7 @@ gmailLogger.info(
       console.error('❌ Some order-based sync updates failed:', error)
       throw error
     }
-  }  */
+  } 
 
   // Clear sync flags for products that were processed
   const productIds = productsNeedingSync.map((entry) => entry.productId)
