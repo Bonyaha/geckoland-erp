@@ -212,6 +212,12 @@ model ExpenseByCategory {
   expenseSummary      ExpenseSummary @relation(fields: [expenseSummaryId], references: [expenseSummaryId])
 }
 
+model Settings {
+  key       String   @id
+  value     String
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+}
+
 enum Source {
   prom
   rozetka

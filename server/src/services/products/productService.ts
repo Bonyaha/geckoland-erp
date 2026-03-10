@@ -14,6 +14,7 @@ import {
   createMarketplaceUpdatePromise,
   createMarketplaceSyncStatus,
 } from '../marketplaces/sync/marketplaceSyncHelpers'
+import { settingsService } from '../settings/settingsService'
 import { normalizeQuantity } from '../../utils/helpers/normalizeQuantity'
 import { ErrorFactory } from '../../middleware/errorHandler'
 import type {
@@ -229,6 +230,9 @@ class ProductService {
       throw ErrorFactory.notFound(`Product ${productId} not found`)
     }
 
+    // Check Rozetka store status
+    const rozetkaActive = await settingsService.isRozetkaStoreActive()
+
     const now = new Date()
     const dbUpdateData: Record<string, unknown> = {
       needsSync: true,
@@ -270,7 +274,7 @@ class ProductService {
       updates.quantity > currentProduct.stockQuantity
     ) {
       throw ErrorFactory.badRequest(
-        'You cannot change quantity bigger than there is in warehouse!'
+        'You cannot change quantity bigger than there is in warehouse!',
       )
     }
 
@@ -300,7 +304,7 @@ class ProductService {
           // If the user *specifically* asked for prom, treat it as an error
           if (targetMarketplace === 'prom') {
             throw ErrorFactory.badRequest(
-              `Product ${productId} is not linked to a Prom product (no external ID).`
+              `Product ${productId} is not linked to a Prom product (no external ID).`,
             )
           }
           // Otherwise (targetMarketplace='all'), just skip it silently.
@@ -319,7 +323,7 @@ class ProductService {
               onSuccess: () => (syncStatus.promSynced = true),
               resultsArray: syncResults,
               errorsArray: syncErrors,
-            })
+            }),
           )
         }
       }
@@ -334,33 +338,41 @@ class ProductService {
           // Only throw if the user *specifically* asked for Rozetka
           if (targetMarketplace === 'rozetka') {
             throw ErrorFactory.badRequest(
-              `Product ${productId} is not linked to a Rozetka product (no external ID).`
+              `Product ${productId} is not linked to a Rozetka product (no external ID).`,
             )
           }
           // If target was 'all', we just silently skip it
         } else {
-          const rozetkaUpdates: ProductUpdateParams = {}
-          if (updates.quantity !== undefined)
-            rozetkaUpdates.quantity = updates.quantity
-          if (updates.price !== undefined) rozetkaUpdates.price = updates.price
+          // Check if Rozetka store is active
+          if (!rozetkaActive) {
+            console.log(
+              `Skipping Rozetka sync for product ${productId} - store is paused`,
+            )
+            // Don't add to syncPromises, but we'll update the DB later
+          } else {
+            const rozetkaUpdates: ProductUpdateParams = {}
+            if (updates.quantity !== undefined)
+              rozetkaUpdates.quantity = updates.quantity
+            if (updates.price !== undefined)
+              rozetkaUpdates.price = updates.price
 
-          syncPromises.push(
-            createMarketplaceUpdatePromise({
-              marketplaceName: 'Rozetka',
-              productId,
-              updateFunction: () =>
-                updateRozetkaProduct(
-                  externalIds.rozetka!.item_id!,
-                  rozetkaUpdates
-                ),
-              onSuccess: () => (syncStatus.rozetkaSynced = true),
-              resultsArray: syncResults,
-              errorsArray: syncErrors,
-            })
-          )
+            syncPromises.push(
+              createMarketplaceUpdatePromise({
+                marketplaceName: 'Rozetka',
+                productId,
+                updateFunction: () =>
+                  updateRozetkaProduct(
+                    externalIds.rozetka!.item_id!,
+                    rozetkaUpdates,
+                  ),
+                onSuccess: () => (syncStatus.rozetkaSynced = true),
+                resultsArray: syncResults,
+                errorsArray: syncErrors,
+              }),
+            )
+          }
         }
       }
-
       // Execute parallel updates
       if (syncPromises.length > 0) {
         await Promise.allSettled(syncPromises)
@@ -386,10 +398,27 @@ class ProductService {
       if (updates.quantity !== undefined) {
         finalUpdateData.rozetkaQuantity = updates.quantity
       }
+      finalUpdateData.needsRozetkaSync = false
+    } else if (
+      !rozetkaActive &&
+      externalIds?.rozetka?.item_id &&
+      (!targetMarketplace ||
+        targetMarketplace === 'all' ||
+        targetMarketplace === 'rozetka') &&
+      updates.quantity !== undefined
+    ) {
+      // Store is inactive - keep quantity in sync but mark as needing sync
+      finalUpdateData.rozetkaQuantity = updates.quantity
+      finalUpdateData.needsRozetkaSync = true
     }
 
+    // Clear needsSync only if both marketplace flags will be false
     if (syncErrors.length === 0 && needsMarketplaceSync) {
-      finalUpdateData.needsSync = false
+      // Use the flags we just set (or keep existing if not set)
+      const willNeedPromSync = finalUpdateData.needsPromSync ?? false
+      const willNeedRozetkaSync = finalUpdateData.needsRozetkaSync ?? false
+
+      finalUpdateData.needsSync = willNeedPromSync || willNeedRozetkaSync
     }
 
     // Apply final DB updates if needed
@@ -482,7 +511,7 @@ class ProductService {
           if (!dbProduct) continue
           if (updates.quantity > dbProduct.stockQuantity) {
             throw ErrorFactory.badRequest(
-              `Product ${productId}: You cannot change quantity bigger than there is in warehouse!`
+              `Product ${productId}: You cannot change quantity bigger than there is in warehouse!`,
             )
           }
         }
@@ -494,7 +523,7 @@ class ProductService {
       (item: BatchProductUpdateItem) =>
         item.updates.costPrice !== undefined &&
         item.updates.quantity === undefined &&
-        item.updates.price === undefined
+        item.updates.price === undefined,
     )
 
     // Case 1: Update DB first (if updating everywhere OR if cost price only)
@@ -530,7 +559,7 @@ class ProductService {
         if (item.updates.costPrice !== undefined) {
           updateData.costPrice = item.updates.costPrice
           console.log(
-            `Updating costPrice for ${item.productId}: ${item.updates.costPrice}`
+            `Updating costPrice for ${item.productId}: ${item.updates.costPrice}`,
           )
         }
 
@@ -560,7 +589,7 @@ class ProductService {
             error:
               (result as PromiseRejectedResult).reason?.message ||
               String((result as PromiseRejectedResult).reason),
-          })
+          }),
     )
 
     // If this is ONLY a cost price update, skip marketplace sync entirely
@@ -592,7 +621,7 @@ class ProductService {
 
     for (const productId of successfulUpdates) {
       const original = products.find(
-        (p: BatchProductUpdateItem) => p.productId === productId
+        (p: BatchProductUpdateItem) => p.productId === productId,
       )
       if (!original) continue
 
@@ -662,7 +691,7 @@ class ProductService {
           resultsArray: syncResults,
           errorsArray: syncErrors,
           isBatch: true,
-        })
+        }),
       )
     }
 
@@ -677,7 +706,7 @@ class ProductService {
           resultsArray: syncResults,
           errorsArray: syncErrors,
           isBatch: true,
-        })
+        }),
       )
     }
 
@@ -685,29 +714,29 @@ class ProductService {
 
     //Mark DB as synced
     const syncTime = new Date()
-const productsNeedingSyncUpdate = successfulUpdates.filter((productId) => {
-  const original = products.find(
-    (p: BatchProductUpdateItem) => p.productId === productId
-  )
-  return (
-    original &&
-    (original.updates.quantity !== undefined ||
-      original.updates.price !== undefined)
-  )
-})
-if (productsNeedingSyncUpdate.length > 0) {
-    const markSyncedPromises = productsNeedingSyncUpdate.map((productId) => {
-      const data: Record<string, unknown> = { needsSync: false }
-      if (syncStatus.promSynced) {
-        data.lastPromSync = syncTime
-      }
-      if (syncStatus.rozetkaSynced) {
-        data.lastRozetkaSync = syncTime
-      }
-      return prisma.products.update({ where: { productId }, data })
+    const productsNeedingSyncUpdate = successfulUpdates.filter((productId) => {
+      const original = products.find(
+        (p: BatchProductUpdateItem) => p.productId === productId,
+      )
+      return (
+        original &&
+        (original.updates.quantity !== undefined ||
+          original.updates.price !== undefined)
+      )
     })
-    await Promise.allSettled(markSyncedPromises)
-}
+    if (productsNeedingSyncUpdate.length > 0) {
+      const markSyncedPromises = productsNeedingSyncUpdate.map((productId) => {
+        const data: Record<string, unknown> = { needsSync: false }
+        if (syncStatus.promSynced) {
+          data.lastPromSync = syncTime
+        }
+        if (syncStatus.rozetkaSynced) {
+          data.lastRozetkaSync = syncTime
+        }
+        return prisma.products.update({ where: { productId }, data })
+      })
+      await Promise.allSettled(markSyncedPromises)
+    }
     const success = syncErrors.length === 0 && failedUpdates.length === 0
     const message = `Batch update completed${
       targetMarketplace ? ' for ' + targetMarketplace : ''
@@ -803,7 +832,7 @@ if (productsNeedingSyncUpdate.length > 0) {
     }
 
     console.log(
-      `✅ Fetched ${promProducts.length} Prom, ${rozetkaProducts.length} Rozetka products`
+      `✅ Fetched ${promProducts.length} Prom, ${rozetkaProducts.length} Rozetka products`,
     )
 
     // OPTIMIZATION 3: Build efficient lookup structures in a single pass
@@ -828,7 +857,7 @@ if (productsNeedingSyncUpdate.length > 0) {
     }
 
     console.log(
-      `📦 Existing: ${existingPromIds.size} Prom, ${existingRozetkaIds.size} Rozetka, ${existingSKUs.size} SKUs`
+      `📦 Existing: ${existingPromIds.size} Prom, ${existingRozetkaIds.size} Rozetka, ${existingSKUs.size} SKUs`,
     )
 
     // OPTIMIZATION 4: Build Rozetka lookup only once and filter simultaneously
@@ -886,7 +915,7 @@ if (productsNeedingSyncUpdate.length > 0) {
           stockQuantity: normalizeQuantity(promProduct.stockQuantity),
           promQuantity: normalizeQuantity(promProduct.stockQuantity),
           rozetkaQuantity: normalizeQuantity(
-            matchingRozetkaProduct.stockQuantity
+            matchingRozetkaProduct.stockQuantity,
           ),
           lastPromSync: new Date(),
           lastRozetkaSync: new Date(),
@@ -915,25 +944,27 @@ if (productsNeedingSyncUpdate.length > 0) {
       createPromises.push(
         prisma
           .$transaction(
-            promCreateOperations.map((data) => prisma.products.create({ data }))
+            promCreateOperations.map((data) =>
+              prisma.products.create({ data }),
+            ),
           )
           .then(() => {
             result.productsCreatedFromProm = promCreateOperations.length
             console.log(
-              `✅ Created ${promCreateOperations.length} Prom-sourced products`
+              `✅ Created ${promCreateOperations.length} Prom-sourced products`,
             )
           })
           .catch((error: any) => {
             console.error('Error in Prom batch creation:', error)
             result.errors.push(`Prom batch creation failed: ${error.message}`)
             result.success = false
-          })
+          }),
       )
     }
 
     // OPTIMIZATION 7: Filter Rozetka-only products more efficiently
     const rozetkaOnlyProducts = newRozetkaProducts.filter(
-      (p) => !p.sku || !matchedRozetkaSKUs.has(p.sku)
+      (p) => !p.sku || !matchedRozetkaSKUs.has(p.sku),
     )
 
     console.log(`📊 New products: ${rozetkaOnlyProducts.length} Rozetka-only`)
@@ -952,22 +983,22 @@ if (productsNeedingSyncUpdate.length > 0) {
         prisma
           .$transaction(
             rozetkaCreateOperations.map((data) =>
-              prisma.products.create({ data })
-            )
+              prisma.products.create({ data }),
+            ),
           )
           .then(() => {
             result.productsCreatedFromRozetka = rozetkaCreateOperations.length
             console.log(
-              `✅ Created ${rozetkaCreateOperations.length} Rozetka-only products`
+              `✅ Created ${rozetkaCreateOperations.length} Rozetka-only products`,
             )
           })
           .catch((error: any) => {
             console.error('Error in Rozetka batch creation:', error)
             result.errors.push(
-              `Rozetka batch creation failed: ${error.message}`
+              `Rozetka batch creation failed: ${error.message}`,
             )
             result.success = false
-          })
+          }),
       )
     }
 
@@ -999,7 +1030,7 @@ if (productsNeedingSyncUpdate.length > 0) {
    * Internal helper: Creates a product from Prom data.
    */
   private async createProductFromProm(
-    promProduct: PromProductData
+    promProduct: PromProductData,
   ): Promise<void> {
     await prisma.products.create({
       data: {
@@ -1015,7 +1046,7 @@ if (productsNeedingSyncUpdate.length > 0) {
    * Internal helper: Creates a product from Rozetka data.
    */
   private async createProductFromRozetka(
-    rozetkaProduct: RozetkaProductData
+    rozetkaProduct: RozetkaProductData,
   ): Promise<void> {
     await prisma.products.create({
       data: {
