@@ -406,6 +406,20 @@ export interface GetOrCreateClientResponse {
   data: Client
 }
 
+// ================================
+//        SETTINGS TYPES
+// ================================
+
+export interface RozetkaStoreStatusResponse {
+  success: boolean
+  rozetkaStoreActive: boolean
+}
+
+export interface SyncAllToRozetkaResult {
+  updated: number
+  errors: string[]
+}
+
 export const api = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL }),
   reducerPath: 'api',
@@ -417,6 +431,7 @@ export const api = createApi({
     'Sales',
     'Orders',
     'Clients',
+    'Settings',
   ],
   endpoints: (build) => ({
     getDashboardMetrics: build.query<DashboardMetrics, void>({
@@ -673,6 +688,29 @@ export const api = createApi({
       transformResponse: (response: ClientsResponse) => response.data.clients,
       providesTags: ['Clients'],
     }),
+
+    /* SETTINGS ENDPOINTS */
+    getRozetkaStoreStatus: build.query<RozetkaStoreStatusResponse, void>({
+      query: () => '/settings/rozetka-store-status',
+      providesTags: ['Settings'],
+    }),
+    setRozetkaStoreStatus: build.mutation<
+      RozetkaStoreStatusResponse,
+      { active: boolean }
+    >({
+      query: (body) => ({
+        url: '/settings/rozetka-store-status',
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: ['Settings'],
+    }),
+    syncAllQuantitiesToRozetka: build.mutation<SyncAllToRozetkaResult, void>({
+      query: () => ({
+        url: '/products/sync/rozetka',
+        method: 'POST',
+      }),
+    }),
   }),
 })
 
@@ -688,7 +726,7 @@ export const {
   useBatchUpdateProductMutation,
   useSyncProductsFromMarketplacesMutation,
   useGetOrdersQuery,
-useGetOrderCountsQuery,
+  useGetOrderCountsQuery,
   useGetOrderByIdQuery,
   useCreateCRMOrderMutation,
   useUpdateOrderMutation,
@@ -701,4 +739,7 @@ useGetOrderCountsQuery,
   useDeleteOrderMutation,
   useGetClientsQuery,
   useSearchClientsAutocompleteQuery,
+  useGetRozetkaStoreStatusQuery,
+  useSetRozetkaStoreStatusMutation,
+  useSyncAllQuantitiesToRozetkaMutation,
 } = api

@@ -36,10 +36,10 @@ export const initializeMarketplaceQuantitiesOptimized = async () => {
 
   // Separate products by marketplace
   const needsPromInit = productsToInitialize.filter(
-    (p) => p.promQuantity === null
+    (p) => p.promQuantity === null,
   )
   const needsRozetkaInit = productsToInitialize.filter(
-    (p) => p.rozetkaQuantity === null
+    (p) => p.rozetkaQuantity === null,
   )
 
   // Process Prom products
@@ -48,7 +48,7 @@ export const initializeMarketplaceQuantitiesOptimized = async () => {
       console.log('🔄 Fetching ALL Prom products data...')
       const promProducts = await fetchPromProducts()
       const promProductsMap = new Map(
-        promProducts.map((p) => [p.id.toString(), p])
+        promProducts.map((p) => [p.id.toString(), p]),
       )
 
       // Use Prisma transaction for bulk updates
@@ -69,7 +69,7 @@ export const initializeMarketplaceQuantitiesOptimized = async () => {
               lastPromSync: new Date(),
             },
           })
-        })
+        }),
       )
       console.log(`✅ Updated ${needsPromInit.length} Prom quantities`)
     } catch (error) {
@@ -83,7 +83,7 @@ export const initializeMarketplaceQuantitiesOptimized = async () => {
       console.log('🔄 Fetching ALL Rozetka products data...')
       const rozetkaProducts = await fetchRozetkaProducts()
       const rozetkaProductsMap = new Map(
-        rozetkaProducts.map((p) => [p.rz_item_id.toString(), p])
+        rozetkaProducts.map((p) => [p.rz_item_id.toString(), p]),
       )
 
       // Use Prisma transaction for bulk updates
@@ -106,7 +106,7 @@ export const initializeMarketplaceQuantitiesOptimized = async () => {
               lastRozetkaSync: new Date(),
             },
           })
-        })
+        }),
       )
       console.log(`✅ Updated ${needsRozetkaInit.length} Rozetka quantities`)
     } catch (error) {
@@ -136,7 +136,7 @@ export async function syncRozetkaProductIds() {
     const allRozetkaProducts = await fetchRozetkaProducts()
 
     console.log(
-      `Found ${allRozetkaProducts.length} products on Rozetka. Starting sync...`
+      `Found ${allRozetkaProducts.length} products on Rozetka. Starting sync...`,
     )
     let updatedCount = 0
     let notFoundCount = 0
@@ -147,7 +147,7 @@ export async function syncRozetkaProductIds() {
 
       if (!sku) {
         console.warn(
-          `Skipping Rozetka product without an article/SKU: Name: ${rozetkaProduct.name}`
+          `Skipping Rozetka product without an article/SKU: Name: ${rozetkaProduct.name}`,
         )
         continue
       }
@@ -166,7 +166,7 @@ export async function syncRozetkaProductIds() {
         // This log will confirm it's finding the duplicates you saw in pgAdmin
         if (existingProducts.length > 1) {
           console.warn(
-            `Found ${existingProducts.length} products with the same SKU: ${sku}. Updating all of them.`
+            `Found ${existingProducts.length} products with the same SKU: ${sku}. Updating all of them.`,
           )
         }
 
@@ -194,7 +194,7 @@ export async function syncRozetkaProductIds() {
 
           updatedCount++
           console.log(
-            `Updated product with ID ${productToUpdate.productId} (SKU: ${sku}) with Rozetka data.`
+            `Updated product with ID ${productToUpdate.productId} (SKU: ${sku}) with Rozetka data.`,
           )
         }
       } else {
@@ -206,10 +206,10 @@ export async function syncRozetkaProductIds() {
 
     console.log('--- Sync Complete ---')
     console.log(
-      `Successfully updated/processed ${updatedCount} product entries.`
+      `Successfully updated/processed ${updatedCount} product entries.`,
     )
     console.log(
-      `${notFoundCount} SKUs from Rozetka were not found in the database.`
+      `${notFoundCount} SKUs from Rozetka were not found in the database.`,
     )
   } catch (error: any) {
     console.error('❌ Main sync process failed:', error.message)
@@ -267,6 +267,10 @@ export async function createMarketplaceUpdatePromise({
 
     if (onSuccess) onSuccess()
   } catch (error: any) {
+    const isInactiveStoreError = error.message?.includes(
+      'неактивним прайс-листом',
+    )
+
     const errorResult: MarketplaceUpdateResult = {
       marketplace: marketplaceName,
       success: false,
@@ -274,6 +278,11 @@ export async function createMarketplaceUpdatePromise({
     }
     errorsArray.push(errorResult)
 
+    if (isInactiveStoreError) {
+      console.warn(
+        `⚠️ Rozetka store is inactive - skipping sync for product ${productId}`,
+      )
+    }
     const message = isBatch
       ? `❌ Failed to batch update ${marketplaceName} products`
       : `❌ Failed to update ${marketplaceName} product ${productId}`
@@ -284,24 +293,24 @@ export async function createMarketplaceUpdatePromise({
 /**
  * Creates a new MarketplaceSyncStatus object with all flags set to false.
  * Use this to initialize sync tracking before performing marketplace updates.
- * 
+ *
  * @returns A new sync status object with all flags set to false
- * 
+ *
  * @remarks
  * This is a factory function to ensure consistent initialization.
  * Always use this instead of manually creating the object.
- * 
+ *
  * @example
  * const syncStatus = createMarketplaceSyncStatus()
  * // syncStatus = { promSynced: false, rozetkaSynced: false }
- * 
+ *
  * try {
  *   await updatePromProduct(productId, updates)
  *   syncStatus.promSynced = true
  * } catch (error) {
  *   // promSynced remains false
  * }
- * 
+ *
  * // Use sync status to update database
  * if (syncStatus.promSynced) {
  *   await prisma.products.update({
