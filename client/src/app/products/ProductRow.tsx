@@ -183,8 +183,7 @@ const ProductRow = ({
         targetMarketplace: 'all', // or let user choose
       }).unwrap()
 
-      // Optional: Show success message
-      console.log('Quantity updated successfully')
+      // Optional: Show success message     
     } catch (error) {
       console.error('Failed to update quantity:', error)
       // Optional: Show error message to user

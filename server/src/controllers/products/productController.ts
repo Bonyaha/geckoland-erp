@@ -113,13 +113,6 @@ export const updateSingleProduct = async (
   const { productId } = req.params
   const { quantity, price, costPrice, targetMarketplace } = req.body
 
-  console.log('updateSingleProduct received:', {
-    productId,
-    quantity,
-    price,
-    costPrice,
-    targetMarketplace,
-  })
   const input: SingleProductUpdateInput = {
     productId,
     updates: {

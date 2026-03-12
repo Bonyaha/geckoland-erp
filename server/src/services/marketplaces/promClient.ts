@@ -74,12 +74,9 @@ export const updatePromProduct = async (
   }
 
   const payload = [productUpdate]
-  console.log('payload', payload)
-  console.log(`🔄 Updating Prom product ${productId}:`, payload)
-
-  try {
-    const response = await axios.post(url, payload, { headers })
-    console.log('response', response.data)
+  
+ try {
+    const response = await axios.post(url, payload, { headers })   
 
     // Check if the response contains an error
     if (response.data.error) {
@@ -106,12 +103,27 @@ export const updatePromProduct = async (
     if (processedIds && processedIds.includes(productId)) {
       console.log(`✅ Prom product ${productId} updated successfully`)
       return response.data
-    } else if (response.data.processed_ids) {
-      console.error(
-        `❌ Product ${productId} was not in processed_ids:`,
-        response.data.processed_ids,
-      )
-      throw new Error(`Product ${productId} was not processed successfully`)
+    } else {
+      // Product not in processed_ids - check if there are actual errors
+      const hasErrors =
+        response.data.errors && Object.keys(response.data.errors).length > 0
+
+      if (hasErrors) {
+        console.error(
+          `❌ Product ${productId} was not in processed_ids:`,
+          response.data.processed_ids,
+        )
+        throw new Error(`Product ${productId} was not processed successfully`)
+      } else {
+        // No errors means product already had the correct values
+        console.warn(
+          `⚠️ Product ${productId} not in processed_ids (likely already up-to-date)`,
+        )
+        console.log(
+          `✅ Prom product ${productId} updated successfully (already correct)`,
+        )
+        return response.data
+      }
     }
   } catch (error: any) {
     if (error.response) {
@@ -179,8 +191,7 @@ export const updateMultiplePromProducts = async (
   console.log(`🔄 Updating ${products.length} Prom products...`)
 
   try {
-    const response = await axios.post(url, payload, { headers })
-    console.log('response', response.data)
+    const response = await axios.post(url, payload, { headers })    
 
     // Check if the response contains an error
     if (response.data.error) {
@@ -211,8 +222,23 @@ export const updateMultiplePromProducts = async (
       )
 
       if (notProcessed.length > 0) {
-        console.error(`❌ Some products were not processed:`, notProcessed)
-        throw new Error(`Products not processed: ${notProcessed.join(', ')}`)
+        // Check if there are actual errors for these products
+        const hasErrors =
+          response.data.errors && Object.keys(response.data.errors).length > 0
+
+        if (hasErrors) {
+          console.error(
+            `❌ Some products were not processed with errors:`,
+            notProcessed,
+          )
+          throw new Error(`Products not processed: ${notProcessed.join(', ')}`)
+        } else {
+          // No errors means products already had the correct values
+          console.warn(
+            `⚠️ Products not in processed_ids (likely already up-to-date): ${notProcessed.join(', ')}`,
+          )
+          // Don't throw - this is a success case
+        }
       }
     }
 

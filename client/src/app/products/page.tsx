@@ -390,8 +390,7 @@ const Products = () => {
     pages: 1,
   }
 
-  const typedProducts: ProductType[] = sortedProducts as ProductType[]
-  console.log('Typed products:', typedProducts[0])
+  const typedProducts: ProductType[] = sortedProducts as ProductType[]  
 
   // Generate page numbers for pagination
   const generatePageNumbers = () => {
