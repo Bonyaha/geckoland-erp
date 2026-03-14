@@ -1,4 +1,4 @@
-//server\src\services\marketplaces\promClient.ts
+//server/src/services/marketplaces/promClient.ts
 import axios from 'axios'
 import { config } from '../../config/environment'
 import { gmailLogger } from '../../utils/gmailLogger'

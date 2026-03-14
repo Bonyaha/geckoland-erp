@@ -9,163 +9,32 @@ import { enrichWithRozetkaIds } from '../../src/utils/helpers/mapExternalIdsRoze
 import { enrichWithPromCategoriesAndDescription } from '../../src/utils/helpers/enrichWithPromCategories'
 import { enrichWithRozetkaCategories } from '../../src/utils/helpers/enrichWithRozetkaCategories'
 import { fetchCRMProducts } from '../../src/services/data-fetchers/fetchCRMProducts'
+import { fetchPromProductsWithTransformation } from '../../src/services/data-fetchers/fetchPromProducts'
+import {
+  mapHPCsvToProduct,
+  mapDbCsvToProduct,
+} from '../../src/utils/helpers/mapCsvProductToEnriched'
+import { mapPromProductToEnriched } from '../../src/utils/helpers/mapPromProductToEnriched'
 
 /* 
-  This file provides a generic way to populate the Products table in the database from CSV files or directly from HugeProfit API. It supports:
-  1. products.csv from HugeProfit CRM export
-  2. productsFromDB.csv exported from the existing database
-  3. Fetching products directly via the HugeProfit API
-
-  It uses mapper functions to transform each CSV row (or API response) into the format expected by Prisma and the database.
+    Populates the Products table from one of four sources.
+  Mapper functions live in src/utils/helpers/ alongside the other data-transform
+  helpers — this script contains only orchestration logic.
+ 
+  Methods:
+    'fromHP_CSV'   – products.csv from HugeProfit CRM export
+    'fromDB_CSV'   – productsFromDB.csv exported from the existing database
+    'fromAPI'      – fetch directly from HugeProfit API
+    'fromPromAPI'  – fetch directly from Prom API
  */
-
-// --- INTERFACES FOR EACH CSV STRUCTURE ---
-
-interface ProductFromHPCSV {
-  ID: string
-  Назва: string
-  Артикул: string
-  Кількість: string
-  Ціна: string
-  'Собівр.': string
-  Зображення: string
-  Категорія: string
-  Опис: string
-  'Од.вим.': string
-}
-
-interface ProductFromDbCSV {
-  productId: string
-  sku: string
-  name: string
-  price: string
-  stockQuantity: string
-  source: string
-  externalIds: string // Comes as a JSON string
-  description: string
-  mainImage: string
-  images: string // Comes as a comma-separated or JSON string
-  available: string // Comes as 'true' or 'false'
-  priceOld: string
-  pricePromo: string
-  updatedPrice: string
-  currency: string
-  dateModified: string
-  lastSynced: string
-  needsSync: string
-  categoryData: string // JSON string
-  measureUnit: string
-  lastPromSync: string
-  lastRozetkaSync: string
-  needsPromSync: string
-  needsRozetkaSync: string
-  promQuantity: string
-  rozetkaQuantity: string
-  costPrice: string
-}
-
-// --- MAPPER FUNCTIONS FOR EACH CSV ---
-
-/**
- * Mapper for the 'products.csv' file from HugeProfit.
- */
-function mapHPCsvToProduct(row: ProductFromHPCSV): any {
-  const quantity = parseInt(row['Кількість'], 10) || 0
-
-  const price = String(parseFloat(row['Ціна']) || '0.00')
-  const costPrice = row['Собівр.'] ? String(parseFloat(row['Собівр.'])) : null
-
-  const imageUrls = row['Зображення']
-    ? row['Зображення']
-        .split(',')
-        .map((url) => url.trim())
-        .filter((url) => url)
-    : []
-  const mainImage = imageUrls.length > 0 ? imageUrls[0] : null
-
-  return {
-    productId: `${row.ID}_${nanoid(6)}`,
-    sku: row['Артикул'] || null,
-    name: row['Назва'] || 'Unnamed Product',
-    price,
-    costPrice,
-    stockQuantity: quantity,
-    source: Source.crm, // Use the enum for type safety
-    externalIds: { prom: null, rozetka: null },
-    description: row['Опис'] || null,
-    mainImage: imageUrls[0] || null,
-    images: imageUrls,
-    available: quantity > 0,
-    currency: 'UAH',
-    lastSynced: new Date(),
-    needsSync: false,
-    categoryData: row['Категорія'] ? { name: row['Категорія'] } : null,
-    measureUnit: row['Од.вим.'] || 'шт',
-    // Set defaults for fields not present in this CSV
-    promQuantity: null,
-    rozetkaQuantity: null,
-    priceOld: null,
-    pricePromo: null,
-    updatedPrice: null,
-    dateModified: new Date(),
-    lastPromSync: null,
-    lastRozetkaSync: null,
-    needsPromSync: false,
-    needsRozetkaSync: false,
-  }
-}
-
-/**
- * Mapper for the 'productsFromDB.csv' file.
- */
-function mapDbCsvToProduct(row: ProductFromDbCSV): any {
-  // Helper to safely parse JSON strings from the CSV
-  const safeJsonParse = (jsonString: string) => {
-    try {
-      return JSON.parse(jsonString)
-    } catch {
-      return null // Return null if JSON is malformed
-    }
-  }
-
-  return {
-    productId: row.productId,
-    sku: row.sku || null,
-    name: row.name || 'Unnamed Product',
-    // Prisma expects Decimals as strings. The CSV already provides them.
-    price: String(row.price || '0.00'),
-    costPrice: row.costPrice ? String(row.costPrice) : null,
-    stockQuantity: parseInt(row.stockQuantity, 10) || 0,
-    source: (row.source as Source) || Source.crm,
-    externalIds: safeJsonParse(row.externalIds),
-    description: row.description || null,
-    mainImage: row.mainImage || null,
-    // Assuming 'images' is a JSON array string like '["url1", "url2"]'
-    images: safeJsonParse(row.images) || [],
-    available: row.available === 'true',
-    priceOld: row.priceOld ? String(row.priceOld) : null,
-    pricePromo: row.pricePromo ? String(row.pricePromo) : null,
-    updatedPrice: row.updatedPrice ? String(row.updatedPrice) : null,
-    currency: row.currency || 'UAH',
-    dateModified: row.dateModified ? new Date(row.dateModified) : null,
-    lastSynced: row.lastSynced ? new Date(row.lastSynced) : new Date(),
-    needsSync: row.needsSync === 'true',
-    categoryData: safeJsonParse(row.categoryData),
-    measureUnit: row.measureUnit || 'шт',
-    lastPromSync: row.lastPromSync ? new Date(row.lastPromSync) : null,
-    lastRozetkaSync: row.lastRozetkaSync ? new Date(row.lastRozetkaSync) : null,
-    needsPromSync: row.needsPromSync === 'true',
-    needsRozetkaSync: row.needsRozetkaSync === 'true',
-    promQuantity: null,
-    rozetkaQuantity: null,
-  }
-}
 
 // --- SHARED ENRICHMENT AND INSERT LOGIC ---
 
 /**
  * Enriches products with external IDs and categories, then inserts them into the database.
  * This is the core logic shared by both CSV and API population methods.
+ * ⚠️  DESTRUCTIVE: clears Sales, Purchases, OrderItems, and Products before
+ * inserting. Only run on an empty or disposable database.
  */
 async function enrichAndInsertProducts(products: any[]): Promise<void> {
   console.log(`Processing ${products.length} products...`)
@@ -295,6 +164,27 @@ async function populateProductsFromAPI(): Promise<void> {
     throw error
   }
 }
+ 
+/**
+ * Populates from the Prom API.
+ *
+ * Uses mapPromProductToEnriched() to convert PromProductData to the shape
+ * expected by enrichAndInsertProducts(), then runs the same pipeline as
+ * every other method.
+ */
+async function populateProductsFromPromAPI(): Promise<void> {
+  console.log('🚀 Fetching products from Prom API...')
+ 
+  const promProducts = await fetchPromProductsWithTransformation()
+ 
+  if (!promProducts || promProducts.length === 0) {
+    console.log('No products returned from Prom API.')
+    return
+  }
+ 
+  console.log(`✅ Fetched ${promProducts.length} products from Prom API`)
+  await enrichAndInsertProducts(promProducts.map(mapPromProductToEnriched))
+}
 
 // --- CONTROLLER TO RUN THE POPULATION ---
 
@@ -306,11 +196,13 @@ async function main() {
     // 'fromHP_CSV' - Use CSV export from HugeProfit
     // 'fromDB_CSV' - Use CSV export from database
     // 'fromAPI'    - Fetch directly from HugeProfit API
+    //   'fromPromAPI'  – Prom API
 
     const populationMethod = 'fromAPI' as
       | 'fromHP_CSV'
       | 'fromDB_CSV'
       | 'fromAPI'
+      | 'fromPromAPI'
 
     switch (populationMethod) {
       case 'fromHP_CSV':
@@ -335,12 +227,17 @@ async function main() {
         await populateProductsFromAPI()
         break
 
+      case 'fromPromAPI': 
+        console.log('🌐 Using Prom API...\n')
+        await populateProductsFromPromAPI()
+        break
+      
       default:
         console.error('Invalid population method selected')
         process.exit(1)
     }
 
-    console.log('\n✨ Population complete!')
+    console.log('\n Population complete!')
   } catch (error) {
     console.error('\n❌ Population failed:', error)
     process.exit(1)
