@@ -215,7 +215,7 @@ async function enrichAndInsertProducts(products: any[]): Promise<void> {
       console.error(`Failed to insert product ${product.name}:`, error)
     }
   }
-  //console.log('example of product id:', enrichedProducts[0]?.productId)  
+  //console.log('example of product id:', enrichedProducts[0]?.productId)
 
   console.log(
     `✅ Successfully inserted ${successCount} out of ${enrichedProducts.length} products.`,
@@ -229,7 +229,7 @@ async function enrichAndInsertProducts(products: any[]): Promise<void> {
  */
 async function populateProductsFromCSV(
   filePath: string,
-  mapper: (row: any) => any
+  mapper: (row: any) => any,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const products: any[] = []
@@ -237,7 +237,7 @@ async function populateProductsFromCSV(
     if (!fs.existsSync(filePath)) {
       console.error(`Error: The file was not found at ${filePath}`)
       console.error(
-        'Please place your CSV file in the geckoland-erp/server/prisma/data/ directory.'
+        'Please place your CSV file in the geckoland-erp/server/prisma/data/ directory.',
       )
       reject(new Error('CSV file not found'))
       return
@@ -325,7 +325,7 @@ async function main() {
           __dirname,
           '..',
           'data',
-          'productsFromDB.csv'
+          'productsFromDB.csv',
         )
         await populateProductsFromCSV(dbCsvPath, mapDbCsvToProduct)
         break

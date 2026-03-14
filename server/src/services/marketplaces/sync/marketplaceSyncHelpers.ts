@@ -6,6 +6,8 @@ import type {
   MarketplaceUpdateOptions,
   MarketplaceSyncStatus,
   MarketplaceUpdateResult,
+  KnownMarketplace,
+  ProductExternalIds,
 } from '../../../types/marketplaces'
 import { normalizeQuantity } from '../../../utils/helpers/normalizeQuantity'
 
@@ -219,6 +221,28 @@ export async function syncRozetkaProductIds() {
   }
 }
 
+// ─── Marketplace Registry ────────────────────────────────────────────────────
+/**
+* Single source of truth for which marketplaces exist and how to detect
+* whether a product is linked to each one.
+*
+* To add a new marketplace:
+*   1. Add its key to KnownMarketplace in types/marketplaces.ts
+*   2. Add a matching entry here with the appropriate hasLink predicate
+*   3. Add the external ID structure to ProductExternalIds if needed
+*/
+export const MARKETPLACE_REGISTRY: Record<
+  KnownMarketplace,
+  { hasLink: (ext: ProductExternalIds | null) => boolean }
+> = {
+  prom: {
+    hasLink: (ext) => Boolean(ext?.prom),
+  },
+  rozetka: {
+    hasLink: (ext) => Boolean(ext?.rozetka?.item_id),
+  },
+}
+
 /**
  * Creates a promise wrapper for marketplace update operations with consistent
  * error handling and result tracking. Supports both single and batch updates.
@@ -246,6 +270,8 @@ export async function syncRozetkaProductIds() {
  *   isBatch: false
  * })
  */
+
+
 export async function createMarketplaceUpdatePromise({
   marketplaceName,
   productId,
@@ -270,6 +296,16 @@ export async function createMarketplaceUpdatePromise({
     const isInactiveStoreError = error.message?.includes(
       'неактивним прайс-листом',
     )
+    if (isInactiveStoreError) {
+      console.warn(
+        `⚠️ Rozetka store is inactive - skipping sync for product ${productId}`,
+      )
+    } else {
+      const message = isBatch
+        ? `❌ Failed to batch update ${marketplaceName} products`
+        : `❌ Failed to update ${marketplaceName} product ${productId}`
+      console.error(message, error)
+    }
 
     const errorResult: MarketplaceUpdateResult = {
       marketplace: marketplaceName,
@@ -277,16 +313,6 @@ export async function createMarketplaceUpdatePromise({
       error: error.message || String(error),
     }
     errorsArray.push(errorResult)
-
-    if (isInactiveStoreError) {
-      console.warn(
-        `⚠️ Rozetka store is inactive - skipping sync for product ${productId}`,
-      )
-    }
-    const message = isBatch
-      ? `❌ Failed to batch update ${marketplaceName} products`
-      : `❌ Failed to update ${marketplaceName} product ${productId}`
-    console.error(message, error)
   }
 }
 

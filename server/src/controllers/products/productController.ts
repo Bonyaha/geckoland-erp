@@ -1,7 +1,13 @@
 // server/src/controllers/products/productController.ts
 import { Request, Response } from 'express'
+import prisma from '../../config/database'
 import productService from '../../services/products/productService'
-import { BatchUpdateInput } from '../../types/marketplaces'
+import {
+  BatchUpdateInput,
+  ProductExternalIds,
+  KnownMarketplace,
+} from '../../types/marketplaces'
+import { MARKETPLACE_REGISTRY } from '../../services/marketplaces/sync/marketplaceSyncHelpers'
 import {
   ProductQueryParams,
   ProductCreateInput,
@@ -143,4 +149,89 @@ export const syncNewProductsFromMarketplaces = async (
 
   const statusCode = result.success ? 200 : 207
   res.status(statusCode).json(result)
+}
+
+/**
+ * Push current DB stock quantities to one or all marketplaces.
+ * Always DB → marketplace direction; the database is never written.
+ *
+ * Body (all optional):
+ *   targetMarketplace?: 'prom' | 'rozetka' | 'all'   (default: 'all')
+ *
+ * @route POST /api/products/sync/push
+ */
+export const syncAllQuantitiesToMarketplaces = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const target: 'prom' | 'rozetka' | 'all' =
+    req.body?.targetMarketplace ?? 'all'
+ 
+  const marketplacesToSync: KnownMarketplace[] =
+    target === 'all'
+      ? (Object.keys(MARKETPLACE_REGISTRY) as KnownMarketplace[])
+      : [target as KnownMarketplace]
+ 
+  // Single DB read — shared across all marketplace iterations
+  const allProducts = await prisma.products.findMany({
+    select: { productId: true, stockQuantity: true, externalIds: true },
+  })
+ 
+  const breakdown: Record<
+    string,
+    { updated: number; skipped: number; errors: string[] }
+  > = {}
+ 
+  for (const marketplace of marketplacesToSync) {
+    const { hasLink } = MARKETPLACE_REGISTRY[marketplace]
+ 
+    const eligible = allProducts.filter((p) =>
+      hasLink(p.externalIds as ProductExternalIds | null)
+    )
+ 
+    if (eligible.length === 0) {
+      breakdown[marketplace] = { updated: 0, skipped: 0, errors: [] }
+      console.log(`⏭️  [sync/push] No products linked to ${marketplace} — skipping`)
+      continue
+    }
+ 
+    console.log(
+      `🔄 [sync/push] Pushing ${eligible.length} products to ${marketplace}`,
+    )
+ 
+    const batchInput: BatchProductUpdateInput = {
+      products: eligible.map((p) => ({
+        productId: p.productId,
+        updates: { quantity: p.stockQuantity },
+      })),
+      // Passing a specific marketplace (never 'all') ensures updateBatchProducts
+      // skips all DB writes — only the marketplace API is called.
+      targetMarketplace: marketplace,
+    }
+ 
+    const result: BatchProductUpdateResult =
+      await productService.updateBatchProducts(batchInput)
+ 
+    breakdown[marketplace] = {
+      updated: result.summary.successfulDatabaseUpdates,
+      skipped: eligible.length - result.summary.successfulDatabaseUpdates,
+      errors:
+        result.summary.marketplaceErrors?.map(
+          (e) => e.error ?? e.marketplace,
+        ) ?? [],
+    }
+  }
+ 
+  const totalUpdated = Object.values(breakdown).reduce(
+    (sum, b) => sum + b.updated,
+    0,
+  )
+  const allErrors = Object.values(breakdown).flatMap((b) => b.errors)
+ 
+  res.status(allErrors.length > 0 ? 207 : 200).json({
+    success: allErrors.length === 0,
+    updated: totalUpdated,
+    errors: allErrors,
+    breakdown,
+  })
 }

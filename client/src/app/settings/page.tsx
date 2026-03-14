@@ -5,7 +5,7 @@ import Header from '@/app/(components)/Header'
 import {
   useGetRozetkaStoreStatusQuery,
   useSetRozetkaStoreStatusMutation,
-  useSyncAllQuantitiesToRozetkaMutation,
+  useSyncAllQuantitiesToMarketplacesMutation,
 } from '@/state/api'
 import { useToast } from '@/hooks/useToast'
 import Toast from '@/app/(components)/Toast'
@@ -31,8 +31,8 @@ const Settings = () => {
     useGetRozetkaStoreStatusQuery()
   const [setRozetkaStoreStatus, { isLoading: isToggling }] =
     useSetRozetkaStoreStatusMutation()
-  const [syncAllQuantitiesToRozetka, { isLoading: isSyncing }] =
-    useSyncAllQuantitiesToRozetkaMutation()
+  const [syncAllQuantitiesToMarketplaces, { isLoading: isSyncing }] =
+    useSyncAllQuantitiesToMarketplacesMutation()
 
   const { toast, showToast, hideToast } = useToast()
 
@@ -58,15 +58,20 @@ const Settings = () => {
     }
   }
 
-  const handleRozetkaSync = async () => {
+  const handleSync = async () => {
     try {
-      const result = await syncAllQuantitiesToRozetka().unwrap()
+      // No body = default 'all' on the backend
+      const result = await syncAllQuantitiesToMarketplaces().unwrap()
+
+      const lines = Object.entries(result.breakdown).map(
+        ([mp, b]) => `${mp}: ${b.updated} товарів`,
+      )
       showToast(
-        `Синхронізовано ${result.updated} товарів на Rozetka`,
-        'success',
+        `Синхронізовано — ${lines.join(', ')}`,
+        result.success ? 'success' : 'warning',
       )
     } catch {
-      showToast('Помилка при синхронізації з Rozetka', 'error')
+      showToast('Помилка при синхронізації з маркетплейсами', 'error')
     }
   }
 
@@ -145,7 +150,7 @@ const Settings = () => {
               <td className='py-4 px-4'>
                 {rozetkaActive && (
                   <button
-                    onClick={handleRozetkaSync}
+                    onClick={handleSync}
                     disabled={isSyncing || isStatusLoading}
                     className='px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg
                       hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
@@ -191,9 +196,9 @@ const Settings = () => {
                         onChange={() => handleToggleChange(index)}
                       />
                       <div
-                        className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-blue-400 peer-focus:ring-4 
-                        transition peer-checked:after:translate-x-full peer-checked:after:border-white 
-                        after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white 
+                        className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-blue-400 peer-focus:ring-4
+                        transition peer-checked:after:translate-x-full peer-checked:after:border-white
+                        after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white
                         after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all
                         peer-checked:bg-blue-600"
                       ></div>

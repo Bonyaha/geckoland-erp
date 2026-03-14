@@ -6,6 +6,7 @@ import {
   updateSingleProduct,
   updateBatchProducts,
   syncNewProductsFromMarketplaces,
+  syncAllQuantitiesToMarketplaces,
   getProductStats,
 } from '../controllers/products/productController'
 import { asyncHandler } from '../middleware/asyncHandler'
@@ -19,17 +20,22 @@ import {
 
 const router = Router()
 
+// --- Sync routes (must come before /:productId to avoid param conflicts) ---
 router.post('/sync/marketplaces', asyncHandler(syncNewProductsFromMarketplaces))
+router.post('/sync/push', asyncHandler(syncAllQuantitiesToMarketplaces))
 
+// --- Batch update ---
 router.patch(
   '/batch',
   validate(updateBatchProductSchema),
   asyncHandler(updateBatchProducts)
 )
 
+// --- Stats ---
 // GET /api/products/stats
 router.get('/stats', asyncHandler(getProductStats))
 
+// --- CRUD ---
 router.get('/', validate(getProductsQuerySchema), asyncHandler(getProducts))
 router.post('/', validate(createProductSchema), asyncHandler(createProduct))
 

@@ -415,9 +415,19 @@ export interface RozetkaStoreStatusResponse {
   rozetkaStoreActive: boolean
 }
 
-export interface SyncAllToRozetkaResult {
+export type SyncTargetMarketplace = 'prom' | 'rozetka' | 'all'
+
+export interface SyncMarketplaceBreakdown {
+  updated: number
+  skipped: number
+  errors: string[]
+}
+
+export interface SyncAllToMarketplacesResult {
+  success: boolean
   updated: number
   errors: string[]
+  breakdown: Record<string, SyncMarketplaceBreakdown>
 }
 
 export const api = createApi({
@@ -705,10 +715,14 @@ export const api = createApi({
       }),
       invalidatesTags: ['Settings'],
     }),
-    syncAllQuantitiesToRozetka: build.mutation<SyncAllToRozetkaResult, void>({
-      query: () => ({
-        url: '/products/sync/rozetka',
+    syncAllQuantitiesToMarketplaces: build.mutation<
+      SyncAllToMarketplacesResult,
+      { targetMarketplace?: SyncTargetMarketplace } | void
+    >({
+      query: (body) => ({
+        url: '/products/sync/push',
         method: 'POST',
+        body: body ?? {},
       }),
     }),
   }),
@@ -741,5 +755,5 @@ export const {
   useSearchClientsAutocompleteQuery,
   useGetRozetkaStoreStatusQuery,
   useSetRozetkaStoreStatusMutation,
-  useSyncAllQuantitiesToRozetkaMutation,
+  useSyncAllQuantitiesToMarketplacesMutation,
 } = api

@@ -18,6 +18,16 @@ import {Prisma} from '../config/database'
 export type TargetMarketplace = 'prom' | 'rozetka' | 'all'
 
 /**
+ * Known individual marketplaces (TargetMarketplace without 'all').
+ * Used when iterating over marketplaces one by one, e.g. in the
+ * sync/push endpoint which must never pass 'all' to updateBatchProducts.
+ *
+ * When a new marketplace is added, extend both this type AND
+ * MARKETPLACE_REGISTRY in marketplaceSyncHelpers.ts.
+ */
+export type KnownMarketplace = 'prom' | 'rozetka'
+
+/**
  * Generic update parameters for marketplace products.
  * Used when updating product information across different marketplaces.
  * 
