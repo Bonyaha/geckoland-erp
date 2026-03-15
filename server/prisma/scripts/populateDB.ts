@@ -16,6 +16,7 @@ import {
 } from '../../src/utils/helpers/mapCsvProductToEnriched'
 import { mapPromProductToEnriched } from '../../src/utils/helpers/mapPromProductToEnriched'
 import { EnrichedProductData } from '../../src/types/products'
+import { enrichWithRozetka } from '../../src/utils/helpers/enrichWithRozetka'
 
 /* 
     Populates the Products table from one of four sources.
@@ -61,16 +62,13 @@ console.log('Enriching products with Prom IDs and categories...')
   
 
   console.log('Enriching products with Rozetka IDs and categories...')
-  enriched = await enrichWithRozetkaIds(enriched)
-  enriched = await enrichWithRozetkaCategories(enriched)
+  enriched = await enrichWithRozetka(enriched)
+//console.log('enriched product example: ', enriched[0]);
 
-  console.log('Setting marketplace quantities...')
   enriched = enriched.map((product) => ({
     ...product,
     promQuantity: product.externalIds?.prom ? product.stockQuantity : null,
-    rozetkaQuantity: product.externalIds?.rozetka
-      ? product.stockQuantity
-      : null,
+    rozetkaQuantity: product.rozetkaQuantity ?? null,
   }))
 
   //console.log('Clearing the Products table...')

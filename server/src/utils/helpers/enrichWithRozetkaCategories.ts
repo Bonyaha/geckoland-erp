@@ -1,6 +1,9 @@
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import { EnrichedProductData } from '../../types/products'
+
+/* This file should be deleted after some time of testing (we have new file, containing this logic) */
+
 /**
  * Reads rozetkaProducts.json and enriches each product’s categoryData
  * with Rozetka category info (id + name).

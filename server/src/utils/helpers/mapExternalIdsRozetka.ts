@@ -75,6 +75,9 @@ async function updateProductsExternalIds() {
 //Function similar to the one above, but it takes an array of products instead of reading from a file and returns the enriched array, not writing to a file
 */
 
+
+/* This function should be deleted after some time of testing (we have new file, containing this logic) */
+
 export async function enrichWithRozetkaIds(
   products: EnrichedProductData[]
 ): Promise<EnrichedProductData[]> {
