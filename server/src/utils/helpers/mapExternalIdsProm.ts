@@ -75,6 +75,7 @@ async function updateProductsExternalIds() {
 export async function enrichWithPromIds(
   products: EnrichedProductData[]
 ): Promise<EnrichedProductData[]> {
+
   const promDataPath = path.join(
     __dirname,
     '../../../prisma/data/promProducts.json'
@@ -96,14 +97,6 @@ export async function enrichWithPromIds(
 
     promProductsMap.set(sku, productIds)
   })
-
-  let example = products.filter((p) => p.sku === '520D-ZX-050')
-
-  console.log('520D-ZX-050 in input products:')
-  console.log(example)
-
-  console.log('520D-ZX-050 in promProductsMap:')
-  console.log(promProductsMap.get('520D-ZX-050')) //[ '1940765428', '1729613222' ]
 
   let updatedCount = 0
   let notFoundCount = 0

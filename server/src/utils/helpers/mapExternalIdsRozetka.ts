@@ -1,6 +1,8 @@
+//server/src/utils/helpers/mapExternalIdsRozetka.ts
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import { EnrichedProductData } from '../../types/products'
+import { fetchRozetkaProductsWithTransformation } from '../../services/data-fetchers/fetchRozetkaProducts'
 
 async function updateProductsExternalIds() {
   try {
@@ -77,14 +79,7 @@ export async function enrichWithRozetkaIds(
   products: EnrichedProductData[]
 ): Promise<EnrichedProductData[]> {
   //console.log('I am in enrichWithRozetkaIds');
-  const rozetkaDataPath = path.join(
-    __dirname,
-    '../../../prisma/data/rozetkaProducts.json'
-  )
-
-  const rozetkaProductsData = await fs.readFile(rozetkaDataPath, 'utf-8')
-  const rozetkaProducts = JSON.parse(rozetkaProductsData)
-  //console.log('Rozetka products data loaded:', rozetkaProducts);
+  const rozetkaProducts = await fetchRozetkaProductsWithTransformation()
 
   // Create a map for quick lookup: uniqueProductKey -> productId
   const rozetkaProductsMap = new Map()

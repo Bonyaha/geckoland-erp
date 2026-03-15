@@ -35,7 +35,17 @@ export function mapPromProductToEnriched(
     images: p.images,
     currency: p.currency,
     measureUnit: p.measureUnit ?? null,
-    categoryData: p.categoryData ?? null,
+    categoryData: p.categoryData?.group?.id
+      ? {
+          prom: {
+            id: p.categoryData.group.id,
+            name:
+              p.categoryData.group.name_multilang?.uk ??
+              p.categoryData.group.name ??
+              '',
+          },
+        }
+      : undefined,
     source: p.source,
     // Preserve all Prom-specific sync fields via the index signature
     priceOld: p.priceOld ?? null,

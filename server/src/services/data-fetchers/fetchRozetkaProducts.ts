@@ -5,7 +5,6 @@ import { rozetkaTokenManager } from './rozetkaTokenCache'
 import { Source } from '../../config/database'
 import { RozetkaProductData } from '../../types/products'
 
-
 // Function to fetch all Rozetka products with pagination. It is used internally by functions below.
 async function fetchAllRozetkaProducts(accessToken: string): Promise<any[]> {
   const baseUrl = 'https://api-seller.rozetka.com.ua/goods/all'
@@ -66,15 +65,15 @@ async function fetchAllRozetkaProducts(accessToken: string): Promise<any[]> {
     console.log(`🎉 Finished! Total products fetched: ${allProducts.length}`)
     // Filter products with status 'on_display'
     const filteredProducts = allProducts.filter(
-      (product) => product.available !== 2
-    )   
-console.log('Total filteredProducts: ', filteredProducts.length);
+      (product) => product.available !== 2,
+    )
+    console.log('Total filteredProducts: ', filteredProducts.length)
 
     return allProducts
   } catch (error: any) {
     console.error(
       '❌ Error fetching products:',
-      error.response?.data || error.message
+      error.response?.data || error.message,
     )
     throw new Error(`Failed to fetch products: ${error.message}`)
   }
@@ -90,7 +89,7 @@ export async function fetchRozetkaProducts() {
     const allProducts = await fetchAllRozetkaProducts(accessToken)
     console.log('allProducts', allProducts[0])
 
-     return allProducts
+    return allProducts
   } catch (error: any) {
     // If error might be due to invalid token, clear cache and retry once
     if (error.response?.status === 401 || error.response?.status === 403) {
@@ -147,10 +146,10 @@ export async function fetchRozetkaProductsWithTransformation(): Promise<
 
     await fs.writeFile(
       'prisma/data/rozetkaProducts.json',
-      JSON.stringify(transformedProducts, null, 2)
+      JSON.stringify(transformedProducts, null, 2),
     )
     console.log(
-      'Rozetka products data saved to prisma/realData/rozetkaProducts.json'
+      'Rozetka products data saved to prisma/data/rozetkaProducts.json',
     )
 
     return transformedProducts
@@ -159,8 +158,6 @@ export async function fetchRozetkaProductsWithTransformation(): Promise<
     throw error
   }
 }
-
-
 
 //fetchAllRozetkaProducts()
 //fetchRozetkaProducts()

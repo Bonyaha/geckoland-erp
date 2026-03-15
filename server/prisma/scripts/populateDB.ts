@@ -15,6 +15,7 @@ import {
   mapDbCsvToProduct,
 } from '../../src/utils/helpers/mapCsvProductToEnriched'
 import { mapPromProductToEnriched } from '../../src/utils/helpers/mapPromProductToEnriched'
+import { EnrichedProductData } from '../../src/types/products'
 
 /* 
     Populates the Products table from one of four sources.
@@ -43,19 +44,28 @@ async function enrichAndInsertProducts(products: any[]): Promise<void> {
     console.log('No products to process.')
     return
   }
-  //console.log('example of a product: ', products[0])
+  
+// Skip Prom ID and category enrichment if products already carry them
+  // (i.e. they came from the Prom API via mapPromProductToEnriched)
+  const hasPromIds = products.every((p) => p.externalIds?.prom)
 
-  console.log('Enriching products with Prom IDs and categories...')
-  let enrichedProducts = await enrichWithPromIds(products)
-  enrichedProducts =
-    await enrichWithPromCategoriesAndDescription(enrichedProducts)
+  let enriched: EnrichedProductData[] = products
+
+if (!hasPromIds) {
+console.log('Enriching products with Prom IDs and categories...')
+    enriched = await enrichWithPromIds(enriched)
+    enriched = await enrichWithPromCategoriesAndDescription(enriched)
+  } else {
+    console.log('⏭️  Skipping Prom ID and category enrichment (already present)')
+  }
+  
 
   console.log('Enriching products with Rozetka IDs and categories...')
-  enrichedProducts = await enrichWithRozetkaIds(enrichedProducts)
-  enrichedProducts = await enrichWithRozetkaCategories(enrichedProducts)
+  enriched = await enrichWithRozetkaIds(enriched)
+  enriched = await enrichWithRozetkaCategories(enriched)
 
   console.log('Setting marketplace quantities...')
-  enrichedProducts = enrichedProducts.map((product) => ({
+  enriched = enriched.map((product) => ({
     ...product,
     promQuantity: product.externalIds?.prom ? product.stockQuantity : null,
     rozetkaQuantity: product.externalIds?.rozetka
@@ -74,7 +84,7 @@ async function enrichAndInsertProducts(products: any[]): Promise<void> {
   console.log('Populating the Products table...')
 
   let successCount = 0
-  for (const product of enrichedProducts) {
+  for (const product of enriched) {
     try {
       await prisma.products.create({
         data: product,
@@ -83,11 +93,10 @@ async function enrichAndInsertProducts(products: any[]): Promise<void> {
     } catch (error) {
       console.error(`Failed to insert product ${product.name}:`, error)
     }
-  }
-  //console.log('example of product id:', enrichedProducts[0]?.productId)
+  }  
 
   console.log(
-    `✅ Successfully inserted ${successCount} out of ${enrichedProducts.length} products.`,
+    `✅ Successfully inserted ${successCount} out of ${enriched.length} products.`,
   )
 }
 
@@ -183,6 +192,7 @@ async function populateProductsFromPromAPI(): Promise<void> {
   }
  
   console.log(`✅ Fetched ${promProducts.length} products from Prom API`)
+
   await enrichAndInsertProducts(promProducts.map(mapPromProductToEnriched))
 }
 
@@ -198,7 +208,7 @@ async function main() {
     // 'fromAPI'    - Fetch directly from HugeProfit API
     //   'fromPromAPI'  – Prom API
 
-    const populationMethod = 'fromAPI' as
+    const populationMethod = (process.env.METHOD || 'fromAPI') as
       | 'fromHP_CSV'
       | 'fromDB_CSV'
       | 'fromAPI'
