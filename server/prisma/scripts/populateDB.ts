@@ -206,7 +206,7 @@ async function main() {
     // 'fromAPI'    - Fetch directly from HugeProfit API
     //   'fromPromAPI'  – Prom API
 
-    const populationMethod = (process.env.METHOD || 'fromAPI') as
+    const populationMethod = (process.env.METHOD || 'fromPromAPI') as
       | 'fromHP_CSV'
       | 'fromDB_CSV'
       | 'fromAPI'
