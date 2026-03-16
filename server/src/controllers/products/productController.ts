@@ -177,6 +177,12 @@ export const syncAllQuantitiesToMarketplaces = async (
     select: { productId: true, stockQuantity: true, externalIds: true },
   })
  
+// Fetch the store-active flag once; reused inside pushProductsToMarketplaces
+  const rozetkaActive = await prisma.settings
+    .findUnique({ where: { key: 'rozetkaStoreActive' } })
+    .then((s) => s?.value === 'true')
+    .catch(() => true) // fail-open: if setting is missing, assume active
+
   const breakdown: Record<
     string,
     { updated: number; skipped: number; errors: string[] }
@@ -184,50 +190,54 @@ export const syncAllQuantitiesToMarketplaces = async (
  
   for (const marketplace of marketplacesToSync) {
     const { hasLink } = MARKETPLACE_REGISTRY[marketplace]
- 
+
     const eligible = allProducts.filter((p) =>
-      hasLink(p.externalIds as ProductExternalIds | null)
+      hasLink(p.externalIds as ProductExternalIds | null),
     )
- 
+
     if (eligible.length === 0) {
       breakdown[marketplace] = { updated: 0, skipped: 0, errors: [] }
-      console.log(`⏭️  [sync/push] No products linked to ${marketplace} — skipping`)
+      console.log(
+        `⏭️  [sync/push] No products linked to ${marketplace} — skipping`,
+      )
       continue
     }
- 
+
     console.log(
       `🔄 [sync/push] Pushing ${eligible.length} products to ${marketplace}`,
     )
- 
-    const batchInput: BatchProductUpdateInput = {
-      products: eligible.map((p) => ({
-        productId: p.productId,
-        updates: { quantity: p.stockQuantity },
-      })),
-      // Passing a specific marketplace (never 'all') ensures updateBatchProducts
-      // skips all DB writes — only the marketplace API is called.
-      targetMarketplace: marketplace,
-    }
- 
-    const result: BatchProductUpdateResult =
-      await productService.updateBatchProducts(batchInput)
- 
+
+    // Build push items — each carries only what the push method needs
+    const pushItems = eligible.map((p) => ({
+      productId: p.productId,
+      externalIds: p.externalIds as ProductExternalIds | null,
+      updates: { quantity: p.stockQuantity },
+    }))
+
+    // ✅ Call the dedicated method — no DB-skip trick needed
+    const { syncResults, syncErrors } =
+      await productService.pushProductsToMarketplaces(
+        pushItems,
+        marketplace, // never 'all' — we iterate one marketplace at a time
+        rozetkaActive,
+      )
+
     breakdown[marketplace] = {
-      updated: result.summary.successfulDatabaseUpdates,
-      skipped: eligible.length - result.summary.successfulDatabaseUpdates,
-      errors:
-        result.summary.marketplaceErrors?.map(
-          (e) => e.error ?? e.marketplace,
-        ) ?? [],
+      updated:
+        syncErrors.length === 0
+          ? eligible.length
+          : eligible.length - syncErrors.length,
+      skipped: syncErrors.length,
+      errors: syncErrors.map((e) => e.error ?? e.marketplace),
     }
   }
- 
+
   const totalUpdated = Object.values(breakdown).reduce(
     (sum, b) => sum + b.updated,
     0,
   )
   const allErrors = Object.values(breakdown).flatMap((b) => b.errors)
- 
+
   res.status(allErrors.length > 0 ? 207 : 200).json({
     success: allErrors.length === 0,
     updated: totalUpdated,

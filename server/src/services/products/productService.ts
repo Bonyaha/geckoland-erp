@@ -40,6 +40,10 @@ import {
   ProductCreateInput,
 } from '../../types/products'
 
+// ---------------------------------------------------------------------------
+// Internal helper types
+// ---------------------------------------------------------------------------
+
 type BatchEnrichedProduct = {
   original: BatchProductUpdateItem
   dbProduct:
@@ -47,6 +51,27 @@ type BatchEnrichedProduct = {
     | undefined
   externalIds: ProductExternalIds | null
   hasMarketplaceUpdates: boolean
+}
+
+/**
+ * Minimal description of a product needed to push updates to marketplace APIs.
+ * Intentionally keeps only what `pushProductsToMarketplaces` needs so callers
+ * don't have to build the full BatchEnrichedProduct shape.
+ */
+type MarketplacePushItem = {
+  productId: string // internal DB id — used only for the DB sync-status write
+  externalIds: ProductExternalIds | null
+  updates: ProductUpdateParams
+}
+ 
+/**
+ * Return value of `pushProductsToMarketplaces`.
+ * Mirrors the fields that `updateBatchProducts` previously computed inline.
+ */
+type MarketplacePushResult = {
+  syncResults: string[]
+  syncErrors: MarketplaceUpdateResult[]
+  syncStatus: MarketplaceSyncStatus
 }
 
 /**
@@ -464,30 +489,12 @@ class ProductService {
   }
 
   /**
-   * Updates multiple products in a single batch operation.
-   * More efficient than individual updates when changing many products.
+   * Updates multiple products in a single batch operation (DB + marketplace sync).
    *
-   * @param params - Batch update parameters including products array and target marketplace
-   * @returns Result object with summary statistics and detailed results
-   * @throws {Error} If validation fails
-   *
-   * @remarks
-   * - Validates all products before starting updates
-   * - If targeting specific marketplace, validates quantities don't exceed stock
-   * - Uses Prisma transactions for database updates
-   * - Uses marketplace batch APIs when available for efficiency
-   * - Cost price updates are internal only and skip marketplace sync
-   *
-   * @example
-   * const result = await productService.updateBatchProducts({
-   *   products: [
-   *     { productId: 'prod_1', updates: { quantity: 10 } },
-   *     { productId: 'prod_2', updates: { price: 199.99 } }
-   *   ],
-   *   targetMarketplace: 'all'
-   * })
-   *
-   * console.log(`Updated ${result.summary.successfulDatabaseUpdates} products`)
+   * This method owns the DB-write side of the operation.  The marketplace-push
+   * side is fully delegated to `pushProductsToMarketplaces`, which can also be
+   * called independently when you only need to push without touching the DB
+   * (e.g. the "sync/push" endpoint that reconciles DB→marketplace quantities).
    */
   async updateBatchProducts({
     products,
@@ -510,7 +517,7 @@ class ProductService {
 
     // This single flag drives both the sync-skip and the DB mark logic below.
     const rozetkaActive = await settingsService.isRozetkaStoreActive()
-    
+
     // Warehouse validation if only one marketplace is targeted
     if (targetMarketplace && targetMarketplace !== 'all') {
       for (const item of products) {
@@ -536,14 +543,13 @@ class ProductService {
         item.updates.price === undefined,
     )
 
-    // Update the DB when:
-    //   a) targeting all/undefined  — normal full update path
-    //   b) isCostPriceOnlyUpdate    — costPrice is internal; always persist it
-    //      regardless of targetMarketplace
+    // Write primary product columns (stockQuantity, price, available) only when
+    // targeting all marketplaces — because in that case `updates.quantity` is
+    // the new warehouse truth, not just a number to push outward.
     //
-    // The `needsSync = true` guard inside this block is intentional and
-    // correct for path (a). For path (b) it will simply never fire because no
-    // item has quantity/price — that is expected, not a contradiction.
+    // Sync-metadata columns (lastPromSync, promQuantity, needsRozetkaSync …)
+    // are always written by pushProductsToMarketplaces after the API calls,
+    // regardless of which path we took here.
     let dbResults: PromiseSettledResult<any>[] = []
 
     if (
@@ -577,9 +583,6 @@ class ProductService {
 
         if (item.updates.costPrice !== undefined) {
           updateData.costPrice = item.updates.costPrice
-          console.log(
-            `Updating costPrice for ${item.productId}: ${item.updates.costPrice}`,
-          )
         }
 
         return prisma.products.update({
@@ -590,6 +593,8 @@ class ProductService {
       dbResults = await Promise.allSettled(dbUpdatePromises)
     } else {
       // Skip DB updates for marketplace-only operations
+      // fabricate fulfilled results so the tracking
+      // logic below stays uniform.
       dbResults = products.map((item: BatchProductUpdateItem) => ({
         status: 'fulfilled',
         value: dbMap.get(item.productId),
@@ -609,9 +614,9 @@ class ProductService {
               (result as PromiseRejectedResult).reason?.message ||
               String((result as PromiseRejectedResult).reason),
           }),
-    )    
+    )
 
-    // Build enriched map for downstream use
+    /* // Build enriched map for downstream use
     const enrichedMap = new Map<string, BatchEnrichedProduct>()
     for (const productId of successfulUpdates) {
       const original = products.find(
@@ -631,7 +636,7 @@ class ProductService {
         externalIds,
         hasMarketplaceUpdates,
       })
-    }
+    } */
 
     // If this is ONLY a cost price update, skip marketplace sync entirely
     if (isCostPriceOnlyUpdate) {
@@ -656,7 +661,35 @@ class ProductService {
       }
     }
 
-    //Collect marketplace updates
+// ── Build push items for successfully-written products ─────────────────
+    const pushItems: MarketplacePushItem[] = []
+ 
+    for (const productId of successfulUpdates) {
+      const original = products.find(
+        (p: BatchProductUpdateItem) => p.productId === productId,
+      )
+      if (!original) continue
+ 
+      const hasMarketplaceUpdates =
+        original.updates.quantity !== undefined || original.updates.price !== undefined
+      if (!hasMarketplaceUpdates) continue
+ 
+      const externalIds = dbMap.get(productId)?.externalIds as ProductExternalIds | null
+ 
+      pushItems.push({ productId, externalIds, updates: original.updates })
+    }
+
+// ── Delegate marketplace push + sync-status DB write ──────────────────
+    const { syncResults, syncErrors, syncStatus } =
+      await this.pushProductsToMarketplaces(
+        pushItems,
+        targetMarketplace ?? 'all',
+        rozetkaActive,
+      )
+
+
+
+    /* //Collect marketplace updates
     const promUpdates: PromBatchUpdate[] = []
     const rozetkaUpdates: RozetkaBatchUpdate[] = []
 
@@ -808,14 +841,13 @@ class ProductService {
         },
       )
       await Promise.allSettled(markSyncedPromises)
-    }
+    } */
 
     const success = syncErrors.length === 0 && failedUpdates.length === 0
     const message = `Batch update completed${
       targetMarketplace ? ' for ' + targetMarketplace : ''
     }`
 
-    //Respond
     return {
       success,
       message,
@@ -832,6 +864,122 @@ class ProductService {
       },
     }
   }
+
+/**
+   * Pushes current DB quantities/prices for the given products to one or all
+   * marketplaces, **without touching the main product columns in the DB**.
+   *
+   * This is the entry-point for "DB → marketplace reconciliation" flows:
+   * - The `POST /api/products/sync/push` endpoint calls this directly.
+   * - `updateBatchProducts` also calls this after its own DB writes.
+   *
+   * After successful API calls the method writes only the marketplace-specific
+   * sync metadata (`lastPromSync`, `promQuantity`, `needsRozetkaSync`, …) so
+   * the DB stays accurate for future reconciliation runs.
+   *
+   * @param items   Products to push, each carrying their externalIds and the
+   *                update payload (quantity / price) to send to the APIs.
+   * @param target  Which marketplace(s) to push to.
+   * @param rozetkaActive  Pre-fetched Rozetka store-active flag.  The caller
+   *                       owns the `settingsService` call so we don't repeat it.
+   */
+  async pushProductsToMarketplaces(
+    items: MarketplacePushItem[],
+    target: TargetMarketplace,
+    rozetkaActive: boolean,
+  ): Promise<MarketplacePushResult> {
+    const promUpdates: PromBatchUpdate[] = []
+    const rozetkaUpdates: RozetkaBatchUpdate[] = []
+ 
+    // Collect per-marketplace payloads
+    for (const { externalIds, updates } of items) {
+      if ((target === 'all' || target === 'prom') && externalIds?.prom) {
+        const params: ProductUpdateParams = {}
+        if (updates.quantity !== undefined) params.quantity = updates.quantity
+        if (updates.price !== undefined) params.price = updates.price
+        promUpdates.push({ productId: externalIds.prom, updates: params })
+      }
+ 
+      if ((target === 'all' || target === 'rozetka') && externalIds?.rozetka?.item_id) {
+        if (!rozetkaActive) {
+          console.log(
+            `Skipping Rozetka sync for product with item_id=${externalIds.rozetka.item_id} - store is paused`,
+          )
+        } else {
+          const params: ProductUpdateParams = {}
+          if (updates.quantity !== undefined) params.quantity = updates.quantity
+          if (updates.price !== undefined) params.price = updates.price
+          rozetkaUpdates.push({ productId: externalIds.rozetka.item_id, updates: params })
+        }
+      }
+    }
+ 
+    // Execute API calls in parallel
+    const syncResults: string[] = []
+    const syncErrors: MarketplaceUpdateResult[] = []
+    const syncStatus: MarketplaceSyncStatus = createMarketplaceSyncStatus()
+    const syncPromises: Promise<void>[] = []
+ 
+    if (promUpdates.length > 0) {
+      syncPromises.push(
+        createMarketplaceUpdatePromise({
+          marketplaceName: 'Prom',
+          count: promUpdates.length,
+          updateFunction: () => updateMultiplePromProducts(promUpdates),
+          onSuccess: () => (syncStatus.promSynced = true),
+          resultsArray: syncResults,
+          errorsArray: syncErrors,
+          isBatch: true,
+        }),
+      )
+    }
+ 
+    if (rozetkaUpdates.length > 0) {
+      syncPromises.push(
+        createMarketplaceUpdatePromise({
+          marketplaceName: 'Rozetka',
+          count: rozetkaUpdates.length,
+          updateFunction: () => updateMultipleRozetkaProducts(rozetkaUpdates),
+          onSuccess: () => (syncStatus.rozetkaSynced = true),
+          resultsArray: syncResults,
+          errorsArray: syncErrors,
+          isBatch: true,
+        }),
+      )
+    }
+ 
+    await Promise.allSettled(syncPromises)
+ 
+    // Write sync-status metadata back to the DB
+    const syncTime = new Date()
+    const metaUpdatePromises = items.map(({ productId, externalIds, updates }) => {
+      const data: Record<string, unknown> = {}
+ 
+      if (syncStatus.promSynced) {
+        data.lastPromSync = syncTime
+        if (updates.quantity !== undefined) data.promQuantity = updates.quantity
+      }
+ 
+      if (syncStatus.rozetkaSynced) {
+        data.lastRozetkaSync = syncTime
+        if (updates.quantity !== undefined) data.rozetkaQuantity = updates.quantity
+        data.needsRozetkaSync = false
+      } else if (!rozetkaActive && externalIds?.rozetka?.item_id) {
+        // Store is paused — mirror quantity internally so it's accurate on resume
+        if (updates.quantity !== undefined) data.rozetkaQuantity = updates.quantity
+        data.needsRozetkaSync = true
+      }
+ 
+      data.needsSync = Boolean(data.needsRozetkaSync)
+ 
+      return prisma.products.update({ where: { productId }, data })
+    })
+ 
+    await Promise.allSettled(metaUpdatePromises)
+ 
+    return { syncResults, syncErrors, syncStatus }
+  }
+
 
   /**
    * Syncs new products from marketplaces to the database.
