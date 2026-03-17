@@ -1,4 +1,4 @@
-// server/src/controllers/notificationController.ts
+// server/src/controllers/notifications/notificationController.ts
 // This is the webhook that Google Pub/Sub will call.
 
 import { Request, Response } from 'express'
@@ -175,8 +175,9 @@ async function handleNewOrder(
     gmailLogger.orderProcessingStart(marketplace)
 
     if (marketplace === 'Prom') {
-      const result =
-        await orderService.fetchAndCreateNewPromOrders(specificOrderId)
+      const result = await orderService.fetchAndCreateNewPromOrders({
+        specificOrderId,
+      })
       gmailLogger.orderProcessingResult(marketplace, result)
 
       if (result.created > 0) {

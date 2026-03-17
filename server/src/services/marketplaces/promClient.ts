@@ -319,7 +319,10 @@ export class PromClient {
    * @param specificOrderId - Optional Prom order ID parsed from the notification email subject
    */
 
-  async getNewOrders(specificOrderId?: number): Promise<PromOrder[]> {
+  async getNewOrders(
+    specificOrderId?: number,
+    skipRetry = false,
+  ): Promise<PromOrder[]> {
     try {
       // ── FAST PATH: fetch the specific order directly ──────────────────
       if (specificOrderId) {
@@ -349,7 +352,7 @@ export class PromClient {
       }
 
       // ── FALLBACK: list endpoint with increasing delays ────────────────
-      const RETRY_DELAYS_MS = [0, 5000, 15000, 30000] // 0s, 5s, 15s, 30s
+      const RETRY_DELAYS_MS = skipRetry ? [0] : [0, 5000, 15000, 30000] // 0s, 5s, 15s, 30s
 
       for (let attempt = 0; attempt < RETRY_DELAYS_MS.length; attempt++) {
         const delay = RETRY_DELAYS_MS[attempt]

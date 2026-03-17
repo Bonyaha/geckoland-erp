@@ -1200,12 +1200,14 @@ class OrderService {
    * @param specificOrderId - Optional order ID extracted from Gmail notification subject
    */
   async fetchAndCreateNewPromOrders(
-    specificOrderId?: number,
+    options: { specificOrderId?: number; skipRetry?: boolean } = {},
   ): Promise<OrderSyncResult> {
     console.log('Fetching new orders from Prom...')
 
     try {
-      const newOrders = await this.promClient.getNewOrders(specificOrderId)
+      const newOrders = await this.promClient.getNewOrders(
+        options.specificOrderId,
+        options.skipRetry)
       console.log(`Found ${newOrders.length} pending orders from Prom`)
 
       let created = 0
@@ -1374,7 +1376,7 @@ class OrderService {
     }
   }
 
-/**
+  /**
    * Get order counts grouped by status in a single DB query
    * Used by the sidebar to display per-status badges
    */
@@ -1969,7 +1971,7 @@ class OrderService {
     console.log('Manual check for new orders initiated...')
     try {
       const [promResult, rozetkaResult] = await Promise.all([
-        this.fetchAndCreateNewPromOrders(),
+        this.fetchAndCreateNewPromOrders({ skipRetry: true }),
         this.fetchAndCreateNewRozetkaOrders(),
       ])
 
