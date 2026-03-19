@@ -11,7 +11,7 @@ import { RozetkaClient, type RozetkaOrder } from '../marketplaces/rozetkaClient'
 import { nanoid } from 'nanoid'
 import { ErrorFactory, AppError } from '../../middleware/errorHandler'
 import SalesService from '../sales/salesService'
-import { syncAfterOrder } from '../marketplaces/sync/syncMarketplaces'
+import { syncInventoryAdjustment } from '../marketplaces/sync/syncMarketplaces'
 import clientService from '../clients/clientService'
 import { OrderItemForSync } from '../../types/orders'
 
@@ -24,8 +24,7 @@ import {
   NameParts,
   OrderCustomerInfo,
   OrderRecipientInfo,
-  OrderDeliveryInfo,
-  OrderPaymentInfo,
+  OrderDeliveryInfo, 
   OrderFinancialInfo,
   OrderItemInput,
   OrderCreationResult,
@@ -711,22 +710,22 @@ class OrderService {
     })
 
     console.log(
-      `Created order ${orderId} with ${order.orderItems.length} items`,
+      `Created order ${orderId} from Prom with ${order.orderItems.length} items`,
     )
 
-    // Prepare orderedProducts for sync
-    /*const orderedProducts: OrderItemForSync[] = order.orderItems.map((item) => ({
+    // Inventory sync for Prom orders (currently disabled — enable when ready)
+    /*const itemsToDeduct: OrderItemForSync[] = order.orderItems.map((item) => ({
         productId: item.sku || item.externalProductId,
-        orderedQuantity: item.quantity,
+        quantity: item.quantity,
       }))
 
       //for now disable automatic sync
      try {
-         await syncAfterOrder(orderedProducts, 'prom')  
-        console.log(`✅ Synced inventory after Prom order ${orderId}`)
+         await syncInventoryAdjustment(itemsToDeduct, 'prom')  
+        console.log(`✅ Inventory adjusted after Prom order ${orderId}`)
       } catch (syncError) {
         console.error(
-          `❌ Failed to sync inventory for order ${orderId}:`,
+          `❌ Failed to adjust inventory for order ${orderId}:`,
           syncError
         )
       } */
@@ -907,21 +906,21 @@ class OrderService {
     })
 
     console.log(
-      `Created Rozetka order ${orderId} with ${order.orderItems.length} items`,
+      `Created order ${orderId} from Rozetka with ${order.orderItems.length} items`,
     )
 
-    // Prepare orderedProducts for sync
-    /* const orderedProducts: OrderItemForSync[] = order.orderItems.map((item) => ({
+    // Inventory sync for Rozetka orders (currently disabled — enable when ready)
+    /* const itemsToDeduct: OrderItemForSync[] = order.orderItems.map((item) => ({
         productId: item.sku || item.externalProductId,
-        orderedQuantity: item.quantity,
+        quantity: item.quantity,
       }))
 
        try {
-          await syncAfterOrder(orderedProducts, 'rozetka')
-        console.log(`✅ Synced inventory after Rozetka order ${orderId}`) 
+          await syncInventoryAdjustment(itemsToDeduct, 'rozetka')
+        console.log(`✅ Inventory adjusted after after Rozetka order ${orderId}`) 
       } catch (syncError) {
         console.error(
-          `❌ Failed to sync inventory for order ${orderId}:`,
+          `❌ Failed to adjust inventory for order ${orderId}:`,
           syncError
         )
       }*/
@@ -1164,22 +1163,21 @@ class OrderService {
     })
 
     console.log(
-      `Created CRM order ${orderId} with ${order.orderItems.length} items`,
-    )
-    // Prepare orderedProducts for sync
-    const orderedProducts: OrderItemForSync[] = order.orderItems.map(
-      (item) => ({
-        productId: item.productId,
-        orderedQuantity: item.quantity,
-      }),
+      `Created order ${orderId} from CRM with ${order.orderItems.length} items`,
     )
 
+    // Deduct stock for all items in the new CRM order
+    const itemsToDeduct: OrderItemForSync[] = order.orderItems.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+    }))
+
     try {
-      await syncAfterOrder(orderedProducts, 'crm')
-      console.log(`✅ Synced inventory after CRM order ${orderId}`)
+      await syncInventoryAdjustment(itemsToDeduct, 'crm')
+      console.log(`✅ Inventory adjusted after CRM order ${orderId} ${orderId}`)
     } catch (syncError) {
       console.error(
-        `❌ Failed to sync inventory for order ${orderId}:`,
+        `❌ Failed to adjust inventory for order ${orderId}:`,
         syncError,
       )
     }
@@ -1700,7 +1698,7 @@ class OrderService {
               if (quantityDelta !== 0 && resolvedProductId) {
                 itemsDelta.push({
                   productId: resolvedProductId,
-                  orderedQuantity: quantityDelta,
+                  quantity: quantityDelta,
                 })
               }
             }
@@ -1712,7 +1710,7 @@ class OrderService {
             if (existingItem.productId) {
               itemsDelta.push({
                 productId: existingItem.productId,
-                orderedQuantity: -existingItem.quantity, // Negative = return to stock
+                quantity: -existingItem.quantity, // Negative = return to stock
               })
             }
           }
@@ -1753,7 +1751,7 @@ class OrderService {
               // Add to inventory delta (new item = reduce stock)
               itemsDelta.push({
                 productId: resolvedProductId,
-                orderedQuantity: quantity,
+                quantity: quantity,
               })
             } else {
               // Product not found — skip creation and warn
@@ -1840,10 +1838,10 @@ class OrderService {
         console.log('🔄 Syncing inventory after order item update...')
         console.log('Inventory deltas:', itemsDelta)
         try {
-          await syncAfterOrder(itemsDelta, 'crm')
-          console.log('✅ Inventory synced successfully after order update')
+          await syncInventoryAdjustment(itemsDelta, 'crm')
+          console.log('✅ Inventory adjusted successfully after order update')
         } catch (syncError) {
-          console.error('❌ Failed to sync inventory:', syncError)
+          console.error('❌ Failed to adjust inventory:', syncError)
           // Don't throw - order was updated successfully, sync is secondary
         }
       }
@@ -1922,11 +1920,11 @@ class OrderService {
           .filter((item) => item.productId)
           .map((item) => ({
             productId: item.productId,
-            orderedQuantity: -item.quantity, // negative = return to stock
+            quantity: -item.quantity, // negative = return to stock
           }))
 
         if (itemsToRestore.length > 0) {
-          syncAfterOrder(itemsToRestore, 'crm')
+          syncInventoryAdjustment(itemsToRestore, 'crm')
             .then(() =>
               console.log(
                 `✅ Stock restored after order ${currentOrder.orderNumber || orderId} was moved back from DELIVERED`,
@@ -1950,11 +1948,11 @@ class OrderService {
           .filter((item) => item.productId)
           .map((item) => ({
             productId: item.productId,
-            orderedQuantity: -item.quantity,
+            quantity: -item.quantity,
           }))
 
         if (itemsToRestore.length > 0) {
-          syncAfterOrder(itemsToRestore, 'crm')
+          syncInventoryAdjustment(itemsToRestore, 'crm')
             .then(() =>
               console.log(
                 `✅ Stock restored after order ${currentOrder.orderNumber || orderId} was ${updates.status}`,
@@ -2015,12 +2013,12 @@ class OrderService {
         .filter((item) => item.productId)
         .map((item) => ({
           productId: item.productId,
-          orderedQuantity: -item.quantity, // negative = return to stock
+          quantity: -item.quantity, // negative = return to stock
         }))
 
       if (itemsToRestore.length > 0) {
         try {
-          await syncAfterOrder(itemsToRestore, 'crm')
+          await syncInventoryAdjustment(itemsToRestore, 'crm')
           console.log(
             `✅ Stock restored for ${itemsToRestore.length} item(s) before deleting order ${orderId}`,
           )

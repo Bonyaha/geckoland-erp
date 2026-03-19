@@ -542,87 +542,73 @@ const syncMarketplaces = async () => {
 }
 
 /**
- * Applies order-based inventory synchronization across the internal database
- * and connected marketplaces (Prom and Rozetka).
+ * Applies a signed inventory adjustment for one or more products, updating
+ * the internal database and propagating the change to connected marketplaces
+ * (Prom and/or Rozetka) according to the active sync strategy.
  *
- * This function adjusts stock levels after an order is placed on a marketplace,
- * updates the master quantity in the ERP, recalculates marketplace-specific quantities,
- * applies the appropriate sync strategy (`same_quantity` or `different_quantity`), and
- * determines whether downstream marketplace updates are required.
+ * This is a **bidirectional** function — the sign of `quantity` determines
+ * the direction of the stock change:
+ * - `quantity > 0`  →  **deduct** from stock  (order placed, item added)
+ * - `quantity < 0`  →  **return** to stock    (order cancelled/deleted, item removed)
  *
- * Marketplace API updates are currently disabled for safety, but the function still:
- * - Computes required deltas
- * - Marks products with sync flags
- * - Writes updated stock values to the database
+ * Marketplace API updates are currently disabled for safety, but the function
+ * still computes required deltas, sets sync flags, and writes updated stock
+ * values to the database.
  *
- * @param orderedProducts Array of ordered product items, each containing:
- * - `productId`: internal product identifier
- * - `orderedQuantity`: number of units purchased in the order
- *
- * @param sourceMarketplace Marketplace where the order originated (`prom` or `rozetka`)
- *
- * @remarks
- * - Reduces local master stock based on the order quantity.
- * - Determines synchronization strategy:
- *   - `same_quantity`: both marketplaces must remain aligned; order delta is mirrored.
- *   - `different_quantity`: marketplaces operate independently; only source marketplace updates.
- * - Computes new marketplace quantities (Prom/Rozetka) and sets sync flags accordingly.
- * - Updates database fields: `stockQuantity`, `promQuantity`, `rozetkaQuantity`,
- *   availability flags, and sync timestamps.
- * - Prepares, but does not execute, outbound marketplace API updates
- *   (execution is explicitly commented out for safety).
- * - Clears sync flags after internal processing is complete.
+ * @param items   Products to adjust, each with an internal `productId` and a
+ *                signed `quantity`.
+ * @param source  Which system triggered the change; controls sync-strategy
+ *                direction:
+ *                - `'prom'` / `'rozetka'` — change originated on that marketplace
+ *                - `'crm'`                 — change originated inside this CRM
  *
  * @example
- * await syncAfterOrder(
+ * // Deduct stock — order placed in CRM
+ * await syncInventoryAdjustment(
  *   [
- *     { productId: "P123", orderedQuantity: 2 },
- *     { productId: "P456", orderedQuantity: 1 }
+ *     { productId: 'P123', quantity: 2 },   // take 2 units
+ *     { productId: 'P456', quantity: 1 },   // take 1 unit
  *   ],
- *   "prom"
- * );
- *
- * // Effects:
- * // - Stock is reduced for each product
- * // - Prom quantity decreases by ordered amount
- * // - If quantities were previously equal, Rozetka is aligned to new stock
- * // - DB is updated; sync flags set depending on strategy
+ *   'crm',
+ * )
  *
  * @example
- * // SAME QUANTITY strategy example:
+ * // Restore stock — order cancelled
+ * await syncInventoryAdjustment(
+ *   [{ productId: 'P123', quantity: -2 }],  // return 2 units
+ *   'crm',
+ * )
+ *
+ * @example
+ * // SAME QUANTITY strategy:
  * // promQuantity = 50, rozetkaQuantity = 50, stock = 50
- * // Prom order of 3 units:
- * //   - master = 47
- * //   - newPromQuantity = 47
- * //   - newRozetkaQuantity = 47 (mirrored)
+ * // Prom order of 3 units → master = 47, Prom = 47, Rozetka mirrored to 47
  *
  * @example
- * // DIFFERENT QUANTITY strategy example:
+ * // DIFFERENT QUANTITY strategy:
  * // promQuantity = 40, rozetkaQuantity = 55
- * // Rozetka order of 5 units:
- * //   - master = 50
- * //   - newRozetkaQuantity = 50
- * //   - Prom remains unchanged at 40
+ * // Rozetka order of 5 units → master = 50, Rozetka = 50, Prom stays 40
  */
 
-export const syncAfterOrder = async (
+export const syncInventoryAdjustment = async (
   orderedProducts: Array<{
     productId: string // App's internal product ID
-    orderedQuantity: number // How many were ordered
+    /** Positive = deduct from stock.  Negative = return to stock. */
+    quantity: number
   }>,
-  sourceMarketplace: 'prom' | 'rozetka' | 'crm', // Where the order came from
+  source: 'prom' | 'rozetka' | 'crm', // Where the order came from
 ) => {
   console.log(
-    `Processing order sync for ${orderedProducts.length} products from ${sourceMarketplace}`,
+    `Processing order sync for ${orderedProducts.length} products from ${source}`,
   )
 
   // Track products that need updates
   const productsToUpdate = new Map<string, ProductSyncEntry>()
 
   // Process each ordered product
-  for (const { productId, orderedQuantity } of orderedProducts) {
+  for (const { productId, quantity } of orderedProducts) {
     console.log(
-      `Processing order for product ${productId}: ${orderedQuantity} units`,
+      `Adjusting inventory for product ${productId}: ${quantity} units`,
     )
 
     const appProduct = await prisma.products.findUnique({
@@ -637,14 +623,14 @@ export const syncAfterOrder = async (
     const externalIds = appProduct.externalIds as ProductExternalIds
 
     // Calculate quantity delta (negative because items were ordered/sold)
-    const masterQuantityDelta = -orderedQuantity
+    const masterQuantityDelta = -quantity
 
     const currentPromQuantity =
       appProduct.promQuantity ?? appProduct.stockQuantity
     const currentRozetkaQuantity =
       appProduct.rozetkaQuantity ?? appProduct.stockQuantity
     gmailLogger.info(
-      `Order sync for product ${productId}: currentPromQuantity=${currentPromQuantity}, currentRozetkaQuantity=${currentRozetkaQuantity}, masterQuantityDelta=${masterQuantityDelta}`,
+      `Inventory adjustment for product ${productId}: currentPromQuantity=${currentPromQuantity}, currentRozetkaQuantity=${currentRozetkaQuantity}, masterQuantityDelta=${masterQuantityDelta}`,
       {
         productId,
         currentPromQuantity,
@@ -680,14 +666,14 @@ export const syncAfterOrder = async (
     }
 
     // Apply the order delta to the source marketplace
-    if (sourceMarketplace === 'prom') {
+    if (source === 'prom') {
       entry.newPromQuantity = Math.max(
         0,
         currentPromQuantity + masterQuantityDelta,
       )
 
       console.log(
-        `Prom order: ${currentPromQuantity} -> ${entry.newPromQuantity} (${masterQuantityDelta})`,
+        `Prom adjustment: ${currentPromQuantity} -> ${entry.newPromQuantity} (delta ${masterQuantityDelta})`,
       )
 
       // For same_quantity strategy, sync to other marketplace
@@ -695,14 +681,14 @@ export const syncAfterOrder = async (
         entry.needsRozetkaSync = true
         entry.newRozetkaQuantity = newMasterQuantity
       }
-    } else if (sourceMarketplace === 'rozetka') {
+    } else if (source === 'rozetka') {
       entry.newRozetkaQuantity = Math.max(
         0,
         currentRozetkaQuantity + masterQuantityDelta,
       )
 
       console.log(
-        `Rozetka order: ${currentRozetkaQuantity} -> ${entry.newRozetkaQuantity} (${masterQuantityDelta})`,
+        `Rozetka adjustment: ${currentRozetkaQuantity} -> ${entry.newRozetkaQuantity} (delta ${masterQuantityDelta})`,
       )
 
       // For same_quantity strategy, sync to other marketplace
@@ -710,10 +696,10 @@ export const syncAfterOrder = async (
         entry.needsPromSync = true
         entry.newPromQuantity = newMasterQuantity
       }
-    } else if (sourceMarketplace === 'crm') {
+    } else if (source === 'crm') {
       // CRM orders: update master quantity and marketplace quantities based on strategy
       console.log(
-        `CRM order: master quantity ${appProduct.stockQuantity} -> ${newMasterQuantity} (${masterQuantityDelta})`,
+        `CRM adjustment: master quantity ${appProduct.stockQuantity} -> ${newMasterQuantity} (delta ${masterQuantityDelta})`,
       )
 
       if (syncStrategy === 'same_quantity') {
@@ -741,7 +727,7 @@ export const syncAfterOrder = async (
   }
 
   console.log(
-    'Products to update after order processing:',
+    'Products to update after inventory adjustment:',
     JSON.stringify(Array.from(productsToUpdate), null, 2),
   )
 
@@ -787,7 +773,7 @@ export const syncAfterOrder = async (
   )
 
   gmailLogger.info(
-    `Order sync for ${sourceMarketplace}: ${productsNeedingSync.length} products need marketplace updates`,
+    `Inventory adjustment from ${source}: ${productsNeedingSync.length} products need marketplace updates`,
     { products: productsNeedingSync },
   )
   /******************************************************************** */
@@ -858,7 +844,7 @@ export const syncAfterOrder = async (
       `🚀 Batch updating ${promUpdates.length} Prom products after order`,
     )
     gmailLogger.info(
-      `I am going to update ${promUpdates.length} Prom products after order synchronization for ${sourceMarketplace}`,
+      `Preparing to push ${promUpdates.length} Prom product(s) after inventory adjustment from ${source}`,
       promUpdates,
     )
     // If you have updateMultiplePromProducts, use it here
@@ -876,7 +862,7 @@ export const syncAfterOrder = async (
       `🚀 Batch updating ${rozetkaUpdates.length} Rozetka products after order`,
     )
     gmailLogger.info(
-      `I am going to update ${rozetkaUpdates.length} Rozetka products after order synchronization for ${sourceMarketplace}`,
+      `Preparing to push ${rozetkaUpdates.length} Rozetka product(s) after inventory adjustment from ${source}`,
       rozetkaUpdates,
     )
     //syncPromises.push(updateMultipleRozetkaProducts(rozetkaUpdates))
@@ -936,9 +922,7 @@ export const syncAfterOrder = async (
     )
   }
 
-  console.log(
-    `🎉 Order-based marketplace synchronization completed for ${sourceMarketplace}`,
-  )
+  console.log(`🎉 Inventory adjustment sync completed for ${source}`)
 }
 
 // Run every 5 minutes
@@ -951,7 +935,7 @@ export const syncAfterOrder = async (
 //syncRozetkaProductIds()
 //updateAllMarketplaceQuantities()
 /* ;(async () => {
-  await syncAfterOrder(
+  await syncInventoryAdjustment(
     [{ productId: '2737880255', orderedQuantity: 2 }],
     'prom'
   )

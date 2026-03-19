@@ -475,23 +475,31 @@ export interface BaseOrderCreateInput {
 // ============================================
 
 /**
- * Simplified order item for inventory synchronization.
- * Used when syncing stock levels after order creation.
+ * Minimal product descriptor passed to `syncInventoryAdjustment`.
  *
- * @remarks
- * After creating an order, pass order items in this format to syncAfterOrder().
+ * Sign convention for `quantity`:
+ *   - **positive** → deduct from stock  (order placed, item added to order)
+ *   - **negative** → return to stock    (order cancelled/deleted, item removed)
  *
  * @example
- * const itemsForSync: OrderItemForSync[] = order.orderItems.map(item => ({
- *   productId: item.sku || item.externalProductId,
- *   orderedQuantity: item.quantity
+ * // Deduct stock when creating an order
+ * const items: OrderItemForSync[] = order.orderItems.map(item => ({
+ *   productId: item.productId,
+ *   quantity: item.quantity,          // positive = take from stock
  * }))
+ * await syncInventoryAdjustment(items, 'crm')
  *
- * await syncAfterOrder(itemsForSync, 'prom')
+ * @example
+ * // Restore stock when cancelling an order
+ * const items: OrderItemForSync[] = order.orderItems.map(item => ({
+ *   productId: item.productId,
+ *   quantity: -item.quantity,         // negative = return to stock
+ * }))
+ * await syncInventoryAdjustment(items, 'crm')
  */
 export interface OrderItemForSync {
   productId: string // App's internal product ID or SKU
-  orderedQuantity: number
+  quantity: number
 }
 
 /**
