@@ -125,6 +125,10 @@ const OrdersPage = () => {
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null) // State for Actions menu
   const [editingOrder, setEditingOrder] = useState<Order | null>(null)
   const [deletingOrder, setDeletingOrder] = useState<Order | null>(null)
+const [menuPosition, setMenuPosition] = useState<{
+  top: number
+  right: number
+} | null>(null)
 
   const { toast, showToast, hideToast } = useToast()
 
@@ -715,13 +719,26 @@ const OrdersPage = () => {
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
-                        onClick={() =>
-                          setActiveActionMenu(
-                            activeActionMenu === order.orderId
-                              ? null
-                              : order.orderId,
-                          )
-                        }
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const isOpening = activeActionMenu !== order.orderId
+                          setActiveActionMenu(isOpening ? order.orderId : null)
+
+                          if (isOpening) {
+                            // Calculate position when opening
+                            const rect = e.currentTarget.getBoundingClientRect()
+                            const menuHeight = 200
+                            const spaceBelow = window.innerHeight - rect.bottom
+
+                            setMenuPosition({
+                              top:
+                                spaceBelow < menuHeight && rect.top > menuHeight
+                                  ? rect.top - menuHeight
+                                  : rect.bottom + 8,
+                              right: window.innerWidth - rect.right,
+                            })
+                          }
+                        }}
                         className='p-2 hover:bg-gray-100 rounded-full transition-colors'
                       >
                         <MoreVertical
@@ -730,38 +747,64 @@ const OrdersPage = () => {
                         />
                       </button>
 
-                      {activeActionMenu === order.orderId && (
-                        <div className='absolute right-0 mt-2 w-48 rounded-md shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-[100] divide-y divide-gray-100'>
-                          <div className='py-1'>
-                            <button
-                              className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition-colors cursor-pointer'
-                              onClick={() => setEditingOrder(order)}
-                            >
-                              Редагувати
-                            </button>
-                            <button
-                              className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition-colors cursor-pointer'
-                              onClick={() => handleCopySale(order)}
-                            >
-                              Копіювати продаж
-                            </button>
-                            <button className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition-colors cursor-pointer'>
-                              Додати витрату
-                            </button>
+                      {activeActionMenu === order.orderId && menuPosition && (
+                        <>
+                          {/* Backdrop */}
+                          <div
+                            className='fixed inset-0 z-[99]'
+                            onClick={() => {
+                              setActiveActionMenu(null)
+                              setMenuPosition(null)
+                            }}
+                          />
+                          {/* Menu with fixed positioning */}
+                          <div
+                            className='fixed w-48 rounded-md shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-[100] divide-y divide-gray-100'
+                            style={{
+                              top: `${menuPosition.top}px`,
+                              right: `${menuPosition.right}px`,
+                            }}
+                          >
+                            <div className='py-1'>
+                              <button
+                                className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition-colors cursor-pointer text-left'
+                                onClick={() => {
+                                  setEditingOrder(order)
+                                  setActiveActionMenu(null)
+                                  setMenuPosition(null)
+                                }}
+                              >
+                                Редагувати
+                              </button>
+                              <button
+                                className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition-colors cursor-pointer text-left'
+                                onClick={() => {
+                                  handleCopySale(order)
+                                  setActiveActionMenu(null)
+                                  setMenuPosition(null)
+                                }}
+                              >
+                                Копіювати продаж
+                              </button>
+                              <button className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 transition-colors cursor-pointer text-left'>
+                                Додати витрату
+                              </button>
+                            </div>
+                            <div className='py-1'>
+                              <button
+                                className='flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 font-medium hover:bg-red-50 transition-colors cursor-pointer text-left'
+                                onClick={() => {
+                                  setActiveActionMenu(null)
+                                  setMenuPosition(null)
+                                  setDeletingOrder(order)
+                                }}
+                              >
+                                <Trash2 size={14} />
+                                Видалити
+                              </button>
+                            </div>
                           </div>
-                          <div className='py-1'>
-                            <button
-                              className='flex items-center w-full px-4 py-2.5 text-sm text-red-600 font-medium hover:bg-red-50 transition-colors cursor-pointer'
-                              onClick={() => {
-                                setActiveActionMenu(null)
-                                setDeletingOrder(order)
-                              }}
-                            >
-                              <Trash2 size={14} />
-                              Видалити
-                            </button>
-                          </div>
-                        </div>
+                        </>
                       )}
                     </div>
                   </td>
