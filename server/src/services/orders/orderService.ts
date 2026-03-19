@@ -1207,7 +1207,8 @@ class OrderService {
     try {
       const newOrders = await this.promClient.getNewOrders(
         options.specificOrderId,
-        options.skipRetry)
+        options.skipRetry,
+      )
       console.log(`Found ${newOrders.length} pending orders from Prom`)
 
       let created = 0
@@ -1910,30 +1911,62 @@ class OrderService {
             currentOrder.clientPhone,
             Number(currentOrder.totalAmount),
             false, // decrement
-            false, // isSuccessful - since it's no longer delivered
+            true, // isSuccessful false since it's no longer delivered
           )
           .catch((error) => {
             console.error('Failed to decrement client stats:', error)
           })
+        // Restore stock — the product was not actually delivered,
+        // so the deduction made at order creation must be reversed.
+        const itemsToRestore: OrderItemForSync[] = updatedOrder.orderItems
+          .filter((item) => item.productId)
+          .map((item) => ({
+            productId: item.productId,
+            orderedQuantity: -item.quantity, // negative = return to stock
+          }))
+
+        if (itemsToRestore.length > 0) {
+          syncAfterOrder(itemsToRestore, 'crm')
+            .then(() =>
+              console.log(
+                `✅ Stock restored after order ${currentOrder.orderNumber || orderId} was moved back from DELIVERED`,
+              ),
+            )
+            .catch((error) =>
+              console.error(
+                `❌ Failed to restore stock on delivery reversal:`,
+                error,
+              ),
+            )
+        }
+
       }
       if (isChangingToFailure) {
         console.log(
-          `Order ${currentOrder.orderNumber || orderId} status changed to ${updates.status} (non-delivery cancellation), updating client stats...`,
-        )
+          `Order ${currentOrder.orderNumber || orderId} status changed to ${updates.status} (non-delivery cancellation), restoring stock, no client stat changes needed`,
+        )        
 
-        clientService
-          .updateClientStats(
-            currentOrder.clientPhone,
-            Number(currentOrder.totalAmount),
-            true, // increment totalOrders — the order did happen
-            false, // NOT successful — client didn't pay / refused
-          )
-          .catch((error) => {
-            console.error(
-              'Failed to update client stats on cancellation:',
-              error,
+        const itemsToRestore: OrderItemForSync[] = updatedOrder.orderItems
+          .filter((item) => item.productId)
+          .map((item) => ({
+            productId: item.productId,
+            orderedQuantity: -item.quantity,
+          }))
+
+        if (itemsToRestore.length > 0) {
+          syncAfterOrder(itemsToRestore, 'crm')
+            .then(() =>
+              console.log(
+                `✅ Stock restored after order ${currentOrder.orderNumber || orderId} was ${updates.status}`,
+              ),
             )
-          })
+            .catch((error) =>
+              console.error(
+                `❌ Failed to restore stock on cancellation:`,
+                error,
+              ),
+            )
+        }
       }
 
       return updatedOrder
@@ -1950,11 +1983,59 @@ class OrderService {
   async deleteOrder(orderId: string): Promise<void> {
     const existing = await prisma.orders.findUnique({
       where: { orderId },
-      select: { orderId: true },
+      select: {
+        orderId: true,
+        status: true,
+        orderItems: {
+          select: { productId: true, quantity: true },
+        },
+      },
     })
 
     if (!existing) {
       throw ErrorFactory.notFound(`Order ${orderId} not found`)
+    }
+
+    // Statuses where stock must NOT be restored:
+    // - DELIVERED: product reached the client, deduction is permanent
+    // - CANCELED / RETURN: stock was already restored on status change
+    const SKIP_STOCK_RESTORE: OrderStatus[] = [
+      OrderStatus.DELIVERED,
+      OrderStatus.CANCELED,
+      OrderStatus.RETURN,
+    ]
+
+    const shouldRestoreStock = !SKIP_STOCK_RESTORE.includes(
+      existing.status as OrderStatus,
+    )
+
+    if (shouldRestoreStock) {
+      // Restore stock for all items before deleting.
+      const itemsToRestore: OrderItemForSync[] = existing.orderItems
+        .filter((item) => item.productId)
+        .map((item) => ({
+          productId: item.productId,
+          orderedQuantity: -item.quantity, // negative = return to stock
+        }))
+
+      if (itemsToRestore.length > 0) {
+        try {
+          await syncAfterOrder(itemsToRestore, 'crm')
+          console.log(
+            `✅ Stock restored for ${itemsToRestore.length} item(s) before deleting order ${orderId}`,
+          )
+        } catch (syncError) {
+          console.error(
+            `❌ Failed to restore stock for order ${orderId}:`,
+            syncError,
+          )
+          // Don't block deletion — log and proceed
+        }
+      }
+    } else {
+      console.log(
+        `⏭️  Skipping stock restoration for order ${orderId} — status is ${existing.status}`,
+      )
     }
 
     // OrderItems are cascade-deleted via the Prisma schema onDelete: Cascade

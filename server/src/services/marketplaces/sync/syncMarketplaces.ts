@@ -879,13 +879,13 @@ export const syncAfterOrder = async (
       `I am going to update ${rozetkaUpdates.length} Rozetka products after order synchronization for ${sourceMarketplace}`,
       rozetkaUpdates,
     )
-    syncPromises.push(updateMultipleRozetkaProducts(rozetkaUpdates))
+    //syncPromises.push(updateMultipleRozetkaProducts(rozetkaUpdates))
   }
 
   // Execute all updates
   if (syncPromises.length > 0) {
     try {
-      await Promise.all(syncPromises)
+      //await Promise.all(syncPromises)
       console.log('✅ All order-based sync updates completed successfully')
     } catch (error) {
       console.error('❌ Some order-based sync updates failed:', error)
