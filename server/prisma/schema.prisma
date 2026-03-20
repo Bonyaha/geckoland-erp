@@ -30,12 +30,53 @@ model Clients {
   createdAt     DateTime @default(now()) @db.Timestamptz(6)
   updatedAt     DateTime @updatedAt @db.Timestamptz(6)
   orders        Orders[]
+phones           ClientPhones[]
+addresses        ClientAddresses[]
+comments         ClientComments[]
 
   @@index([phone])               // Fast lookup for getOrCreateClient
   @@index([email])               // For filtering/searching by email
   @@index([lastName, firstName]) // Name search optimization  
   
 }
+
+model ClientPhones {
+  phoneId   String   @id @default(cuid())
+  clientId  String
+  phone     String   
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  client    Clients  @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([phone])
+}
+
+model ClientAddresses {
+  addressId          String   @id @default(cuid())
+  clientId           String  
+  address            String  // Full human-readable address string, e.g. "вул. Васильківська, 55 (м. Виставковий Центр)"
+  branchNumber       String? //holds the branch identifier, e.g. "№64", "№59995 (Поштомат)"
+  deliveryOptionName String?  // "NovaPoshta" | "UkrPoshta" | etc.
+  isPrimary          Boolean  @default(false)
+  createdAt          DateTime @default(now()) @db.Timestamptz(6)
+  client             Clients  @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+
+  @@index([clientId])
+}
+
+model ClientComments {
+  commentId String   @id @default(cuid())
+  clientId  String
+  text      String                         // the comment body
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  client    Clients  @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([createdAt])
+}
+
 
 model Products {
   productId        String       @id
