@@ -64,6 +64,31 @@ export interface ProductQueryParams {
   stockFilter?: 'all' | 'inStock' | 'outOfStock'
 }
 
+// ================================
+//        CLIENT INTERFACES
+// ================================
+
+export interface ClientAddress {
+  addressId: string
+  clientId: string
+  address: string
+  branchNumber?: string | null
+  deliveryOptionName?: string | null
+  isPrimary: boolean
+  createdAt: string
+}
+
+export interface CreateClientAddressInput {
+  clientId: string
+  address: string
+  branchNumber?: string
+  deliveryOptionName?: string
+  isPrimary?: boolean
+}
+
+
+
+
 export interface SyncMarketplacesResult {
   success: boolean
   productsCreatedFromProm: number
@@ -448,6 +473,7 @@ export const api = createApi({
       query: () => '/dashboard',
       providesTags: ['DashboardMetrics'],
     }),
+    /* PRODUCTS ENDPOINTS */
     getProducts: build.query<ProductsResponse, ProductQueryParams | void>({
       query: (params) => ({
         url: '/products',
@@ -511,14 +537,6 @@ export const api = createApi({
         method: 'POST',
       }),
       invalidatesTags: ['Products'],
-    }),
-    getUsers: build.query<User[], void>({
-      query: () => '/users',
-      providesTags: ['Users'],
-    }),
-    getExpensesByCategory: build.query<ExpenseByCategorySummary[], void>({
-      query: () => '/expenses',
-      providesTags: ['Expenses'],
     }),
 
     /* ORDERS ENDPOINTS */
@@ -586,6 +604,8 @@ export const api = createApi({
         { type: 'Orders', id: orderId },
       ],
     }),
+
+    /* TRACKING ENDPOINTS */
     fetchTrackingNumber: build.mutation<
       { success: boolean; message: string; data: any },
       string
@@ -674,7 +694,7 @@ export const api = createApi({
       ],
     }),
 
-    //Client endpoints
+    /* CLIENTS ENDPOINTS */
     getClients: build.query<
       ClientsResponse,
       { search?: string; page?: number; limit?: number } | void
@@ -697,6 +717,67 @@ export const api = createApi({
       // Transform response to extract just the clients array
       transformResponse: (response: ClientsResponse) => response.data.clients,
       providesTags: ['Clients'],
+    }),
+
+    /* CLIENT ADDRESSES ENDPOINTS */
+    getClientAddresses: build.query<ClientAddress[], string>({
+      query: (clientId) => `/clients/${clientId}/addresses`,
+      transformResponse: (response: {
+        success: boolean
+        data: ClientAddress[]
+      }) => response.data,
+      providesTags: (result, error, clientId) => [
+        { type: 'Clients', id: `${clientId}-addresses` },
+      ],
+    }),
+
+    createClientAddress: build.mutation<
+      { success: boolean; data: ClientAddress },
+      CreateClientAddressInput
+    >({
+      query: ({ clientId, ...body }) => ({
+        url: `/clients/${clientId}/addresses`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: (result, error, { clientId }) => [
+        { type: 'Clients', id: `${clientId}-addresses` },
+        { type: 'Clients', id: clientId },
+      ],
+    }),
+
+    updateClientAddress: build.mutation<
+      { success: boolean; data: ClientAddress },
+      {
+        addressId: string
+        updates: {
+          address?: string
+          branchNumber?: string
+          deliveryOptionName?: string
+          isPrimary?: boolean
+        }
+      }
+    >({
+      query: ({ addressId, updates }) => ({
+        url: `/addresses/${addressId}`,
+        method: 'PATCH',
+        body: updates,
+      }),
+      invalidatesTags: (result, error, { addressId }) => [
+        'Clients',
+        { type: 'Clients', id: addressId },
+      ],
+    }),
+
+    deleteClientAddress: build.mutation<
+      { success: boolean; message: string },
+      string
+    >({
+      query: (addressId) => ({
+        url: `/addresses/${addressId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Clients'],
     }),
 
     /* SETTINGS ENDPOINTS */
@@ -724,6 +805,14 @@ export const api = createApi({
         method: 'POST',
         body: body ?? {},
       }),
+    }),
+    getUsers: build.query<User[], void>({
+      query: () => '/users',
+      providesTags: ['Users'],
+    }),
+    getExpensesByCategory: build.query<ExpenseByCategorySummary[], void>({
+      query: () => '/expenses',
+      providesTags: ['Expenses'],
     }),
   }),
 })
@@ -753,6 +842,10 @@ export const {
   useDeleteOrderMutation,
   useGetClientsQuery,
   useSearchClientsAutocompleteQuery,
+  useGetClientAddressesQuery,
+  useCreateClientAddressMutation,
+  useUpdateClientAddressMutation,
+  useDeleteClientAddressMutation,
   useGetRozetkaStoreStatusQuery,
   useSetRozetkaStoreStatusMutation,
   useSyncAllQuantitiesToMarketplacesMutation,

@@ -11,8 +11,11 @@ import {
   /* useGetOrCreateClientMutation */
   Product,
   CreateCRMOrderInput,
-  Client,
+  type Client,
+  useGetClientAddressesQuery,
+  type ClientAddress,
 } from '@/state/api'
+
 import {
   Trash2,
   Save,
@@ -32,6 +35,8 @@ import {
 import { useToast } from '@/hooks/useToast'
 import Toast from '@/app/(components)/Toast'
 
+import { AddAddressModal } from '../(components)'
+
 type OrderItemWithStock = NonNullable<CreateCRMOrderInput['items']>[number] & {
   stockQuantity: number
 }
@@ -49,8 +54,7 @@ const CreateOrderPage = () => {
     clientSecondName: '',
     clientPhone: '',
     clientEmail: '',
-    deliveryAddress: '',
-    deliveryCity: '',
+    deliveryAddress: '',    
     deliveryOptionName: '',
     paymentOptionName: '',
     totalAmount: 0,
@@ -67,7 +71,6 @@ const CreateOrderPage = () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // STATE - Product Search & Selection
   // ═══════════════════════════════════════════════════════════════════════════
-  // Product dropdown and search state
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -76,14 +79,16 @@ const CreateOrderPage = () => {
   const [prefilledSkus, setPrefilledSkus] = useState<string>('')
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // STATE - Client Search & Selection
+  // STATE - Client Search & Selection & Address Management
   // ═══════════════════════════════════════════════════════════════════════════
 
-  // Client search state
   const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false)
   const [clientSearchTerm, setClientSearchTerm] = useState('')
   const [debouncedClientSearch, setDebouncedClientSearch] = useState('')
-
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null)
+  const [isAddressDropdownOpen, setIsAddressDropdownOpen] = useState(false)
+  const [showAddAddressModal, setShowAddAddressModal] = useState(false)
+  
   // ═══════════════════════════════════════════════════════════════════════════
   // API QUERIES & MUTATIONS
   // ═══════════════════════════════════════════════════════════════════════════
@@ -114,6 +119,12 @@ const CreateOrderPage = () => {
       skip: debouncedClientSearch.length < 3,
     })
 
+  // Fetch addresses when client is selected
+  const { data: clientAddresses } = useGetClientAddressesQuery(
+    selectedClient?.clientId || '',
+    { skip: !selectedClient?.clientId },
+  )
+
   // ═══════════════════════════════════════════════════════════════════════════
   // COMPUTED VALUES
   // ═══════════════════════════════════════════════════════════════════════════
@@ -143,8 +154,7 @@ const CreateOrderPage = () => {
         clientSecondName: prefill.clientSecondName ?? prev.clientSecondName,
         clientPhone: prefill.clientPhone ?? prev.clientPhone,
         clientEmail: prefill.clientEmail ?? prev.clientEmail,
-        deliveryAddress: prefill.deliveryAddress ?? prev.deliveryAddress,
-        deliveryCity: prefill.deliveryCity ?? prev.deliveryCity,
+        deliveryAddress: '',
         deliveryOptionName:
           prefill.deliveryOptionName ?? prev.deliveryOptionName,
         paymentOptionName: prefill.paymentOptionName ?? prev.paymentOptionName,
@@ -258,7 +268,7 @@ const CreateOrderPage = () => {
   // HANDLERS - Client Selection
   // ═══════════════════════════════════════════════════════════════════════════
   const handleClientSelect = (client: Client) => {
-    /* setSelectedClient(client) */
+    setSelectedClient(client)
     setClientSearchTerm(
       `${client.lastName} ${client.firstName} (${client.phone})`,
     )
@@ -269,7 +279,7 @@ const CreateOrderPage = () => {
       clientSecondName: client.secondName || '',
       clientPhone: client.phone,
       clientEmail: client.email || '',
-      deliveryAddress: client.address || '',
+      deliveryAddress: '',
       deliveryOptionName: client.deliveryOptionName || '',
       paymentOptionName: client.paymentOptionName || '',
     }))
@@ -301,12 +311,35 @@ const CreateOrderPage = () => {
       clientLastName: '',
       clientSecondName: '',
       clientEmail: '',
-      deliveryAddress: '',
-      deliveryCity: '',
+      deliveryAddress: '',      
       deliveryOptionName: '',
       paymentOptionName: '',
     }))
   }
+
+// HANDLERS - Address Selection
+
+const handleAddressSelect = (address: ClientAddress) => { 
+  setFormData((prev) => ({
+    ...prev,
+    deliveryAddress: address.address,
+    deliveryOptionName: address.deliveryOptionName || prev.deliveryOptionName,
+  }))
+  setIsAddressDropdownOpen(false)
+}
+
+const handleNewAddressAdded = (address: {
+  addressId: string
+  address: string
+  deliveryOptionName?: string | null
+}) => {
+  setFormData((prev) => ({
+    ...prev,
+    deliveryAddress: address.address,
+    deliveryOptionName: address.deliveryOptionName || prev.deliveryOptionName,
+  }))
+}
+
 
   // ═══════════════════════════════════════════════════════════════════════════
   // HANDLERS - Product Selection
@@ -921,33 +954,97 @@ const CreateOrderPage = () => {
                   <option value='UkrPoshta'>Укрпошта</option>
                 </select>
               </div>
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Місто
-                </label>
-                <input
-                  type='text'
-                  value={formData.deliveryCity}
-                  onChange={(e) =>
-                    handleInputChange('deliveryCity', e.target.value)
-                  }
-                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
-                  placeholder='Київ'
-                />
-              </div>
               <div className='md:col-span-2'>
                 <label className='block text-sm font-medium text-gray-700 mb-1'>
                   Адреса
                 </label>
-                <input
-                  type='text'
-                  value={formData.deliveryAddress}
-                  onChange={(e) =>
-                    handleInputChange('deliveryAddress', e.target.value)
-                  }
-                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
-                  placeholder='Відділення №1 або адреса доставки'
-                />
+                {/* CHANGE: New address dropdown */}
+                <div className='relative'>
+                  <input
+                    type='text'
+                    value={formData.deliveryAddress}
+                    onChange={(e) => {
+                      handleInputChange('deliveryAddress', e.target.value)
+                      if (!selectedClient) {
+                        setIsAddressDropdownOpen(false)
+                      }
+                    }}
+                    onFocus={() => {
+                      if (selectedClient) {
+                        setIsAddressDropdownOpen(true)
+                      }
+                    }}
+                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+                    placeholder={
+                      selectedClient
+                        ? 'Виберіть адресу зі списку'
+                        : 'Введіть адресу'
+                    }
+                  />
+
+                  {/* Address Dropdown */}
+                  {isAddressDropdownOpen && selectedClient && (
+                    <>
+                      <div
+                        className='fixed inset-0 z-40'
+                        onClick={() => setIsAddressDropdownOpen(false)}
+                      />
+                      <div className='absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-64 overflow-y-auto'>
+                        {/* Add New Address Button */}
+                        <button
+                          type='button'
+                          onClick={() => {
+                            setShowAddAddressModal(true)
+                            setIsAddressDropdownOpen(false)
+                          }}
+                          className='w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-200 transition-colors text-blue-600 font-medium cursor-pointer'
+                        >
+                          <span className='text-lg'>+</span>
+                          Додати адресу доставки
+                        </button>
+
+                        {/* Address List */}
+                        {clientAddresses && clientAddresses.length > 0 ? (
+                          clientAddresses.map((address) => (
+                            <button
+                              key={address.addressId}
+                              type='button'
+                              onClick={() => handleAddressSelect(address)}
+                              className='w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-0 transition-colors cursor-pointer'
+                            >
+                              <div className='flex-1'>
+                                <p className='text-sm font-medium text-gray-900'>
+                                  {address.address}
+                                </p>
+                                {address.branchNumber && (
+                                  <p className='text-xs text-gray-500 mt-0.5'>
+                                    {address.branchNumber}
+                                  </p>
+                                )}
+                                {address.deliveryOptionName && (
+                                  <p className='text-xs text-blue-600 mt-0.5'>
+                                    {address.deliveryOptionName === 'NovaPoshta'
+                                      ? 'Нова Пошта'
+                                      : 'Укрпошта'}
+                                  </p>
+                                )}
+                              </div>
+                              {address.isPrimary && (
+                                <span className='text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full'>
+                                  Основна
+                                </span>
+                              )}
+                            </button>
+                          ))
+                        ) : (
+                          <div className='px-4 py-3 text-sm text-gray-500 text-center'>
+                            Немає збережених адрес
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
               <div>
                 <label className='block text-sm font-medium text-gray-700 mb-1'>
@@ -1012,6 +1109,14 @@ const CreateOrderPage = () => {
               </button>
             </div>
           </div>
+          {showAddAddressModal && selectedClient && (
+            <AddAddressModal
+              clientId={selectedClient.clientId}
+              clientName={`${selectedClient.lastName} ${selectedClient.firstName}`}
+              onClose={() => setShowAddAddressModal(false)}
+              onSuccess={handleNewAddressAdded}
+            />
+          )}
         </form>
       </div>
       <Toast

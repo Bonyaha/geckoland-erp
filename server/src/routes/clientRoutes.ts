@@ -8,6 +8,14 @@ import {
   getClientsQuerySchema,
   getClientByIdSchema,
 } from '../schemas/client.schema'
+
+import {
+  createClientAddressSchema,
+  updateClientAddressSchema,
+  getClientAddressesSchema,
+  deleteClientAddressSchema,
+} from '../schemas/clientAddress.schema'
+
 import {
   createClient,
   getClients,
@@ -15,6 +23,13 @@ import {
   updateClient,  
   getOrCreateClient,
 } from '../controllers/clients/clientController'
+
+import {
+  getClientAddresses,
+  createClientAddress,
+  updateClientAddress,
+  deleteClientAddress,
+} from '../controllers/clients/clientAddressController'
 
 const router = Router()
 
@@ -59,6 +74,28 @@ router.get(
   asyncHandler(getClientById),
 )
 
+/**
+ * @route   GET /api/clients/:clientId/addresses
+ * @desc    Get all addresses for a client
+ * @access  Private
+ */
+router.get(
+  '/:clientId/addresses',
+  validate(getClientAddressesSchema),
+  asyncHandler(getClientAddresses),
+)
+ 
+/**
+ * @route   POST /api/clients/:clientId/addresses
+ * @desc    Create a new address for a client
+ * @access  Private
+ */
+router.post(
+  '/:clientId/addresses',
+  validate(createClientAddressSchema),
+  asyncHandler(createClientAddress),
+)
+
 // PATCH routes
 /**
  * @route   PATCH /api/clients/:clientId
@@ -69,6 +106,29 @@ router.patch(
   '/:clientId',
   validate(updateClientSchema),
   asyncHandler(updateClient),
+)
+
+/**
+ * @route   PATCH /api/addresses/:addressId
+ * @desc    Update a client address
+ * @access  Private
+ */
+router.patch(
+  '/addresses/:addressId',
+  validate(updateClientAddressSchema),
+  asyncHandler(updateClientAddress),
+)
+ 
+// CHANGE: Address delete route
+/**
+ * @route   DELETE /api/addresses/:addressId
+ * @desc    Delete a client address
+ * @access  Private
+ */
+router.delete(
+  '/addresses/:addressId',
+  validate(deleteClientAddressSchema),
+  asyncHandler(deleteClientAddress),
 )
 
 export default router

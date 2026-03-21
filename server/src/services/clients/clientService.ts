@@ -10,6 +10,11 @@ import {
   ClientUpdateResult,
   calculateReliability,
 } from '../../types/clients'
+import {
+  CreateClientAddressInput,
+  UpdateClientAddressInput,
+  ClientAddress,
+} from '../../types/clientAddresses'
 
 /**
  * Service class for client-related operations
@@ -46,7 +51,7 @@ class ClientService {
         secondName: clientData.secondName || null,
         phone: normalizedPhone,
         email: clientData.email || null,
-        address: clientData.address || null,        
+        address: clientData.address || null,
       },
     })
 
@@ -226,7 +231,7 @@ class ClientService {
       }
       if (updates.email !== undefined) updateData.email = updates.email || null
       if (updates.address !== undefined)
-        updateData.address = updates.address || null      
+        updateData.address = updates.address || null
 
       // Update the client
       await prisma.clients.update({
@@ -325,12 +330,12 @@ class ClientService {
       // Calculate new values
       const orderDelta = increment ? 1 : -1
       const amountDelta = increment ? orderAmount : -orderAmount
-const successDelta = isSuccessful ? (increment ? 1 : -1) : 0
+      const successDelta = isSuccessful ? (increment ? 1 : -1) : 0
 
-const newTotalOrders = Math.max(0, client.totalOrders + orderDelta)
-const newSuccessfulOrders = Math.max(0, client.successfulOrders + successDelta)
+      const newTotalOrders = Math.max(0, client.totalOrders + orderDelta)
+      const newSuccessfulOrders = Math.max(0,client.successfulOrders + successDelta)
 
-const newReliability = calculateReliability(newTotalOrders, newSuccessfulOrders)
+      const newReliability = calculateReliability(newTotalOrders,newSuccessfulOrders)
 
       // Update client statistics
       await prisma.clients.update({
@@ -352,6 +357,126 @@ const newReliability = calculateReliability(newTotalOrders, newSuccessfulOrders)
       console.error('Failed to update client stats:', error)
       // Don't throw - this is a non-critical operation
     }
+  }
+
+  /**
+   * Get all addresses for a client
+   *
+   * @param clientId - The client's unique identifier
+   * @returns Array of client addresses
+   */
+  async getClientAddresses(clientId: string): Promise<ClientAddress[]> {
+    const addresses = await prisma.clientAddresses.findMany({
+      where: { clientId },
+      orderBy: [
+        { isPrimary: 'desc' }, // Primary addresses first
+        { createdAt: 'desc' },
+      ],
+    })
+
+    return addresses
+  }
+
+  /**
+   * Create a new address for a client
+   *
+   * @param addressData - Address information
+   * @returns Created address
+   */
+  async createClientAddress(
+    addressData: CreateClientAddressInput,
+  ): Promise<ClientAddress> {
+    // If this is marked as primary, unmark all other addresses for this client
+    if (addressData.isPrimary) {
+      await prisma.clientAddresses.updateMany({
+        where: { clientId: addressData.clientId, isPrimary: true },
+        data: { isPrimary: false },
+      })
+    }
+
+    const address = await prisma.clientAddresses.create({
+      data: {
+        clientId: addressData.clientId,
+        address: addressData.address,
+        branchNumber: addressData.branchNumber || null,
+        deliveryOptionName: addressData.deliveryOptionName || null,
+        isPrimary: addressData.isPrimary || false,
+      },
+    })
+
+    console.log(
+      `✅ Created address ${address.addressId} for client ${addressData.clientId}`,
+    )
+
+    return address
+  }
+
+  /**
+   * Update an existing client address
+   *
+   * @param addressId - Address ID to update
+   * @param updates - Fields to update
+   * @returns Updated address
+   */
+  async updateClientAddress(
+    addressId: string,
+    updates: UpdateClientAddressInput,
+  ): Promise<ClientAddress> {
+    // Check if address exists
+    const existingAddress = await prisma.clientAddresses.findUnique({
+      where: { addressId },
+    })
+
+    if (!existingAddress) {
+      throw ErrorFactory.notFound(`Address with ID ${addressId} not found`)
+    }
+
+    // If setting as primary, unmark other addresses for this client
+    if (updates.isPrimary) {
+      await prisma.clientAddresses.updateMany({
+        where: {
+          clientId: existingAddress.clientId,
+          isPrimary: true,
+          addressId: { not: addressId },
+        },
+        data: { isPrimary: false },
+      })
+    }
+
+    const address = await prisma.clientAddresses.update({
+      where: { addressId },
+      data: {
+        address: updates.address,
+        branchNumber: updates.branchNumber,
+        deliveryOptionName: updates.deliveryOptionName,
+        isPrimary: updates.isPrimary,
+      },
+    })
+
+    console.log(`✅ Updated address ${addressId}`)
+
+    return address
+  }
+
+  /**
+   * Delete a client address
+   *
+   * @param addressId - Address ID to delete
+   */
+  async deleteClientAddress(addressId: string): Promise<void> {
+    const address = await prisma.clientAddresses.findUnique({
+      where: { addressId },
+    })
+
+    if (!address) {
+      throw ErrorFactory.notFound(`Address with ID ${addressId} not found`)
+    }
+
+    await prisma.clientAddresses.delete({
+      where: { addressId },
+    })
+
+    console.log(`🗑️ Deleted address ${addressId}`)
   }
 }
 

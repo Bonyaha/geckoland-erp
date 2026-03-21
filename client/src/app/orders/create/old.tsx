@@ -7,11 +7,13 @@ import { useRouter } from 'next/navigation'
 import {
   useCreateCRMOrderMutation,
   useGetProductsQuery,
+  useSearchClientsAutocompleteQuery,
+  /* useGetOrCreateClientMutation */
   Product,
   CreateCRMOrderInput,
+  Client,
 } from '@/state/api'
 import {
-  /* Plus, */
   Trash2,
   Save,
   X,
@@ -22,50 +24,26 @@ import {
   ChevronRight,
   CircleMinus,
   CirclePlus,
+  UserPlus,
+  AlertTriangle,
+  Copy,
 } from 'lucide-react'
 
-/* interface OrderItem {
-  productId?: string
-  productName: string
-  sku?: string
-  quantity: number
-  unitPrice: number
-} */
+import { useToast } from '@/hooks/useToast'
+import Toast from '@/app/(components)/Toast'
+
+type OrderItemWithStock = NonNullable<CreateCRMOrderInput['items']>[number] & {
+  stockQuantity: number
+}
 
 const CreateOrderPage = () => {
   const router = useRouter()
-  const [createOrder, { isLoading }] = useCreateCRMOrderMutation()
+  const { toast, showToast, hideToast } = useToast()
 
-  // Dropdown and search state
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [selectedProducts, setSelectedProducts] = useState<Product[]>([])
-
-  // Debounce logic
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300)
-    return () => clearTimeout(timer)
-  }, [searchTerm])
-
-  // Fetch products from API
-  const { data: productsData, isFetching } = useGetProductsQuery({
-    search: debouncedSearch,
-    page: currentPage,
-    limit: 10,
-  })
-
-  const products = productsData?.products || []
-  const totalPages = productsData?.pagination?.pages || 1
-
-  // Reset to page 1 when searching
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [debouncedSearch])
-
-  // Form state
-  const [formData, setFormData] = useState<CreateCRMOrderInput>({
+  // ═══════════════════════════════════════════════════════════════════════════
+  // STATE - Form Data(items excluded — managed separately in orderItems)
+  // ═══════════════════════════════════════════════════════════════════════════
+  const [formData, setFormData] = useState<Omit<CreateCRMOrderInput, 'items'>>({
     clientFirstName: '',
     clientLastName: '',
     clientSecondName: '',
@@ -75,112 +53,265 @@ const CreateOrderPage = () => {
     deliveryCity: '',
     deliveryOptionName: '',
     paymentOptionName: '',
-    items: [],
     totalAmount: 0,
     currency: 'UAH',
     clientNotes: '',
   })
 
-  /* const [currentItem, setCurrentItem] = useState<OrderItem>({
-    productId: '',
-    productName: '',
-    sku: '',
-    quantity: 1,
-    unitPrice: 0,
+  // Order items
+  const [orderItems, setOrderItems] = useState<OrderItemWithStock[]>([])
+
+  // Prefill banner
+  const [isPrefilled, setIsPrefilled] = useState(false)
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // STATE - Product Search & Selection
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Product dropdown and search state
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>([])
+  const [prefilledSkus, setPrefilledSkus] = useState<string>('')
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // STATE - Client Search & Selection
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Client search state
+  const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false)
+  const [clientSearchTerm, setClientSearchTerm] = useState('')
+  const [debouncedClientSearch, setDebouncedClientSearch] = useState('')
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // API QUERIES & MUTATIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+  const [createOrder, { isLoading }] = useCreateCRMOrderMutation()
+
+  // Fetch products from API(for manual search)
+  const { data: productsData, isFetching } = useGetProductsQuery({
+    search: debouncedSearch,
+    page: currentPage,
+    limit: 10,
   })
- */
+
+  // Fetch stock for prefilled items using their SKUs
+  const { data: prefilledProductsData } = useGetProductsQuery(
+    {
+      search: prefilledSkus,
+      page: 1,
+      limit: 50, // Higher limit to catch all prefilled items
+    },
+    {
+      skip: !prefilledSkus, // Only run when we have SKUs to search
+    },
+  )
+
+  // Fetch clients
+  const { data: clientsData, isFetching: isClientFetching } =
+    useSearchClientsAutocompleteQuery(debouncedClientSearch, {
+      skip: debouncedClientSearch.length < 3,
+    })
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // COMPUTED VALUES
+  // ═══════════════════════════════════════════════════════════════════════════
+  const products = productsData?.products || []
+  const totalPages = productsData?.pagination?.pages || 1
+  const clients = clientsData || []
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EFFECTS - Prefill from sessionStorage (Copy Sale)
+  // ═══════════════════════════════════════════════════════════════════════════
+  useEffect(() => {
+    const raw = sessionStorage.getItem('order_prefill')
+    if (!raw) return
+
+    try {
+      const prefill = JSON.parse(raw)
+      //console.log('prefill is: ',prefill);
+
+      sessionStorage.removeItem('order_prefill') // consume once
+
+      setIsPrefilled(true)
+
+      setFormData((prev) => ({
+        ...prev,
+        clientFirstName: prefill.clientFirstName ?? prev.clientFirstName,
+        clientLastName: prefill.clientLastName ?? prev.clientLastName,
+        clientSecondName: prefill.clientSecondName ?? prev.clientSecondName,
+        clientPhone: prefill.clientPhone ?? prev.clientPhone,
+        clientEmail: prefill.clientEmail ?? prev.clientEmail,
+        deliveryAddress: prefill.deliveryAddress ?? prev.deliveryAddress,
+        deliveryCity: prefill.deliveryCity ?? prev.deliveryCity,
+        deliveryOptionName:
+          prefill.deliveryOptionName ?? prev.deliveryOptionName,
+        paymentOptionName: prefill.paymentOptionName ?? prev.paymentOptionName,
+        clientNotes: prefill.clientNotes ?? prev.clientNotes,
+      }))
+
+      // Pre-populate client search display
+      if (prefill.clientLastName || prefill.clientPhone) {
+        setClientSearchTerm(
+          `${prefill.clientLastName ?? ''} ${prefill.clientFirstName ?? ''} (${prefill.clientPhone ?? ''})`.trim(),
+        )
+      }
+
+      // Pre-populate items - stock quantities will be updated from fetched products
+      if (Array.isArray(prefill.items) && prefill.items.length > 0) {
+        const items: OrderItemWithStock[] = prefill.items.map((item: any) => ({
+          productId: item.productId ?? undefined,
+          productName: item.productName,
+          sku: item.sku ?? undefined,
+          quantity: item.quantity ?? 1,
+          stockQuantity: 0, // Will be updated when products are fetched
+          unitPrice: item.unitPrice ?? 0,
+          totalPrice: item.totalPrice ?? item.unitPrice ?? 0,
+        }))
+        setOrderItems(items)
+
+        // Trigger a search for all SKUs to fetch stock data
+        const skus = items
+          .map((i) => i.sku)
+          .filter(Boolean)
+          .join(' ')
+        if (skus) {
+          setPrefilledSkus(skus)
+        }
+      }
+    } catch (e) {
+      console.error('Failed to parse order prefill', e)
+    }
+  }, [])
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EFFECTS - Debouncing
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Debounce logic for products
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300)
+    return () => clearTimeout(timer)
+  }, [searchTerm])
+
+  // Debounce logic for clients
+  useEffect(() => {
+    const timer = setTimeout(
+      () => setDebouncedClientSearch(clientSearchTerm),
+      300,
+    )
+    return () => clearTimeout(timer)
+  }, [clientSearchTerm])
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EFFECTS - Product Search Pagination
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Reset to page 1 when searching products
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [debouncedSearch])
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EFFECTS - Stock Quantity Updates
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Update stock quantities for order items when products data changes
+  useEffect(() => {
+    if (!prefilledProductsData?.products || orderItems.length === 0) return
+
+    setOrderItems((prevItems) =>
+      prevItems.map((item) => {
+        const product = prefilledProductsData.products.find(
+          (p) => p.productId === item.productId || p.sku === item.sku,
+        )
+        // Update stock if we found the product
+        if (product) {
+          return {
+            ...item,
+            stockQuantity: product.stockQuantity,
+          }
+        }
+        return item
+      }),
+    )
+  }, [prefilledProductsData, orderItems.length])
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EFFECTS - Total Amount Calculation
+  // ═══════════════════════════════════════════════════════════════════════════
   // Recalculate total amount whenever items change
   useEffect(() => {
-    const total = formData.items.reduce(
+    const total = orderItems.reduce(
       (sum, item) => sum + (item.totalPrice || 0),
       0,
     )
     setFormData((prev) => ({ ...prev, totalAmount: total }))
-  }, [formData.items])
+  }, [orderItems])
 
-  // Handlers
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HANDLERS - Form Input
+  // ═══════════════════════════════════════════════════════════════════════════
   const handleInputChange = (field: keyof CreateCRMOrderInput, value: any) => {
-    //console.log('value is: ', value)
-
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  /* const handleAddItem = () => {
-    if (!currentItem.productName || currentItem.unitPrice <= 0) {
-      alert('Будь ласка, заповніть назву товару та ціну')
-      return
-    }
-
-    const newItem = {
-      ...currentItem,
-      totalPrice: currentItem.quantity * currentItem.unitPrice,
-    }
-
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HANDLERS - Client Selection
+  // ═══════════════════════════════════════════════════════════════════════════
+  const handleClientSelect = (client: Client) => {
+    /* setSelectedClient(client) */
+    setClientSearchTerm(
+      `${client.lastName} ${client.firstName} (${client.phone})`,
+    )
     setFormData((prev) => ({
       ...prev,
-      items: [...prev.items, newItem],
-      totalAmount: prev.totalAmount + newItem.totalPrice,
+      clientFirstName: client.firstName,
+      clientLastName: client.lastName,
+      clientSecondName: client.secondName || '',
+      clientPhone: client.phone,
+      clientEmail: client.email || '',
+      deliveryAddress: client.address || '',
+      deliveryOptionName: client.deliveryOptionName || '',
+      paymentOptionName: client.paymentOptionName || '',
     }))
-
-    // Reset current item
-    setCurrentItem({
-      productId: '',
-      productName: '',
-      sku: '',
-      quantity: 1,
-      unitPrice: 0,
-    })
+    setIsClientDropdownOpen(false)
   }
 
-  const handleCurrentItemChange = (field: keyof OrderItem, value: string) => {
-    setCurrentItem((prev) => ({
-      ...prev,
-      [field]:
-        field === 'quantity' || field === 'unitPrice'
-          ? value === ''
-            ? ''
-            : Number(value) // Allow empty string in state
-          : value,
-    }))
+  // Handle manual client data change (when user types in fields)
+  const handleManualClientChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+
+    // If phone changes, clear selected client
+    if (field === 'clientPhone') {
+      /* setSelectedClient(null) */
+      setClientSearchTerm(value)
+    }
   }
-  const handleRemoveItem = (index: number) => {
-    const removedItem = formData.items[index]
+
+  // Create new client from search term
+  const handleCreateNewClient = () => {
+    // Clear the search field and close dropdown
+    setClientSearchTerm('')
+    setIsClientDropdownOpen(false)
+
+    // Clear all client fields to allow manual entry
     setFormData((prev) => ({
       ...prev,
-      items: prev.items.filter((_, i) => i !== index),
-      totalAmount: prev.totalAmount - (removedItem.totalPrice || 0),
+      clientPhone: '',
+      clientFirstName: '',
+      clientLastName: '',
+      clientSecondName: '',
+      clientEmail: '',
+      deliveryAddress: '',
+      deliveryCity: '',
+      deliveryOptionName: '',
+      paymentOptionName: '',
     }))
-  } */
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (formData.items.length === 0) {
-      alert('Додайте хоча б один товар до замовлення')
-      return
-    }
-
-    if (!formData.clientPhone) {
-      alert('Введіть номер телефону клієнта')
-      return
-    }
-
-    try {
-      console.log('Submitting order with data: ', formData)
-      const result = await createOrder(formData).unwrap()
-      alert(`Замовлення створено успішно! ID: ${result.orderId}`)
-      router.push('/orders')
-    } catch (error: any) {
-      console.error('Failed to create order:', error)
-      alert(
-        `Помилка створення замовлення: ${
-          error.data?.message || 'Невідома помилка'
-        }`,
-      )
-    }
   }
 
-  //Logic for Checkboxes and Adding Multiple Items
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HANDLERS - Product Selection
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Logic for Checkboxes and Adding Multiple Items
   const toggleProductSelection = (product: Product) => {
     setSelectedProducts((prev) =>
       prev.find((p) => p.productId === product.productId)
@@ -190,84 +321,115 @@ const CreateOrderPage = () => {
   }
 
   const addSelectedToOrder = () => {
-    const newItems = selectedProducts.map((p) => ({
+    const newItems: OrderItemWithStock[] = selectedProducts.map((p) => ({
       productId: p.productId,
       productName: p.name,
       sku: p.sku,
       quantity: 1,
+      stockQuantity: p.stockQuantity,
       unitPrice: p.price,
       totalPrice: p.price,
     }))
 
-    setFormData((prev) => ({
-      ...prev,
-      items: [...prev.items, ...newItems],
-      totalAmount:
-        prev.totalAmount +
-        newItems.reduce((sum, item) => sum + item.totalPrice, 0),
-    }))
-
-    setSelectedProducts([]) // Clear selection
-    setIsDropdownOpen(false) // Close dropdown
-    setSearchTerm('') // Clear search
-  }
-
-  // Directly add product from dropdown to the list
-  /* const addProductToOrder = (product: Product) => {
-    const exists = formData.items.find(
-      (item) => item.productId === product.productId,
-    )
-    if (exists) {
-      updateItemQuantity(product.productId!, exists.quantity + 1)
-    } else {
-      const newItem = {
-        productId: product.productId,
-        productName: product.name,
-        sku: product.sku,
-        quantity: 1,
-        unitPrice: product.price,
-        totalPrice: product.price,
-      }
-      setFormData((prev) => ({ ...prev, items: [...prev.items, newItem] }))
-    }
+    setOrderItems((prev) => [...prev, ...newItems])
+    setSelectedProducts([])
     setIsDropdownOpen(false)
     setSearchTerm('')
-  } */
+  }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HANDLERS - Order Items Management
+  // ═══════════════════════════════════════════════════════════════════════════
   const updateItemQuantity = (productId: string, newQty: number) => {
     const qty = Math.max(1, newQty)
-    setFormData((prev) => ({
-      ...prev,
-      items: prev.items.map((item) =>
+    setOrderItems((prev) =>
+      prev.map((item) =>
         item.productId === productId
           ? { ...item, quantity: qty, totalPrice: qty * item.unitPrice }
           : item,
       ),
-    }))
+    )
   }
 
-  const updateItemPrice = (productId: string, newPrice: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      items: prev.items.map((item) =>
+  const updateItemPrice = (productId: string, newPriceRaw: string) => {
+    const numericPrice = newPriceRaw === '' ? 0 : parseFloat(newPriceRaw) || 0
+
+    setOrderItems((prev) =>
+      prev.map((item) =>
         item.productId === productId
           ? {
               ...item,
-              unitPrice: newPrice,
-              totalPrice: item.quantity * newPrice,
+              unitPrice: newPriceRaw as any,
+              totalPrice: item.quantity * numericPrice,
             }
           : item,
       ),
-    }))
+    )
   }
 
   const removeItem = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      items: prev.items.filter((_, i) => i !== index),
-    }))
+    setOrderItems((prev) => prev.filter((_, i) => i !== index))
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HANDLERS - Form Submission
+  // ═════════════════════════════════════════════════════════════════════════════════
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (orderItems.length === 0) {
+      alert('Додайте хоча б один товар до замовлення')
+      return
+    }
+
+    if (!formData.clientPhone) {
+      alert('Введіть номер телефону клієнта')
+      return
+    }
+
+    //Check for insufficient inventory
+    const itemsWithInsufficientStock = orderItems.filter(
+      (item) => item.quantity > item.stockQuantity,
+    )
+
+    if (itemsWithInsufficientStock.length > 0) {
+      // Build error message for toast
+      /* console.log('itemsWithInsufficientStock: ', itemsWithInsufficientStock) */
+
+      const errorDetails = itemsWithInsufficientStock
+        .map(
+          (item) =>
+            `${item.productName} (${item.sku}): обрано ${item.quantity}, але на складі лише ${item.stockQuantity}`,
+        )
+        .join(' | ')
+
+      showToast('Недостатньо товару на складі: ' + errorDetails, 'error')
+      return
+    }
+
+    try {
+      // Strip stockQuantity before sending to API — it's a UI-only field
+      const payload: CreateCRMOrderInput = {
+        ...formData,
+        items: orderItems.map(({ stockQuantity: _s, ...rest }) => rest),
+      }
+      console.log('Submitting order with data: ', payload)
+      const result = await createOrder(payload).unwrap()
+
+      showToast(`Замовлення створено успішно! ID: ${result.orderId}`, 'success')
+      router.push('/orders')
+    } catch (error: any) {
+      console.error('Failed to create order:', error)
+      showToast(
+        `Помилка створення замовлення: ${error.data?.message || 'Невідома помилка'}`,
+        'error',
+      )
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // UTILITY FUNCTIONS
+  // ═══════════════════════════════════════════════════════════════════════════
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('uk-UA', {
       style: 'currency',
@@ -275,6 +437,14 @@ const CreateOrderPage = () => {
     }).format(amount)
   }
 
+  //Check if an item has insufficient stock
+  const hasInsufficientStock = (item: OrderItemWithStock) => {
+    return item.stockQuantity === 0 || item.quantity > item.stockQuantity
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════════════════════════════════════
   return (
     <div className='p-6 bg-gray-50 min-h-screen'>
       <div className='max-w-4xl mx-auto'>
@@ -283,6 +453,15 @@ const CreateOrderPage = () => {
           <h1 className='text-3xl font-bold text-gray-900 mb-2'>
             Створити замовлення
           </h1>
+
+          {/* Prefill banner */}
+          {isPrefilled && (
+            <div className='flex items-center gap-2 mt-2 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700 w-fit'>
+              <Copy size={15} />
+              Дані скопійовано з попереднього замовлення. Перевірте та
+              відредагуйте за потреби.
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className='space-y-6'>
@@ -323,7 +502,6 @@ const CreateOrderPage = () => {
                     onClick={() => setIsDropdownOpen(false)}
                   ></div>
                   <div className='absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-96 overflow-hidden flex flex-col'>
-                    {/* Top Header for Multi-select - inside the dropdown menu div */}
                     {selectedProducts.length > 0 && (
                       <div className='p-2 bg-blue-50 border-b flex justify-between items-center'>
                         <span className='text-sm font-medium text-blue-700 ml-2'>
@@ -341,7 +519,6 @@ const CreateOrderPage = () => {
                     <div className='overflow-y-auto flex-1'>
                       {products.length > 0 ? (
                         products.map((product) => {
-                          // Check if this specific product is currently selected
                           const isChecked = selectedProducts.some(
                             (p) => p.productId === product.productId,
                           )
@@ -352,12 +529,11 @@ const CreateOrderPage = () => {
                               className={`flex items-start gap-3 p-3 border-b border-gray-100 last:border-0 transition-colors cursor-pointer ${isChecked ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}
                               onClick={() => toggleProductSelection(product)}
                             >
-                              {/* Checkbox UI */}
                               <div className='pt-1'>
                                 <input
                                   type='checkbox'
                                   checked={isChecked}
-                                  onChange={() => {}} // Handled by parent div onClick
+                                  onChange={() => {}}
                                   className='w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer'
                                 />
                               </div>
@@ -389,7 +565,6 @@ const CreateOrderPage = () => {
                       )}
                     </div>
 
-                    {/* Dropdown Pagination Footer */}
                     {totalPages > 1 && (
                       <div className='p-2 border-t bg-gray-50 flex items-center justify-between'>
                         <button
@@ -424,110 +599,229 @@ const CreateOrderPage = () => {
 
             {/* Added Products List */}
             <div className='space-y-2'>
-              {formData.items.map((item, index) => (
-                <div
-                  key={item.productId}
-                  className='flex flex-wrap md:flex-nowrap items-center gap-4 p-3 border border-gray-200 rounded-lg bg-white shadow-sm'
-                >
-                  {/* Name and Stock Info */}
-                  <div className='flex-1 min-w-[250px]'>
-                    <p className='text-sm font-medium text-blue-600 leading-tight'>
-                      {item.productName}
-                      <span className='text-gray-400 ml-1 font-normal text-xs'>
-                        {item.sku}
-                      </span>
-                    </p>
-                    <p className='text-[11px] text-gray-500 mt-0.5'>
-                      (доступно 10 шт)
-                    </p>
-                  </div>
+              {orderItems.map((item, index) => {
+                const isOutOfStock = hasInsufficientStock(item)
 
-                  {/* Quantity Controls */}
-                  <div className='flex items-center gap-1'>
-                    <button
-                      type='button'
-                      onClick={() =>
-                        updateItemQuantity(item.productId!, item.quantity - 1)
-                      }
-                      className='text-red-400 hover:text-red-600 transition-colors'
-                    >
-                      <CircleMinus size={22} strokeWidth={2.5} />
-                    </button>
-                    <div className='flex items-center border border-gray-300 rounded px-2 py-1 bg-white'>
+                return (
+                  <div
+                    key={item.productId}
+                    className={`flex flex-wrap md:flex-nowrap items-center gap-4 p-3 border rounded-lg  shadow-sm ${
+                      isOutOfStock
+                        ? 'bg-red-50 border-red-200'
+                        : 'bg-white border-gray-200'
+                    }`}
+                  >
+                    {/* Name and Stock Info */}
+                    <div className='flex-1 min-w-[250px]'>
+                      <div className='flex items-center gap-2'>
+                        {isOutOfStock && (
+                          <AlertTriangle className='w-4 h-4 text-red-500 flex-shrink-0' />
+                        )}
+                        <p
+                          className={`text-sm font-medium leading-tight ${
+                            isOutOfStock ? 'text-red-700' : 'text-blue-600'
+                          }`}
+                        >
+                          {item.productName}
+                          <span className='text-gray-400 ml-1 font-normal text-xs'>
+                            {item.sku}
+                          </span>
+                        </p>
+                      </div>
+                      <p
+                        className={`text-[11px] mt-0.5 ${
+                          isOutOfStock
+                            ? 'text-red-600 font-bold'
+                            : 'text-gray-500'
+                        }`}
+                      >
+                        {item.stockQuantity === 0
+                          ? 'Немає на складі!'
+                          : `(доступно ${item.stockQuantity} шт)`}
+                      </p>
+                    </div>
+
+                    {/* Quantity Controls */}
+                    <div className='flex items-center gap-1'>
+                      <button
+                        type='button'
+                        onClick={() =>
+                          updateItemQuantity(item.productId!, item.quantity - 1)
+                        }
+                        className='text-red-400 hover:text-red-600 transition-colors cursor-pointer'
+                      >
+                        <CircleMinus size={22} strokeWidth={2.5} />
+                      </button>
+                      <div className='flex items-center border border-gray-300 rounded px-2 py-1 bg-white'>
+                        <input
+                          type='number'
+                          value={item.quantity}
+                          onFocus={(e) => e.target.select()} // Selects the number on click for easy overwriting
+                          onChange={(e) =>
+                            updateItemQuantity(
+                              item.productId!,
+                              Number(e.target.value),
+                            )
+                          }
+                          className='w-10 text-center text-sm font-semibold focus:outline-none'
+                        />
+                        <span className='text-[10px] text-gray-400 font-medium ml-1'>
+                          шт
+                        </span>
+                      </div>
+                      <button
+                        type='button'
+                        onClick={() =>
+                          updateItemQuantity(item.productId!, item.quantity + 1)
+                        }
+                        className='text-green-500 hover:text-green-600 transition-colors cursor-pointer'
+                      >
+                        <CirclePlus size={22} strokeWidth={2.5} />
+                      </button>
+                    </div>
+
+                    <div className='flex items-center border border-gray-300 rounded px-2 py-1 bg-white min-w-[100px]'>
                       <input
                         type='number'
-                        value={item.quantity}
+                        value={item.unitPrice}
+                        onFocus={(e) => e.target.select()} // Auto-selects 0 when clicked
                         onChange={(e) =>
-                          updateItemQuantity(
+                          updateItemPrice(
                             item.productId!,
-                            Number(e.target.value),
+                            e.target.value, // Pass raw string
                           )
                         }
-                        className='w-10 text-center text-sm font-semibold focus:outline-none'
+                        className='w-full text-right text-sm font-semibold focus:outline-none'
                       />
                       <span className='text-[10px] text-gray-400 font-medium ml-1'>
-                        шт
+                        грн.
                       </span>
                     </div>
+
+                    <div className='flex items-center gap-2 min-w-[120px] justify-end'>
+                      <ChevronDown size={14} className='text-blue-500' />
+                      <span className='text-sm font-bold text-gray-700'>
+                        {(item.totalPrice || 0).toFixed(2)} грн.
+                      </span>
+                    </div>
+
                     <button
                       type='button'
-                      onClick={() =>
-                        updateItemQuantity(item.productId!, item.quantity + 1)
-                      }
-                      className='text-green-500 hover:text-green-600 transition-colors'
+                      onClick={() => removeItem(index)}
+                      className='text-blue-500 hover:text-red-500 p-1 transition-colors cursor-pointer'
                     >
-                      <CirclePlus size={22} strokeWidth={2.5} />
+                      <Trash2 size={18} />
                     </button>
                   </div>
+                )
+              })}
 
-                  {/* Price Input */}
-                  <div className='flex items-center border border-gray-300 rounded px-2 py-1 bg-white min-w-[100px]'>
-                    <input
-                      type='number'
-                      value={item.unitPrice}
-                      onChange={(e) =>
-                        updateItemPrice(item.productId!, Number(e.target.value))
-                      }
-                      className='w-full text-right text-sm font-semibold focus:outline-none'
-                    />
-                    <span className='text-[10px] text-gray-400 font-medium ml-1'>
-                      грн.
-                    </span>
-                  </div>
-
-                  {/* Row Total */}
-                  <div className='flex items-center gap-2 min-w-[120px] justify-end'>
-                    <ChevronDown size={14} className='text-blue-500' />
-                    <span className='text-sm font-bold text-gray-700'>
-                      {(item.totalPrice || 0).toFixed(2)} грн.
-                    </span>
-                  </div>
-
-                  {/* Delete Button */}
-                  <button
-                    type='button'
-                    onClick={() => removeItem(index)}
-                    className='text-blue-500 hover:text-red-500 p-1 transition-colors'
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              ))}
-
-              {/* Summary Counter */}
-              {formData.items.length > 0 && (
+              {orderItems.length > 0 && (
                 <div className='text-right pt-2 text-gray-700 font-bold'>
-                  Усього: {formData.items.length} найм. (
-                  {formData.items.reduce((a, b) => a + b.quantity, 0)} од.)
+                  Усього: {orderItems.length} найм. (
+                  {orderItems.reduce((a, b) => a + b.quantity, 0)} од.)
                 </div>
               )}
             </div>
           </div>
-          {/* Client Information */}
+
+          {/* Client Information with Dropdown */}
           <div className='bg-white rounded-lg shadow-sm p-6'>
             <h2 className='text-xl font-semibold text-gray-900 mb-4'>
               Інформація про клієнта
             </h2>
+
+            {/* Client Search Dropdown */}
+            <div className='relative mb-4'>
+              <label className='block text-sm font-medium text-gray-700 mb-1'>
+                Оберіть клієнта
+              </label>
+              <div
+                className={`flex items-center border rounded-lg px-3 py-2.5 transition-all ${
+                  isClientDropdownOpen
+                    ? 'border-blue-500 ring-2 ring-blue-100'
+                    : 'border-gray-300'
+                }`}
+              >
+                <Search size={18} className='text-gray-400 mr-2' />
+                <input
+                  type='text'
+                  className='w-full outline-none text-gray-700 bg-transparent'
+                  placeholder='Пошук по імені або телефону...'
+                  value={clientSearchTerm}
+                  onFocus={() => setIsClientDropdownOpen(true)}
+                  onChange={(e) => setClientSearchTerm(e.target.value)}
+                />
+                {isClientFetching ? (
+                  <Loader2
+                    size={18}
+                    className='text-blue-500 animate-spin mr-2'
+                  />
+                ) : (
+                  <ChevronDown
+                    size={18}
+                    className='text-gray-400 cursor-pointer'
+                    onClick={() =>
+                      setIsClientDropdownOpen(!isClientDropdownOpen)
+                    }
+                  />
+                )}
+              </div>
+
+              {/* Client Dropdown */}
+              {isClientDropdownOpen && (
+                <>
+                  <div
+                    className='fixed inset-0 z-40'
+                    onClick={() => setIsClientDropdownOpen(false)}
+                  ></div>
+                  <div className='absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-80 overflow-hidden flex flex-col'>
+                    <div className='overflow-y-auto flex-1'>
+                      {clients.length > 0 ? (
+                        clients.map((client) => (
+                          <div
+                            key={client.clientId}
+                            className='flex items-center gap-3 p-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 cursor-pointer transition-colors'
+                            onClick={() => handleClientSelect(client)}
+                          >
+                            <div className='flex-1'>
+                              <p className='text-sm font-medium text-gray-900'>
+                                {client.lastName} {client.firstName}{' '}
+                                {client.secondName || ''}
+                              </p>
+                              <p className='text-xs text-gray-500'>
+                                {client.phone}
+                                {client.email && ` • ${client.email}`}
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                      ) : debouncedClientSearch.length >= 3 ? (
+                        <div className='p-4 text-center'>
+                          <p className='text-sm text-gray-500 mb-3'>
+                            Клієнта не знайдено
+                          </p>
+                          <button
+                            type='button'
+                            onClick={handleCreateNewClient}
+                            className='flex items-center gap-2 mx-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm'
+                          >
+                            <UserPlus size={16} />
+                            Створити: {clientSearchTerm}
+                          </button>
+                        </div>
+                      ) : (
+                        <div className='p-4 text-center text-sm text-gray-500'>
+                          Введіть мінімум 3 символи для пошуку
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Client Details Form */}
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               <div>
                 <label className='block text-sm font-medium text-gray-700 mb-1'>
@@ -538,7 +832,7 @@ const CreateOrderPage = () => {
                   required
                   value={formData.clientLastName}
                   onChange={(e) =>
-                    handleInputChange('clientLastName', e.target.value)
+                    handleManualClientChange('clientLastName', e.target.value)
                   }
                   className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                   placeholder='Іванов'
@@ -553,7 +847,7 @@ const CreateOrderPage = () => {
                   required
                   value={formData.clientFirstName}
                   onChange={(e) =>
-                    handleInputChange('clientFirstName', e.target.value)
+                    handleManualClientChange('clientFirstName', e.target.value)
                   }
                   className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                   placeholder='Іван'
@@ -567,7 +861,7 @@ const CreateOrderPage = () => {
                   type='text'
                   value={formData.clientSecondName}
                   onChange={(e) =>
-                    handleInputChange('clientSecondName', e.target.value)
+                    handleManualClientChange('clientSecondName', e.target.value)
                   }
                   className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                   placeholder='Іванович'
@@ -582,7 +876,7 @@ const CreateOrderPage = () => {
                   required
                   value={formData.clientPhone}
                   onChange={(e) =>
-                    handleInputChange('clientPhone', e.target.value)
+                    handleManualClientChange('clientPhone', e.target.value)
                   }
                   className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                   placeholder='+380501234567'
@@ -596,7 +890,7 @@ const CreateOrderPage = () => {
                   type='email'
                   value={formData.clientEmail}
                   onChange={(e) =>
-                    handleInputChange('clientEmail', e.target.value)
+                    handleManualClientChange('clientEmail', e.target.value)
                   }
                   className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                   placeholder='example@email.com'
@@ -703,7 +997,7 @@ const CreateOrderPage = () => {
             <div className='flex gap-3'>
               <button
                 type='submit'
-                disabled={isLoading || formData.items.length === 0}
+                disabled={isLoading || orderItems.length === 0}
                 className='flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
               >
                 <Save size={20} />
@@ -712,7 +1006,7 @@ const CreateOrderPage = () => {
               <button
                 type='button'
                 onClick={() => router.push('/orders')}
-                className='px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50'
+                className='px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors'
               >
                 <X size={20} />
               </button>
@@ -720,6 +1014,13 @@ const CreateOrderPage = () => {
           </div>
         </form>
       </div>
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}
+        duration={10000}
+      />
     </div>
   )
 }
