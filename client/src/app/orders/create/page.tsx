@@ -1109,15 +1109,15 @@ const handleNewAddressAdded = (address: {
               </button>
             </div>
           </div>
-          {showAddAddressModal && selectedClient && (
-            <AddAddressModal
-              clientId={selectedClient.clientId}
-              clientName={`${selectedClient.lastName} ${selectedClient.firstName}`}
-              onClose={() => setShowAddAddressModal(false)}
-              onSuccess={handleNewAddressAdded}
-            />
-          )}
         </form>
+        {showAddAddressModal && selectedClient && (
+          <AddAddressModal
+            clientId={selectedClient.clientId}
+            clientName={`${selectedClient.lastName} ${selectedClient.firstName}`}
+            onClose={() => setShowAddAddressModal(false)}
+            onSuccess={handleNewAddressAdded}
+          />
+        )}
       </div>
       <Toast
         message={toast.message}
