@@ -810,7 +810,29 @@ const handleNewAddressAdded = (address: {
                   ></div>
                   <div className='absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-80 overflow-hidden flex flex-col'>
                     <div className='overflow-y-auto flex-1'>
-                      {clients.length > 0 ? (
+                      {/* If client is selected, show the selected client */}
+                      {selectedClient ? (
+                        <div
+                          className='flex items-center gap-3 p-3 border-b border-gray-100 bg-blue-50 cursor-pointer transition-colors'
+                          onClick={() => handleClientSelect(selectedClient)}
+                        >
+                          <div className='flex-1'>
+                            <p className='text-sm font-medium text-gray-900'>
+                              {selectedClient.lastName}{' '}
+                              {selectedClient.firstName}{' '}
+                              {selectedClient.secondName || ''}
+                            </p>
+                            <p className='text-xs text-gray-500'>
+                              {selectedClient.phone}
+                              {selectedClient.email &&
+                                ` • ${selectedClient.email}`}
+                            </p>
+                          </div>
+                          <span className='text-xs bg-blue-600 text-white px-2 py-1 rounded'>
+                            Обрано
+                          </span>
+                        </div>
+                      ) : clients.length > 0 ? (
                         clients.map((client) => (
                           <div
                             key={client.clientId}
