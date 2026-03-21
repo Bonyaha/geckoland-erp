@@ -4,11 +4,11 @@ import { z } from 'zod'
 
 // Reusable param validators
 const clientIdParam = z.object({
-  clientId: z.string().uuid('Невірний ID клієнта'),
+  clientId: z.cuid('Невірний ID клієнта'),
 })
 
 const addressIdParam = z.object({
-  addressId: z.string().uuid('Невірний ID адреси'),
+  addressId: z.cuid('Невірний ID адреси'),
 })
 
 // Body schemas
