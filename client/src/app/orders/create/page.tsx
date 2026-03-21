@@ -54,7 +54,7 @@ const CreateOrderPage = () => {
     clientSecondName: '',
     clientPhone: '',
     clientEmail: '',
-    deliveryAddress: '',    
+    deliveryAddress: '',
     deliveryOptionName: '',
     paymentOptionName: '',
     totalAmount: 0,
@@ -88,7 +88,7 @@ const CreateOrderPage = () => {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [isAddressDropdownOpen, setIsAddressDropdownOpen] = useState(false)
   const [showAddAddressModal, setShowAddAddressModal] = useState(false)
-  
+
   // ═══════════════════════════════════════════════════════════════════════════
   // API QUERIES & MUTATIONS
   // ═══════════════════════════════════════════════════════════════════════════
@@ -311,35 +311,34 @@ const CreateOrderPage = () => {
       clientLastName: '',
       clientSecondName: '',
       clientEmail: '',
-      deliveryAddress: '',      
+      deliveryAddress: '',
       deliveryOptionName: '',
       paymentOptionName: '',
     }))
   }
 
-// HANDLERS - Address Selection
+  // HANDLERS - Address Selection
 
-const handleAddressSelect = (address: ClientAddress) => { 
-  setFormData((prev) => ({
-    ...prev,
-    deliveryAddress: address.address,
-    deliveryOptionName: address.deliveryOptionName || prev.deliveryOptionName,
-  }))
-  setIsAddressDropdownOpen(false)
-}
+  const handleAddressSelect = (address: ClientAddress) => {
+    setFormData((prev) => ({
+      ...prev,
+      deliveryAddress: address.address,
+      deliveryOptionName: address.deliveryOptionName || prev.deliveryOptionName,
+    }))
+    setIsAddressDropdownOpen(false)
+  }
 
-const handleNewAddressAdded = (address: {
-  addressId: string
-  address: string
-  deliveryOptionName?: string | null
-}) => {
-  setFormData((prev) => ({
-    ...prev,
-    deliveryAddress: address.address,
-    deliveryOptionName: address.deliveryOptionName || prev.deliveryOptionName,
-  }))
-}
-
+  const handleNewAddressAdded = (address: {
+    addressId: string
+    address: string
+    deliveryOptionName?: string | null
+  }) => {
+    setFormData((prev) => ({
+      ...prev,
+      deliveryAddress: address.address,
+      deliveryOptionName: address.deliveryOptionName || prev.deliveryOptionName,
+    }))
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // HANDLERS - Product Selection
@@ -473,6 +472,18 @@ const handleNewAddressAdded = (address: {
   //Check if an item has insufficient stock
   const hasInsufficientStock = (item: OrderItemWithStock) => {
     return item.stockQuantity === 0 || item.quantity > item.stockQuantity
+  }
+
+  /**
+   * Normalize phone number for search by removing spaces and common separators
+   * Examples:
+   * "063 579 0251" -> "0635790251"
+   * "+380 63 579 02 51" -> "+380635790251"
+   * "063-579-0251" -> "0635790251"
+   */
+  const normalizePhoneForSearch = (phone: string): string => {
+    // Remove spaces, hyphens, parentheses, and dots
+    return phone.replace(/[\s\-()\.]/g, '')
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -783,7 +794,24 @@ const handleNewAddressAdded = (address: {
                   placeholder='Пошук по імені або телефону...'
                   value={clientSearchTerm}
                   onFocus={() => setIsClientDropdownOpen(true)}
-                  onChange={(e) => setClientSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    const rawValue = e.target.value
+                    setClientSearchTerm(rawValue)
+                  }}
+                  onPaste={(e) => {
+                    // On paste, normalize phone numbers by removing spaces
+                    const pastedText = e.clipboardData.getData('text')
+                    const normalized = normalizePhoneForSearch(pastedText)
+
+                    // Only update if it looks like a phone number (mostly digits)
+                    const digitCount = normalized.replace(/\D/g, '').length
+                    if (digitCount >= 9) {
+                      // This looks like a phone number - use normalized version
+                      e.preventDefault()
+                      setClientSearchTerm(normalized)
+                    }
+                    // Otherwise let the default paste behavior happen
+                  }}
                 />
                 {isClientFetching ? (
                   <Loader2
