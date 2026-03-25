@@ -28,7 +28,8 @@ import {
 import { useToast } from '@/hooks/useToast'
 import Toast from '@/app/(components)/Toast'
 import { PAYMENT_OPTIONS } from '@/utils/marketplaceUtils' 
-
+import type { NpCity, NpWarehouse } from '@/hooks/useNovaPoshtaAutocomplete'
+import { NpCitySearch, NpWarehouseSearch } from '@/app/(components)/NovaPoshtaSearch'
 // ─── Types ─────────────────────────────────────────────────────────────────
 
 interface EditableOrderItem {
@@ -168,6 +169,15 @@ export default function EditOrderModal({
       )
     }
   }, [order])
+
+const [npCityQuery, setNpCityQuery] = useState(
+   order.deliveryOptionName === 'NovaPoshta' ? (order.deliveryCity || '') : ''
+ )
+const [npCityRef, setNpCityRef] = useState('')
+ const [npWarehouseQuery, setNpWarehouseQuery] = useState(
+  order.deliveryOptionName === 'NovaPoshta' ? (order.deliveryAddress || '') : ''
+ )
+
 
   // ── Derived total ─────────────────────────────────────────────────────
   const totalAmount = orderItems.reduce((s, i) => s + (i.totalPrice || 0), 0)
@@ -312,6 +322,19 @@ export default function EditOrderModal({
     }
   }
 
+const handleNpCitySelect = (city: NpCity) => {
+ setNpCityRef(city.DeliveryCity)
+ setNpWarehouseQuery('')
+ handleField('deliveryAddress', '')
+ if (!form.deliveryOptionName) handleField('deliveryOptionName', 'NovaPoshta')
+ }
+
+const handleNpWarehouseSelect = (w: NpWarehouse) => {
+  const cityName = npCityQuery.split(',')[0]?.trim() || ''
+  const combined = cityName ? `${cityName}, ${w.Description}` : w.Description
+  handleField('deliveryAddress', combined)
+ }
+ 
   // ── Render ────────────────────────────────────────────────────────────
   return (
     <>
@@ -802,9 +825,14 @@ export default function EditOrderModal({
                   </label>
                   <select
                     value={form.deliveryOptionName}
-                    onChange={(e) =>
+                    onChange={(e) => {
                       handleField('deliveryOptionName', e.target.value)
-                    }
+                      if (e.target.value !== 'NovaPoshta') {
+                        setNpCityQuery('')
+                        setNpCityRef('')
+                        setNpWarehouseQuery('')
+                      }
+                    }}
                     className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm'
                   >
                     {DELIVERY_OPTIONS.map((o) => (
@@ -814,33 +842,74 @@ export default function EditOrderModal({
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className='block text-xs font-medium text-gray-600 mb-1'>
-                    Місто / Відділення
-                  </label>
-                  <input
-                    type='text'
-                    value={form.deliveryCity}
-                    onChange={(e) =>
-                      handleField('deliveryCity', e.target.value)
-                    }
-                    placeholder='Іванківці, Відділення №1'
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm'
-                  />
-                </div>
-                <div className='sm:col-span-2'>
-                  <label className='block text-xs font-medium text-gray-600 mb-1'>
-                    Адреса доставки
-                  </label>
-                  <input
-                    type='text'
-                    value={form.deliveryAddress}
-                    onChange={(e) =>
-                      handleField('deliveryAddress', e.target.value)
-                    }
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm'
-                  />
-                </div>
+
+                {form.deliveryOptionName === 'NovaPoshta' ? (
+                  <>
+                    <div>
+                      <label className='block text-xs font-medium text-gray-600 mb-1'>
+                        Місто
+                      </label>
+                      <NpCitySearch
+                        value={npCityQuery}
+                        onChange={setNpCityQuery}
+                        onSelect={handleNpCitySelect}
+                        placeholder='Введіть назву міста...'
+                      />
+                    </div>
+
+                    <div className='sm:col-span-2'>
+                      <label className='block text-xs font-medium text-gray-600 mb-1'>
+                        Номер відділення
+                      </label>
+                      <NpWarehouseSearch
+                        cityRef={npCityRef}
+                        value={npWarehouseQuery}
+                        onChange={setNpWarehouseQuery}
+                        onSelect={handleNpWarehouseSelect}
+                        placeholder='Введіть номер або адресу відділення...'
+                      />
+                      {form.deliveryAddress && (
+                        <p className='mt-1.5 text-xs text-gray-500 pl-1'>
+                          Буде збережено:{' '}
+                          <span className='font-medium text-gray-700'>
+                            {form.deliveryAddress}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label className='block text-xs font-medium text-gray-600 mb-1'>
+                        Місто / Відділення
+                      </label>
+                      <input
+                        type='text'
+                        value={form.deliveryCity}
+                        onChange={(e) =>
+                          handleField('deliveryCity', e.target.value)
+                        }
+                        placeholder='Іванківці, Відділення №1'
+                        className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm'
+                      />
+                    </div>
+                    <div className='sm:col-span-2'>
+                      <label className='block text-xs font-medium text-gray-600 mb-1'>
+                        Адреса доставки
+                      </label>
+                      <input
+                        type='text'
+                        value={form.deliveryAddress}
+                        onChange={(e) =>
+                          handleField('deliveryAddress', e.target.value)
+                        }
+                        className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm'
+                      />
+                    </div>
+                  </>
+                )}
+
                 <div className='sm:col-span-2'>
                   <label className='block text-xs font-medium text-gray-600 mb-1'>
                     Трекінг номер (ТТН)

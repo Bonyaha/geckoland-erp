@@ -37,6 +37,11 @@ import Toast from '@/app/(components)/Toast'
 
 import { AddAddressModal } from '../(components)'
 
+import { PAYMENT_OPTIONS } from '@/utils/marketplaceUtils'
+
+import { NpCitySearch, NpWarehouseSearch } from '@/app/(components)/NovaPoshtaSearch'
+import type { NpCity } from '@/hooks/useNovaPoshtaAutocomplete'
+
 type OrderItemWithStock = NonNullable<CreateCRMOrderInput['items']>[number] & {
   stockQuantity: number
 }
@@ -67,6 +72,14 @@ const CreateOrderPage = () => {
 
   // Prefill banner
   const [isPrefilled, setIsPrefilled] = useState(false)
+
+  // ─── NP Autocomplete State ───────────────────────────────────────────────────
+  // Stores the city display string typed by the user
+  const [npCityQuery, setNpCityQuery] = useState('')
+  // Stores the DeliveryCity ref returned by Nova Poshta (needed for warehouse lookup)
+  const [npCityRef, setNpCityRef] = useState('')
+  // Stores the warehouse display string typed by the user
+  const [npWarehouseQuery, setNpWarehouseQuery] = useState('')
 
   // ═══════════════════════════════════════════════════════════════════════════
   // STATE - Product Search & Selection
@@ -338,6 +351,51 @@ const CreateOrderPage = () => {
       deliveryAddress: address.address,
       deliveryOptionName: address.deliveryOptionName || prev.deliveryOptionName,
     }))
+  }
+
+  // ═══════════════════════════════════════════════════════════v════════════════
+  // HANDLERS - Nova Poshta Autocomplete
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // ─── NP City selected ────────────────────────────────────────────────────────
+  const handleNpCitySelect = (city: NpCity) => {
+    // HANDLERS - Product Selection
+
+    // Store city ref for warehouse lookup
+
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    setNpCityRef(city.DeliveryCity)
+
+    // Logic for Checkboxes and Adding Multiple Items
+
+    // Clear warehouse when city changes
+
+    setNpWarehouseQuery('')
+
+    setFormData((prev) => ({ ...prev, deliveryAddress: '' }))
+
+    // Auto-select NovaPoshta delivery if not already set
+
+    setFormData((prev) => ({
+      ...prev,
+
+      deliveryOptionName: prev.deliveryOptionName || 'NovaPoshta',
+    }))
+  }
+
+  // ─── NP Warehouse selected ───────────────────────────────────────────────────
+
+  const handleNpWarehouseSelect = (
+    w: import('@/hooks/useNovaPoshtaAutocomplete').NpWarehouse,
+  ) => {
+    // Build a combined delivery address: city + warehouse description
+
+    const cityName = npCityQuery.split(',')[0]?.trim() || ''
+
+    const combined = cityName ? `${cityName}, ${w.Description}` : w.Description
+
+    setFormData((prev) => ({ ...prev, deliveryAddress: combined }))
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -994,9 +1052,15 @@ const CreateOrderPage = () => {
                 </label>
                 <select
                   value={formData.deliveryOptionName}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     handleInputChange('deliveryOptionName', e.target.value)
-                  }
+                    // Reset NP state if switching away from NovaPoshta
+                    if (e.target.value !== 'NovaPoshta') {
+                      setNpCityQuery('')
+                      setNpCityRef('')
+                      setNpWarehouseQuery('')
+                    }
+                  }}
                   className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                 >
                   <option value=''>Оберіть спосіб</option>
@@ -1004,98 +1068,147 @@ const CreateOrderPage = () => {
                   <option value='UkrPoshta'>Укрпошта</option>
                 </select>
               </div>
-              <div className='md:col-span-2'>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Адреса
-                </label>
-                {/* CHANGE: New address dropdown */}
-                <div className='relative'>
-                  <input
-                    type='text'
-                    value={formData.deliveryAddress}
-                    onChange={(e) => {
-                      handleInputChange('deliveryAddress', e.target.value)
-                      if (!selectedClient) {
-                        setIsAddressDropdownOpen(false)
-                      }
-                    }}
-                    onFocus={() => {
-                      if (selectedClient) {
-                        setIsAddressDropdownOpen(true)
-                      }
-                    }}
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
-                    placeholder={
-                      selectedClient
-                        ? 'Виберіть адресу зі списку'
-                        : 'Введіть адресу'
-                    }
-                  />
 
-                  {/* Address Dropdown */}
-                  {isAddressDropdownOpen && selectedClient && (
-                    <>
-                      <div
-                        className='fixed inset-0 z-40'
-                        onClick={() => setIsAddressDropdownOpen(false)}
-                      />
-                      <div className='absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-64 overflow-y-auto'>
-                        {/* Add New Address Button */}
-                        <button
-                          type='button'
-                          onClick={() => {
-                            setShowAddAddressModal(true)
-                            setIsAddressDropdownOpen(false)
-                          }}
-                          className='w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-200 transition-colors text-blue-600 font-medium cursor-pointer'
-                        >
-                          <span className='text-lg'>+</span>
-                          Додати адресу доставки
-                        </button>
+              {/* ── Nova Poshta autocomplete fields ── */}
+              {formData.deliveryOptionName === 'NovaPoshta' ? (
+                <>
+                  {/* City search */}
+                  <div>
+                    <label className='block text-sm font-medium text-gray-700 mb-1'>
+                      Місто
+                    </label>
+                    <NpCitySearch
+                      value={npCityQuery}
+                      onChange={setNpCityQuery}
+                      onSelect={handleNpCitySelect}
+                      placeholder='Введіть назву міста...'
+                    />
+                  </div>
 
-                        {/* Address List */}
-                        {clientAddresses && clientAddresses.length > 0 ? (
-                          clientAddresses.map((address) => (
-                            <button
-                              key={address.addressId}
-                              type='button'
-                              onClick={() => handleAddressSelect(address)}
-                              className='w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-0 transition-colors cursor-pointer'
-                            >
-                              <div className='flex-1'>
-                                <p className='text-sm font-medium text-gray-900'>
-                                  {address.address}
-                                </p>
-                                {address.branchNumber && (
-                                  <p className='text-xs text-gray-500 mt-0.5'>
-                                    {address.branchNumber}
-                                  </p>
-                                )}
-                                {address.deliveryOptionName && (
-                                  <p className='text-xs text-blue-600 mt-0.5'>
-                                    {address.deliveryOptionName === 'NovaPoshta'
-                                      ? 'Нова Пошта'
-                                      : 'Укрпошта'}
-                                  </p>
-                                )}
-                              </div>
-                              {address.isPrimary && (
-                                <span className='text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full'>
-                                  Основна
-                                </span>
+                  {/* Warehouse search — full width */}
+                  <div className='md:col-span-2'>
+                    <label className='block text-sm font-medium text-gray-700 mb-1'>
+                      Номер відділення
+                    </label>
+                    <NpWarehouseSearch
+                      cityRef={npCityRef}
+                      value={npWarehouseQuery}
+                      onChange={setNpWarehouseQuery}
+                      onSelect={handleNpWarehouseSelect}
+                      placeholder='Введіть номер або адресу відділення...'
+                    />
+                    {/* Show resulting deliveryAddress as a subtle hint */}
+                    {formData.deliveryAddress && (
+                      <p className='mt-1.5 text-xs text-gray-500 pl-1'>
+                        Буде збережено:{' '}
+                        <span className='font-medium text-gray-700'>
+                          {formData.deliveryAddress}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                /* Manual address field for UkrPoshta or no selection */
+                <>
+                  <div>
+                    <label className='block text-sm font-medium text-gray-700 mb-1'>
+                      Місто
+                    </label>
+                    <input
+                      type='text'
+                      value={formData.deliveryAddress?.split(',')[0] || ''}
+                      onChange={(e) =>
+                        handleInputChange('deliveryAddress', e.target.value)
+                      }
+                      className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+                      placeholder='Київ'
+                    />
+                  </div>
+                  <div className='md:col-span-2'>
+                    <label className='block text-sm font-medium text-gray-700 mb-1'>
+                      Адреса
+                    </label>
+                    {selectedClient ? (
+                      <div className='relative'>
+                        <input
+                          type='text'
+                          value={formData.deliveryAddress}
+                          onChange={(e) =>
+                            handleInputChange('deliveryAddress', e.target.value)
+                          }
+                          onFocus={() => setIsAddressDropdownOpen(true)}
+                          className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+                          placeholder='Виберіть адресу зі списку'
+                        />
+                        {isAddressDropdownOpen && (
+                          <>
+                            <div
+                              className='fixed inset-0 z-40'
+                              onClick={() => setIsAddressDropdownOpen(false)}
+                            />
+                            <div className='absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-64 overflow-y-auto'>
+                              <button
+                                type='button'
+                                onClick={() => {
+                                  setShowAddAddressModal(true)
+                                  setIsAddressDropdownOpen(false)
+                                }}
+                                className='w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-200 transition-colors text-blue-600 font-medium cursor-pointer'
+                              >
+                                <span className='text-lg'>+</span>
+                                Додати адресу доставки
+                              </button>
+                              {clientAddresses && clientAddresses.length > 0 ? (
+                                clientAddresses.map((address) => (
+                                  <button
+                                    key={address.addressId}
+                                    type='button'
+                                    onClick={() => handleAddressSelect(address)}
+                                    className='w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-0 transition-colors cursor-pointer'
+                                  >
+                                    <div className='flex-1'>
+                                      <p className='text-sm font-medium text-gray-900'>
+                                        {address.address}
+                                      </p>
+                                      {address.branchNumber && (
+                                        <p className='text-xs text-gray-500 mt-0.5'>
+                                          {address.branchNumber}
+                                        </p>
+                                      )}
+                                    </div>
+                                    {address.isPrimary && (
+                                      <span className='text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full'>
+                                        Основна
+                                      </span>
+                                    )}
+                                  </button>
+                                ))
+                              ) : (
+                                <div className='px-4 py-3 text-sm text-gray-500 text-center'>
+                                  Немає збережених адрес
+                                </div>
                               )}
-                            </button>
-                          ))
-                        ) : (
-                          <div className='px-4 py-3 text-sm text-gray-500 text-center'>
-                            Немає збережених адрес
-                          </div>
+                            </div>
+                          </>
                         )}
                       </div>
-                    </>
-                  )}
-                </div>
-              </div>
+                    ) : (
+                      <input
+                        type='text'
+                        value={formData.deliveryAddress}
+                        onChange={(e) =>
+                          handleInputChange('deliveryAddress', e.target.value)
+                        }
+                        className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+                        placeholder='Відділення №1 або адреса доставки'
+                      />
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Payment */}
               <div>
                 <label className='block text-sm font-medium text-gray-700 mb-1'>
                   Спосіб оплати
@@ -1107,11 +1220,11 @@ const CreateOrderPage = () => {
                   }
                   className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                 >
-                  <option value=''>Оберіть спосіб</option>
-                  <option value='CashOnDelivery'>Післяплата</option>
-                  <option value='IBAN'>IBAN</option>
-                  <option value='PromPayment'>Пром оплата</option>
-                  <option value='RozetkaPay'>Rozetka Pay</option>
+                  {PAYMENT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
