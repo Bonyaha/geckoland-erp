@@ -1,7 +1,7 @@
 // client/src/app/orders/create/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import {
@@ -30,6 +30,8 @@ import {
   UserPlus,
   AlertTriangle,
   Copy,
+  MapPin,
+  Plus,
 } from 'lucide-react'
 
 import { useToast } from '@/hooks/useToast'
@@ -80,6 +82,13 @@ const CreateOrderPage = () => {
   const [npCityRef, setNpCityRef] = useState('')
   // Stores the warehouse display string typed by the user
   const [npWarehouseQuery, setNpWarehouseQuery] = useState('')
+
+  // ─── NP Address Dropdown State ────────────────────────────────────────────
+  const [isNpAddressDropdownOpen, setIsNpAddressDropdownOpen] = useState(false)
+  const [selectedNpAddressId, setSelectedNpAddressId] = useState<string | null>(
+    null,
+  )
+  const npAddressDropdownRef = useRef<HTMLDivElement>(null)
 
   // ═══════════════════════════════════════════════════════════════════════════
   // STATE - Product Search & Selection
@@ -144,6 +153,27 @@ const CreateOrderPage = () => {
   const products = productsData?.products || []
   const totalPages = productsData?.pagination?.pages || 1
   const clients = clientsData || []
+
+  // NovaPoshta addresses from client
+  const npAddresses = clientAddresses?.filter(
+    (a) => !a.deliveryOptionName || a.deliveryOptionName === 'NovaPoshta',
+  ) || []
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EFFECTS - Close NP address dropdown on outside click
+  // ═══════════════════════════════════════════════════════════════════════════
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (
+        npAddressDropdownRef.current &&
+        !npAddressDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsNpAddressDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   // ═══════════════════════════════════════════════════════════════════════════
   // EFFECTS - Prefill from sessionStorage (Copy Sale)
@@ -353,6 +383,47 @@ const CreateOrderPage = () => {
     }))
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HANDLERS - Nova Poshta Saved Address Selection
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Parse a saved address string like "Хмельницький, Відділення №21 (до 30 кг): просп. Миру, 80"
+   * into city part and warehouse part.
+   */
+  const parseNpAddress = (
+    address: string,
+  ): { city: string; warehouse: string } => {
+    // The address is stored as "CityName, WarehouseDescription"
+    // Split on first comma to separate city from warehouse
+    const commaIdx = address.indexOf(', ')
+    if (commaIdx === -1) return { city: address, warehouse: '' }
+    return {
+      city: address.substring(0, commaIdx).trim(),
+      warehouse: address.substring(commaIdx + 2).trim(),
+    }
+  }
+
+  const handleNpSavedAddressSelect = (address: ClientAddress) => {
+    setSelectedNpAddressId(address.addressId)
+    setIsNpAddressDropdownOpen(false)
+
+    const { city, warehouse } = parseNpAddress(address.address)
+
+    // Prefill the city search field
+    setNpCityQuery(city)
+
+    // Prefill the warehouse search field
+    setNpWarehouseQuery(warehouse)
+
+    // Set the deliveryAddress that will be saved
+    setFormData((prev) => ({ ...prev, deliveryAddress: address.address }))
+
+    // Note: npCityRef will be empty until the user re-selects city from NP API.
+    // The warehouse search won't work without cityRef, but the display is prefilled.
+    // This is intentional — if user wants to change warehouse they re-select city first.
+  }
+
   // ═══════════════════════════════════════════════════════════v════════════════
   // HANDLERS - Nova Poshta Autocomplete
   // ═══════════════════════════════════════════════════════════════════════════
@@ -382,6 +453,8 @@ const CreateOrderPage = () => {
 
       deliveryOptionName: prev.deliveryOptionName || 'NovaPoshta',
     }))
+    // Clear saved address selection when manually changing city
+    setSelectedNpAddressId(null)
   }
 
   // ─── NP Warehouse selected ───────────────────────────────────────────────────
@@ -544,6 +617,10 @@ const CreateOrderPage = () => {
     return phone.replace(/[\s\-()\.]/g, '')
   }
 
+  // Selected NP address display label
+  const selectedNpAddress = selectedNpAddressId
+    ? npAddresses.find((a) => a.addressId === selectedNpAddressId)
+    : null
   // ═══════════════════════════════════════════════════════════════════════════
   // RENDER
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1072,6 +1149,113 @@ const CreateOrderPage = () => {
               {/* ── Nova Poshta autocomplete fields ── */}
               {formData.deliveryOptionName === 'NovaPoshta' ? (
                 <>
+                  {/* ── Saved NP address picker (shown only when client is selected) ── */}
+                  {selectedClient && (
+                    <div className='md:col-span-2' ref={npAddressDropdownRef}>
+                      <label className='block text-sm font-medium text-gray-700 mb-1'>
+                        Адреса клієнта
+                      </label>
+                      <div className='relative'>
+                        {/* Trigger button — mirrors the look from the screenshots */}
+                        <button
+                          type='button'
+                          onClick={() => setIsNpAddressDropdownOpen((v) => !v)}
+                          className={`w-full flex items-center gap-2 px-3 py-2.5 border rounded-lg text-left text-sm transition-all ${
+                            isNpAddressDropdownOpen
+                              ? 'border-blue-500 ring-2 ring-blue-100'
+                              : 'border-gray-300'
+                          } bg-white`}
+                        >
+                          <MapPin
+                            size={15}
+                            className='text-gray-400 shrink-0'
+                          />
+                          <span
+                            className={`flex-1 truncate ${selectedNpAddress ? 'text-gray-800' : 'text-gray-400'}`}
+                          >
+                            {selectedNpAddress
+                              ? selectedNpAddress.address
+                              : 'Оберіть збережену адресу або введіть нову'}
+                          </span>
+                          <ChevronDown
+                            size={15}
+                            className={`text-gray-400 shrink-0 transition-transform ${isNpAddressDropdownOpen ? 'rotate-180' : ''}`}
+                          />
+                        </button>
+
+                        {isNpAddressDropdownOpen && (
+                          <div className='absolute z-[200] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden'>
+                            {/* Add new address row */}
+                            <button
+                              type='button'
+                              onClick={() => {
+                                setIsNpAddressDropdownOpen(false)
+                                setShowAddAddressModal(true)
+                              }}
+                              className='w-full flex items-center gap-2 px-4 py-3 text-left text-sm text-blue-600 font-medium hover:bg-blue-50 border-b border-gray-200 transition-colors'
+                            >
+                              <Plus size={15} />
+                              Додати адресу доставки
+                            </button>
+
+                            {/* Existing addresses */}
+                            {npAddresses.length > 0 ? (
+                              npAddresses.map((address) => {
+                                const isSelected =
+                                  selectedNpAddressId === address.addressId
+                                return (
+                                  <button
+                                    key={address.addressId}
+                                    type='button'
+                                    onClick={() =>
+                                      handleNpSavedAddressSelect(address)
+                                    }
+                                    className={`w-full flex items-start gap-3 px-4 py-3 text-left text-sm border-b border-gray-100 last:border-0 transition-colors ${
+                                      isSelected
+                                        ? 'bg-blue-600 text-white'
+                                        : 'hover:bg-gray-50 text-gray-800'
+                                    }`}
+                                  >
+                                    <MapPin
+                                      size={14}
+                                      className={`mt-0.5 shrink-0 ${isSelected ? 'text-blue-200' : 'text-gray-400'}`}
+                                    />
+                                    <div className='flex-1 min-w-0'>
+                                      <p className='font-medium leading-snug break-words'>
+                                        {address.address}
+                                      </p>
+                                      {address.branchNumber && (
+                                        <p
+                                          className={`text-xs mt-0.5 ${isSelected ? 'text-blue-200' : 'text-gray-500'}`}
+                                        >
+                                          {address.branchNumber}
+                                        </p>
+                                      )}
+                                    </div>
+                                    {address.isPrimary && (
+                                      <span
+                                        className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${
+                                          isSelected
+                                            ? 'bg-blue-500 text-white'
+                                            : 'bg-green-100 text-green-700'
+                                        }`}
+                                      >
+                                        Основна
+                                      </span>
+                                    )}
+                                  </button>
+                                )
+                              })
+                            ) : (
+                              <div className='px-4 py-3 text-sm text-gray-500 text-center'>
+                                Немає збережених адрес Нової Пошти
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   {/* City search */}
                   <div>
                     <label className='block text-sm font-medium text-gray-700 mb-1'>
