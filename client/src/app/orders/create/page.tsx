@@ -1,7 +1,7 @@
 // client/src/app/orders/create/page.tsx
 'use client'
 
-import { useState, useEffect,useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import {
@@ -114,6 +114,12 @@ const CreateOrderPage = () => {
   // which saved address is currently shown in the address pill
   const [selectedSavedAddress, setSelectedSavedAddress] =
     useState<ClientAddress | null>(null)
+
+  // Remember the last saved address so we can restore it when the user
+  // switches the delivery option back to the one that originally matched it.
+  const [lastSavedAddress, setLastSavedAddress] =
+    useState<ClientAddress | null>(null)
+
   // 'saved' = showing the address pill / dropdown; 'manual' = NP autocomplete or plain input
   const [addressSource, setAddressSource] = useState<AddressSource>('manual')
 
@@ -332,6 +338,7 @@ const CreateOrderPage = () => {
     }))
     // reset address state so the auto-select effect can run
     setSelectedSavedAddress(null)
+    setLastSavedAddress(null) //clear remembered address for new client
     setAddressSource('manual')
     setNpCityQuery('')
     setNpCityRef('')
@@ -370,6 +377,7 @@ const CreateOrderPage = () => {
     }))
     // clear saved address when starting a new client from scratch
     setSelectedSavedAddress(null)
+    setLastSavedAddress(null)
     setAddressSource('manual')
   }
 
@@ -378,6 +386,7 @@ const CreateOrderPage = () => {
   // shared logic for applying a saved address to form state
   const applyAddressSelection = (address: ClientAddress) => {
     setSelectedSavedAddress(address)
+    setLastSavedAddress(address) //remember this address for potential restoration
     setAddressSource('saved')
     setFormData((prev) => ({
       ...prev,
@@ -631,7 +640,7 @@ const CreateOrderPage = () => {
         {/* Header */}
         <div className='mb-6'>
           <h1 className='text-3xl font-bold text-gray-900 mb-2'>
-            Створити замовлення
+            Нове замовлення
           </h1>
 
           {/* Prefill banner */}
@@ -1131,18 +1140,48 @@ const CreateOrderPage = () => {
                 <select
                   value={formData.deliveryOptionName}
                   onChange={(e) => {
-                    handleInputChange('deliveryOptionName', e.target.value)
-                    // Reset NP state if switching away from NovaPoshta
-                    if (e.target.value !== 'NovaPoshta') {
-                      setNpCityQuery('')
-                      setNpCityRef('')
-                      setNpWarehouseQuery('')
-                    }
-                    // switching delivery type clears the saved-address lock so
-                    // the user can enter a new address appropriate for the new service
-                    setSelectedSavedAddress(null)
-                    setAddressSource('manual')
-                    setFormData((prev) => ({ ...prev, deliveryAddress: '' }))
+                    const newDeliveryOption = e.target.value //CHANGE
+                    handleInputChange('deliveryOptionName', newDeliveryOption) //CHANGE
+
+                    // CHANGE: Use the currently-selected saved address OR the last
+                    // remembered one so we can restore it if the user switches back.
+                    const addressToCheck =
+                      selectedSavedAddress ?? lastSavedAddress //CHANGE
+
+                    if (addressToCheck) {
+                      //CHANGE
+                      const savedOption =
+                        addressToCheck.deliveryOptionName || '' //CHANGE
+                      if (newDeliveryOption === savedOption) {
+                        //CHANGE
+                        // CHANGE: User switched back to the delivery option that
+                        // matches the saved address — restore it automatically.
+                        applyAddressSelection(addressToCheck) //CHANGE
+                      } else {
+                        //CHANGE
+                        // CHANGE: Different delivery option — clear saved address
+                        // lock so the user can enter a new address for this service.
+                        setSelectedSavedAddress(null) //CHANGE
+                        setAddressSource('manual') //CHANGE
+                        setFormData((prev) => ({
+                          ...prev,
+                          deliveryAddress: '',
+                        })) //CHANGE
+                        setNpCityQuery('') //CHANGE
+                        setNpCityRef('') //CHANGE
+                        setNpWarehouseQuery('') //CHANGE
+                      } //CHANGE
+                    } else {
+                      //CHANGE
+                      // CHANGE: No saved address at all — original behaviour:
+                      // only reset NP fields when switching away from NovaPoshta.
+                      if (newDeliveryOption !== 'NovaPoshta') {
+                        //CHANGE
+                        setNpCityQuery('') //CHANGE
+                        setNpCityRef('') //CHANGE
+                        setNpWarehouseQuery('') //CHANGE
+                      } //CHANGE
+                    } //CHANGE
                   }}
                   className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                 >
