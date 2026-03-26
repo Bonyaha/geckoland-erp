@@ -6,6 +6,11 @@ import { useState } from 'react'
 import { X, Save, MapPin } from 'lucide-react'
 import { useCreateClientAddressMutation } from '@/state/api'
 import { useToast } from '@/hooks/useToast'
+import {
+  NpCitySearch,
+  NpWarehouseSearch,
+} from '@/app/(components)/NovaPoshtaSearch'
+import type { NpCity, NpWarehouse } from '@/hooks/useNovaPoshtaAutocomplete'
 
 interface AddAddressModalProps {
   clientId: string
@@ -40,6 +45,51 @@ export default function AddAddressModal({
     isPrimary: false,
   })
 
+  // NP autocomplete state — city display string, city ref, warehouse display string
+  const [npCityQuery, setNpCityQuery] = useState('')
+  const [npCityRef, setNpCityRef] = useState('')
+  const [npWarehouseQuery, setNpWarehouseQuery] = useState('')
+
+  // Handler when user picks a city from the NP dropdown
+  const handleNpCitySelect = (city: NpCity) => {
+    setNpCityRef(city.DeliveryCity)
+    // Clear warehouse when city changes
+    setNpWarehouseQuery('')
+    setFormData((prev) => ({ ...prev, address: '', branchNumber: '' }))
+  }
+
+  // Handler when user picks a warehouse from the NP dropdown
+  const handleNpWarehouseSelect = (warehouse: NpWarehouse) => {
+    // Build combined address: "Місто, Відділення №X: вул. ..."
+    const cityName = npCityQuery.split(',')[0]?.trim() || ''
+    const combined = cityName
+      ? `${cityName}, ${warehouse.Description}`
+      : warehouse.Description
+
+    setFormData((prev) => ({
+      ...prev,
+      address: combined,
+      // Store branch number separately if available
+      branchNumber: warehouse.Number || prev.branchNumber,
+    }))
+  }
+
+  // Reset NP state when delivery option changes away from NovaPoshta
+  const handleDeliveryOptionChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      deliveryOptionName: value,
+      address: '',
+      branchNumber: '',
+    }))
+    // Clear NP autocomplete state when switching away from NovaPoshta
+    if (value !== 'NovaPoshta') {
+      setNpCityQuery('')
+      setNpCityRef('')
+      setNpWarehouseQuery('')
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -67,6 +117,8 @@ export default function AddAddressModal({
       )
     }
   }
+
+const isNovaPoshta = formData.deliveryOptionName === 'NovaPoshta'
 
   return (
     <>
@@ -103,55 +155,15 @@ export default function AddAddressModal({
 
           {/* Form */}
           <form onSubmit={handleSubmit} className='p-6 space-y-4'>
-            {/* Address Field */}
-            <div>
-              <label className='block text-sm font-medium text-gray-700 mb-1'>
-                Адреса доставки <span className='text-red-500'>*</span>
-              </label>
-              <input
-                type='text'
-                required
-                value={formData.address}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, address: e.target.value }))
-                }
-                placeholder='Київ, вул. Васильківська, 55 (м. Виставковий Центр)'
-                className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm'
-              />
-            </div>
-
-            {/* Branch Number Field */}
-            <div>
-              <label className='block text-sm font-medium text-gray-700 mb-1'>
-                Номер відділення
-              </label>
-              <input
-                type='text'
-                value={formData.branchNumber}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    branchNumber: e.target.value,
-                  }))
-                }
-                placeholder='№64 або №59995 (Поштомат)'
-                className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm'
-              />
-            </div>
-
             {/* Delivery Service Field */}
             <div>
               <label className='block text-sm font-medium text-gray-700 mb-1'>
                 Служба доставки
               </label>
+              {/* CHANGE: now calls handleDeliveryOptionChange instead of inline setFormData */}
               <select
                 value={formData.deliveryOptionName}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    deliveryOptionName: e.target.value,
-                  }))
-                }
+                onChange={(e) => handleDeliveryOptionChange(e.target.value)}
                 className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm'
               >
                 {DELIVERY_OPTIONS.map((option) => (
@@ -161,6 +173,89 @@ export default function AddAddressModal({
                 ))}
               </select>
             </div>
+
+            {/* CHANGE: Show NP autocomplete fields when NovaPoshta is selected,
+                otherwise show plain text inputs (original behaviour) */}
+            {isNovaPoshta ? (
+              <>
+                {/* NEW: NP City autocomplete */}
+                <div>
+                  <label className='block text-sm font-medium text-gray-700 mb-1'>
+                    Місто <span className='text-red-500'>*</span>
+                  </label>
+                  <NpCitySearch
+                    value={npCityQuery}
+                    onChange={setNpCityQuery}
+                    onSelect={handleNpCitySelect}
+                    placeholder='Введіть назву міста...'
+                  />
+                </div>
+
+                {/* NEW: NP Warehouse autocomplete */}
+                <div>
+                  <label className='block text-sm font-medium text-gray-700 mb-1'>
+                    Відділення <span className='text-red-500'>*</span>
+                  </label>
+                  <NpWarehouseSearch
+                    cityRef={npCityRef}
+                    value={npWarehouseQuery}
+                    onChange={setNpWarehouseQuery}
+                    onSelect={handleNpWarehouseSelect}
+                    placeholder='№64 або №59995 (Поштомат)'
+                  />
+                  {/* NEW: Show the address that will be saved */}
+                  {formData.address && (
+                    <p className='mt-1.5 text-xs text-gray-500 pl-1'>
+                      Буде збережено:{' '}
+                      <span className='font-medium text-gray-700'>
+                        {formData.address}
+                      </span>
+                    </p>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Address Field */}
+                <div>
+                  <label className='block text-sm font-medium text-gray-700 mb-1'>
+                    Адреса доставки <span className='text-red-500'>*</span>
+                  </label>
+                  <input
+                    type='text'
+                    required
+                    value={formData.address}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        address: e.target.value,
+                      }))
+                    }
+                    placeholder='Київ, вул. Васильківська, 55 (м. Виставковий Центр)'
+                    className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm'
+                  />
+                </div>
+
+                {/* Branch Number Field */}
+                <div>
+                  <label className='block text-sm font-medium text-gray-700 mb-1'>
+                    Номер відділення
+                  </label>
+                  <input
+                    type='text'
+                    value={formData.branchNumber}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        branchNumber: e.target.value,
+                      }))
+                    }
+                    placeholder='№64 або №59995 (Поштомат)'
+                    className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm'
+                  />
+                </div>
+              </>
+            )}
 
             {/* Primary Checkbox */}
             <div className='flex items-center gap-2'>

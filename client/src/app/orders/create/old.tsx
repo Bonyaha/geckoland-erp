@@ -1,18 +1,20 @@
 // client/src/app/orders/create/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react' //CHANGE: added useRef
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import {
   useCreateCRMOrderMutation,
   useGetProductsQuery,
   useSearchClientsAutocompleteQuery,
-  /* useGetOrCreateClientMutation */
   Product,
   CreateCRMOrderInput,
-  Client,
+  type Client,
+  useGetClientAddressesQuery,
+  type ClientAddress,
 } from '@/state/api'
+
 import {
   Trash2,
   Save,
@@ -27,21 +29,37 @@ import {
   UserPlus,
   AlertTriangle,
   Copy,
+  Pencil, //NEW: edit icon — click to switch back to manual / NP address input
+  MapPin, //NEW: icon for "add new address" option in dropdown
 } from 'lucide-react'
 
 import { useToast } from '@/hooks/useToast'
 import Toast from '@/app/(components)/Toast'
 
+import { AddAddressModal } from '../(components)'
+
+import { PAYMENT_OPTIONS } from '@/utils/marketplaceUtils'
+
+import {
+  NpCitySearch,
+  NpWarehouseSearch,
+} from '@/app/(components)/NovaPoshtaSearch'
+import type { NpCity } from '@/hooks/useNovaPoshtaAutocomplete'
+
 type OrderItemWithStock = NonNullable<CreateCRMOrderInput['items']>[number] & {
   stockQuantity: number
 }
+
+// NEW: Tracks whether the delivery address came from the saved-address picker
+// or was entered manually (including via Nova Poshta autocomplete).
+type AddressSource = 'saved' | 'manual'
 
 const CreateOrderPage = () => {
   const router = useRouter()
   const { toast, showToast, hideToast } = useToast()
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // STATE - Form Data(items excluded — managed separately in orderItems)
+  // STATE - Form Data (items excluded — managed separately in orderItems)
   // ═══════════════════════════════════════════════════════════════════════════
   const [formData, setFormData] = useState<Omit<CreateCRMOrderInput, 'items'>>({
     clientFirstName: '',
@@ -50,7 +68,6 @@ const CreateOrderPage = () => {
     clientPhone: '',
     clientEmail: '',
     deliveryAddress: '',
-    deliveryCity: '',
     deliveryOptionName: '',
     paymentOptionName: '',
     totalAmount: 0,
@@ -58,16 +75,17 @@ const CreateOrderPage = () => {
     clientNotes: '',
   })
 
-  // Order items
   const [orderItems, setOrderItems] = useState<OrderItemWithStock[]>([])
-
-  // Prefill banner
   const [isPrefilled, setIsPrefilled] = useState(false)
+
+  // ─── NP Autocomplete State ────────────────────────────────────────────────
+  const [npCityQuery, setNpCityQuery] = useState('')
+  const [npCityRef, setNpCityRef] = useState('')
+  const [npWarehouseQuery, setNpWarehouseQuery] = useState('')
 
   // ═══════════════════════════════════════════════════════════════════════════
   // STATE - Product Search & Selection
   // ═══════════════════════════════════════════════════════════════════════════
-  // Product dropdown and search state
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -76,42 +94,49 @@ const CreateOrderPage = () => {
   const [prefilledSkus, setPrefilledSkus] = useState<string>('')
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // STATE - Client Search & Selection
+  // STATE - Client Search, Selection & Address Management
   // ═══════════════════════════════════════════════════════════════════════════
-
-  // Client search state
   const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false)
   const [clientSearchTerm, setClientSearchTerm] = useState('')
   const [debouncedClientSearch, setDebouncedClientSearch] = useState('')
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null)
+  const [isAddressDropdownOpen, setIsAddressDropdownOpen] = useState(false)
+  const [showAddAddressModal, setShowAddAddressModal] = useState(false)
+
+  // NEW: which saved address is currently shown in the address pill
+  const [selectedSavedAddress, setSelectedSavedAddress] =
+    useState<ClientAddress | null>(null)
+  // NEW: 'saved' = showing the address pill / dropdown; 'manual' = NP autocomplete or plain input
+  const [addressSource, setAddressSource] = useState<AddressSource>('manual')
+
+  // NEW: ref for the address dropdown so outside-clicks close it
+  const addressDropdownRef = useRef<HTMLDivElement>(null)
 
   // ═══════════════════════════════════════════════════════════════════════════
   // API QUERIES & MUTATIONS
   // ═══════════════════════════════════════════════════════════════════════════
   const [createOrder, { isLoading }] = useCreateCRMOrderMutation()
 
-  // Fetch products from API(for manual search)
   const { data: productsData, isFetching } = useGetProductsQuery({
     search: debouncedSearch,
     page: currentPage,
     limit: 10,
   })
 
-  // Fetch stock for prefilled items using their SKUs
   const { data: prefilledProductsData } = useGetProductsQuery(
-    {
-      search: prefilledSkus,
-      page: 1,
-      limit: 50, // Higher limit to catch all prefilled items
-    },
-    {
-      skip: !prefilledSkus, // Only run when we have SKUs to search
-    },
+    { search: prefilledSkus, page: 1, limit: 50 },
+    { skip: !prefilledSkus },
   )
 
-  // Fetch clients
   const { data: clientsData, isFetching: isClientFetching } =
     useSearchClientsAutocompleteQuery(debouncedClientSearch, {
       skip: debouncedClientSearch.length < 3,
+    })
+
+  // CHANGE: added refetch so the list updates immediately after AddAddressModal saves
+  const { data: clientAddresses, refetch: refetchAddresses } =
+    useGetClientAddressesQuery(selectedClient?.clientId || '', {
+      skip: !selectedClient?.clientId,
     })
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -122,20 +147,31 @@ const CreateOrderPage = () => {
   const clients = clientsData || []
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // EFFECTS - Prefill from sessionStorage (Copy Sale)
+  // EFFECTS
   // ═══════════════════════════════════════════════════════════════════════════
+
+  // NEW: close address dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (
+        addressDropdownRef.current &&
+        !addressDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsAddressDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  // Prefill from sessionStorage (Copy Sale)
   useEffect(() => {
     const raw = sessionStorage.getItem('order_prefill')
     if (!raw) return
-
     try {
       const prefill = JSON.parse(raw)
-      //console.log('prefill is: ',prefill);
-
-      sessionStorage.removeItem('order_prefill') // consume once
-
+      sessionStorage.removeItem('order_prefill')
       setIsPrefilled(true)
-
       setFormData((prev) => ({
         ...prev,
         clientFirstName: prefill.clientFirstName ?? prev.clientFirstName,
@@ -143,58 +179,46 @@ const CreateOrderPage = () => {
         clientSecondName: prefill.clientSecondName ?? prev.clientSecondName,
         clientPhone: prefill.clientPhone ?? prev.clientPhone,
         clientEmail: prefill.clientEmail ?? prev.clientEmail,
-        deliveryAddress: prefill.deliveryAddress ?? prev.deliveryAddress,
-        deliveryCity: prefill.deliveryCity ?? prev.deliveryCity,
+        deliveryAddress: '',
         deliveryOptionName:
           prefill.deliveryOptionName ?? prev.deliveryOptionName,
         paymentOptionName: prefill.paymentOptionName ?? prev.paymentOptionName,
         clientNotes: prefill.clientNotes ?? prev.clientNotes,
       }))
-
-      // Pre-populate client search display
       if (prefill.clientLastName || prefill.clientPhone) {
         setClientSearchTerm(
           `${prefill.clientLastName ?? ''} ${prefill.clientFirstName ?? ''} (${prefill.clientPhone ?? ''})`.trim(),
         )
       }
-
-      // Pre-populate items - stock quantities will be updated from fetched products
       if (Array.isArray(prefill.items) && prefill.items.length > 0) {
         const items: OrderItemWithStock[] = prefill.items.map((item: any) => ({
           productId: item.productId ?? undefined,
           productName: item.productName,
           sku: item.sku ?? undefined,
           quantity: item.quantity ?? 1,
-          stockQuantity: 0, // Will be updated when products are fetched
+          stockQuantity: 0,
           unitPrice: item.unitPrice ?? 0,
           totalPrice: item.totalPrice ?? item.unitPrice ?? 0,
         }))
         setOrderItems(items)
-
-        // Trigger a search for all SKUs to fetch stock data
         const skus = items
           .map((i) => i.sku)
           .filter(Boolean)
           .join(' ')
-        if (skus) {
-          setPrefilledSkus(skus)
-        }
+        if (skus) setPrefilledSkus(skus)
       }
     } catch (e) {
       console.error('Failed to parse order prefill', e)
     }
   }, [])
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // EFFECTS - Debouncing
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Debounce logic for products
+  // Debounce products
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300)
     return () => clearTimeout(timer)
   }, [searchTerm])
 
-  // Debounce logic for clients
+  // Debounce clients
   useEffect(() => {
     const timer = setTimeout(
       () => setDebouncedClientSearch(clientSearchTerm),
@@ -203,42 +227,27 @@ const CreateOrderPage = () => {
     return () => clearTimeout(timer)
   }, [clientSearchTerm])
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // EFFECTS - Product Search Pagination
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Reset to page 1 when searching products
+  // Reset product page on search change
   useEffect(() => {
     setCurrentPage(1)
   }, [debouncedSearch])
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // EFFECTS - Stock Quantity Updates
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Update stock quantities for order items when products data changes
+  // Update stock for prefilled items
   useEffect(() => {
     if (!prefilledProductsData?.products || orderItems.length === 0) return
-
     setOrderItems((prevItems) =>
       prevItems.map((item) => {
         const product = prefilledProductsData.products.find(
           (p) => p.productId === item.productId || p.sku === item.sku,
         )
-        // Update stock if we found the product
-        if (product) {
-          return {
-            ...item,
-            stockQuantity: product.stockQuantity,
-          }
-        }
-        return item
+        return product
+          ? { ...item, stockQuantity: product.stockQuantity }
+          : item
       }),
     )
   }, [prefilledProductsData, orderItems.length])
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // EFFECTS - Total Amount Calculation
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Recalculate total amount whenever items change
+  // Total amount recalculation
   useEffect(() => {
     const total = orderItems.reduce(
       (sum, item) => sum + (item.totalPrice || 0),
@@ -246,6 +255,19 @@ const CreateOrderPage = () => {
     )
     setFormData((prev) => ({ ...prev, totalAmount: total }))
   }, [orderItems])
+
+  // NEW: When addresses load for a freshly-selected client, auto-select the
+  // primary address (or first one) so the delivery field is prefilled.
+  useEffect(() => {
+    if (!clientAddresses || clientAddresses.length === 0) return
+    if (selectedSavedAddress) return // already chosen, don't overwrite
+    const primary =
+      clientAddresses.find((a) => a.isPrimary) ?? clientAddresses[0]
+    if (primary) {
+      applyAddressSelection(primary)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientAddresses])
 
   // ═══════════════════════════════════════════════════════════════════════════
   // HANDLERS - Form Input
@@ -258,7 +280,7 @@ const CreateOrderPage = () => {
   // HANDLERS - Client Selection
   // ═══════════════════════════════════════════════════════════════════════════
   const handleClientSelect = (client: Client) => {
-    /* setSelectedClient(client) */
+    setSelectedClient(client)
     setClientSearchTerm(
       `${client.lastName} ${client.firstName} (${client.phone})`,
     )
@@ -269,31 +291,27 @@ const CreateOrderPage = () => {
       clientSecondName: client.secondName || '',
       clientPhone: client.phone,
       clientEmail: client.email || '',
-      deliveryAddress: client.address || '',
+      deliveryAddress: '', // CHANGE: cleared so address effect fills it
       deliveryOptionName: client.deliveryOptionName || '',
       paymentOptionName: client.paymentOptionName || '',
     }))
+    // CHANGE: reset address state so the auto-select effect can run
+    setSelectedSavedAddress(null)
+    setAddressSource('manual')
+    setNpCityQuery('')
+    setNpCityRef('')
+    setNpWarehouseQuery('')
     setIsClientDropdownOpen(false)
   }
 
-  // Handle manual client data change (when user types in fields)
   const handleManualClientChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
-
-    // If phone changes, clear selected client
-    if (field === 'clientPhone') {
-      /* setSelectedClient(null) */
-      setClientSearchTerm(value)
-    }
+    if (field === 'clientPhone') setClientSearchTerm(value)
   }
 
-  // Create new client from search term
   const handleCreateNewClient = () => {
-    // Clear the search field and close dropdown
     setClientSearchTerm('')
     setIsClientDropdownOpen(false)
-
-    // Clear all client fields to allow manual entry
     setFormData((prev) => ({
       ...prev,
       clientPhone: '',
@@ -302,16 +320,97 @@ const CreateOrderPage = () => {
       clientSecondName: '',
       clientEmail: '',
       deliveryAddress: '',
-      deliveryCity: '',
       deliveryOptionName: '',
       paymentOptionName: '',
     }))
+    // CHANGE: clear saved address when starting a new client from scratch
+    setSelectedSavedAddress(null)
+    setAddressSource('manual')
+  }
+
+  // ─── Address helpers ──────────────────────────────────────────────────────
+
+  // NEW: shared logic for applying a saved address to form state
+  const applyAddressSelection = (address: ClientAddress) => {
+    setSelectedSavedAddress(address)
+    setAddressSource('saved')
+    setFormData((prev) => ({
+      ...prev,
+      deliveryAddress: address.address,
+      deliveryOptionName: address.deliveryOptionName || prev.deliveryOptionName,
+    }))
+    // NEW: if saved address is Nova Poshta, pre-populate NP query fields too
+    if (address.deliveryOptionName === 'NovaPoshta') {
+      const parts = address.address.split(', ')
+      setNpCityQuery(parts[0] || '')
+      setNpCityRef('') // ref unknown from stored string; user can re-search
+      setNpWarehouseQuery(parts.slice(1).join(', '))
+    } else {
+      setNpCityQuery('')
+      setNpCityRef('')
+      setNpWarehouseQuery('')
+    }
+  }
+
+  // CHANGE: now delegates to applyAddressSelection and closes the dropdown
+  const handleAddressSelect = (address: ClientAddress) => {
+    applyAddressSelection(address)
+    setIsAddressDropdownOpen(false)
+  }
+
+  // NEW: pencil button — switch back to manual / NP input mode
+  const handleSwitchToManualAddress = () => {
+    setSelectedSavedAddress(null)
+    setAddressSource('manual')
+    setFormData((prev) => ({ ...prev, deliveryAddress: '' }))
+    setNpCityQuery('')
+    setNpCityRef('')
+    setNpWarehouseQuery('')
+  }
+
+  const handleNewAddressAdded = (address: {
+    addressId: string
+    address: string
+    deliveryOptionName?: string | null
+  }) => {
+    // CHANGE: treat a newly-created address like a saved selection
+    const synthetic: ClientAddress = {
+      addressId: address.addressId,
+      clientId: selectedClient?.clientId || '',
+      address: address.address,
+      deliveryOptionName: address.deliveryOptionName ?? null,
+      branchNumber: null,
+      isPrimary: false,
+      createdAt: new Date().toISOString(),
+    } as any
+    applyAddressSelection(synthetic)
+    refetchAddresses() // NEW: refresh so new address appears in the list
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // HANDLERS - Product Selection
+  // HANDLERS - Nova Poshta Autocomplete (unchanged)
   // ═══════════════════════════════════════════════════════════════════════════
-  // Logic for Checkboxes and Adding Multiple Items
+  const handleNpCitySelect = (city: NpCity) => {
+    setNpCityRef(city.DeliveryCity)
+    setNpWarehouseQuery('')
+    setFormData((prev) => ({ ...prev, deliveryAddress: '' }))
+    setFormData((prev) => ({
+      ...prev,
+      deliveryOptionName: prev.deliveryOptionName || 'NovaPoshta',
+    }))
+  }
+
+  const handleNpWarehouseSelect = (
+    w: import('@/hooks/useNovaPoshtaAutocomplete').NpWarehouse,
+  ) => {
+    const cityName = npCityQuery.split(',')[0]?.trim() || ''
+    const combined = cityName ? `${cityName}, ${w.Description}` : w.Description
+    setFormData((prev) => ({ ...prev, deliveryAddress: combined }))
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HANDLERS - Product Selection (unchanged)
+  // ═══════════════════════════════════════════════════════════════════════════
   const toggleProductSelection = (product: Product) => {
     setSelectedProducts((prev) =>
       prev.find((p) => p.productId === product.productId)
@@ -330,7 +429,6 @@ const CreateOrderPage = () => {
       unitPrice: p.price,
       totalPrice: p.price,
     }))
-
     setOrderItems((prev) => [...prev, ...newItems])
     setSelectedProducts([])
     setIsDropdownOpen(false)
@@ -338,7 +436,7 @@ const CreateOrderPage = () => {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // HANDLERS - Order Items Management
+  // HANDLERS - Order Items Management (unchanged)
   // ═══════════════════════════════════════════════════════════════════════════
   const updateItemQuantity = (productId: string, newQty: number) => {
     const qty = Math.max(1, newQty)
@@ -353,7 +451,6 @@ const CreateOrderPage = () => {
 
   const updateItemPrice = (productId: string, newPriceRaw: string) => {
     const numericPrice = newPriceRaw === '' ? 0 : parseFloat(newPriceRaw) || 0
-
     setOrderItems((prev) =>
       prev.map((item) =>
         item.productId === productId
@@ -372,8 +469,8 @@ const CreateOrderPage = () => {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // HANDLERS - Form Submission
-  // ═════════════════════════════════════════════════════════════════════════════════
+  // HANDLERS - Form Submission (unchanged)
+  // ═══════════════════════════════════════════════════════════════════════════
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -381,41 +478,32 @@ const CreateOrderPage = () => {
       alert('Додайте хоча б один товар до замовлення')
       return
     }
-
     if (!formData.clientPhone) {
       alert('Введіть номер телефону клієнта')
       return
     }
 
-    //Check for insufficient inventory
     const itemsWithInsufficientStock = orderItems.filter(
       (item) => item.quantity > item.stockQuantity,
     )
-
     if (itemsWithInsufficientStock.length > 0) {
-      // Build error message for toast
-      /* console.log('itemsWithInsufficientStock: ', itemsWithInsufficientStock) */
-
       const errorDetails = itemsWithInsufficientStock
         .map(
           (item) =>
             `${item.productName} (${item.sku}): обрано ${item.quantity}, але на складі лише ${item.stockQuantity}`,
         )
         .join(' | ')
-
       showToast('Недостатньо товару на складі: ' + errorDetails, 'error')
       return
     }
 
     try {
-      // Strip stockQuantity before sending to API — it's a UI-only field
       const payload: CreateCRMOrderInput = {
         ...formData,
         items: orderItems.map(({ stockQuantity: _s, ...rest }) => rest),
       }
       console.log('Submitting order with data: ', payload)
       const result = await createOrder(payload).unwrap()
-
       showToast(`Замовлення створено успішно! ID: ${result.orderId}`, 'success')
       router.push('/orders')
     } catch (error: any) {
@@ -437,9 +525,12 @@ const CreateOrderPage = () => {
     }).format(amount)
   }
 
-  //Check if an item has insufficient stock
   const hasInsufficientStock = (item: OrderItemWithStock) => {
     return item.stockQuantity === 0 || item.quantity > item.stockQuantity
+  }
+
+  const normalizePhoneForSearch = (phone: string): string => {
+    return phone.replace(/[\s\-()\.]/g, '')
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -453,8 +544,6 @@ const CreateOrderPage = () => {
           <h1 className='text-3xl font-bold text-gray-900 mb-2'>
             Створити замовлення
           </h1>
-
-          {/* Prefill banner */}
           {isPrefilled && (
             <div className='flex items-center gap-2 mt-2 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700 w-fit'>
               <Copy size={15} />
@@ -465,7 +554,7 @@ const CreateOrderPage = () => {
         </div>
 
         <form onSubmit={handleSubmit} className='space-y-6'>
-          {/* Main Product Selection Area */}
+          {/* ─────────────────────────────── Product Selection ─────────────────────────── */}
           <div className='bg-white rounded-lg shadow-sm p-6'>
             <div className='relative mb-4'>
               <div
@@ -494,13 +583,12 @@ const CreateOrderPage = () => {
                 )}
               </div>
 
-              {/* Search Dropdown */}
               {isDropdownOpen && (
                 <>
                   <div
                     className='fixed inset-0 z-40'
                     onClick={() => setIsDropdownOpen(false)}
-                  ></div>
+                  />
                   <div className='absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-96 overflow-hidden flex flex-col'>
                     {selectedProducts.length > 0 && (
                       <div className='p-2 bg-blue-50 border-b flex justify-between items-center'>
@@ -522,7 +610,6 @@ const CreateOrderPage = () => {
                           const isChecked = selectedProducts.some(
                             (p) => p.productId === product.productId,
                           )
-
                           return (
                             <div
                               key={product.productId}
@@ -564,7 +651,6 @@ const CreateOrderPage = () => {
                         </div>
                       )}
                     </div>
-
                     {totalPages > 1 && (
                       <div className='p-2 border-t bg-gray-50 flex items-center justify-between'>
                         <button
@@ -601,26 +687,18 @@ const CreateOrderPage = () => {
             <div className='space-y-2'>
               {orderItems.map((item, index) => {
                 const isOutOfStock = hasInsufficientStock(item)
-
                 return (
                   <div
                     key={item.productId}
-                    className={`flex flex-wrap md:flex-nowrap items-center gap-4 p-3 border rounded-lg  shadow-sm ${
-                      isOutOfStock
-                        ? 'bg-red-50 border-red-200'
-                        : 'bg-white border-gray-200'
-                    }`}
+                    className={`flex flex-wrap md:flex-nowrap items-center gap-4 p-3 border rounded-lg shadow-sm ${isOutOfStock ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200'}`}
                   >
-                    {/* Name and Stock Info */}
                     <div className='flex-1 min-w-[250px]'>
                       <div className='flex items-center gap-2'>
                         {isOutOfStock && (
                           <AlertTriangle className='w-4 h-4 text-red-500 flex-shrink-0' />
                         )}
                         <p
-                          className={`text-sm font-medium leading-tight ${
-                            isOutOfStock ? 'text-red-700' : 'text-blue-600'
-                          }`}
+                          className={`text-sm font-medium leading-tight ${isOutOfStock ? 'text-red-700' : 'text-blue-600'}`}
                         >
                           {item.productName}
                           <span className='text-gray-400 ml-1 font-normal text-xs'>
@@ -629,19 +707,13 @@ const CreateOrderPage = () => {
                         </p>
                       </div>
                       <p
-                        className={`text-[11px] mt-0.5 ${
-                          isOutOfStock
-                            ? 'text-red-600 font-bold'
-                            : 'text-gray-500'
-                        }`}
+                        className={`text-[11px] mt-0.5 ${isOutOfStock ? 'text-red-600 font-bold' : 'text-gray-500'}`}
                       >
                         {item.stockQuantity === 0
                           ? 'Немає на складі!'
                           : `(доступно ${item.stockQuantity} шт)`}
                       </p>
                     </div>
-
-                    {/* Quantity Controls */}
                     <div className='flex items-center gap-1'>
                       <button
                         type='button'
@@ -656,7 +728,7 @@ const CreateOrderPage = () => {
                         <input
                           type='number'
                           value={item.quantity}
-                          onFocus={(e) => e.target.select()} // Selects the number on click for easy overwriting
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) =>
                             updateItemQuantity(
                               item.productId!,
@@ -679,17 +751,13 @@ const CreateOrderPage = () => {
                         <CirclePlus size={22} strokeWidth={2.5} />
                       </button>
                     </div>
-
                     <div className='flex items-center border border-gray-300 rounded px-2 py-1 bg-white min-w-[100px]'>
                       <input
                         type='number'
                         value={item.unitPrice}
-                        onFocus={(e) => e.target.select()} // Auto-selects 0 when clicked
+                        onFocus={(e) => e.target.select()}
                         onChange={(e) =>
-                          updateItemPrice(
-                            item.productId!,
-                            e.target.value, // Pass raw string
-                          )
+                          updateItemPrice(item.productId!, e.target.value)
                         }
                         className='w-full text-right text-sm font-semibold focus:outline-none'
                       />
@@ -697,14 +765,12 @@ const CreateOrderPage = () => {
                         грн.
                       </span>
                     </div>
-
                     <div className='flex items-center gap-2 min-w-[120px] justify-end'>
                       <ChevronDown size={14} className='text-blue-500' />
                       <span className='text-sm font-bold text-gray-700'>
                         {(item.totalPrice || 0).toFixed(2)} грн.
                       </span>
                     </div>
-
                     <button
                       type='button'
                       onClick={() => removeItem(index)}
@@ -715,7 +781,6 @@ const CreateOrderPage = () => {
                   </div>
                 )
               })}
-
               {orderItems.length > 0 && (
                 <div className='text-right pt-2 text-gray-700 font-bold'>
                   Усього: {orderItems.length} найм. (
@@ -725,23 +790,19 @@ const CreateOrderPage = () => {
             </div>
           </div>
 
-          {/* Client Information with Dropdown */}
+          {/* ─────────────────────────────── Client Information ────────────────────────── */}
           <div className='bg-white rounded-lg shadow-sm p-6'>
             <h2 className='text-xl font-semibold text-gray-900 mb-4'>
               Інформація про клієнта
             </h2>
 
-            {/* Client Search Dropdown */}
+            {/* Client Search */}
             <div className='relative mb-4'>
               <label className='block text-sm font-medium text-gray-700 mb-1'>
                 Оберіть клієнта
               </label>
               <div
-                className={`flex items-center border rounded-lg px-3 py-2.5 transition-all ${
-                  isClientDropdownOpen
-                    ? 'border-blue-500 ring-2 ring-blue-100'
-                    : 'border-gray-300'
-                }`}
+                className={`flex items-center border rounded-lg px-3 py-2.5 transition-all ${isClientDropdownOpen ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-300'}`}
               >
                 <Search size={18} className='text-gray-400 mr-2' />
                 <input
@@ -751,6 +812,15 @@ const CreateOrderPage = () => {
                   value={clientSearchTerm}
                   onFocus={() => setIsClientDropdownOpen(true)}
                   onChange={(e) => setClientSearchTerm(e.target.value)}
+                  onPaste={(e) => {
+                    const pastedText = e.clipboardData.getData('text')
+                    const normalized = normalizePhoneForSearch(pastedText)
+                    const digitCount = normalized.replace(/\D/g, '').length
+                    if (digitCount >= 9) {
+                      e.preventDefault()
+                      setClientSearchTerm(normalized)
+                    }
+                  }}
                 />
                 {isClientFetching ? (
                   <Loader2
@@ -768,16 +838,36 @@ const CreateOrderPage = () => {
                 )}
               </div>
 
-              {/* Client Dropdown */}
               {isClientDropdownOpen && (
                 <>
                   <div
                     className='fixed inset-0 z-40'
                     onClick={() => setIsClientDropdownOpen(false)}
-                  ></div>
+                  />
                   <div className='absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-80 overflow-hidden flex flex-col'>
                     <div className='overflow-y-auto flex-1'>
-                      {clients.length > 0 ? (
+                      {selectedClient ? (
+                        <div
+                          className='flex items-center gap-3 p-3 border-b border-gray-100 bg-blue-50 cursor-pointer transition-colors'
+                          onClick={() => handleClientSelect(selectedClient)}
+                        >
+                          <div className='flex-1'>
+                            <p className='text-sm font-medium text-gray-900'>
+                              {selectedClient.lastName}{' '}
+                              {selectedClient.firstName}{' '}
+                              {selectedClient.secondName || ''}
+                            </p>
+                            <p className='text-xs text-gray-500'>
+                              {selectedClient.phone}
+                              {selectedClient.email &&
+                                ` • ${selectedClient.email}`}
+                            </p>
+                          </div>
+                          <span className='text-xs bg-blue-600 text-white px-2 py-1 rounded'>
+                            Обрано
+                          </span>
+                        </div>
+                      ) : clients.length > 0 ? (
                         clients.map((client) => (
                           <div
                             key={client.clientId}
@@ -821,7 +911,7 @@ const CreateOrderPage = () => {
               )}
             </div>
 
-            {/* Client Details Form */}
+            {/* Client detail fields */}
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               <div>
                 <label className='block text-sm font-medium text-gray-700 mb-1'>
@@ -899,21 +989,33 @@ const CreateOrderPage = () => {
             </div>
           </div>
 
-          {/* Delivery Information */}
+          {/* ─────────────────────────────── Delivery ──────────────────────────────────── */}
           <div className='bg-white rounded-lg shadow-sm p-6'>
             <h2 className='text-xl font-semibold text-gray-900 mb-4'>
               Доставка
             </h2>
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+              {/* Delivery service selector */}
               <div>
                 <label className='block text-sm font-medium text-gray-700 mb-1'>
                   Спосіб доставки
                 </label>
                 <select
                   value={formData.deliveryOptionName}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     handleInputChange('deliveryOptionName', e.target.value)
-                  }
+                    // Reset NP state when switching away from NovaPoshta
+                    if (e.target.value !== 'NovaPoshta') {
+                      setNpCityQuery('')
+                      setNpCityRef('')
+                      setNpWarehouseQuery('')
+                    }
+                    // CHANGE: switching delivery type clears the saved-address lock so
+                    // the user can enter a new address appropriate for the new service
+                    setSelectedSavedAddress(null)
+                    setAddressSource('manual')
+                    setFormData((prev) => ({ ...prev, deliveryAddress: '' }))
+                  }}
                   className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                 >
                   <option value=''>Оберіть спосіб</option>
@@ -921,34 +1023,211 @@ const CreateOrderPage = () => {
                   <option value='UkrPoshta'>Укрпошта</option>
                 </select>
               </div>
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Місто
-                </label>
-                <input
-                  type='text'
-                  value={formData.deliveryCity}
-                  onChange={(e) =>
-                    handleInputChange('deliveryCity', e.target.value)
-                  }
-                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
-                  placeholder='Київ'
-                />
-              </div>
-              <div className='md:col-span-2'>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Адреса
-                </label>
-                <input
-                  type='text'
-                  value={formData.deliveryAddress}
-                  onChange={(e) =>
-                    handleInputChange('deliveryAddress', e.target.value)
-                  }
-                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
-                  placeholder='Відділення №1 або адреса доставки'
-                />
-              </div>
+
+              {/* ══════════════════════════════════════════════════════════════════════
+                  NEW: Saved-address picker.
+                  Visible when a client is selected AND they have saved addresses
+                  AND the user hasn't clicked the pencil to switch to manual input.
+
+                  Layout mirrors the mockup images:
+                    [address dropdown pill ──────────────────] [✏ pencil]
+                ══════════════════════════════════════════════════════════════════════ */}
+              {selectedClient &&
+                clientAddresses &&
+                clientAddresses.length > 0 &&
+                addressSource === 'saved' && (
+                  <div className='md:col-span-2'>
+                    <label className='block text-sm font-medium text-gray-700 mb-1'>
+                      Адреса доставки
+                    </label>
+
+                    <div className='flex items-center gap-2'>
+                      {/* Address dropdown */}
+                      <div ref={addressDropdownRef} className='relative flex-1'>
+                        <button
+                          type='button'
+                          onClick={() => setIsAddressDropdownOpen((v) => !v)}
+                          className={`w-full flex items-center justify-between border rounded-lg px-3 py-2.5 text-sm bg-white text-left transition-all ${
+                            isAddressDropdownOpen
+                              ? 'border-blue-500 ring-2 ring-blue-100'
+                              : 'border-gray-300 hover:border-gray-400'
+                          }`}
+                        >
+                          <span
+                            className={`truncate ${selectedSavedAddress ? 'text-gray-800' : 'text-gray-400'}`}
+                          >
+                            {selectedSavedAddress
+                              ? selectedSavedAddress.address
+                              : 'Оберіть адресу зі списку...'}
+                          </span>
+                          <ChevronDown
+                            size={16}
+                            className='text-gray-400 shrink-0 ml-2'
+                          />
+                        </button>
+
+                        {/* Dropdown list */}
+                        {isAddressDropdownOpen && (
+                          <div className='absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-64 overflow-y-auto'>
+                            {/* Add new address */}
+                            <button
+                              type='button'
+                              onClick={() => {
+                                setShowAddAddressModal(true)
+                                setIsAddressDropdownOpen(false)
+                              }}
+                              className='w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-200 transition-colors text-blue-600 font-medium cursor-pointer text-sm'
+                            >
+                              <MapPin size={15} />
+                              Додати адресу доставки
+                            </button>
+
+                            {/* Existing addresses */}
+                            {clientAddresses.map((address) => (
+                              <button
+                                key={address.addressId}
+                                type='button'
+                                onClick={() => handleAddressSelect(address)}
+                                className={`w-full flex items-start gap-3 px-4 py-3 text-left border-b border-gray-100 last:border-0 transition-colors cursor-pointer text-sm ${
+                                  selectedSavedAddress?.addressId ===
+                                  address.addressId
+                                    ? 'bg-blue-50'
+                                    : 'hover:bg-gray-50'
+                                }`}
+                              >
+                                <div className='flex-1'>
+                                  <p className='font-medium text-gray-900 leading-tight'>
+                                    {address.address}
+                                  </p>
+                                  {address.branchNumber && (
+                                    <p className='text-xs text-gray-500 mt-0.5'>
+                                      {address.branchNumber}
+                                    </p>
+                                  )}
+                                  {address.deliveryOptionName && (
+                                    <p className='text-xs text-gray-400 mt-0.5'>
+                                      {address.deliveryOptionName}
+                                    </p>
+                                  )}
+                                </div>
+                                {address.isPrimary && (
+                                  <span className='text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full shrink-0 mt-0.5'>
+                                    Основна
+                                  </span>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Pencil button — switch to manual / NP input */}
+                      <button
+                        type='button'
+                        title='Ввести адресу вручну'
+                        onClick={handleSwitchToManualAddress}
+                        className='p-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-500 hover:text-blue-600 shrink-0'
+                      >
+                        <Pencil size={16} />
+                      </button>
+                    </div>
+
+                    {/* Hint showing what will be saved */}
+                    {selectedSavedAddress && formData.deliveryAddress && (
+                      <p className='mt-1.5 text-xs text-gray-500 pl-1'>
+                        Буде збережено:{' '}
+                        <span className='font-medium text-gray-700'>
+                          {formData.deliveryAddress}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                )}
+
+              {/* ══════════════════════════════════════════════════════════════════════
+                  EXISTING delivery input fields.
+                  Shown when:
+                  • No client selected, OR
+                  • Client has no saved addresses, OR
+                  • User clicked the pencil (addressSource === 'manual')
+                ══════════════════════════════════════════════════════════════════════ */}
+              {(!selectedClient ||
+                !clientAddresses ||
+                clientAddresses.length === 0 ||
+                addressSource === 'manual') && (
+                <>
+                  {/* Nova Poshta autocomplete — completely unchanged */}
+                  {formData.deliveryOptionName === 'NovaPoshta' ? (
+                    <>
+                      <div>
+                        <label className='block text-sm font-medium text-gray-700 mb-1'>
+                          Місто
+                        </label>
+                        <NpCitySearch
+                          value={npCityQuery}
+                          onChange={setNpCityQuery}
+                          onSelect={handleNpCitySelect}
+                          placeholder='Введіть назву міста...'
+                        />
+                      </div>
+                      <div className='md:col-span-2'>
+                        <label className='block text-sm font-medium text-gray-700 mb-1'>
+                          Номер відділення
+                        </label>
+                        <NpWarehouseSearch
+                          cityRef={npCityRef}
+                          value={npWarehouseQuery}
+                          onChange={setNpWarehouseQuery}
+                          onSelect={handleNpWarehouseSelect}
+                          placeholder='Введіть номер або адресу відділення...'
+                        />
+                        {formData.deliveryAddress && (
+                          <p className='mt-1.5 text-xs text-gray-500 pl-1'>
+                            Буде збережено:{' '}
+                            <span className='font-medium text-gray-700'>
+                              {formData.deliveryAddress}
+                            </span>
+                          </p>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    /* Manual address for UkrPoshta or no delivery option selected */
+                    <>
+                      <div>
+                        <label className='block text-sm font-medium text-gray-700 mb-1'>
+                          Місто
+                        </label>
+                        <input
+                          type='text'
+                          value={formData.deliveryAddress?.split(',')[0] || ''}
+                          onChange={(e) =>
+                            handleInputChange('deliveryAddress', e.target.value)
+                          }
+                          className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+                          placeholder='Київ'
+                        />
+                      </div>
+                      <div className='md:col-span-2'>
+                        <label className='block text-sm font-medium text-gray-700 mb-1'>
+                          Адреса
+                        </label>
+                        <input
+                          type='text'
+                          value={formData.deliveryAddress}
+                          onChange={(e) =>
+                            handleInputChange('deliveryAddress', e.target.value)
+                          }
+                          className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+                          placeholder='Відділення №1 або адреса доставки'
+                        />
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+
+              {/* Payment */}
               <div>
                 <label className='block text-sm font-medium text-gray-700 mb-1'>
                   Спосіб оплати
@@ -960,11 +1239,11 @@ const CreateOrderPage = () => {
                   }
                   className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                 >
-                  <option value=''>Оберіть спосіб</option>
-                  <option value='CashOnDelivery'>Післяплата</option>
-                  <option value='IBAN'>IBAN</option>
-                  <option value='PromPayment'>Пром оплата</option>
-                  <option value='RozetkaPay'>Rozetka Pay</option>
+                  {PAYMENT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -1013,6 +1292,15 @@ const CreateOrderPage = () => {
             </div>
           </div>
         </form>
+
+        {showAddAddressModal && selectedClient && (
+          <AddAddressModal
+            clientId={selectedClient.clientId}
+            clientName={`${selectedClient.lastName} ${selectedClient.firstName}`}
+            onClose={() => setShowAddAddressModal(false)}
+            onSuccess={handleNewAddressAdded}
+          />
+        )}
       </div>
       <Toast
         message={toast.message}
