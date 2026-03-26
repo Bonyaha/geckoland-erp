@@ -983,8 +983,9 @@ const CreateOrderPage = () => {
                   ></div>
                   <div className='absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-80 overflow-hidden flex flex-col'>
                     <div className='overflow-y-auto flex-1'>
-                      {/* If client is selected, show the selected client */}
-                      {selectedClient ? (
+                      {/* CHANGE: Show search results when user is actively searching (debouncedClientSearch >= 3 chars) */}
+                      {/* CHANGE: Only show "currently selected" badge when search is empty or very short */}
+                      {selectedClient && debouncedClientSearch.length < 3 ? (
                         <div
                           className='flex items-center gap-3 p-3 border-b border-gray-100 bg-blue-50 cursor-pointer transition-colors'
                           onClick={() => handleClientSelect(selectedClient)}
@@ -1140,48 +1141,40 @@ const CreateOrderPage = () => {
                 <select
                   value={formData.deliveryOptionName}
                   onChange={(e) => {
-                    const newDeliveryOption = e.target.value //CHANGE
-                    handleInputChange('deliveryOptionName', newDeliveryOption) //CHANGE
+                    const newDeliveryOption = e.target.value
+                    handleInputChange('deliveryOptionName', newDeliveryOption)
 
-                    // CHANGE: Use the currently-selected saved address OR the last
+                    //Use the currently-selected saved address OR the last
                     // remembered one so we can restore it if the user switches back.
                     const addressToCheck =
-                      selectedSavedAddress ?? lastSavedAddress //CHANGE
+                      selectedSavedAddress ?? lastSavedAddress
 
                     if (addressToCheck) {
-                      //CHANGE
                       const savedOption =
-                        addressToCheck.deliveryOptionName || '' //CHANGE
+                        addressToCheck.deliveryOptionName || ''
                       if (newDeliveryOption === savedOption) {
-                        //CHANGE
-                        // CHANGE: User switched back to the delivery option that
+                        // User switched back to the delivery option that
                         // matches the saved address — restore it automatically.
-                        applyAddressSelection(addressToCheck) //CHANGE
+                        applyAddressSelection(addressToCheck)
                       } else {
-                        //CHANGE
-                        // CHANGE: Different delivery option — clear saved address
-                        // lock so the user can enter a new address for this service.
-                        setSelectedSavedAddress(null) //CHANGE
-                        setAddressSource('manual') //CHANGE
+                        setSelectedSavedAddress(null)
+                        setAddressSource('manual')
                         setFormData((prev) => ({
                           ...prev,
                           deliveryAddress: '',
-                        })) //CHANGE
-                        setNpCityQuery('') //CHANGE
-                        setNpCityRef('') //CHANGE
-                        setNpWarehouseQuery('') //CHANGE
-                      } //CHANGE
+                        }))
+                        setNpCityQuery('')
+                        setNpCityRef('')
+                        setNpWarehouseQuery('')
+                      }
                     } else {
-                      //CHANGE
-                      // CHANGE: No saved address at all — original behaviour:
                       // only reset NP fields when switching away from NovaPoshta.
                       if (newDeliveryOption !== 'NovaPoshta') {
-                        //CHANGE
-                        setNpCityQuery('') //CHANGE
-                        setNpCityRef('') //CHANGE
-                        setNpWarehouseQuery('') //CHANGE
-                      } //CHANGE
-                    } //CHANGE
+                        setNpCityQuery('')
+                        setNpCityRef('')
+                        setNpWarehouseQuery('')
+                      }
+                    }
                   }}
                   className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                 >
