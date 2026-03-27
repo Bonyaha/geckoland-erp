@@ -41,7 +41,7 @@ export default function AddAddressModal({
   const [formData, setFormData] = useState({
     address: '',
     branchNumber: '',
-    deliveryOptionName: '',
+    deliveryOptionName: 'NovaPoshta',
     isPrimary: false,
   })
 

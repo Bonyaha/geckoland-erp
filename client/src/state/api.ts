@@ -296,6 +296,7 @@ export interface CreateCRMOrderInput {
 
   // Payment
   paymentOptionName?: string
+  paymentStatus?: string
 
   // Order details
   items: Array<{

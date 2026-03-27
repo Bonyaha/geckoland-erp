@@ -81,6 +81,9 @@ const CreateOrderPage = () => {
 
   // Prefill banner
   const [isPrefilled, setIsPrefilled] = useState(false)
+  const [paymentStatus, setPaymentStatus] = useState<'PAID' | 'UNPAID'>(
+    'UNPAID',
+  )
 
   // ─── NP Autocomplete State ───────────────────────────────────────────────────
   // Stores the city display string typed by the user
@@ -602,6 +605,7 @@ setPendingClientData(null)
       // Strip stockQuantity before sending to API — it's a UI-only field
       const payload: CreateCRMOrderInput = {
         ...formData,
+        paymentStatus,
         items: orderItems.map(({ stockQuantity: _s, ...rest }) => rest),
       }
       console.log('Submitting order with data: ', payload)
@@ -970,7 +974,7 @@ setPendingClientData(null)
                       })
                       setIsPendingClientEdit(true)
                       setClientSearchTerm('')
-setDebouncedClientSearch('')
+                      setDebouncedClientSearch('')
                     }
                     setIsClientSearchFocused(true)
                   }}
@@ -1481,11 +1485,28 @@ setDebouncedClientSearch('')
                   }
                   className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                 >
-                  {PAYMENT_OPTIONS.map((o) => (
+                  {PAYMENT_OPTIONS.filter((o) =>
+                    ['', 'IBAN', 'CashOnDelivery'].includes(o.value),
+                  ).map((o) => (
                     <option key={o.value} value={o.value}>
                       {o.label}
                     </option>
                   ))}
+                </select>
+              </div>
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-1'>
+                  Статус оплати
+                </label>
+                <select
+                  value={paymentStatus}
+                  onChange={(e) =>
+                    setPaymentStatus(e.target.value as 'PAID' | 'UNPAID')
+                  }
+                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+                >
+                  <option value='UNPAID'>Не оплачено</option>
+                  <option value='PAID'>Оплачено</option>
                 </select>
               </div>
             </div>

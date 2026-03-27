@@ -467,7 +467,7 @@ const [menuPosition, setMenuPosition] = useState<{
     )
   }
 
-  //console.log('orders are: ', filteredOrders);
+  console.log('example of payment status of newly created order: ', filteredOrders[0].paymentStatus)
 
   return (
     <div className='p-6 bg-gray-50 min-h-screen text-base'>
@@ -671,11 +671,21 @@ const [menuPosition, setMenuPosition] = useState<{
 
                   <td className='px-6 py-5 whitespace-nowrap text-base'>
                     <span
-                      className={`font-medium ${order.paymentStatus === 'PAID' ? 'text-green-600' : order.paymentStatus === 'UNPAID' ? 'text-red-600' : 'text-gray-700'}`}
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        order.paymentStatus === 'PAID'
+                          ? 'bg-green-100 text-green-700'
+                          : order.paymentStatus === 'PART_PAID'
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-red-100 text-red-600'
+                      }`}
                     >
-                      {getPaymentStatusLabel(order.paymentStatus)}
+                      {order.paymentStatus === 'PAID'
+                        ? 'Оплачено'
+                        : order.paymentStatus === 'PART_PAID'
+                          ? 'Частково'
+                          : 'Не оплачено'}
                     </span>
-                    <div className='text-gray-500 text-sm'>
+                    <div className='text-gray-500 text-sm mt-0.5'>
                       ({getPaymentOptionLabel(order.paymentOptionName)})
                     </div>
                   </td>
