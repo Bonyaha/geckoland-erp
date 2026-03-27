@@ -108,6 +108,16 @@ const CreateOrderPage = () => {
   const [clientSearchTerm, setClientSearchTerm] = useState('')
   const [debouncedClientSearch, setDebouncedClientSearch] = useState('')
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
+  const [isClientSearchFocused, setIsClientSearchFocused] = useState(false)
+  // Track if user is in "pending" mode - started editing but hasn't confirmed
+  const [isPendingClientEdit, setIsPendingClientEdit] = useState(false)
+  // Store backup of client data to restore if user cancels editing
+  const [pendingClientData, setPendingClientData] = useState<{
+    client: Client | null
+    formData: typeof formData
+    savedAddress: ClientAddress | null
+    lastSavedAddress: ClientAddress | null
+  } | null>(null)
   const [isAddressDropdownOpen, setIsAddressDropdownOpen] = useState(false)
   const [showAddAddressModal, setShowAddAddressModal] = useState(false)
 
@@ -321,6 +331,8 @@ const CreateOrderPage = () => {
   // HANDLERS - Client Selection
   // ═══════════════════════════════════════════════════════════════════════════
   const handleClientSelect = (client: Client) => {
+setIsPendingClientEdit(false)
+setPendingClientData(null)
     setSelectedClient(client)
     setClientSearchTerm(
       `${client.lastName} ${client.firstName} (${client.phone})`,
@@ -363,6 +375,8 @@ const CreateOrderPage = () => {
     setClientSearchTerm('')
     setIsClientDropdownOpen(false)
 
+setIsPendingClientEdit(false)
+setPendingClientData(null)
     // Clear all client fields to allow manual entry
     setFormData((prev) => ({
       ...prev,
@@ -938,7 +952,28 @@ const CreateOrderPage = () => {
                   className='w-full outline-none text-gray-700 bg-transparent'
                   placeholder='Пошук по імені або телефону...'
                   value={clientSearchTerm}
-                  onFocus={() => setIsClientDropdownOpen(true)}
+                  onFocus={() => {
+                    setIsClientDropdownOpen(true)
+                    // If a client is already selected, clicking the field should
+                    // clear it so user can immediately type a new value without deleting
+                    if (
+                      selectedClient &&
+                      !isClientSearchFocused &&
+                      !isPendingClientEdit
+                    ) {
+                      // Save backup of current client data to restore if user cancels
+                      setPendingClientData({
+                        client: selectedClient,
+                        formData: { ...formData },
+                        savedAddress: selectedSavedAddress,
+                        lastSavedAddress: lastSavedAddress,
+                      })
+                      setIsPendingClientEdit(true)
+                      setClientSearchTerm('')
+setDebouncedClientSearch('')
+                    }
+                    setIsClientSearchFocused(true)
+                  }}
                   onChange={(e) => {
                     const rawValue = e.target.value
                     setClientSearchTerm(rawValue)
@@ -956,6 +991,10 @@ const CreateOrderPage = () => {
                       setClientSearchTerm(normalized)
                     }
                     // Otherwise let the default paste behavior happen
+                  }}
+                  onBlur={() => {
+                    // Reset focus state after a short delay to allow onClick on dropdown items
+                    setTimeout(() => setIsClientSearchFocused(false), 200)
                   }}
                 />
                 {isClientFetching ? (
@@ -979,11 +1018,47 @@ const CreateOrderPage = () => {
                 <>
                   <div
                     className='fixed inset-0 z-40'
-                    onClick={() => setIsClientDropdownOpen(false)}
+                    onClick={() => {
+                      // If user clicks outside without confirming (not creating a new client),
+                      // restore the previous client data
+                      if (isPendingClientEdit && pendingClientData) {
+                        setSelectedClient(pendingClientData.client)
+                        setFormData(pendingClientData.formData)
+                        setSelectedSavedAddress(pendingClientData.savedAddress)
+                        setLastSavedAddress(pendingClientData.lastSavedAddress)
+                        setClientSearchTerm(
+                          pendingClientData.client
+                            ? `${pendingClientData.client.lastName} ${pendingClientData.client.firstName} (${pendingClientData.client.phone})`
+                            : '',
+                        )
+                        // Restore NP fields based on saved address
+                        if (
+                          pendingClientData.savedAddress?.deliveryOptionName ===
+                          'NovaPoshta'
+                        ) {
+                          const parts =
+                            pendingClientData.savedAddress.address.split(', ')
+                          setNpCityQuery(parts[0] || '')
+                          setNpCityRef('')
+                          setNpWarehouseQuery(parts.slice(1).join(', '))
+                        } else {
+                          setNpCityQuery('')
+                          setNpCityRef('')
+                          setNpWarehouseQuery('')
+                        }
+                        // Determine address source based on whether we have saved address
+                        setAddressSource(
+                          pendingClientData.savedAddress ? 'saved' : 'manual',
+                        )
+                        setIsPendingClientEdit(false)
+                        setPendingClientData(null)
+                      }
+                      setIsClientDropdownOpen(false)
+                    }}
                   ></div>
                   <div className='absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-80 overflow-hidden flex flex-col'>
                     <div className='overflow-y-auto flex-1'>
-                      {/* CHANGE: Reorganized logic to prioritize search results, but handle the selected client state gracefully to avoid "Not found" errors when a client is already picked. */}
+                      {/* Reorganized logic to prioritize search results, but handle the selected client state gracefully to avoid "Not found" errors when a client is already picked. */}
                       {clients.length > 0 ? (
                         clients.map((client) => (
                           <div
