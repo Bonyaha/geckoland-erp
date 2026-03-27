@@ -983,9 +983,36 @@ const CreateOrderPage = () => {
                   ></div>
                   <div className='absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-80 overflow-hidden flex flex-col'>
                     <div className='overflow-y-auto flex-1'>
-                      {/* CHANGE: Show search results when user is actively searching (debouncedClientSearch >= 3 chars) */}
-                      {/* CHANGE: Only show "currently selected" badge when search is empty or very short */}
-                      {selectedClient && debouncedClientSearch.length < 3 ? (
+                      {/* CHANGE: Reorganized logic to prioritize search results, but handle the selected client state gracefully to avoid "Not found" errors when a client is already picked. */}
+                      {clients.length > 0 ? (
+                        clients.map((client) => (
+                          <div
+                            key={client.clientId}
+                            className='flex items-center gap-3 p-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 cursor-pointer transition-colors'
+                            onClick={() => handleClientSelect(client)}
+                          >
+                            <div className='flex-1'>
+                              <p className='text-sm font-medium text-gray-900'>
+                                {client.lastName} {client.firstName}{' '}
+                                {client.secondName || ''}
+                              </p>
+                              <p className='text-xs text-gray-500'>
+                                {client.phone}
+                                {client.email && ` • ${client.email}`}
+                              </p>
+                            </div>
+                            {/* NEW: Added indicator to highlight the already selected client within the search results list */}
+                            {selectedClient?.clientId === client.clientId && (
+                              <span className='text-xs bg-blue-600 text-white px-2 py-1 rounded'>
+                                Обрано
+                              </span>
+                            )}
+                          </div>
+                        ))
+                      ) : selectedClient &&
+                        (debouncedClientSearch.length < 3 ||
+                          clientSearchTerm ===
+                            `${selectedClient.lastName} ${selectedClient.firstName} (${selectedClient.phone})`) ? (
                         <div
                           className='flex items-center gap-3 p-3 border-b border-gray-100 bg-blue-50 cursor-pointer transition-colors'
                           onClick={() => handleClientSelect(selectedClient)}
@@ -1006,25 +1033,6 @@ const CreateOrderPage = () => {
                             Обрано
                           </span>
                         </div>
-                      ) : clients.length > 0 ? (
-                        clients.map((client) => (
-                          <div
-                            key={client.clientId}
-                            className='flex items-center gap-3 p-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 cursor-pointer transition-colors'
-                            onClick={() => handleClientSelect(client)}
-                          >
-                            <div className='flex-1'>
-                              <p className='text-sm font-medium text-gray-900'>
-                                {client.lastName} {client.firstName}{' '}
-                                {client.secondName || ''}
-                              </p>
-                              <p className='text-xs text-gray-500'>
-                                {client.phone}
-                                {client.email && ` • ${client.email}`}
-                              </p>
-                            </div>
-                          </div>
-                        ))
                       ) : debouncedClientSearch.length >= 3 ? (
                         <div className='p-4 text-center'>
                           <p className='text-sm text-gray-500 mb-3'>
