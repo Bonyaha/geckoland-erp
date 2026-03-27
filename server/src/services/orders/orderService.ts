@@ -961,6 +961,7 @@ class OrderService {
       deliveryCity,
       deliveryOptionName,
       paymentOptionName,
+      paymentStatus: rawPaymentStatus,
       items,
       totalAmount,
       deliveryCost,
@@ -1124,6 +1125,7 @@ class OrderService {
     // Payment information
     const paymentInfo: OrderPaymentInfoInternal = {
       paymentOptionName: mapToPaymentOption(paymentOptionName),
+      paymentStatus: mapToPaymentStatus(rawPaymentStatus ?? null),
     }
 
     // Financial information
