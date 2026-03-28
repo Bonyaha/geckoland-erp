@@ -84,6 +84,7 @@ const CreateOrderPage = () => {
   const [paymentStatus, setPaymentStatus] = useState<'PAID' | 'UNPAID'>(
     'UNPAID',
   )
+const [orderSource, setOrderSource] = useState<string>('telegram')
 
   // ─── NP Autocomplete State ───────────────────────────────────────────────────
   // Stores the city display string typed by the user
@@ -606,6 +607,7 @@ setPendingClientData(null)
       const payload: CreateCRMOrderInput = {
         ...formData,
         paymentStatus,
+        source: orderSource,
         items: orderItems.map(({ stockQuantity: _s, ...rest }) => rest),
       }
       console.log('Submitting order with data: ', payload)
@@ -1473,7 +1475,16 @@ setPendingClientData(null)
                 </>
               )}
 
-              {/* Payment */}
+              </div>
+          </div>
+
+          {/* CHANGE: Separated payment into its own section */}
+          {/* Оплата */}
+          <div className='bg-white rounded-lg shadow-sm p-6'>
+            <h2 className='text-xl font-semibold text-gray-900 mb-4'>
+              Оплата
+            </h2>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               <div>
                 <label className='block text-sm font-medium text-gray-700 mb-1'>
                   Спосіб оплати
@@ -1511,6 +1522,32 @@ setPendingClientData(null)
               </div>
             </div>
           </div>
+
+          {/* NEW: Канал продажів section */}
+          <div className='bg-white rounded-lg shadow-sm p-6'>
+            <h2 className='text-xl font-semibold text-gray-900 mb-4'>
+              Канал продажів
+            </h2>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-1'>
+                  Джерело замовлення
+                </label>
+                <select
+                  value={orderSource}
+                  onChange={(e) => setOrderSource(e.target.value)}
+                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+                >
+                  <option value='crm'>CRM (вручну)</option>
+                  <option value='telegram'>Telegram</option>
+                  <option value='viber'>Viber</option>
+                  <option value='instagram'>Instagram</option>
+                  <option value='website'>Сайт</option>
+                  <option value='olx'>OLX</option>
+                </select>
+              </div>
+            </div>
+          </div>         
 
           {/* Notes */}
           <div className='bg-white rounded-lg shadow-sm p-6'>

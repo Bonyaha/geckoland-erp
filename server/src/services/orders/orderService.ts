@@ -968,6 +968,7 @@ class OrderService {
       clientNotes,
       status = 'RECEIVED',
       currency = 'UAH',
+      source: crmSource,
     } = frontendOrderData
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -1139,7 +1140,7 @@ class OrderService {
     const baseOrderData = this.buildBaseOrderData({
       orderId,
       externalOrderId: orderId,
-      source: Source.crm,
+      source: (crmSource as Source) || Source.telegram,
       orderNumber: orderId,
       createdAt: new Date(),
       lastModified: new Date(),

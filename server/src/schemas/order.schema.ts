@@ -99,6 +99,7 @@ export const createCRMOrderSchema = z.object({
       currency: z.string().default('UAH'),
       clientNotes: z.string().optional(),
       status: z.string().optional(),
+      source: z.string().optional(),
     }),
 })
 

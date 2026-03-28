@@ -38,7 +38,7 @@ import {
 
 import Toast from '@/app/(components)/Toast'
 import { useToast } from '@/hooks/useToast'
-import { getPaymentStatusLabel,getPaymentOptionLabel } from '@/utils/marketplaceUtils'
+import { getPaymentOptionLabel } from '@/utils/marketplaceUtils'
 
 import CopyableItem from '@/app/(components)/CopyableItem'
 import CustomSelect from '@/app/(components)/CustomSelect'
@@ -412,12 +412,21 @@ const [menuPosition, setMenuPosition] = useState<{
   } */
 
   const getSourceBadge = (source: OrderSource) => {
-    const sourceConfig = {
-      prom: { label: 'Prom', color: 'bg-indigo-100 text-indigo-800' },
-      rozetka: { label: 'Rozetka', color: 'bg-green-100 text-green-800' },
-      crm: { label: 'CRM', color: 'bg-gray-100 text-gray-800' },
+    const sourceConfig: Record<OrderSource, { label: string; color: string }> =
+      {
+        prom: { label: 'Prom', color: 'bg-indigo-100 text-indigo-800' },
+        rozetka: { label: 'Rozetka', color: 'bg-green-100 text-green-800' },
+        crm: { label: 'CRM', color: 'bg-gray-100 text-gray-800' },
+        telegram: { label: 'Telegram', color: 'bg-sky-100 text-sky-700' },
+        viber: { label: 'Viber', color: 'bg-violet-100 text-violet-700' },
+        instagram: { label: 'Instagram', color: 'bg-pink-100 text-pink-700' },
+        website: { label: 'Сайт', color: 'bg-teal-100 text-teal-700' },
+        olx: { label: 'OLX', color: 'bg-lime-100 text-lime-700' },
+      }
+    const config = sourceConfig[source] ?? {
+      label: source,
+      color: 'bg-gray-100 text-gray-800',
     }
-    const config = sourceConfig[source]
     return (
       <span className={`px-2 py-1 rounded text-xs font-medium ${config.color}`}>
         {config.label}
@@ -466,8 +475,6 @@ const [menuPosition, setMenuPosition] = useState<{
       </div>
     )
   }
-
-  console.log('example of payment status of newly created order: ', filteredOrders[0].paymentStatus)
 
   return (
     <div className='p-6 bg-gray-50 min-h-screen text-base'>

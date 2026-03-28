@@ -159,7 +159,7 @@ export interface User {
 //        ORDERS TYPES
 // ================================
 
-export type OrderSource = 'prom' | 'rozetka' | 'crm'
+export type OrderSource = 'prom' | 'rozetka' | 'crm' | 'telegram' | 'viber' | 'instagram' | 'website' | 'olx'
 
 export type OrderStatus =
   | 'RECEIVED'
@@ -312,6 +312,7 @@ export interface CreateCRMOrderInput {
   currency?: string
   clientNotes?: string
   status?: string
+  source?: string
 }
 
 export interface UpdateOrderInput {
