@@ -263,6 +263,11 @@ enum Source {
   prom
   rozetka
   crm
+  telegram
+  viber
+  instagram
+  website
+  olx
 }
 
 enum OrderStatus {
