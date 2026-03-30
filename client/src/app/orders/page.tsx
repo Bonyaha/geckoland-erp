@@ -165,12 +165,17 @@ const [menuPosition, setMenuPosition] = useState<{
     { value: 'RETURN', label: 'Повернення' },
   ]
 
-  const sourceOptions = [
-    { value: 'all', label: 'Всі джерела' },
-    { value: 'prom', label: 'Prom' },
-    { value: 'rozetka', label: 'Rozetka' },
-    { value: 'crm', label: 'CRM' },
-  ]
+const sourceOptions = [
+  { value: 'all', label: 'Всі джерела' },
+  { value: 'prom', label: 'Prom' },
+  { value: 'rozetka', label: 'Rozetka' },
+  { value: 'telegram', label: 'Telegram' },
+  { value: 'viber', label: 'Viber' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'website', label: 'Сайт' },
+  { value: 'olx', label: 'OLX' },
+]
+
 
   // API hooks
   const {
@@ -412,17 +417,15 @@ const [menuPosition, setMenuPosition] = useState<{
   } */
 
   const getSourceBadge = (source: OrderSource) => {
-    const sourceConfig: Record<OrderSource, { label: string; color: string }> =
-      {
-        prom: { label: 'Prom', color: 'bg-indigo-100 text-indigo-800' },
-        rozetka: { label: 'Rozetka', color: 'bg-green-100 text-green-800' },
-        crm: { label: 'CRM', color: 'bg-gray-100 text-gray-800' },
-        telegram: { label: 'Telegram', color: 'bg-sky-100 text-sky-700' },
-        viber: { label: 'Viber', color: 'bg-violet-100 text-violet-700' },
-        instagram: { label: 'Instagram', color: 'bg-pink-100 text-pink-700' },
-        website: { label: 'Сайт', color: 'bg-teal-100 text-teal-700' },
-        olx: { label: 'OLX', color: 'bg-lime-100 text-lime-700' },
-      }
+    const sourceConfig: Record<OrderSource, { label: string; color: string }> = {
+  prom: { label: 'Prom', color: 'bg-indigo-100 text-indigo-800' },
+  rozetka: { label: 'Rozetka', color: 'bg-green-100 text-green-800' },
+  telegram: { label: 'Telegram', color: 'bg-sky-100 text-sky-700' },
+  viber: { label: 'Viber', color: 'bg-violet-100 text-violet-700' },
+  instagram: { label: 'Instagram', color: 'bg-pink-100 text-pink-700' },
+  website: { label: 'Сайт', color: 'bg-teal-100 text-teal-700' },
+  olx: { label: 'OLX', color: 'bg-lime-100 text-lime-700' },
+}
     const config = sourceConfig[source] ?? {
       label: source,
       color: 'bg-gray-100 text-gray-800',

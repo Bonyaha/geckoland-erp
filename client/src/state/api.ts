@@ -159,7 +159,7 @@ export interface User {
 //        ORDERS TYPES
 // ================================
 
-export type OrderSource = 'prom' | 'rozetka' | 'crm' | 'telegram' | 'viber' | 'instagram' | 'website' | 'olx'
+export type OrderSource = 'prom' | 'rozetka' | 'telegram' | 'viber' | 'instagram' | 'website' | 'olx'
 
 export type OrderStatus =
   | 'RECEIVED'

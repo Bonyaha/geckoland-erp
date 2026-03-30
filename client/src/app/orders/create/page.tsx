@@ -1538,7 +1538,6 @@ setPendingClientData(null)
                   onChange={(e) => setOrderSource(e.target.value)}
                   className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                 >
-                  <option value='crm'>CRM (вручну)</option>
                   <option value='telegram'>Telegram</option>
                   <option value='viber'>Viber</option>
                   <option value='instagram'>Instagram</option>
