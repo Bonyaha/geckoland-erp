@@ -141,7 +141,6 @@ export async function fetchRozetkaProductsWithTransformation(): Promise<
         id: item.rz_category?.id || null,
         title: item.rz_category?.title_ua || null,
       },
-      source: Source.rozetka,
     }))
 
     await fs.writeFile(

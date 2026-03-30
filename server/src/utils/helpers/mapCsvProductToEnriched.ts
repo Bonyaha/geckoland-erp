@@ -1,6 +1,5 @@
 // server/src/utils/helpers/mapCsvProductToEnriched.ts
 import { nanoid } from 'nanoid'
-import { Source } from '../../config/database'
 
 /**
  * ============================================================
@@ -79,8 +78,7 @@ export function mapHPCsvToProduct(row: ProductFromHPCSV): any {
     name: row['Назва'] || 'Unnamed Product',
     price,
     costPrice,
-    stockQuantity: quantity,
-    source: Source.crm,
+    stockQuantity: quantity,    
     externalIds: { prom: null, rozetka: null },
     description: row['Опис'] || null,
     mainImage: imageUrls[0] || null,
@@ -123,8 +121,7 @@ export function mapDbCsvToProduct(row: ProductFromDbCSV): any {
     name: row.name || 'Unnamed Product',
     price: String(row.price || '0.00'),
     costPrice: row.costPrice ? String(row.costPrice) : null,
-    stockQuantity: parseInt(row.stockQuantity, 10) || 0,
-    source: (row.source as Source) || Source.crm,
+    stockQuantity: parseInt(row.stockQuantity, 10) || 0,    
     externalIds: safeJsonParse(row.externalIds),
     description: row.description || null,
     mainImage: row.mainImage || null,

@@ -45,8 +45,7 @@ export function mapPromProductToEnriched(
               '',
           },
         }
-      : undefined,
-    source: p.source,
+      : undefined,    
     // Preserve all Prom-specific sync fields via the index signature
     priceOld: p.priceOld ?? null,
     pricePromo: p.pricePromo ?? null,

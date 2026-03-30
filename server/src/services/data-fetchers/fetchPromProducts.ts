@@ -166,7 +166,6 @@ export async function fetchPromProductsWithTransformation(): Promise<
       measureUnit: product.measure_unit || 'шт.',
       rozetkaQuantity: null,
       lastRozetkaSync: null,
-      source: Source.prom,
     })
   )
 

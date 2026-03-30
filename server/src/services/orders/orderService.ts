@@ -164,7 +164,6 @@ class OrderService {
       // Then try by external ID in the externalIds JSON field
       //
       const products = await prisma.products.findMany({
-        where: { source },
         select: { productId: true, externalIds: true },
       })
 
@@ -1444,10 +1443,10 @@ class OrderService {
         alreadyExists: true,
       }
     }
-
-    if (order.source === Source.crm) {
+    
+    if (order.source !== Source.prom && order.source !== Source.rozetka) {
       throw ErrorFactory.badRequest(
-        'Cannot fetch tracking for CRM orders. Add manually.',
+        'Cannot fetch tracking for non-marketplace orders. Add manually.',
       )
     }
 

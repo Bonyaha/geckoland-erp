@@ -33,8 +33,7 @@ const updateAllMarketplaceQuantities = async () => {
   const promProductIds = new Set(promProducts.map((p) => p.productId))
 
   // Find products in our DB that are NOT in the latest Prom fetch.
-  const productsInDb = await prisma.products.findMany({
-    where: { source: 'prom' },
+  const productsInDb = await prisma.products.findMany({    
     select: { productId: true },
   })
 

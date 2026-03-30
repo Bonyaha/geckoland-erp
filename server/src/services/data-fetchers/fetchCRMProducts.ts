@@ -40,8 +40,7 @@ export async function fetchCRMProducts() {
         sku: product.sku || null,
         name: product.name || 'Unnamed Product',
         price: String(parseFloat(regularPrice) || '0.00'),
-        stockQuantity: parseInt(stockInfo.quantity || 0, 10),
-        source: Source.crm,
+        stockQuantity: parseInt(stockInfo.quantity || 0, 10),        
         externalIds: { prom: null, rozetka: null },
         description:
           product.description === 'None' ? null : product.description,
