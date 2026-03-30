@@ -277,8 +277,7 @@ export interface PromProductData {
   categoryData?: any
   measureUnit?: string
   rozetkaQuantity?: number | null
-  lastRozetkaSync?: Date | null
-  source: Source
+  lastRozetkaSync?: Date | null  
 }
 
 /**
@@ -322,7 +321,6 @@ export interface RozetkaProductData {
     id: number | null
     title: string | null
   }
-  source: Source
 }
 
 // ============================================

@@ -20,8 +20,7 @@ export const createProductBodySchema = z.object({
   // images is 'String[]', not optional, but can be empty
   images: z.array(z.string()).default([]),
 
-  // --- Fields with Defaults (optional in Zod) ---
-  source: z.enum(Source).default(Source.prom).optional(),
+  // --- Fields with Defaults (optional in Zod) ---  
   needsSync: z.boolean().default(false).optional(),
   needsPromSync: z.boolean().default(false).optional(),
   needsRozetkaSync: z.boolean().default(false).optional(),
