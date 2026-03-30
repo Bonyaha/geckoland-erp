@@ -83,8 +83,7 @@ model Products {
   sku              String?
   name             String
   price            Decimal      @db.Decimal(10, 2)
-  stockQuantity    Int
-  source           Source       @default(prom)
+  stockQuantity    Int  
   externalIds      Json
   description      String?
   mainImage        String?
@@ -261,8 +260,7 @@ model Settings {
 
 enum Source {
   prom
-  rozetka
-  crm
+  rozetka  
   telegram
   viber
   instagram

@@ -11,7 +11,7 @@
     "dev": "cross-env NODE_ENV=development npm run build && concurrently --names \"TSC,SERVER,NGROK\" -c \"auto\" \"npx tsc -w\" \"nodemon --exec ts-node src/index.ts\" \"npx ngrok http --url=complete-pelican-endlessly.ngrok-free.app 8001\""
   },
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": ""
   },
   "keywords": [],
   "author": "Roman",
