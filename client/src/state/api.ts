@@ -141,6 +141,27 @@ export interface ExpenseByCategorySummary {
   date: string
 }
 
+//NEW - Expense record type for CRUD table
+export interface ExpenseRecord {
+  expenseId: string
+  category: string
+  amount: number
+  timestamp: string
+}
+ 
+//NEW - Input for creating/updating expense
+export interface CreateExpenseInput {
+  category: string
+  amount: number
+  timestamp: string
+}
+ 
+export interface UpdateExpenseInput {
+  category?: string
+  amount?: number
+  timestamp?: string
+}
+
 export interface DashboardMetrics {
   popularProducts: Product[]
   salesSummary: SalesSummary[]
@@ -812,9 +833,47 @@ export const api = createApi({
       query: () => '/users',
       providesTags: ['Users'],
     }),
+
+/* EXPENSES ENDPOINTS */
     getExpensesByCategory: build.query<ExpenseByCategorySummary[], void>({
+      query: () => '/expenses/by-category',
+      providesTags: ['Expenses'],
+    }),
+    getExpenses: build.query<{ success: boolean; data: ExpenseRecord[] }, void>({
       query: () => '/expenses',
       providesTags: ['Expenses'],
+    }),    
+    createExpense: build.mutation<
+      { success: boolean; data: ExpenseRecord },
+      CreateExpenseInput
+    >({
+      query: (body) => ({
+        url: '/expenses',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Expenses'],
+    }),   
+    updateExpense: build.mutation<
+      { success: boolean; data: ExpenseRecord },
+      { expenseId: string; updates: UpdateExpenseInput }
+    >({
+      query: ({ expenseId, updates }) => ({
+        url: `/expenses/${expenseId}`,
+        method: 'PATCH',
+        body: updates,
+      }),
+      invalidatesTags: ['Expenses'],
+    }),    
+    deleteExpense: build.mutation<
+      { success: boolean; message: string },
+      string
+    >({
+      query: (expenseId) => ({
+        url: `/expenses/${expenseId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Expenses'],
     }),
   }),
 })
@@ -826,7 +885,6 @@ export const {
   useGetProductsSalesQuery,
   useCreateProductMutation,
   useGetUsersQuery,
-  useGetExpensesByCategoryQuery,
   useUpdateProductMutation,
   useBatchUpdateProductMutation,
   useSyncProductsFromMarketplacesMutation,
@@ -851,4 +909,9 @@ export const {
   useGetRozetkaStoreStatusQuery,
   useSetRozetkaStoreStatusMutation,
   useSyncAllQuantitiesToMarketplacesMutation,
+  useGetExpensesByCategoryQuery,
+  useGetExpensesQuery,
+  useCreateExpenseMutation,
+  useUpdateExpenseMutation,
+  useDeleteExpenseMutation,
 } = api
