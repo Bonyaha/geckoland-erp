@@ -392,7 +392,7 @@ export class PromClient {
     }
 
     /* FOR TESTING ONLY */
-    /* const ordersResponse = await this.getOrders({ status: 'delivered' })
+    /* const ordersResponse = await this.getOrders({ status: 'delivered', limit: 5 })
     return ordersResponse.orders || [] */
   }
 
