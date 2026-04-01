@@ -1,41 +1,41 @@
-import React, { ChangeEvent, FormEvent, useState } from 'react';
-import { v4 } from 'uuid';
-import Header from '@/app/(components)/Header';
+import React, { ChangeEvent, FormEvent, useState } from 'react'
+import { v4 } from 'uuid'
+import Header from '@/app/(components)/Header'
 
 type ProductFormData = {
-  productId: string;
-  name: string;
-  price: number;
-  stockQuantity: number;
-  sku?: string;
-  source?: string;
-  externalIds?: string;
-  description?: string;
-  mainImage?: string;
-  images?: string[];
-  inStock: number;
-  available: boolean;
-  priceOld?: number;
-  pricePromo?: number;
-  updatedPrice?: number;
-  currency?: string;
-  sellingType?: string;
-  presence?: string;
-  dateModified?: string;
-  lastSynced?: string;
-  needsSync?: boolean;
-  multilangData?: string;
-  categoryData?: string;
-  measureUnit?: string;
-  status?: string;
-  [key: string]: string | number | boolean | string[] | undefined; // Index signature
-};
+  productId: string
+  name: string
+  price: number
+  stockQuantity: number
+  sku: string
+  source?: string
+  externalIds?: string
+  description?: string
+  mainImage?: string
+  images?: string[]
+  inStock: number
+  available: boolean
+  priceOld?: number
+  pricePromo?: number
+  updatedPrice?: number
+  currency?: string
+  sellingType?: string
+  presence?: string
+  dateModified?: string
+  lastSynced?: string
+  needsSync?: boolean
+  multilangData?: string
+  categoryData?: string
+  measureUnit?: string
+  status?: string
+  [key: string]: string | number | boolean | string[] | undefined // Index signature
+}
 
 type CreateProductModalProps = {
-  isOpen: boolean;
-  onClose: () => void;
-  onCreate: (formData: ProductFormData) => void;
-};
+  isOpen: boolean
+  onClose: () => void
+  onCreate: (formData: ProductFormData) => void
+}
 
 const CreateProductModal = ({
   isOpen,
@@ -51,46 +51,53 @@ const CreateProductModal = ({
     externalIds: '{}', // Default JSON object
     images: [], // Default empty array
     needsSync: false, // Default from schema
-    inStock: 0,    // Initialized, will be updated with stockQuantity
+    inStock: 0, // Initialized, will be updated with stockQuantity
     available: false, // Initialized, will be updated with stockQuantity logic
-  });
+    sku: '', // Ensure sku is always a string
+  })
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-  const { name, value, type } = e.target;
-  setFormData((prev) => {
-    const updatedData: ProductFormData = { ...prev };
-    if (type === 'checkbox') {
-      const target = e.target as HTMLInputElement;
-      updatedData[name] = target.checked; // Now safe with index signature
-    } else if (type === 'number') {
-      updatedData[name] = parseFloat(value) || 0;
-    } else {
-      updatedData[name] = value;
-    }
-    // Calculate inStock and available based on stockQuantity
-    if (name === 'stockQuantity') {
-      updatedData.inStock = updatedData.stockQuantity;
-      updatedData.available = updatedData.stockQuantity > 0;
-    }
-    return updatedData;
-  });
-};
-
-  const handleArrayChange = (e: ChangeEvent<HTMLInputElement>, index: number, field: 'images') => {
-    const { value } = e.target;
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value, type } = e.target
     setFormData((prev) => {
-      const updatedArray = [...(prev[field] || [])];
-      updatedArray[index] = value;
-      return { ...prev, [field]: updatedArray };
-    });
-  };
+      const updatedData: ProductFormData = { ...prev }
+      if (type === 'checkbox') {
+        const target = e.target as HTMLInputElement
+        updatedData[name] = target.checked // Now safe with index signature
+      } else if (type === 'number') {
+        updatedData[name] = parseFloat(value) || 0
+      } else {
+        updatedData[name] = value
+      }
+      // Calculate inStock and available based on stockQuantity
+      if (name === 'stockQuantity') {
+        updatedData.inStock = updatedData.stockQuantity
+        updatedData.available = updatedData.stockQuantity > 0
+      }
+      return updatedData
+    })
+  }
+
+  const handleArrayChange = (
+    e: ChangeEvent<HTMLInputElement>,
+    index: number,
+    field: 'images'
+  ) => {
+    const { value } = e.target
+    setFormData((prev) => {
+      const updatedArray = [...(prev[field] || [])]
+      updatedArray[index] = value
+      return { ...prev, [field]: updatedArray }
+    })
+  }
 
   const addImage = () => {
-    setFormData((prev) => ({ ...prev, images: [...(prev.images || []), ''] }));
-  };
+    setFormData((prev) => ({ ...prev, images: [...(prev.images || []), ''] }))
+  }
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+    e.preventDefault()
     const submissionData: ProductFormData = {
       ...formData,
       inStock: formData.stockQuantity, // Ensure inStock matches stockQuantity
@@ -98,17 +105,22 @@ const CreateProductModal = ({
       externalIds: formData.externalIds || '{}', // Ensure valid JSON
       images: formData.images || [],
       // Parse JSON strings if provided
-      categoryData: formData.categoryData ? JSON.parse(formData.categoryData) : undefined,
-      multilangData: formData.multilangData ? JSON.parse(formData.multilangData) : undefined,
-    };
-    onCreate(submissionData);
-    onClose();
-  };
+      categoryData: formData.categoryData
+        ? JSON.parse(formData.categoryData)
+        : undefined,
+      multilangData: formData.multilangData
+        ? JSON.parse(formData.multilangData)
+        : undefined,
+    }
+    onCreate(submissionData)
+    onClose()
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
-  const labelCssStyles = 'block text-sm font-medium text-gray-700';
-  const inputCssStyles = 'block w-full mb-2 p-2 border-gray-500 border-2 rounded-md';
+  const labelCssStyles = 'block text-sm font-medium text-gray-700'
+  const inputCssStyles =
+    'block w-full mb-2 p-2 border-gray-500 border-2 rounded-md'
 
   return (
     <div className='fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-20'>
@@ -262,6 +274,6 @@ const CreateProductModal = ({
       </div>
     </div>
   )
-};
+}
 
-export default CreateProductModal;
+export default CreateProductModal

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+// client/src/app/redux.tsx
 import { useRef } from 'react'
 import { combineReducers, configureStore } from '@reduxjs/toolkit'
 import {

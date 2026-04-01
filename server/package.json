@@ -5,33 +5,50 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "seed": "ts-node prisma/seed.ts",
+    "migrate-products": "ts-node prisma/migrate-products.ts",
     "build": "rimraf dist && npx tsc",
-    "start": "npm run build && node dist/index.js",
-    "dev": "npm run build && concurrently \"npx tsc -w\" \"nodemon --exec ts-node src/index.ts\""
+    "start": "cross-env NODE_ENV=production npm run build && node dist/index.js",
+    "dev": "cross-env NODE_ENV=development npm run build && concurrently --names \"TSC,SERVER,NGROK\" -c \"auto\" \"npx tsc -w\" \"nodemon --exec ts-node src/index.ts\" \"npx ngrok http --url=complete-pelican-endlessly.ngrok-free.app 8001\""
+  },
+  "prisma": {
+    "seed": ""
   },
   "keywords": [],
   "author": "Roman",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google-cloud/pubsub": "^5.2.0",
     "@prisma/client": "^6.8.2",
     "axios": "^1.9.0",
+    "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.0",
+    "cheerio": "^1.0.0",
     "concurrently": "^9.1.2",
     "cors": "^2.8.5",
+    "csv-parser": "^3.2.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "googleapis": "^155.0.1",
     "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "nanoid": "^5.1.5",
+    "node-cron": "^3.0.3",
     "prisma": "^6.8.2",
-    "rimraf": "^6.0.1"
+    "rimraf": "^6.0.1",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.15.21",
+    "@types/node-cron": "^3.0.11",
+    "cross-env": "^10.0.0",
+    "ngrok": "^5.0.0-beta.2",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"

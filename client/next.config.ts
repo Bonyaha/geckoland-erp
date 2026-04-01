@@ -1,3 +1,4 @@
+// client/next.config.ts
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -5,13 +6,37 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 's3-geckoerp.s3.eu-central-1.amazonaws.com',
+        hostname: 'images.prom.ua',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'content.rozetka.com.ua',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'content2.rozetka.com.ua',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'content1.rozetka.com.ua',
         port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'crm.h-profit.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'placehold.co',
         port: '',
         pathname: '/**',
       },

@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,49 +8,201 @@ datasource db {
 }
 
 model Users {
-  userId String @id
-  name   String
-  email  String
+  userId   String @id @default(cuid())
+  name     String
+  email    String @unique
+  password String
+  role     String @default("user")
 }
 
+model Clients {
+  clientId      String   @id @default(cuid())
+  firstName     String
+  lastName      String
+  secondName    String?
+  phone         String   @unique
+  email         String?
+  address       String?  
+  reliability   Decimal  @default(100) @db.Decimal(5, 2) 
+  successfulOrders Int      @default(0)
+  totalOrders   Int      @default(0)
+  totalSpent    Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(6)
+  orders        Orders[]
+phones           ClientPhones[]
+addresses        ClientAddresses[]
+comments         ClientComments[]
+
+  @@index([phone])               // Fast lookup for getOrCreateClient
+  @@index([email])               // For filtering/searching by email
+  @@index([lastName, firstName]) // Name search optimization  
+  
+}
+
+model ClientPhones {
+  phoneId   String   @id @default(cuid())
+  clientId  String
+  phone     String   
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  client    Clients  @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([phone])
+}
+
+model ClientAddresses {
+  addressId          String   @id @default(cuid())
+  clientId           String  
+  address            String  // Full human-readable address string, e.g. "вул. Васильківська, 55 (м. Виставковий Центр)"
+  branchNumber       String? //holds the branch identifier, e.g. "№64", "№59995 (Поштомат)"
+  deliveryOptionName String?  // "NovaPoshta" | "UkrPoshta" | etc.
+  isPrimary          Boolean  @default(false)
+  createdAt          DateTime @default(now()) @db.Timestamptz(6)
+  client             Clients  @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+
+  @@index([clientId])
+}
+
+model ClientComments {
+  commentId String   @id @default(cuid())
+  clientId  String
+  text      String                         // the comment body
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  client    Clients  @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([createdAt])
+}
+
+
 model Products {
-  productId     String      @id
-  sku           String? // Computed key for duplicate detection (e.g., SKU)
-  name          String
-  price         Float
-  stockQuantity Int
-  source        Source      @default(prom)
-  externalIds   Json // Marketplace-specific IDs (e.g., { prom: "id", rozetka: "rz_item_id" })
-  description   String?
-  mainImage     String?
-  images        String[]
-  inStock       Int // Changed to Int? to store the stock count
-  available     Boolean // Changed to Boolean? to indicate availability
-  priceOld      Float?
-  pricePromo    Float?
-  updatedPrice  Float?
-  currency      String?
-  sellingType   String?
-  presence      String?
-  dateModified  DateTime?
-  lastSynced    DateTime?
-  needsSync     Boolean     @default(false)
-  multilangData Json?
-  categoryData  Json?
-  measureUnit   String?
-  status        String?
-  Sales         Sales[]
-  Purchases     Purchases[]
+  productId        String       @id
+  sku              String?
+  name             String
+  price            Decimal      @db.Decimal(10, 2)
+  stockQuantity    Int  
+  externalIds      Json
+  description      String?
+  mainImage        String?
+  images           String[]
+  available        Boolean
+  priceOld         Decimal?     @db.Decimal(10, 2)
+  pricePromo       Decimal?     @db.Decimal(10, 2)
+  updatedPrice     Decimal?     @db.Decimal(10, 2)
+  currency         String?
+  dateModified     DateTime?    @db.Timestamptz(6)
+  lastSynced       DateTime?    @db.Timestamptz(6)
+  needsSync        Boolean      @default(false)
+  categoryData     Json?
+  measureUnit      String?
+  lastPromSync     DateTime?    @db.Timestamptz(6)
+  lastRozetkaSync  DateTime?    @db.Timestamptz(6)
+  needsPromSync    Boolean      @default(false)
+  needsRozetkaSync Boolean      @default(false)
+  promQuantity     Int?
+  rozetkaQuantity  Int?
+  costPrice        Decimal?     @db.Decimal(10, 2)
+  OrderItems       OrderItems[]
+  Purchases        Purchases[]
+  Sales            Sales[]
+}
+
+model Orders {
+  orderId                 String       @id
+  externalOrderId         String
+  source                  Source
+  orderNumber             String?
+  createdAt               DateTime     @db.Timestamptz(6)
+  updatedAt               DateTime     @updatedAt @db.Timestamptz(6)
+  lastModified            DateTime?    @db.Timestamptz(6)
+  clientId                String?
+  clientFirstName         String
+  clientLastName          String
+  clientSecondName        String?
+  clientPhone             String
+  clientEmail             String?
+  clientFullName          String?
+  recipientFirstName      String?
+  recipientLastName       String?
+  recipientSecondName     String?
+  recipientPhone          String?
+  recipientFullName       String?
+  deliveryOptionName      DeliveryOption?
+  deliveryAddress         String?
+  deliveryCity            String?
+  trackingNumber          String?
+  deliveryCost            Decimal?     @db.Decimal(10, 2)
+  deliveryProviderData    Json?  
+  paymentOptionName       PaymentOption?
+  paymentData             Json?
+  paymentStatus           PaymentStatus?
+  totalAmount             Decimal      @db.Decimal(10, 2)
+  totalAmountWithDiscount Decimal?     @db.Decimal(10, 2)
+  fullPrice               Decimal?     @db.Decimal(10, 2)
+  currency                String       @default("UAH")
+  totalQuantity           Int?
+  itemCount               Int
+  status                  OrderStatus  @default(RECEIVED)
+  statusName              String?  
+  cpaCommission           Decimal?     @db.Decimal(10, 2)
+  prosaleCommission       Decimal?     @db.Decimal(10, 2)
+  isCommissionRefunded    Boolean      @default(false)
+  clientNotes             String?
+  sellerComment           String?  
+  orderSource             String?
+  dontCallCustomer        Boolean      @default(false)   
+  rawOrderData            Json?
+  orderItems              OrderItems[]
+  client                  Clients?     @relation(fields: [clientId], references: [clientId])
+  sales                   Sales[]
+}
+
+model OrderItems {
+  orderItemId          String    @id @default(cuid())
+  orderId              String
+  productId            String
+  sku                  String?
+  productName          String
+  productNameMultilang Json?
+  productImage         String?
+  productUrl           String?
+  quantity             Int
+  unitPrice            Decimal   @db.Decimal(10, 2)
+  totalPrice           Decimal   @db.Decimal(10, 2)
+  measureUnit          String?
+  cpaCommission        Decimal?  @db.Decimal(10, 2)
+  rawItemData          Json?
+  order                Orders    @relation(fields: [orderId], references: [orderId], onDelete: Cascade)
+  product              Products @relation(fields: [productId], references: [productId])
+  sales                Sales[]
+
+  @@unique([orderId, productId])
+  @@index([sku])
 }
 
 model Sales {
-  saleId      String   @id
+  saleId      String      @id @default(cuid())
   productId   String
-  timestamp   DateTime
+  orderId     String?
+  orderItemId String?
+  createdAt   DateTime    @db.Timestamptz(6)
   quantity    Int
-  unitPrice   Float
-  totalAmount Float
-  product     Products @relation(fields: [productId], references: [productId])
+  unitPrice   Decimal     @db.Decimal(10, 2)
+  totalAmount Decimal     @db.Decimal(10, 2)
+  sku         String?
+  name        String?
+  source      Source?
+  orderNumber String?
+  product     Products    @relation(fields: [productId], references: [productId])
+  order       Orders?     @relation(fields: [orderId], references: [orderId])
+  orderItem   OrderItems? @relation(fields: [orderItemId], references: [orderItemId])
+
+  @@index([createdAt])
+  @@index([productId])
+  @@index([orderId])
 }
 
 model Purchases {
@@ -64,35 +210,35 @@ model Purchases {
   productId  String
   timestamp  DateTime
   quantity   Int
-  unitCost   Float
-  totalCost  Float
+  unitCost   Decimal  @db.Decimal(10, 2)
+  totalCost  Decimal  @db.Decimal(10, 2)
   product    Products @relation(fields: [productId], references: [productId])
 }
 
 model Expenses {
   expenseId String   @id
   category  String
-  amount    Float
+  amount    Decimal  @db.Decimal(10, 2)
   timestamp DateTime
 }
 
 model SalesSummary {
   salesSummaryId   String   @id
-  totalValue       Float
+  totalValue       Decimal  @db.Decimal(10, 2)
   changePercentage Float?
   date             DateTime
 }
 
 model PurchaseSummary {
   purchaseSummaryId String   @id
-  totalPurchased    Float
+  totalPurchased    Decimal  @db.Decimal(10, 2)
   changePercentage  Float?
   date              DateTime
 }
 
 model ExpenseSummary {
   expenseSummaryId  String              @id
-  totalExpenses     Float
+  totalExpenses     Decimal             @db.Decimal(10, 2)
   date              DateTime
   ExpenseByCategory ExpenseByCategory[]
 }
@@ -101,12 +247,54 @@ model ExpenseByCategory {
   expenseByCategoryId String         @id
   expenseSummaryId    String
   category            String
-  amount              BigInt
+  amount              Decimal        @db.Decimal(10, 2)
   date                DateTime
   expenseSummary      ExpenseSummary @relation(fields: [expenseSummaryId], references: [expenseSummaryId])
 }
 
+model Settings {
+  key       String   @id
+  value     String
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+}
+
 enum Source {
   prom
-  rozetka
+  rozetka  
+  telegram
+  viber
+  instagram
+  website
+  olx
+}
+
+enum OrderStatus {
+  RECEIVED
+  PREPARED
+  SHIPPED
+  AWAITING_PICKUP
+  DELIVERED
+  CANCELED
+  RETURN
+}
+
+enum DeliveryOption {
+  NovaPoshta
+  UkrPoshta
+}
+
+enum PaymentOption {
+  ApplePay
+  GooglePay
+  RozetkaPay
+  IBAN
+  PromPayment
+  CashOnDelivery
+}
+
+enum PaymentStatus {
+  PAID
+  UNPAID
+  PART_PAID
+  CANCELLED
 }

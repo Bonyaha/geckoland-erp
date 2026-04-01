@@ -1,3 +1,5 @@
+### This version is different from version-2 by Products model and syncMarketplaces function
+
 # Database Seeding Instructions
 
 Follow these steps to set up and seed the database:
@@ -14,3 +16,5 @@ Follow these steps to set up and seed the database:
    ```bash
    npm run seed
    ```
+
+### Implemented .cron-initialized file for preventing nodemon running cron jobs on every code change. Now cron jobs run only on server srart up
