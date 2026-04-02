@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "migrate-products": "ts-node prisma/migrate-products.ts",
+    "migrate-products": "node --loader ts-node/esm prisma/migrate-products.ts",
     "build": "rimraf dist && npx tsc",
     "start": "cross-env NODE_ENV=production npm run build && node dist/index.js",
-    "dev": "cross-env NODE_ENV=development npm run build && concurrently --names \"TSC,SERVER,NGROK\" -c \"auto\" \"npx tsc -w\" \"nodemon --exec ts-node src/index.ts\" \"npx ngrok http --url=complete-pelican-endlessly.ngrok-free.app 8001\""
+    "dev": "cross-env NODE_ENV=development concurrently --names \"TSC,SERVER,NGROK\" -c \"auto\" \"npx tsc -w\" \"nodemon\" \"npx ngrok http --url=complete-pelican-endlessly.ngrok-free.app 8001\""
   },
   "prisma": {
     "seed": ""
@@ -16,7 +16,7 @@
   "keywords": [],
   "author": "Roman",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "@google-cloud/pubsub": "^5.2.0",
     "@prisma/client": "^6.8.2",
