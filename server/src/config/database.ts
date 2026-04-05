@@ -5,7 +5,9 @@ import {
   OrderStatus,
   Prisma,
   PaymentStatus,
-} from '@prisma/client'
+} from '../generated/prisma/client/client.js'
+
+import { Decimal } from '../generated/prisma/client/internal/prismaNamespace.js'
 
 // Declare global type for TypeScript
 declare global {
@@ -16,11 +18,12 @@ declare global {
 const prisma =
   global.prisma ||
   new PrismaClient({
+    // this tells Prisma to log database operations to console
     log:
       process.env.NODE_ENV === 'development'
-        ? ['query', 'error', 'warn']
-        : ['error'],
-  })
+        ? (['query', 'error', 'warn'] as const)
+        : (['error'] as const),
+  } as any)
 
 // In development, preserve the instance across hot reloads
 if (process.env.NODE_ENV !== 'production') {
@@ -40,5 +43,5 @@ export enum PaymentOption {
   PromPayment = 'PromPayment',
   CashOnDelivery = 'CashOnDelivery',
 }
-export { Source, OrderStatus, PaymentStatus, Prisma }
+export { Source, OrderStatus, PaymentStatus, Prisma, Decimal }
 export default prisma

@@ -1,6 +1,6 @@
 // server/src/services/sales/salesService.ts
 import prisma from '../../config/database'
-import { Decimal } from '@prisma/client/runtime/library'
+import { Decimal } from '../../config/database.js'
 import { nanoid } from 'nanoid'
 import { ErrorFactory } from '../../middleware/errorHandler'
 import { OrderStatus } from '@prisma/client'
