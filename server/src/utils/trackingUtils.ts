@@ -1,5 +1,5 @@
 // server/src/utils/trackingUtils.ts
-import { OrderStatus } from '@prisma/client'
+import { OrderStatus } from '../config/database'
 
 /**
  * Map Nova Poshta status to our OrderStatus enum

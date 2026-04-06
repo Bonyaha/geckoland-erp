@@ -1,8 +1,7 @@
 // server/src/controllers/orders/orderTrackingController.ts
 import { Request, Response } from 'express'
-import prisma from '../../config/database'
+import prisma, { OrderStatus } from '../../config/database'
 import { novaPoshtaService } from '../../services/delivery/novaPoshtaService'
-import { OrderStatus } from '@prisma/client'
 import { ErrorFactory, AppError } from '../../middleware/errorHandler'
 import {
   OrderTrackingUpdateRequest,

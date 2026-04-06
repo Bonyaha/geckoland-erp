@@ -19,6 +19,7 @@
   "type": "module",
   "dependencies": {
     "@google-cloud/pubsub": "^5.2.0",
+    "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.6.0",
     "axios": "^1.9.0",
     "bcryptjs": "^3.0.3",
@@ -35,6 +36,7 @@
     "morgan": "^1.10.0",
     "nanoid": "^5.1.5",
     "node-cron": "^3.0.3",
+    "pg": "^8.20.0",
     "prisma": "^7.6.0",
     "rimraf": "^6.0.1",
     "zod": "^4.1.12"
@@ -47,6 +49,7 @@
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.15.21",
     "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.20.0",
     "cross-env": "^10.0.0",
     "ngrok": "^5.0.0-beta.2",
     "nodemon": "^3.1.10",
