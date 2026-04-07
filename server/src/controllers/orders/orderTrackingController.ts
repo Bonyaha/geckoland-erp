@@ -136,7 +136,7 @@ export const updateOrderTrackingStatuses = async (
  * @route GET /api/tracking/order/:orderId
  */
 export const getSingleOrderTracking = async (req: Request, res: Response) => {
-  const { orderId } = req.params
+  const { orderId } = req.params as { orderId: string }
 
   try {
     const trackingResult = await trackingService.getSingleOrderTracking(orderId)
@@ -171,7 +171,7 @@ export const updateOrderTrackingNumber = async (
   req: Request,
   res: Response,
 ) => {
-  const { orderId } = req.params
+  const { orderId } = req.params as { orderId: string }
   const { trackingNumber } = req.body
 
   if (!orderId) {

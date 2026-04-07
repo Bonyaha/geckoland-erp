@@ -57,7 +57,7 @@ export const createSalesForOrder = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { orderId } = req.params
+  const { orderId } = req.params as { orderId: string }
 
   if (!orderId) {
     throw ErrorFactory.badRequest('Order ID is required')

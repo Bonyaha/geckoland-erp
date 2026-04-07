@@ -72,7 +72,7 @@ export const updateOrder = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { orderId } = req.params
+  const { orderId } = req.params as { orderId: string }
   const updates = req.body as OrderUpdateInput
 
   if (!orderId) {
@@ -99,7 +99,7 @@ export const deleteOrder = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { orderId } = req.params
+  const { orderId } = req.params as { orderId: string }
 
   if (!orderId) {
     throw ErrorFactory.badRequest('Order ID is required')
@@ -190,7 +190,7 @@ export const getOrderById = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { orderId } = req.params
+  const { orderId } = req.params as { orderId: string }
   if (!orderId) {
     throw ErrorFactory.badRequest('Order ID is required')
   }

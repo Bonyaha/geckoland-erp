@@ -73,7 +73,7 @@ export const updateExpenseRecord = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { expenseId } = req.params
+  const { expenseId } = req.params as { expenseId: string }
   const { category, amount, timestamp } = req.body
  
   if (!expenseId) {
@@ -93,7 +93,7 @@ export const deleteExpenseRecord = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { expenseId } = req.params
+  const { expenseId } = req.params as { expenseId: string }
  
   if (!expenseId) {
     throw ErrorFactory.badRequest('ID витрати є обовʼязковим')

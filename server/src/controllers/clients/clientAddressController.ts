@@ -16,7 +16,7 @@ export const getClientAddresses = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { clientId } = req.params
+  const { clientId } = req.params as { clientId: string }
 
   if (!clientId) {
     throw ErrorFactory.badRequest('Client ID is required')
@@ -38,7 +38,7 @@ export const createClientAddress = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { clientId } = req.params
+  const { clientId } = req.params as { clientId: string }
   const addressData: Omit<CreateClientAddressInput, 'clientId'> = req.body
 
   if (!clientId) {
@@ -65,7 +65,7 @@ export const updateClientAddress = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { addressId } = req.params
+  const { addressId } = req.params as { addressId: string }
   const updates: UpdateClientAddressInput = req.body
 
   if (!addressId) {
@@ -89,7 +89,7 @@ export const deleteClientAddress = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { addressId } = req.params
+  const { addressId } = req.params as { addressId: string }
 
   if (!addressId) {
     throw ErrorFactory.badRequest('Address ID is required')

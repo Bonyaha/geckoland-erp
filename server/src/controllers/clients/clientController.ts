@@ -60,7 +60,7 @@ export const getClientById = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { clientId } = req.params
+  const { clientId } = req.params as { clientId: string }
 
   if (!clientId) {
     throw ErrorFactory.badRequest('Client ID is required')
@@ -82,7 +82,7 @@ export const updateClient = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { clientId } = req.params
+  const { clientId } = req.params as { clientId: string }
   const updates: UpdateClientInput = req.body
 
   if (!clientId) {
