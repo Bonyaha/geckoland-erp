@@ -26,3 +26,6 @@ src/storage/
 
 # Prisma data folder
 prisma/data/
+
+# Generated code (e.g., from Prisma or other code generators)
+src/generated/
