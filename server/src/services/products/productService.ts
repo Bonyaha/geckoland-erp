@@ -276,7 +276,6 @@ class ProductService {
 
     if (updates.costPrice !== undefined) {
       dbUpdateData.costPrice = updates.costPrice
-      console.log(`Updating costPrice for ${productId}: ${updates.costPrice}`)
     }
 
     // If updating all sides (default), update DB first

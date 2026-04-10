@@ -4,8 +4,8 @@
 	],
 	"ignore": [
 		"src/storage/gmail-history.json",
-		"src/config/credentials/gmail-token.json",
-		"src/storage/rozetkaTokenCache.json",
+		"src/config/credentials/**/*",
+		"src/storage/.rozetka-token-cache.json",
 		"node_modules/**/*",
 		"dist/**/*",
 		"logs/**/*",

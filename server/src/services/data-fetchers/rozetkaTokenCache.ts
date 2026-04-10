@@ -3,6 +3,12 @@ import axios from 'axios'
 import fs from 'fs'
 import path from 'path'
 import { config } from '../../config/environment'
+import { fileURLToPath } from 'url'
+import { dirname } from 'path'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
 
 interface TokenCache {
   token: string | null
