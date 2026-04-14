@@ -10,6 +10,9 @@ export interface Product {
   stockQuantity: number
   sku: string
   costPrice?: number
+  needsSync?: boolean
+  needsPromSync?: boolean
+  needsRozetkaSync?: boolean
 }
 
 export interface ProductInventoryStats {
@@ -86,9 +89,6 @@ export interface CreateClientAddressInput {
   isPrimary?: boolean
 }
 
-
-
-
 export interface SyncMarketplacesResult {
   success: boolean
   productsCreatedFromProm: number
@@ -148,14 +148,14 @@ export interface ExpenseRecord {
   amount: number
   timestamp: string
 }
- 
+
 //NEW - Input for creating/updating expense
 export interface CreateExpenseInput {
   category: string
   amount: number
   timestamp: string
 }
- 
+
 export interface UpdateExpenseInput {
   category?: string
   amount?: number
@@ -180,7 +180,14 @@ export interface User {
 //        ORDERS TYPES
 // ================================
 
-export type OrderSource = 'prom' | 'rozetka' | 'telegram' | 'viber' | 'instagram' | 'website' | 'olx'
+export type OrderSource =
+  | 'prom'
+  | 'rozetka'
+  | 'telegram'
+  | 'viber'
+  | 'instagram'
+  | 'website'
+  | 'olx'
 
 export type OrderStatus =
   | 'RECEIVED'
@@ -508,6 +515,14 @@ export const api = createApi({
       query: () => '/products/stats',
       providesTags: ['Products'],
     }),
+    getProductSyncStatus: build.query<
+      { needsSync: boolean; needsPromSync: boolean; needsRozetkaSync: boolean },
+      string // productId
+    >({
+      query: (productId) => `/products/${productId}/sync-status`,
+      // No providesTags — this is intentionally not cached by tag,
+      // polling handles freshness manually
+    }),
     getProductsSales: build.query<ProductSalesMap, GetProductSalesParams>({
       query: ({ productIds, startDate }) => ({
         url: '/sales/products',
@@ -834,15 +849,17 @@ export const api = createApi({
       providesTags: ['Users'],
     }),
 
-/* EXPENSES ENDPOINTS */
+    /* EXPENSES ENDPOINTS */
     getExpensesByCategory: build.query<ExpenseByCategorySummary[], void>({
       query: () => '/expenses/by-category',
       providesTags: ['Expenses'],
     }),
-    getExpenses: build.query<{ success: boolean; data: ExpenseRecord[] }, void>({
-      query: () => '/expenses',
-      providesTags: ['Expenses'],
-    }),    
+    getExpenses: build.query<{ success: boolean; data: ExpenseRecord[] }, void>(
+      {
+        query: () => '/expenses',
+        providesTags: ['Expenses'],
+      },
+    ),
     createExpense: build.mutation<
       { success: boolean; data: ExpenseRecord },
       CreateExpenseInput
@@ -853,7 +870,7 @@ export const api = createApi({
         body,
       }),
       invalidatesTags: ['Expenses'],
-    }),   
+    }),
     updateExpense: build.mutation<
       { success: boolean; data: ExpenseRecord },
       { expenseId: string; updates: UpdateExpenseInput }
@@ -864,7 +881,7 @@ export const api = createApi({
         body: updates,
       }),
       invalidatesTags: ['Expenses'],
-    }),    
+    }),
     deleteExpense: build.mutation<
       { success: boolean; message: string },
       string
@@ -883,6 +900,7 @@ export const {
   useGetProductsQuery,
   useGetProductStatsQuery,
   useGetProductsSalesQuery,
+  useGetProductSyncStatusQuery,
   useCreateProductMutation,
   useGetUsersQuery,
   useUpdateProductMutation,

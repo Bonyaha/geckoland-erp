@@ -215,6 +215,28 @@ class ProductService {
     }
   }
 
+/* 
+* Gets the synchronization status of a specific product, including whether it needs to be synced to marketplaces.
+* @param productId - The ID of the product to check
+* @returns An object containing the sync status for the product
+ */
+  async getProductSyncStatus(productId: string) {
+    const product = await prisma.products.findUnique({
+      where: { productId },
+      select: {
+        needsSync: true,
+        needsPromSync: true,
+        needsRozetkaSync: true,
+      },
+    })
+
+    if (!product) {
+      throw ErrorFactory.notFound(`Product ${productId} not found`)
+    }
+
+    return product
+  }
+
   /**
    * Creates a new product in the database.
    *

@@ -70,6 +70,21 @@ export const getProductStats = async (
   const stats = await productService.getProductStats()
   res.json(stats)
 }
+
+/* 
+* Get synchronization status for a single product
+* @route GET /api/products/:productId/sync-status
+ */
+export const getProductSyncStatus = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const productId = req.params.productId as string
+
+  const product = await productService.getProductSyncStatus(productId)
+  res.json(product)
+}
+
 /**
  * Create a new product
  * @route POST /api/products
