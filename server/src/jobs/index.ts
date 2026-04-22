@@ -1,12 +1,12 @@
 // server/src/jobs/index.ts
-import cron from 'node-cron'
+import { ScheduledTask } from 'node-cron'
 import { startTrackingStatusCronJob } from './trackingStatusCronJob'
 import { startGmailWatchCronJob } from './gmailWatchCronJob'
 
 /**
  * Collection of all active cron jobs
  */
-const activeCronJobs: cron.ScheduledTask[] = []
+const activeCronJobs: ScheduledTask[] = []
 
 /**
  * Initialize and start all cron jobs

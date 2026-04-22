@@ -1,5 +1,5 @@
 // server/src/jobs/gmailWatchCronJob.ts
-import cron from 'node-cron'
+import cron, { ScheduledTask } from 'node-cron'
 import { restartGmailWatch } from '../services/gmail/gmailService'
 
 /**
@@ -62,7 +62,7 @@ export function startGmailWatchCronJob() {
 /**
  * Stop the cron job (useful for cleanup)
  */
-export function stopGmailWatchCronJob(job: cron.ScheduledTask) {
+export function stopGmailWatchCronJob(job: ScheduledTask) {
   job.stop()
   console.log('🛑 [CRON] Gmail watch renewal cron job stopped')
 }
