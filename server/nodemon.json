@@ -12,5 +12,5 @@
 		".cron-initialized"
 	],
 	"ext": "ts,js,json",
-	"exec": "node --loader ts-node/esm src/index.ts"
+	"exec": "tsx src/index.ts"
 }
