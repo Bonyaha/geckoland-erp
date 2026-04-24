@@ -937,3 +937,4 @@ export const syncInventoryAdjustment = async (
     process.exit(1)
   }
 })() */
+//npx tsx --env-file=.env src/services/marketplaces/sync/syncMarketplaces.ts - for running in terminal
