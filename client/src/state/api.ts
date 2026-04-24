@@ -675,31 +675,6 @@ export const api = createApi({
       invalidatesTags: ['Orders'],
     }),
 
-    // Fetch new orders from Prom
-    fetchPromOrders: build.mutation<
-      { success: boolean; message: string; data: OrderSyncResult },
-      void
-    >({
-      query: () => ({
-        url: '/orders/fetch/prom',
-        method: 'POST',
-      }),
-      invalidatesTags: ['Orders'],
-    }),
-
-    // Sync orders from marketplaces
-    syncOrders: build.mutation<
-      { success: boolean; message: string; data: OrderSyncResult },
-      { marketplace?: 'prom' | 'rozetka' }
-    >({
-      query: (body) => ({
-        url: '/orders/sync',
-        method: 'POST',
-        body,
-      }),
-      invalidatesTags: ['Orders'],
-    }),
-
     // Manual check for new orders
     checkForNewOrders: build.mutation<OrderCheckSummary, void>({
       query: () => ({
@@ -912,9 +887,7 @@ export const {
   useCreateCRMOrderMutation,
   useUpdateOrderMutation,
   useFetchTrackingNumberMutation,
-  useUpdateAllTrackingStatusesMutation,
-  useFetchPromOrdersMutation,
-  useSyncOrdersMutation,
+  useUpdateAllTrackingStatusesMutation,    
   useCheckForNewOrdersMutation,
   useSyncPaymentStatusesMutation,
   useDeleteOrderMutation,

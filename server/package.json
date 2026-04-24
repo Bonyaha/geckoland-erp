@@ -6,9 +6,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "migrate-products": "tsx prisma/migrate-products.ts",
-    "build": "rimraf dist && npx tsc",
+    "build": "rimraf dist && tsc",
     "start": "cross-env NODE_ENV=production npm run build && node dist/index.js",
-    "dev": "cross-env NODE_ENV=development concurrently --names \"TYPES,SERVER,NGROK\" -c \"auto\" \"npx tsc --noEmit --watch --preserveWatchOutput\" \"nodemon\" \"npx ngrok http --url=complete-pelican-endlessly.ngrok-free.app 8001\""
+    "dev": "cross-env NODE_ENV=development concurrently --names \"TYPES,SERVER,NGROK\" -c \"auto\" \"tsc --noEmit --watch --preserveWatchOutput\" \"nodemon\" \"npx ngrok http --url=complete-pelican-endlessly.ngrok-free.app 8001\"",
+    "type-check": "tsc --noEmit"
   },
   "prisma": {
     "seed": ""
