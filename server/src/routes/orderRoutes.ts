@@ -17,7 +17,6 @@ import {
   orderIdParamSchema,
   createCRMOrderSchema,
   updateOrderSchema,
-  syncOrdersSchema,
 } from '../schemas/order.schema'
 import { asyncHandler } from '../middleware/asyncHandler'
 

@@ -152,16 +152,6 @@ export const updateOrderSchema = z.object({
 })
 
 // ============================================
-// SYNC ORDERS SCHEMA
-// ============================================
-
-export const syncOrdersSchema = z.object({
-  body: z.object({
-    marketplace: z.enum(['prom', 'rozetka']).optional(),
-  }),
-})
-
-// ============================================
 // INFERRED TYPES (Single Source of Truth)
 // ============================================
 
@@ -169,7 +159,6 @@ export type OrderQueryParams = z.infer<typeof getOrdersQuerySchema>['query']
 export type CRMOrderCreateInput = z.infer<typeof createCRMOrderSchema>['body']
 export type CRMOrderItem = z.infer<typeof orderItemSchema>
 export type OrderUpdateInput = z.infer<typeof updateOrderSchema>['body']
-export type SyncOrdersInput = z.infer<typeof syncOrdersSchema>['body']
 
 // Additional inferred types for internal use
 export type OrderCustomerInfo = z.infer<typeof customerInfoSchema>
