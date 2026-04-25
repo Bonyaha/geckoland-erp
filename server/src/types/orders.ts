@@ -158,7 +158,6 @@ export type {
   CRMOrderCreateInput,
   CRMOrderItem,
   OrderUpdateInput,
-  SyncOrdersInput,
   OrderCustomerInfo,
   OrderRecipientInfo,
   OrderDeliveryInfo as OrderDeliveryInfoInput,
