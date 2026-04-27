@@ -209,7 +209,7 @@ export const checkSalesHealth = async (
  */
 export const getProductsSalesData = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   const { productIds, startDate } = req.body
 
@@ -217,69 +217,62 @@ export const getProductsSalesData = async (
     throw ErrorFactory.badRequest('productIds array is required')
   }
 
-  console.log(`📊 Fetching sales data for ${productIds.length} products${startDate ? ` from ${startDate}` : ''}`)
+  console.log(
+    `📊 Fetching sales data for ${productIds.length} products${startDate ? ` from ${startDate}` : ''}`,
+  )
 
-  try {
-    // Build the where clause for sales filtering
-    const whereClause: any = {}
-    
-    if (startDate) {
-      const filterDate = new Date(startDate)
-      if (!isNaN(filterDate.getTime())) {
-        whereClause.createdAt = {
-          gte: filterDate,
-        }
+  // Build the where clause for sales filtering
+  const where: any = {
+    productId: {
+      in: productIds,
+    },
+  }
+
+  if (startDate) {
+    const filterDate = new Date(startDate)
+    if (!isNaN(filterDate.getTime())) {
+      where.createdAt = {
+        gte: filterDate,
       }
     }
-
-    // Get aggregated sales data for each product
-    const salesDataPromises = productIds.map(async (productId: string) => {
-      const sales = await prisma.sales.findMany({
-        where: {
-          productId,
-          ...whereClause,
-        },
-        orderBy: { createdAt: 'asc' },
-      })
-
-      if (sales.length === 0) {
-        return {
-          productId,
-          totalQuantitySold: 0,
-          totalRevenue: 0,
-          salesCount: 0,
-          lastSaleDate: null,
-        }
-      }
-
-      const totalQuantitySold = sales.reduce((sum, sale) => sum + sale.quantity, 0)
-      const totalRevenue = sales.reduce(
-        (sum, sale) => sum + parseFloat(sale.totalAmount.toString()),
-        0
-      )
-
-      return {
-        productId,
-        totalQuantitySold,
-        totalRevenue,
-        salesCount: sales.length,
-        lastSaleDate: sales[0].createdAt.toISOString(),
-      }
-    })
-
-    const salesDataArray = await Promise.all(salesDataPromises)
-
-    // Convert array to map for easier frontend lookup
-    const salesDataMap = salesDataArray.reduce((acc, data) => {
-      acc[data.productId] = data
-      return acc
-    }, {} as Record<string, any>)
-
-    res.status(200).json(salesDataMap)
-  } catch (error: any) {
-    console.error('❌ Error fetching products sales data:', error)
-    throw ErrorFactory.internal(
-      `Failed to fetch sales data: ${error.message || 'Unknown error'}`
-    )
   }
+
+  const allSales = await prisma.sales.findMany({
+    where,
+    orderBy: { createdAt: 'asc' },
+  })
+
+  //initialize result map with zeros for every requested productId
+  // so products with no sales still appear in the response
+  const salesDataMap: Record<
+    string,
+    {
+      productId: string
+      totalQuantitySold: number
+      totalRevenue: number
+      salesCount: number
+      lastSaleDate: string | null
+    }
+  > = {}
+
+  for (const productId of productIds) {
+    salesDataMap[productId] = {
+      productId,
+      totalQuantitySold: 0,
+      totalRevenue: 0,
+      salesCount: 0,
+      lastSaleDate: null,
+    }
+  }
+  
+  for (const sale of allSales) {
+    const entry = salesDataMap[sale.productId]
+    if (!entry) continue
+    entry.totalQuantitySold += sale.quantity
+    entry.totalRevenue += parseFloat(sale.totalAmount.toString())
+    entry.salesCount += 1
+    entry.lastSaleDate = sale.createdAt.toISOString()
+  }
+
+  res.status(200).json(salesDataMap)
 }
