@@ -32,6 +32,7 @@ import {
   Copy,
   Pencil,
   MapPin,
+  UserCheck,
 } from 'lucide-react'
 
 import { useToast } from '@/hooks/useToast'
@@ -84,7 +85,15 @@ const CreateOrderPage = () => {
   const [paymentStatus, setPaymentStatus] = useState<'PAID' | 'UNPAID'>(
     'UNPAID',
   )
-const [orderSource, setOrderSource] = useState<string>('telegram')
+  const [orderSource, setOrderSource] = useState<string>('telegram')
+
+  // separate phone lookup for manual entry mode — does NOT affect the
+  // client search dropdown; only used to show a "client found" hint banner.
+  // Fires only when the user is in manual mode (no selectedClient) and has
+  // typed enough digits (≥ 9) to be a plausible phone number.
+  const [phoneSearchTerm, setPhoneSearchTerm] = useState('')
+  const [debouncedPhoneSearch, setDebouncedPhoneSearch] = useState('')
+  const [phoneMatchDismissed, setPhoneMatchDismissed] = useState(false)
 
   // ─── NP Autocomplete State ───────────────────────────────────────────────────
   // Stores the city display string typed by the user
@@ -163,11 +172,35 @@ const [orderSource, setOrderSource] = useState<string>('telegram')
     },
   )
 
-  // Fetch clients
+  // Fetch clients (for the "Оберіть клієнта" dropdown)
   const { data: clientsData, isFetching: isClientFetching } =
     useSearchClientsAutocompleteQuery(debouncedClientSearch, {
       skip: debouncedClientSearch.length < 3,
     })
+
+  // Background phone lookup — only active when the user is filling in
+  // the form manually (no selectedClient) and has typed a plausible number.
+  // This does NOT drive the client search dropdown at all.
+  const { data: phoneMatchData } = useSearchClientsAutocompleteQuery(
+    debouncedPhoneSearch,
+    {
+      // skip when a client is already selected (came via dropdown),
+      // when the phone is too short, or when the user dismissed the banner.
+      skip:
+        !!selectedClient ||
+        debouncedPhoneSearch.length < 9 ||
+        phoneMatchDismissed,
+    },
+  )
+
+  // The first result from the background phone search (if any)
+  const phoneMatchedClient: Client | null =
+    !selectedClient &&
+    !phoneMatchDismissed &&
+    phoneMatchData &&
+    phoneMatchData.length > 0
+      ? phoneMatchData[0]
+      : null
 
   // Fetch addresses when client is selected
   const { data: clientAddresses, refetch: refetchAddresses } =
@@ -267,7 +300,7 @@ const [orderSource, setOrderSource] = useState<string>('telegram')
     return () => clearTimeout(timer)
   }, [searchTerm])
 
-  // Debounce logic for clients
+  // Debounce logic for clients (the "Оберіть клієнта" dropdown)
   useEffect(() => {
     const timer = setTimeout(
       () => setDebouncedClientSearch(clientSearchTerm),
@@ -275,6 +308,27 @@ const [orderSource, setOrderSource] = useState<string>('telegram')
     )
     return () => clearTimeout(timer)
   }, [clientSearchTerm])
+
+  // Debounce logic for the background phone lookup.
+  // Only fires when user is in manual mode (no selectedClient).
+  useEffect(() => {
+    // do not run if a client is already selected via dropdown
+    if (selectedClient) return
+ 
+    const digits = phoneSearchTerm.replace(/\D/g, '')
+    // Only search when there are enough digits for a real phone number
+    if (digits.length < 9) {
+      setDebouncedPhoneSearch('')
+      return
+    }
+ 
+    const timer = setTimeout(() => {
+      setDebouncedPhoneSearch(phoneSearchTerm)
+    }, 600) // slightly longer debounce (600ms) to reduce noise — phone numbers are typed slowly
+ 
+    return () => clearTimeout(timer)
+  }, [phoneSearchTerm, selectedClient])
+
 
   // Reset to page 1 when searching products
   useEffect(() => {
@@ -335,8 +389,8 @@ const [orderSource, setOrderSource] = useState<string>('telegram')
   // HANDLERS - Client Selection
   // ═══════════════════════════════════════════════════════════════════════════
   const handleClientSelect = (client: Client) => {
-setIsPendingClientEdit(false)
-setPendingClientData(null)
+    setIsPendingClientEdit(false)
+    setPendingClientData(null)
     setSelectedClient(client)
     setClientSearchTerm(
       `${client.lastName} ${client.firstName} (${client.phone})`,
@@ -360,17 +414,24 @@ setPendingClientData(null)
     setNpCityRef('')
     setNpWarehouseQuery('')
     setIsClientDropdownOpen(false)
+
+    // clear phone lookup state when a client is explicitly selected
+    setPhoneSearchTerm('')
+    setDebouncedPhoneSearch('')
+    setPhoneMatchDismissed(false)
   }
 
   // Handle manual client data change (when user types in fields)
   const handleManualClientChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
 
-    // If phone changes, clear selected client
     if (field === 'clientPhone') {
-      /* setSelectedClient(null) */
-      setClientSearchTerm(value)
+      // feed the phone value into the background phone lookup
+      setPhoneSearchTerm(value)
+      // reset the dismissed flag when the user starts typing a new number
+      setPhoneMatchDismissed(false)
     }
+
   }
 
   // Create new client from search term
@@ -379,8 +440,8 @@ setPendingClientData(null)
     setClientSearchTerm('')
     setIsClientDropdownOpen(false)
 
-setIsPendingClientEdit(false)
-setPendingClientData(null)
+    setIsPendingClientEdit(false)
+    setPendingClientData(null)
     // Clear all client fields to allow manual entry
     setFormData((prev) => ({
       ...prev,
@@ -397,6 +458,11 @@ setPendingClientData(null)
     setSelectedSavedAddress(null)
     setLastSavedAddress(null)
     setAddressSource('manual')
+
+    // clear phone lookup state
+    setPhoneSearchTerm('')
+    setDebouncedPhoneSearch('')
+    setPhoneMatchDismissed(false)
   }
 
   // HANDLERS - Address Selection
@@ -464,8 +530,6 @@ setPendingClientData(null)
 
   // ─── NP City selected ────────────────────────────────────────────────────────
   const handleNpCitySelect = (city: NpCity) => {
-    // HANDLERS - Product Selection
-
     // Store city ref for warehouse lookup
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -1199,6 +1263,45 @@ setPendingClientData(null)
                   className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
                   placeholder='+380501234567'
                 />
+                {/* Non-intrusive "client found" hint banner.
+                    Appears below the phone field only when a client with this
+                    phone number already exists in the database and the user has
+                    NOT yet selected a client via the dropdown. The user can
+                    choose to load the found client or dismiss the hint. */}
+                {phoneMatchedClient && (
+                  <div className='mt-2 flex items-center justify-between gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm'>
+                    <div className='flex items-center gap-2 text-amber-800 min-w-0'>
+                      <UserCheck
+                        size={15}
+                        className='shrink-0 text-amber-600'
+                      />
+                      <span className='truncate'>
+                        Клієнт з таким номером вже є:{' '}
+                        <span className='font-semibold'>
+                          {phoneMatchedClient.lastName}{' '}
+                          {phoneMatchedClient.firstName}
+                        </span>
+                      </span>
+                    </div>
+                    <div className='flex items-center gap-1 shrink-0'>
+                      <button
+                        type='button'
+                        onClick={() => handleClientSelect(phoneMatchedClient)}
+                        className='px-2 py-1 text-xs font-medium bg-amber-600 text-white rounded hover:bg-amber-700 transition-colors cursor-pointer'
+                      >
+                        Завантажити
+                      </button>
+                      <button
+                        type='button'
+                        onClick={() => setPhoneMatchDismissed(true)}
+                        className='p-1 text-amber-500 hover:text-amber-700 transition-colors cursor-pointer'
+                        title='Ігнорувати'
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className='md:col-span-2'>
                 <label className='block text-sm font-medium text-gray-700 mb-1'>
@@ -1474,16 +1577,12 @@ setPendingClientData(null)
                   )}
                 </>
               )}
-
-              </div>
+            </div>
           </div>
 
-          {/* CHANGE: Separated payment into its own section */}
           {/* Оплата */}
           <div className='bg-white rounded-lg shadow-sm p-6'>
-            <h2 className='text-xl font-semibold text-gray-900 mb-4'>
-              Оплата
-            </h2>
+            <h2 className='text-xl font-semibold text-gray-900 mb-4'>Оплата</h2>
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               <div>
                 <label className='block text-sm font-medium text-gray-700 mb-1'>
@@ -1523,7 +1622,7 @@ setPendingClientData(null)
             </div>
           </div>
 
-          {/* NEW: Канал продажів section */}
+          {/* Канал продажів section */}
           <div className='bg-white rounded-lg shadow-sm p-6'>
             <h2 className='text-xl font-semibold text-gray-900 mb-4'>
               Канал продажів
@@ -1546,7 +1645,7 @@ setPendingClientData(null)
                 </select>
               </div>
             </div>
-          </div>         
+          </div>
 
           {/* Notes */}
           <div className='bg-white rounded-lg shadow-sm p-6'>
