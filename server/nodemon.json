@@ -12,5 +12,5 @@
 		".cron-initialized"
 	],
 	"ext": "ts,js,json",
-	"exec": "tsx src/index.ts"
+	"exec": "tsx --env-file=.env src/index.ts"
 }

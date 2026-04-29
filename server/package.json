@@ -9,7 +9,9 @@
     "build": "rimraf dist && tsc",
     "start": "cross-env NODE_ENV=production npm run build && node dist/index.js",
     "dev": "cross-env NODE_ENV=development concurrently --names \"TYPES,SERVER,NGROK\" -c \"auto\" \"tsc --noEmit --watch --preserveWatchOutput\" \"nodemon\" \"npx ngrok http --url=complete-pelican-endlessly.ngrok-free.app 8001\"",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "migrate": "npx prisma migrate dev --config prisma/prisma.config.ts",
+    "script": "dotenv -e .env -- npx tsx"
   },
   "prisma": {
     "seed": ""
@@ -52,6 +54,7 @@
     "@types/node-cron": "^3.0.11",
     "@types/pg": "^8.20.0",
     "cross-env": "^10.1.0",
+    "dotenv-cli": "^11.0.0",
     "ngrok": "^5.0.0-beta.2",
     "nodemon": "^3.1.14",
     "tsx": "^4.21.0",
