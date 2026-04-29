@@ -182,12 +182,15 @@ const sourceOptions = [
     data: ordersData,
     isLoading,
     refetch,
-  } = useGetOrdersQuery({
-    page,
-    limit: 20,
-    status: statusFilter === 'all' ? undefined : statusFilter,
-    source: sourceFilter === 'all' ? undefined : sourceFilter,
-  })
+  } = useGetOrdersQuery(
+    {
+      page,
+      limit: 20,
+      status: statusFilter === 'all' ? undefined : statusFilter,
+      source: sourceFilter === 'all' ? undefined : sourceFilter,
+    },
+    { refetchOnMountOrArgChange: true },
+  )
 
   const [updateOrder] = useUpdateOrderMutation()
 
