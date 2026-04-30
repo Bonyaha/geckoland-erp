@@ -14,7 +14,7 @@ const salesService = new SalesService()
  */
 export const backfillSales = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   console.log('🔄 Received request to backfill sales records')
 
@@ -43,7 +43,7 @@ export const backfillSales = async (
   } catch (error: any) {
     console.error('❌ Error during sales backfill:', error)
     throw ErrorFactory.internal(
-      `Sales backfill failed: ${error.message || 'Unknown error'}`
+      `Sales backfill failed: ${error.message || 'Unknown error'}`,
     )
   }
 }
@@ -55,7 +55,7 @@ export const backfillSales = async (
  */
 export const createSalesForOrder = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   const { orderId } = req.params
 
@@ -69,7 +69,7 @@ export const createSalesForOrder = async (
 
   if (!result.success) {
     throw ErrorFactory.badRequest(
-      result.error || 'Failed to create sales records'
+      result.error || 'Failed to create sales records',
     )
   }
 
@@ -93,7 +93,7 @@ export const createSalesForOrder = async (
  */
 export const getSalesStats = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   const { startDate, endDate } = req.query
 
@@ -133,7 +133,7 @@ export const getSalesStats = async (
  */
 export const checkSalesHealth = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   // Get recent delivered orders (last 7 days)
   const sevenDaysAgo = new Date()
@@ -172,12 +172,12 @@ export const checkSalesHealth = async (
         hasSalesRecords: salesCount > 0,
         salesCount,
       }
-    })
+    }),
   )
 
   const ordersWithSales = healthChecks.filter((c) => c.hasSalesRecords).length
   const ordersWithoutSales = healthChecks.filter(
-    (c) => !c.hasSalesRecords
+    (c) => !c.hasSalesRecords,
   ).length
 
   const healthResponse: SalesHealthCheck = {
@@ -237,10 +237,30 @@ export const getProductsSalesData = async (
     }
   }
 
-  const allSales = await prisma.sales.findMany({
+  const grouped = await prisma.sales.groupBy({
+    by: ['productId'],
     where,
-    orderBy: { createdAt: 'asc' },
+    _sum: {
+      quantity: true,
+      totalAmount: true,
+    },
+    _count: {
+      saleId: true,
+    },
   })
+
+  // For lastSaleDate we still need one extra query per product, but only
+  // fetching a single row each time (composite index makes this fast).
+  const lastSaleDates = await prisma.sales.findMany({
+    where,
+    select: { productId: true, createdAt: true },
+    orderBy: { createdAt: 'desc' },
+    distinct: ['productId'],
+  })
+
+  const lastSaleDateMap = new Map(
+    lastSaleDates.map((s) => [s.productId, s.createdAt.toISOString()]),
+  )
 
   //initialize result map with zeros for every requested productId
   // so products with no sales still appear in the response
@@ -264,14 +284,15 @@ export const getProductsSalesData = async (
       lastSaleDate: null,
     }
   }
-  
-  for (const sale of allSales) {
-    const entry = salesDataMap[sale.productId]
-    if (!entry) continue
-    entry.totalQuantitySold += sale.quantity
-    entry.totalRevenue += parseFloat(sale.totalAmount.toString())
-    entry.salesCount += 1
-    entry.lastSaleDate = sale.createdAt.toISOString()
+
+  for (const row of grouped) {
+    salesDataMap[row.productId] = {
+      productId: row.productId,
+      totalQuantitySold: row._sum.quantity ?? 0,
+      totalRevenue: parseFloat((row._sum.totalAmount ?? 0).toString()),
+      salesCount: row._count.saleId,
+      lastSaleDate: lastSaleDateMap.get(row.productId) ?? null,
+    }
   }
 
   res.status(200).json(salesDataMap)
