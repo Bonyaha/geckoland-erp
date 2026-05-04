@@ -25,7 +25,7 @@ import {
   X,
 } from 'lucide-react'
 //import Image from 'next/image'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 //import Header from '@/app/(components)/Header'
 import CreateProductModal from './CreateProductModal'
 import ProductStats from './ProductStats'
@@ -70,7 +70,7 @@ const Products = () => {
     'all' | 'inStock' | 'outOfStock'
   >('all')
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
-  const [showScrollArrow, setShowScrollArrow] = useState(false)  
+  const [showScrollArrow, setShowScrollArrow] = useState(false)
   const [batchMode, setBatchMode] = useState<
     'quantity' | 'price' | 'costPrice'
   >('quantity')
@@ -84,10 +84,13 @@ const Products = () => {
     Record<string, string>
   >({})
 
+  // tracks product IDs that are pending background marketplace sync
+  const [pendingSyncIds, setPendingSyncIds] = useState<string[]>([])
+
   const itemsPerPage = 20
 
   // API hooks
-  const { data, isLoading, isError } = useGetProductsQuery({
+  const { data, isLoading, isError,refetch } = useGetProductsQuery({
     search: searchTerm,
     page: currentPage,
     limit: itemsPerPage,
@@ -151,7 +154,89 @@ const Products = () => {
     }
   }, [])
 
-  //NEW
+  // It polls the product list every 2s while there are pending sync IDs,
+  // and clears itself once all products have needsSync=false.
+
+  const BATCH_POLL_INTERVAL = 2000
+  const BATCH_POLL_MAX = 15 // give up after 30s (15 × 2s)
+  const batchPollAttemptsRef = useRef(0)
+  const batchPollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // polling effect — watches pendingSyncIds and refetches until all clear
+  useEffect(() => {
+    if (pendingSyncIds.length === 0) return
+
+    // Clear any existing timer before starting a new cycle
+    if (batchPollTimeoutRef.current) {
+      clearTimeout(batchPollTimeoutRef.current)
+    }
+
+    const poll = async () => {
+      batchPollAttemptsRef.current += 1
+
+      if (batchPollAttemptsRef.current > BATCH_POLL_MAX) {
+        console.warn('⚠️ Batch sync polling timed out')
+        showToast('Синхронізація займає більше часу ніж очікувалось', 'warning')
+        setPendingSyncIds([])
+        batchPollAttemptsRef.current = 0
+        return
+      }
+
+      // Refetch the product list — RTK Query will update the cache,
+      // ProductRow components re-render with fresh needsSync values.
+      // We need to check if all our pending IDs now have needsSync=false.
+      // The simplest approach: refetch via the existing data object after
+      // a short delay and check needsSync on each pending product.
+
+      // refetch() is available from useGetProductsQuery
+      const result = await refetch()
+
+      if (result.data) {
+        const stillPending = pendingSyncIds.filter((id) => {
+          const product = result.data!.products.find(
+            (p: any) => p.productId === id,
+          )
+          // If the product is not on the current page (pagination),
+          // stop tracking it — we can't check it from here.
+          // needsSync will eventually be cleared by the background job
+          // and the user will see the updated state when they navigate to that page.
+          return product ? product.needsSync : false
+        })
+
+        if (stillPending.length === 0) {
+          // All done!
+          showToast('✅ Синхронізовано з маркетплейсами', 'success')
+          setPendingSyncIds([])
+          batchPollAttemptsRef.current = 0
+          return
+        }
+
+        setPendingSyncIds(stillPending)
+      }
+
+      // Schedule next poll
+      batchPollTimeoutRef.current = setTimeout(poll, BATCH_POLL_INTERVAL)
+    }
+
+    // First poll after a short delay (give background job time to start)
+    batchPollTimeoutRef.current = setTimeout(poll, 1500)
+
+    return () => {
+      if (batchPollTimeoutRef.current) {
+        clearTimeout(batchPollTimeoutRef.current)
+      }
+    }
+  }, [pendingSyncIds, refetch, showToast]) // re-runs whenever pendingSyncIds changes
+
+  // cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (batchPollTimeoutRef.current) {
+        clearTimeout(batchPollTimeoutRef.current)
+      }
+    }
+  }, [])
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       // Cycle through: asc -> desc -> null
@@ -236,7 +321,7 @@ const Products = () => {
       showToast(
         `✅ Синхронізація завершена! Prom: ${result.productsCreatedFromProm}, Rozetka: ${result.productsCreatedFromRozetka}, Всього: ${result.totalCreated}`,
         'success',
-      )     
+      )
 
       // If there were errors, log them
       if (result.errors.length > 0) {
@@ -345,6 +430,12 @@ const Products = () => {
         'success',
       )
 
+      // Watch all selected products — the poll terminates naturally when
+      // needsSync=false on all of them (including products with no marketplace
+      // links, which will clear on the very first poll cycle).
+      batchPollAttemptsRef.current = 0
+      setPendingSyncIds([...selectedProducts])
+
       setSelectedProducts([])
       setIsBatchModalOpen(false)
     } catch (error) {
@@ -390,7 +481,7 @@ const Products = () => {
     pages: 1,
   }
 
-  const typedProducts: ProductType[] = sortedProducts as ProductType[]  
+  const typedProducts: ProductType[] = sortedProducts as ProductType[]
 
   // Generate page numbers for pagination
   const generatePageNumbers = () => {

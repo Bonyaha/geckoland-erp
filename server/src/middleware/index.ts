@@ -11,5 +11,5 @@ export {
   authenticate,
   authorize,
   optionalAuth,
-  AuthenticatedRequest,
 } from './auth'
+export type { AuthenticatedRequest } from './auth'

@@ -1,12 +1,10 @@
 // server/src/routes/orderRoutes.ts
 import { Router } from 'express'
 import { validate } from '../middleware/validation'
-import {
-  fetchNewPromOrders,
+import {  
   getOrders,
   getCRMOrders,
-  getOrderById,
-  syncOrders,
+  getOrderById,  
   createCRMOrder,
   updateOrder,
   deleteOrder,
@@ -19,17 +17,10 @@ import {
   orderIdParamSchema,
   createCRMOrderSchema,
   updateOrderSchema,
-  syncOrdersSchema,
 } from '../schemas/order.schema'
 import { asyncHandler } from '../middleware/asyncHandler'
 
 const router = Router()
-
-// POST /orders/fetch/prom - Fetch new orders from Prom
-router.post('/fetch/prom', asyncHandler(fetchNewPromOrders))
-
-// POST /orders/sync - Manual sync orders from marketplaces
-router.post('/sync', validate(syncOrdersSchema), asyncHandler(syncOrders))
 
 // POST /orders/check-new - Manual check for new orders
 router.post('/check-new', asyncHandler(checkForNewOrders))

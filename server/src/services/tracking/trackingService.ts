@@ -1,7 +1,6 @@
 // server/src/services/tracking/trackingService.ts
-import prisma from '../../config/database'
+import prisma, { OrderStatus } from '../../config/database'
 import { novaPoshtaService } from '../delivery/novaPoshtaService'
-import { OrderStatus } from '@prisma/client'
 import {
   OrderTrackingUpdateRequest,
   OrderTrackingResult,

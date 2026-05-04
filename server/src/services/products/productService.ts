@@ -63,7 +63,7 @@ type MarketplacePushItem = {
   externalIds: ProductExternalIds | null
   updates: ProductUpdateParams
 }
- 
+
 /**
  * Return value of `pushProductsToMarketplaces`.
  * Mirrors the fields that `updateBatchProducts` previously computed inline.
@@ -215,6 +215,28 @@ class ProductService {
     }
   }
 
+  /*
+   * Gets the synchronization status of a specific product, including whether it needs to be synced to marketplaces.
+   * @param productId - The ID of the product to check
+   * @returns An object containing the sync status for the product
+   */
+  async getProductSyncStatus(productId: string) {
+    const product = await prisma.products.findUnique({
+      where: { productId },
+      select: {
+        needsSync: true,
+        needsPromSync: true,
+        needsRozetkaSync: true,
+      },
+    })
+
+    if (!product) {
+      throw ErrorFactory.notFound(`Product ${productId} not found`)
+    }
+
+    return product
+  }
+
   /**
    * Creates a new product in the database.
    *
@@ -255,28 +277,26 @@ class ProductService {
     targetMarketplace,
   }: SingleProductUpdateInput): Promise<SingleProductUpdateResult> {
     // First, get the current product to save old price
-    const currentProduct = await prisma.products.findUnique({
-      where: { productId },
-      select: { price: true, stockQuantity: true, externalIds: true },
-    })
+    const [currentProduct, rozetkaActive] = await Promise.all([
+      prisma.products.findUnique({
+        where: { productId },
+        select: { price: true, stockQuantity: true, externalIds: true },
+      }),
+      settingsService.isRozetkaStoreActive(),
+    ])
 
     if (!currentProduct) {
       throw ErrorFactory.notFound(`Product ${productId} not found`)
     }
 
-    // Check Rozetka store status
-    const rozetkaActive = await settingsService.isRozetkaStoreActive()
-
     const now = new Date()
     const dbUpdateData: Record<string, unknown> = {
-      needsSync: true,
       lastSynced: now,
       dateModified: now,
     }
 
     if (updates.costPrice !== undefined) {
       dbUpdateData.costPrice = updates.costPrice
-      console.log(`Updating costPrice for ${productId}: ${updates.costPrice}`)
     }
 
     // If updating all sides (default), update DB first
@@ -295,11 +315,6 @@ class ProductService {
         dbUpdateData.price = updates.price
         dbUpdateData.updatedPrice = updates.price
       }
-
-      await prisma.products.update({
-        where: { productId },
-        data: dbUpdateData,
-      })
     } else if (
       // If updating only one marketplace, ensure quantity <= warehouse
       updates.quantity !== undefined &&
@@ -310,14 +325,6 @@ class ProductService {
       )
     }
 
-    // Marketplace sync setup
-    const syncResults: string[] = []
-    const syncErrors: MarketplaceUpdateResult[] = []
-    const syncPromises: Promise<any>[] = []
-
-    // Track which marketplaces were successfully synced
-    const syncStatus: MarketplaceSyncStatus = createMarketplaceSyncStatus()
-
     const externalIds = currentProduct.externalIds as ProductExternalIds | null
 
     // Only sync to marketplaces if quantity or price changed (not costPrice)
@@ -325,96 +332,157 @@ class ProductService {
       updates.quantity !== undefined || updates.price !== undefined
 
     if (needsMarketplaceSync) {
-      // Prom update
-      if (
-        !targetMarketplace ||
-        targetMarketplace === 'all' ||
-        targetMarketplace === 'prom'
-      ) {
-        //console.log('target is Prom')
-        if (!externalIds?.prom) {
-          // If the user *specifically* asked for prom, treat it as an error
-          if (targetMarketplace === 'prom') {
-            throw ErrorFactory.badRequest(
-              `Product ${productId} is not linked to a Prom product (no external ID).`,
-            )
-          }
-          // Otherwise (targetMarketplace='all'), just skip it silently.
-        } else {
-          const promUpdates: ProductUpdateParams = {}
-          if (updates.quantity !== undefined)
-            promUpdates.quantity = updates.quantity
-          if (updates.price !== undefined) promUpdates.price = updates.price
+      // Check if we need to sync to Prom
+      const needsPromSync =
+        (!targetMarketplace ||
+          targetMarketplace === 'all' ||
+          targetMarketplace === 'prom') &&
+        externalIds?.prom
 
-          syncPromises.push(
-            createMarketplaceUpdatePromise({
-              marketplaceName: 'Prom',
-              productId,
-              updateFunction: () =>
-                updatePromProduct(externalIds.prom!, promUpdates),
-              onSuccess: () => (syncStatus.promSynced = true),
-              resultsArray: syncResults,
-              errorsArray: syncErrors,
-            }),
-          )
-        }
+      // Check if we need to sync to Rozetka
+      const needsRozetkaSync =
+        (!targetMarketplace ||
+          targetMarketplace === 'all' ||
+          targetMarketplace === 'rozetka') &&
+        externalIds?.rozetka?.item_id &&
+        rozetkaActive
+
+      if (needsPromSync || needsRozetkaSync) {
+        dbUpdateData.needsSync = true
+        if (needsPromSync) dbUpdateData.needsPromSync = true
+        if (needsRozetkaSync) dbUpdateData.needsRozetkaSync = true
       }
-
-      // Rozetka update
+      // For Rozetka when store is inactive, track quantity but mark as needing sync
       if (
-        !targetMarketplace ||
-        targetMarketplace === 'all' ||
-        targetMarketplace === 'rozetka'
+        !rozetkaActive &&
+        externalIds?.rozetka?.item_id &&
+        (!targetMarketplace ||
+          targetMarketplace === 'all' ||
+          targetMarketplace === 'rozetka') &&
+        updates.quantity !== undefined
       ) {
-        if (!externalIds?.rozetka?.item_id) {
-          // Only throw if the user *specifically* asked for Rozetka
-          if (targetMarketplace === 'rozetka') {
-            throw ErrorFactory.badRequest(
-              `Product ${productId} is not linked to a Rozetka product (no external ID).`,
-            )
-          }
-          // If target was 'all', we just silently skip it
-        } else {
-          // Check if Rozetka store is active
-          if (!rozetkaActive) {
-            console.log(
-              `Skipping Rozetka sync for product ${productId} - store is paused`,
-            )
-            // Don't add to syncPromises, but we'll update the DB later
-          } else {
-            const rozetkaUpdates: ProductUpdateParams = {}
-            if (updates.quantity !== undefined)
-              rozetkaUpdates.quantity = updates.quantity
-            if (updates.price !== undefined)
-              rozetkaUpdates.price = updates.price
-
-            syncPromises.push(
-              createMarketplaceUpdatePromise({
-                marketplaceName: 'Rozetka',
-                productId,
-                updateFunction: () =>
-                  updateRozetkaProduct(
-                    externalIds.rozetka!.item_id!,
-                    rozetkaUpdates,
-                  ),
-                onSuccess: () => (syncStatus.rozetkaSynced = true),
-                resultsArray: syncResults,
-                errorsArray: syncErrors,
-              }),
-            )
-          }
-        }
-      }
-      // Execute parallel updates
-      if (syncPromises.length > 0) {
-        await Promise.allSettled(syncPromises)
+        dbUpdateData.rozetkaQuantity = updates.quantity
+        dbUpdateData.needsRozetkaSync = true
+        dbUpdateData.needsSync = true
       }
     }
 
-    // Mark sync complete and update marketplace-specific fields
-    // 1. Finalize DB update with sync status
-    const finalUpdateData: Record<string, unknown> = {}
+    // Perform ONE single database update
+    await prisma.products.update({
+      where: { productId },
+      data: dbUpdateData,
+    })
+
+    // Fire-and-forget marketplace sync in background
+    // This runs AFTER the response is sent to the user
+    if (needsMarketplaceSync) {
+      this.syncToMarketplacesInBackground(
+        productId,
+        updates,
+        externalIds,
+        targetMarketplace,
+        rozetkaActive,
+      ).catch((err) => {
+        console.error(`❌ Background sync failed for ${productId}:`, err)
+        // Optionally: log to error tracking service (Sentry, etc.)
+      })
+    }
+    // Return immediately with optimistic response
+    // User doesn't wait for marketplace APIs
+    const message =
+      needsMarketplaceSync &&
+      (updates.quantity !== undefined || updates.price !== undefined)
+        ? 'Product updated successfully (syncing to marketplaces in background)'
+        : updates.costPrice !== undefined && !needsMarketplaceSync
+          ? 'Cost price updated successfully'
+          : 'Product updated successfully'
+
+    return {
+      success: true,
+      message,
+      productId,
+      updates,
+      syncedMarketplaces: [], // Empty initially - sync happens in background
+    }
+  }
+
+  // Background sync method (runs AFTER response is sent)
+  private async syncToMarketplacesInBackground(
+    productId: string,
+    updates: ProductUpdateParams,
+    externalIds: ProductExternalIds | null,
+    targetMarketplace?: TargetMarketplace,
+    rozetkaActive: boolean = true,
+  ): Promise<void> {
+    console.log(`🔄 Starting background marketplace sync for ${productId}`)
+
+    // Marketplace sync setup
+    const syncResults: string[] = []
+    const syncErrors: MarketplaceUpdateResult[] = []
+    const syncPromises: Promise<void>[] = []
+
+    // Track which marketplaces were successfully synced
+    const syncStatus: MarketplaceSyncStatus = createMarketplaceSyncStatus()
+
+    // Prepare Prom updates
+    if (
+      (!targetMarketplace ||
+        targetMarketplace === 'all' ||
+        targetMarketplace === 'prom') &&
+      externalIds?.prom
+    ) {
+      const promUpdates: ProductUpdateParams = {}
+      if (updates.quantity !== undefined)
+        promUpdates.quantity = updates.quantity
+      if (updates.price !== undefined) promUpdates.price = updates.price
+
+      syncPromises.push(
+        createMarketplaceUpdatePromise({
+          marketplaceName: 'Prom',
+          productId,
+          updateFunction: () =>
+            updatePromProduct(externalIds.prom!, promUpdates),
+          onSuccess: () => (syncStatus.promSynced = true),
+          resultsArray: syncResults,
+          errorsArray: syncErrors,
+        }),
+      )
+    }
+
+    // Prepare Rozetka updates
+    if (
+      (!targetMarketplace ||
+        targetMarketplace === 'all' ||
+        targetMarketplace === 'rozetka') &&
+      externalIds?.rozetka?.item_id &&
+      rozetkaActive
+    ) {
+      const rozetkaUpdates: ProductUpdateParams = {}
+      if (updates.quantity !== undefined)
+        rozetkaUpdates.quantity = updates.quantity
+      if (updates.price !== undefined) rozetkaUpdates.price = updates.price
+
+      syncPromises.push(
+        createMarketplaceUpdatePromise({
+          marketplaceName: 'Rozetka',
+          productId,
+          updateFunction: () =>
+            updateRozetkaProduct(externalIds.rozetka!.item_id!, rozetkaUpdates),
+          onSuccess: () => (syncStatus.rozetkaSynced = true),
+          resultsArray: syncResults,
+          errorsArray: syncErrors,
+        }),
+      )
+    }
+
+    // Execute marketplace API calls
+    if (syncPromises.length > 0) {
+      await Promise.allSettled(syncPromises)
+    }
+
+    // Update database with final sync status
     const syncTime = new Date()
+    const finalUpdateData: Record<string, unknown> = {}
 
     // Update Prom-specific fields if Prom was successfully synced
     if (syncStatus.promSynced) {
@@ -422,6 +490,7 @@ class ProductService {
       if (updates.quantity !== undefined) {
         finalUpdateData.promQuantity = updates.quantity
       }
+      finalUpdateData.needsPromSync = false
     }
 
     // Update Rozetka-specific fields if Rozetka was successfully synced
@@ -444,16 +513,12 @@ class ProductService {
       finalUpdateData.needsRozetkaSync = true
     }
 
-    // Clear needsSync only if both marketplace flags will be false
-    if (syncErrors.length === 0 && needsMarketplaceSync) {
-      // Use the flags we just set (or keep existing if not set)
-      const willNeedPromSync = finalUpdateData.needsPromSync ?? false
-      const willNeedRozetkaSync = finalUpdateData.needsRozetkaSync ?? false
+    // Clear needsSync only if both marketplace flags are false
+    const willNeedPromSync = finalUpdateData.needsPromSync ?? false
+    const willNeedRozetkaSync = finalUpdateData.needsRozetkaSync ?? false
+    finalUpdateData.needsSync = willNeedPromSync || willNeedRozetkaSync
 
-      finalUpdateData.needsSync = willNeedPromSync || willNeedRozetkaSync
-    }
-
-    // Apply final DB updates if needed
+    // Apply final DB updates with sync status
     if (Object.keys(finalUpdateData).length > 0) {
       await prisma.products.update({
         where: { productId },
@@ -461,30 +526,15 @@ class ProductService {
       })
     }
 
-    // 2. Send response
-    const success = syncErrors.length === 0
-    let message: string
-    if (updates.costPrice !== undefined && !needsMarketplaceSync) {
-      message = 'Cost price updated successfully (internal only)'
-    } else if (success) {
-      message = `Product updated${
-        targetMarketplace
-          ? ' for ' + targetMarketplace
-          : ' and synced everywhere'
-      } successfully.`
+    // Log results
+    if (syncErrors.length === 0) {
+      console.log(`✅ Background sync completed successfully for ${productId}`)
+      console.log(`   Synced to: ${syncResults.join(', ')}`)
     } else {
-      message = `Product update processed${
-        targetMarketplace ? ' for ' + targetMarketplace : ''
-      }, but with sync errors.`
-    }
-
-    return {
-      success,
-      message,
-      productId,
-      updates,
-      syncedMarketplaces: syncResults,
-      errors: success ? undefined : syncErrors,
+      console.error(`⚠️ Background sync completed with errors for ${productId}`)
+      syncErrors.forEach((err) => {
+        console.error(`   ${err.marketplace}: ${err.error}`)
+      })
     }
   }
 
@@ -500,7 +550,7 @@ class ProductService {
     products,
     targetMarketplace,
   }: BatchProductUpdateInput): Promise<BatchProductUpdateResult> {
-    console.log(`Starting batch update for ${products.length} products`)
+    //console.log(`Starting batch update for ${products.length} products`)
 
     // Fetch all products first for warehouse validation
     const productIds = products.map((p: BatchProductUpdateItem) => p.productId)
@@ -562,14 +612,48 @@ class ProductService {
           lastSynced: new Date(),
           dateModified: new Date(),
         }
-        // Only mark needsSync for marketplace-relevant fields.
-        // NOTE: when isCostPriceOnlyUpdate caused us to enter this block,
-        // this condition is always false by definition — that is intentional.
-        if (
+
+        const hasMarketplaceFields =
           item.updates.quantity !== undefined ||
           item.updates.price !== undefined
-        ) {
-          updateData.needsSync = true
+
+        if (hasMarketplaceFields && !isCostPriceOnlyUpdate) {
+          const externalIds = dbMap.get(item.productId)
+            ?.externalIds as ProductExternalIds | null
+
+          const wouldSyncProm =
+            (!targetMarketplace ||
+              targetMarketplace === 'all' ||
+              targetMarketplace === 'prom') &&
+            !!externalIds?.prom
+
+          const wouldSyncRozetka =
+            (!targetMarketplace ||
+              targetMarketplace === 'all' ||
+              targetMarketplace === 'rozetka') &&
+            !!externalIds?.rozetka?.item_id &&
+            rozetkaActive
+
+          if (wouldSyncProm || wouldSyncRozetka) {
+            updateData.needsSync = true
+            if (wouldSyncProm) updateData.needsPromSync = true
+            if (wouldSyncRozetka) updateData.needsRozetkaSync = true
+          }
+
+          // Track rozetkaQuantity locally even when the store is paused,
+          // so the value is accurate when the store eventually resumes.
+          if (
+            !rozetkaActive &&
+            externalIds?.rozetka?.item_id &&
+            (!targetMarketplace ||
+              targetMarketplace === 'all' ||
+              targetMarketplace === 'rozetka') &&
+            item.updates.quantity !== undefined
+          ) {
+            updateData.rozetkaQuantity = item.updates.quantity
+            updateData.needsRozetkaSync = true
+            updateData.needsSync = true
+          }
         }
 
         if (item.updates.quantity !== undefined) {
@@ -614,33 +698,11 @@ class ProductService {
               (result as PromiseRejectedResult).reason?.message ||
               String((result as PromiseRejectedResult).reason),
           }),
-    )
-
-    /* // Build enriched map for downstream use
-    const enrichedMap = new Map<string, BatchEnrichedProduct>()
-    for (const productId of successfulUpdates) {
-      const original = products.find(
-        (p: BatchProductUpdateItem) => p.productId === productId,
-      )
-      if (!original) continue
-
-      const dbProduct = dbMap.get(productId)
-      const externalIds = dbProduct?.externalIds as ProductExternalIds | null
-      const hasMarketplaceUpdates =
-        original.updates.quantity !== undefined ||
-        original.updates.price !== undefined
-
-      enrichedMap.set(productId, {
-        original,
-        dbProduct,
-        externalIds,
-        hasMarketplaceUpdates,
-      })
-    } */
+    )    
 
     // If this is ONLY a cost price update, skip marketplace sync entirely
     if (isCostPriceOnlyUpdate) {
-      console.log('Cost price only update - skipping marketplace sync')
+      //console.log('Cost price only update - skipping marketplace sync')
 
       const message = 'Batch cost price update completed (internal only)'
 
@@ -661,189 +723,39 @@ class ProductService {
       }
     }
 
-// ── Build push items for successfully-written products ─────────────────
+    // ── Build push items for successfully-written products ─────────────────
     const pushItems: MarketplacePushItem[] = []
- 
+
     for (const productId of successfulUpdates) {
       const original = products.find(
         (p: BatchProductUpdateItem) => p.productId === productId,
       )
       if (!original) continue
- 
+
       const hasMarketplaceUpdates =
-        original.updates.quantity !== undefined || original.updates.price !== undefined
+        original.updates.quantity !== undefined ||
+        original.updates.price !== undefined
       if (!hasMarketplaceUpdates) continue
- 
-      const externalIds = dbMap.get(productId)?.externalIds as ProductExternalIds | null
- 
+
+      const externalIds = dbMap.get(productId)
+        ?.externalIds as ProductExternalIds | null
+
       pushItems.push({ productId, externalIds, updates: original.updates })
     }
 
-// ── Delegate marketplace push + sync-status DB write ──────────────────
-    const { syncResults, syncErrors, syncStatus } =
-      await this.pushProductsToMarketplaces(
+        // CHANGE: Fire-and-forget background marketplace sync — return response
+    // to the user immediately without waiting for Prom / Rozetka APIs.
+    if (pushItems.length > 0) {
+      this.syncBatchToMarketplacesInBackground( // NEW method call
         pushItems,
         targetMarketplace ?? 'all',
         rozetkaActive,
-      )
-
-
-
-    /* //Collect marketplace updates
-    const promUpdates: PromBatchUpdate[] = []
-    const rozetkaUpdates: RozetkaBatchUpdate[] = []
-
-    for (const [
-      productId,
-      { original, externalIds, hasMarketplaceUpdates },
-    ] of enrichedMap) {
-      // Skip marketplace updates if this product only has costPrice update
-
-      if (!hasMarketplaceUpdates) continue
-
-      const dbProduct = dbMap.get(productId)
-
-      // Collect Prom updates
-      if (
-        (!targetMarketplace ||
-          targetMarketplace === 'all' ||
-          targetMarketplace === 'prom') &&
-        externalIds?.prom
-      ) {
-        const promParams: ProductUpdateParams = {}
-        if (original.updates.quantity !== undefined)
-          promParams.quantity = original.updates.quantity
-        if (original.updates.price !== undefined)
-          promParams.price = original.updates.price
-
-        promUpdates.push({
-          productId: externalIds.prom,
-          updates: promParams,
-        })
-      }
-
-      // Collect Rozetka updates
-      // Mirror updateSingleProduct — skip Rozetka API call when the
-      // store is paused. We still need to track rozetkaQuantity in the DB
-      // (handled in the mark-synced section below) and flag needsRozetkaSync
-      // so the product is picked up when the store resumes.
-      if (
-        (!targetMarketplace ||
-          targetMarketplace === 'all' ||
-          targetMarketplace === 'rozetka') &&
-        externalIds?.rozetka?.item_id
-      ) {
-        if (!rozetkaActive) {
-          console.log(
-            `Skipping Rozetka sync for product ${productId} - store is paused`,
-          )
-        } else {
-          const rozetkaParams: ProductUpdateParams = {}
-          if (original.updates.quantity !== undefined)
-            rozetkaParams.quantity = original.updates.quantity
-          if (original.updates.price !== undefined)
-            rozetkaParams.price = original.updates.price
-
-          rozetkaUpdates.push({
-            productId: externalIds.rozetka.item_id,
-            updates: rozetkaParams,
-          })
-        }
-      }
+      ).catch((err) => {
+        console.error(`❌ Batch background sync failed:`, err)
+      })
     }
 
-    //Sync to marketplaces
-    const syncResults: string[] = []
-    const syncErrors: MarketplaceUpdateResult[] = []
-    const syncStatus: MarketplaceSyncStatus = createMarketplaceSyncStatus()
-    const syncPromises: Promise<void>[] = []
-
-    // Batch update Prom products
-    if (promUpdates.length > 0) {
-      syncPromises.push(
-        createMarketplaceUpdatePromise({
-          marketplaceName: 'Prom',
-          count: promUpdates.length,
-          updateFunction: () => updateMultiplePromProducts(promUpdates),
-          onSuccess: () => (syncStatus.promSynced = true),
-          resultsArray: syncResults,
-          errorsArray: syncErrors,
-          isBatch: true,
-        }),
-      )
-    }
-
-    // Batch update Rozetka products
-    if (rozetkaUpdates.length > 0) {
-      syncPromises.push(
-        createMarketplaceUpdatePromise({
-          marketplaceName: 'Rozetka',
-          count: rozetkaUpdates.length,
-          updateFunction: () => updateMultipleRozetkaProducts(rozetkaUpdates),
-          onSuccess: () => (syncStatus.rozetkaSynced = true),
-          resultsArray: syncResults,
-          errorsArray: syncErrors,
-          isBatch: true,
-        }),
-      )
-    }
-
-    await Promise.allSettled(syncPromises)
-
-    //Mark DB as synced
-    const syncTime = new Date()
-    const productsNeedingSyncUpdate = [...enrichedMap.values()].filter(
-      (e) => e.hasMarketplaceUpdates,
-    )
-
-    if (productsNeedingSyncUpdate.length > 0) {
-      const markSyncedPromises = productsNeedingSyncUpdate.map(
-        ({ original, externalIds }) => {
-          const data: Record<string, unknown> = {}
-
-          // Prom: if the batch Prom sync succeeded, record the timestamp and
-          // mirror the quantity we just sent.
-          if (syncStatus.promSynced) {
-            data.lastPromSync = syncTime
-            if (original?.updates.quantity !== undefined) {
-              data.promQuantity = original.updates.quantity
-            }
-          }
-          // Rozetka: three possible states:
-          //   1. Sync succeeded  → record timestamp, mirror quantity, clear flag
-          //   2. Store inactive  → mirror quantity for internal tracking, set flag
-          //   3. No external ID  → nothing to do
-          if (syncStatus.rozetkaSynced) {
-            data.lastRozetkaSync = syncTime
-            if (original?.updates.quantity !== undefined) {
-              data.rozetkaQuantity = original.updates.quantity
-            }
-            data.needsRozetkaSync = false
-          } else if (!rozetkaActive && externalIds?.rozetka?.item_id) {
-            // Store is paused — keep our internal rozetkaQuantity in sync with
-            // the warehouse so it is accurate when the store eventually resumes.
-            if (original?.updates.quantity !== undefined) {
-              data.rozetkaQuantity = original.updates.quantity
-            }
-            data.needsRozetkaSync = true
-          }
-
-          // needsSync stays true whenever Rozetka still needs to be pushed.
-          // (If Rozetka isn't relevant for this product or the sync succeeded,
-          // willNeedRozetkaSync is false and we clear the flag.)
-          const willNeedRozetkaSync = Boolean(data.needsRozetkaSync)
-          data.needsSync = willNeedRozetkaSync
-
-          return prisma.products.update({
-            where: { productId: original.productId },
-            data,
-          })
-        },
-      )
-      await Promise.allSettled(markSyncedPromises)
-    } */
-
-    const success = syncErrors.length === 0 && failedUpdates.length === 0
+    const success = failedUpdates.length === 0
     const message = `Batch update completed${
       targetMarketplace ? ' for ' + targetMarketplace : ''
     }`
@@ -855,8 +767,15 @@ class ProductService {
         totalRequested: products.length,
         successfulDatabaseUpdates: successfulUpdates.length,
         failedDatabaseUpdates: failedUpdates.length,
-        marketplacesSynced: syncResults,
-        marketplaceErrors: syncErrors.length ? syncErrors : undefined,
+        marketplacesSynced: [], //empty – sync is in background, not yet done
+        marketplaceErrors:
+          failedUpdates.length > 0
+            ? failedUpdates.map((f) => ({
+                marketplace: 'database',
+                success: false,
+                error: f.error,
+              }))
+            : undefined,
       },
       details: {
         successfulProducts: successfulUpdates,
@@ -865,7 +784,57 @@ class ProductService {
     }
   }
 
-/**
+  // ────────────────────────────────────────────────────────────────────────────
+  // NEW private helper — runs AFTER the response is already sent to the user.
+  // Mirrors syncToMarketplacesInBackground() but operates on a batch of products.
+  // ────────────────────────────────────────────────────────────────────────────
+ 
+  /**
+   * Calls Prom and Rozetka APIs for a batch of products in the background,
+   * then writes the resulting sync-status metadata (lastPromSync, promQuantity,
+   * needsRozetkaSync, etc.) back to the DB and clears the needsSync flags.
+   *
+   * This method is intentionally fire-and-forget — the caller does NOT await it.
+   * Errors are logged but never re-thrown so they cannot affect the already-sent
+   * HTTP response.
+   */
+  private async syncBatchToMarketplacesInBackground(
+    items: MarketplacePushItem[],
+    target: TargetMarketplace,
+    rozetkaActive: boolean,
+  ): Promise<void> {
+    console.log(
+      `🔄 Starting background batch marketplace sync for ${items.length} products`,
+    )
+ 
+    try {
+      const { syncResults, syncErrors, syncStatus } =
+        await this.pushProductsToMarketplaces(items, target, rozetkaActive)
+ 
+      // pushProductsToMarketplaces already handles the per-product DB
+      // sync-status writes (lastPromSync, promQuantity, needsRozetkaSync, needsSync).
+      // Nothing extra to do here — just log the outcome.
+ 
+      if (syncErrors.length === 0) {
+        console.log(
+          `✅ Background batch sync completed successfully for ${items.length} products`,
+        )
+        console.log(`   Synced to: ${syncResults.join(', ')}`)
+      } else {
+        console.error(
+          `⚠️ Background batch sync completed with ${syncErrors.length} error(s)`,
+        )
+        syncErrors.forEach((err) => {
+          console.error(`   ${err.marketplace}: ${err.error}`)
+        })
+      }
+    } catch (err) {
+      console.error(`❌ Background batch sync threw unexpectedly:`, err)
+      // Don't re-throw — user already got their response
+    }
+  }
+
+  /**
    * Pushes current DB quantities/prices for the given products to one or all
    * marketplaces, **without touching the main product columns in the DB**.
    *
@@ -890,7 +859,7 @@ class ProductService {
   ): Promise<MarketplacePushResult> {
     const promUpdates: PromBatchUpdate[] = []
     const rozetkaUpdates: RozetkaBatchUpdate[] = []
- 
+
     // Collect per-marketplace payloads
     for (const { externalIds, updates } of items) {
       if ((target === 'all' || target === 'prom') && externalIds?.prom) {
@@ -899,8 +868,11 @@ class ProductService {
         if (updates.price !== undefined) params.price = updates.price
         promUpdates.push({ productId: externalIds.prom, updates: params })
       }
- 
-      if ((target === 'all' || target === 'rozetka') && externalIds?.rozetka?.item_id) {
+
+      if (
+        (target === 'all' || target === 'rozetka') &&
+        externalIds?.rozetka?.item_id
+      ) {
         if (!rozetkaActive) {
           console.log(
             `Skipping Rozetka sync for product with item_id=${externalIds.rozetka.item_id} - store is paused`,
@@ -909,17 +881,20 @@ class ProductService {
           const params: ProductUpdateParams = {}
           if (updates.quantity !== undefined) params.quantity = updates.quantity
           if (updates.price !== undefined) params.price = updates.price
-          rozetkaUpdates.push({ productId: externalIds.rozetka.item_id, updates: params })
+          rozetkaUpdates.push({
+            productId: externalIds.rozetka.item_id,
+            updates: params,
+          })
         }
       }
     }
- 
+
     // Execute API calls in parallel
     const syncResults: string[] = []
     const syncErrors: MarketplaceUpdateResult[] = []
     const syncStatus: MarketplaceSyncStatus = createMarketplaceSyncStatus()
     const syncPromises: Promise<void>[] = []
- 
+
     if (promUpdates.length > 0) {
       syncPromises.push(
         createMarketplaceUpdatePromise({
@@ -933,7 +908,7 @@ class ProductService {
         }),
       )
     }
- 
+
     if (rozetkaUpdates.length > 0) {
       syncPromises.push(
         createMarketplaceUpdatePromise({
@@ -947,39 +922,45 @@ class ProductService {
         }),
       )
     }
- 
+
     await Promise.allSettled(syncPromises)
- 
+
     // Write sync-status metadata back to the DB
     const syncTime = new Date()
-    const metaUpdatePromises = items.map(({ productId, externalIds, updates }) => {
-      const data: Record<string, unknown> = {}
- 
-      if (syncStatus.promSynced) {
-        data.lastPromSync = syncTime
-        if (updates.quantity !== undefined) data.promQuantity = updates.quantity
-      }
- 
-      if (syncStatus.rozetkaSynced) {
-        data.lastRozetkaSync = syncTime
-        if (updates.quantity !== undefined) data.rozetkaQuantity = updates.quantity
-        data.needsRozetkaSync = false
-      } else if (!rozetkaActive && externalIds?.rozetka?.item_id) {
-        // Store is paused — mirror quantity internally so it's accurate on resume
-        if (updates.quantity !== undefined) data.rozetkaQuantity = updates.quantity
-        data.needsRozetkaSync = true
-      }
- 
-      data.needsSync = Boolean(data.needsRozetkaSync)
- 
-      return prisma.products.update({ where: { productId }, data })
-    })
- 
+    const metaUpdatePromises = items.map(
+      ({ productId, externalIds, updates }) => {
+        const data: Record<string, unknown> = {}
+
+        if (syncStatus.promSynced) {
+          data.lastPromSync = syncTime
+          if (updates.quantity !== undefined)
+            data.promQuantity = updates.quantity
+ data.needsPromSync = false
+        }
+
+        if (syncStatus.rozetkaSynced) {
+          data.lastRozetkaSync = syncTime
+          if (updates.quantity !== undefined)
+            data.rozetkaQuantity = updates.quantity
+          data.needsRozetkaSync = false
+        } else if (!rozetkaActive && externalIds?.rozetka?.item_id) {
+          // Store is paused — mirror quantity internally so it's accurate on resume
+          if (updates.quantity !== undefined)
+            data.rozetkaQuantity = updates.quantity
+          data.needsRozetkaSync = true
+        }
+
+        data.needsSync =
+          Boolean(data.needsPromSync) || Boolean(data.needsRozetkaSync)
+
+        return prisma.products.update({ where: { productId }, data })
+      },
+    )
+
     await Promise.allSettled(metaUpdatePromises)
- 
+
     return { syncResults, syncErrors, syncStatus }
   }
-
 
   /**
    * Syncs new products from marketplaces to the database.

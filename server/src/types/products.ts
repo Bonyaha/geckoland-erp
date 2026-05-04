@@ -1,7 +1,6 @@
 // server/src/types/products.ts
 
-import { Source, Prisma } from '../config/database'
-import { Decimal } from '@prisma/client/runtime/library'
+import { Source, Prisma, Decimal } from '../config/database'
 import {
   CreateProductInput,
   ProductUpdateParams,

@@ -7,8 +7,9 @@ import {
   DeliveryOption,
   PaymentOption,
   PaymentStatus,
+  Decimal,
 } from '../config/database'
-import { Decimal } from '@prisma/client/runtime/library'
+
 import {
   OrderCustomerInfo,
   OrderDeliveryInfo as OrderDeliveryInfoInput,
@@ -157,7 +158,6 @@ export type {
   CRMOrderCreateInput,
   CRMOrderItem,
   OrderUpdateInput,
-  SyncOrdersInput,
   OrderCustomerInfo,
   OrderRecipientInfo,
   OrderDeliveryInfo as OrderDeliveryInfoInput,

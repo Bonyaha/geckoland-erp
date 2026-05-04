@@ -17,30 +17,6 @@ import {
 const orderService = new OrderService()
 
 /**
- * Fetch new orders from Prom marketplace and create them in database
- */
-export const fetchNewPromOrders = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  console.log('Received request to fetch new Prom orders')
-
-  const result: OrderSyncResult =
-    await orderService.fetchAndCreateNewPromOrders()
-
-  // Adjust response based on errors
-  const hasErrors = result.errors > 0
-
-  res.status(hasErrors ? 207 : 200).json({
-    success: !hasErrors,
-    message: hasErrors
-      ? `Processed Prom orders with ${result.errors} errors`
-      : 'Successfully processed all Prom orders',
-    data: result,
-  })
-}
-
-/**
  * Create new manual order from frontend (CRM)
  * @route POST /api/orders/create-crm
  */
@@ -207,32 +183,6 @@ export const getOrderById = async (
   })
 }
 
-/**
- * Manual trigger to sync orders from all marketplaces
- */
-export const syncOrders = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  const { marketplace } = req.body
-  if (marketplace && marketplace !== 'prom') {
-    throw ErrorFactory.badRequest(
-      'Invalid marketplace. Currently only "prom" is supported.'
-    )
-  }
-
-  const result = await orderService.fetchAndCreateNewPromOrders()
-
-  if (!result) {
-    throw ErrorFactory.internal('Failed to sync orders')
-  }
-
-  res.status(200).json({
-    success: true,
-    message: `Successfully synced orders from ${marketplace || 'prom'}`,
-    data: result,
-  })
-}
 
 export const checkForNewOrders = async (
   req: Request,

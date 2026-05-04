@@ -8,6 +8,7 @@ import {
   syncNewProductsFromMarketplaces,
   syncAllQuantitiesToMarketplaces,
   getProductStats,
+  getProductSyncStatus,
 } from '../controllers/products/productController'
 import { asyncHandler } from '../middleware/asyncHandler'
 import { validate } from '../middleware/validation'
@@ -39,6 +40,9 @@ router.get('/stats', asyncHandler(getProductStats))
 router.get('/', validate(getProductsQuerySchema), asyncHandler(getProducts))
 router.post('/', validate(createProductSchema), asyncHandler(createProduct))
 
+// --- Single product routes (must come after /sync and /stats to avoid param conflicts) ---
+// GET /api/products/:productId/sync-status
+router.get('/:productId/sync-status', asyncHandler(getProductSyncStatus))
 
 router.patch(
   '/:productId',

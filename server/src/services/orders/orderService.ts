@@ -4,8 +4,9 @@ import prisma, {
   Prisma,
   OrderStatus,
   PaymentStatus,
+  Decimal,
 } from '../../config/database'
-import { Decimal } from '@prisma/client/runtime/library'
+
 import { PromClient, type PromOrder } from '../marketplaces/promClient'
 import { RozetkaClient, type RozetkaOrder } from '../marketplaces/rozetkaClient'
 import { nanoid } from 'nanoid'

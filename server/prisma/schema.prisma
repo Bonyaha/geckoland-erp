@@ -1,10 +1,10 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma/client"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model Users {
@@ -203,6 +203,7 @@ model Sales {
   @@index([createdAt])
   @@index([productId])
   @@index([orderId])
+  @@index([productId, createdAt])
 }
 
 model Purchases {

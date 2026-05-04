@@ -1,5 +1,5 @@
 // client/src/app/products/ProductRow.tsx
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import {
   Pencil,
@@ -9,6 +9,9 @@ import {
   Settings,
   Loader2,
   Calendar,
+  CheckCircle2,
+  CloudUpload,
+  AlertCircle,
 } from 'lucide-react'
 import { formatDateTime } from '@/utils/dateUtils'
 import {
@@ -21,7 +24,10 @@ import UpdateQuantityModal from './UpdateQuantityModal'
 import UpdateCostPriceModal from './UpdateCostPriceModal'
 import UpdatePriceModal from './UpdatePriceModal'
 import SalesDatePickerModal from './SalesDatePickerModal'
-import { useUpdateProductMutation } from '@/state/api'
+import {
+  useUpdateProductMutation,
+  useGetProductSyncStatusQuery,
+} from '@/state/api'
 import CopyableItem from '@/app/(components)/CopyableItem'
 
 // --- Type Definitions ---
@@ -45,6 +51,9 @@ type ProductType = {
     prom?: CategoryData
     rozetka?: CategoryData
   }
+  needsSync?: boolean
+  needsPromSync?: boolean
+  needsRozetkaSync?: boolean
 }
 
 type SalesData = {
@@ -67,8 +76,15 @@ type ProductRowProps = {
   onCostUpdate?: (productName: string) => void
   onSalesDateChange: (productId: string, date: Date) => void
   onClearSalesDate: (productId: string) => void
-  showToast: (message: string, type: 'success' | 'error' | 'info') => void
+  showToast: (
+    message: string,
+    type: 'success' | 'error' | 'info' | 'warning',
+  ) => void
 }
+
+//Constants for polling
+const POLL_INTERVAL_MS = 2000 // Poll every 2 seconds
+const POLL_MAX_ATTEMPTS = 15 // Stop after 30 seconds (15 × 2s)
 
 // --- Component Definition ---
 
@@ -94,7 +110,93 @@ const ProductRow = ({
   const [isCostModalOpen, setIsCostModalOpen] = useState(false)
   const [isQuantityModalOpen, setIsQuantityModalOpen] = useState(false)
   const [isSalesDateModalOpen, setIsSalesDateModalOpen] = useState(false)
-  const [manualCost, setManualCost] = useState<string>('')  
+  const [manualCost, setManualCost] = useState<string>('')
+
+  //Polling state
+  const [isPolling, setIsPolling] = useState(false)
+  const [syncComplete, setSyncComplete] = useState(false)
+  const [syncFailed, setSyncFailed] = useState(false)
+  const pollAttemptsRef = useRef(0)
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const wasSyncedRef = useRef(false)
+
+  //RTK Query for sync status, only active when polling
+  const { data: syncStatus, refetch: refetchSyncStatus } =
+    useGetProductSyncStatusQuery(product.productId, {
+      skip: !isPolling, // Only fetch when we're actively polling
+    })
+
+  // Polling logic: check sync flags, stop when done
+  useEffect(() => {
+    if (!isPolling) return
+
+    if (syncStatus && !syncStatus.needsSync) {
+      // Sync is complete!
+      setIsPolling(false)
+      setSyncComplete(true)
+      pollAttemptsRef.current = 0
+      wasSyncedRef.current = true
+
+      showToast('✅ Синхронізовано з маркетплейсами', 'success')
+
+      // Hide the checkmark after 3 seconds
+      pollTimeoutRef.current = setTimeout(() => {
+        setSyncComplete(false)
+      }, 3000)
+
+      return
+    }
+
+    // Still syncing — schedule next poll
+    pollAttemptsRef.current += 1
+
+    if (pollAttemptsRef.current >= POLL_MAX_ATTEMPTS) {
+      // Timed out — stop polling, show warning
+      setIsPolling(false)
+      setSyncFailed(true)
+      pollAttemptsRef.current = 0
+
+      showToast(
+        '⚠️ Синхронізація займає більше часу ніж очікувалось',
+        'warning',
+      )
+
+      pollTimeoutRef.current = setTimeout(() => {
+        setSyncFailed(false)
+      }, 4000)
+
+      return
+    }
+
+    // Schedule next refetch
+    pollTimeoutRef.current = setTimeout(() => {
+      refetchSyncStatus()
+    }, POLL_INTERVAL_MS)
+
+    return () => {
+      if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current)
+    }
+  }, [isPolling, syncStatus, refetchSyncStatus, showToast])
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current)
+    }
+  }, [])
+
+  // Start polling after a product update
+  const startSyncPolling = useCallback(() => {
+    // Reset state
+    setSyncComplete(false)
+    setSyncFailed(false)
+    pollAttemptsRef.current = 0
+
+    // Small delay before first poll — give background sync time to start
+    pollTimeoutRef.current = setTimeout(() => {
+      setIsPolling(true)
+    }, 1000)
+  }, [])
 
   const cardButtonClass =
     'text-xs bg-white border border-gray-200 text-blue-600 px-3 py-1 rounded-md hover:bg-blue-50 transition-colors shadow-sm w-full max-w-[110px] cursor-pointer'
@@ -183,9 +285,11 @@ const ProductRow = ({
         targetMarketplace: 'all', // or let user choose
       }).unwrap()
 
-      // Optional: Show success message     
+      // Optional: Show success message
+      startSyncPolling()
     } catch (error) {
       console.error('Failed to update quantity:', error)
+      showToast('❌ Помилка оновлення кількості', 'error')
       // Optional: Show error message to user
     }
   }
@@ -198,8 +302,11 @@ const ProductRow = ({
         price: newPrice,
         targetMarketplace: 'all',
       }).unwrap()
+
+      startSyncPolling()
     } catch (error) {
       console.error('Failed to update price:', error)
+      showToast('❌ Помилка оновлення ціни', 'error')
     }
   }
 
@@ -324,6 +431,54 @@ const ProductRow = ({
    } */
   }
 
+  // Sync status indicator component (shown inside quantity/price cells)
+  const SyncIndicator = () => {
+    if (isUpdating) return null // The button already shows "Оновлення..."
+
+    if (isPolling) {
+      return (
+        <div className='flex items-center gap-1 mt-1'>
+          <Loader2 className='w-3 h-3 text-blue-400 animate-spin' />
+          <span className='text-[10px] text-blue-400'>Синхронізація...</span>
+        </div>
+      )
+    }
+
+    if (syncComplete) {
+      return (
+        <div className='flex items-center gap-1 mt-1'>
+          <CheckCircle2 className='w-3 h-3 text-green-500' />
+          <span className='text-[10px] text-green-500'>Синхронізовано</span>
+        </div>
+      )
+    }
+
+    if (syncFailed) {
+      return (
+        <div className='flex items-center gap-1 mt-1'>
+          <AlertCircle className='w-3 h-3 text-yellow-500' />
+          <span className='text-[10px] text-yellow-500'>
+            Синхронізується...
+          </span>
+        </div>
+      )
+    }
+
+    // Show icon if product has pending sync (from a previous session/page load)
+    if (product.needsSync && !wasSyncedRef.current) {
+      return (
+        <div className='flex items-center gap-1 mt-1'>
+          <CloudUpload className='w-3 h-3 text-gray-400' />
+          <span className='text-[10px] text-gray-400'>
+            Очікує синхронізації
+          </span>
+        </div>
+      )
+    }
+
+    return null
+  }
+
   return (
     <tr
       key={product.productId}
@@ -438,6 +593,8 @@ const ProductRow = ({
           >
             Змінити
           </button>
+          {/* Show sync indicator in price cell too */}
+          <SyncIndicator />
         </div>
       </td>
 
@@ -461,6 +618,8 @@ const ProductRow = ({
           >
             {isUpdating ? 'Оновлення...' : 'Додати\\Зменшити'}
           </button>
+          {/* Sync status indicator shown below the button */}
+          <SyncIndicator />
         </div>
       </td>
 

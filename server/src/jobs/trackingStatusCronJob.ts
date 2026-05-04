@@ -1,5 +1,5 @@
 // server/src/jobs/trackingStatusCronJob.ts
-import cron from 'node-cron'
+import cron, { ScheduledTask } from 'node-cron'
 import { trackingService } from '../services/tracking/trackingService'
 
 /**
@@ -49,7 +49,7 @@ export function startTrackingStatusCronJob() {
 /**
  * Stop the cron job (useful for cleanup)
  */
-export function stopTrackingStatusCronJob(job: cron.ScheduledTask) {
+export function stopTrackingStatusCronJob(job: ScheduledTask) {
   job.stop()
   console.log('🛑 [CRON] Tracking status cron job stopped')
 }
