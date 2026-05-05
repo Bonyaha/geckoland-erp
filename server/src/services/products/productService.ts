@@ -255,8 +255,21 @@ class ProductService {
    * })
    */
   async createProduct(productData: ProductCreateInput) {
+const externalIds = productData.externalIds as any
+const promId = externalIds?.prom ? String(externalIds.prom) : null
+const rozetkaItemId = externalIds?.rozetka?.item_id
+  ? String(externalIds.rozetka.item_id)
+  : null
+const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
+  ? String(externalIds.rozetka.rz_item_id)
+  : null
+
     const product = await prisma.products.create({
-      data: productData,
+      data: {...productData,
+        promId,
+        rozetkaItemId,
+        rozetkaRzItemId
+      },
     })
     return product
   }
@@ -698,7 +711,7 @@ class ProductService {
               (result as PromiseRejectedResult).reason?.message ||
               String((result as PromiseRejectedResult).reason),
           }),
-    )    
+    )
 
     // If this is ONLY a cost price update, skip marketplace sync entirely
     if (isCostPriceOnlyUpdate) {
@@ -743,10 +756,11 @@ class ProductService {
       pushItems.push({ productId, externalIds, updates: original.updates })
     }
 
-        // CHANGE: Fire-and-forget background marketplace sync — return response
+    // CHANGE: Fire-and-forget background marketplace sync — return response
     // to the user immediately without waiting for Prom / Rozetka APIs.
     if (pushItems.length > 0) {
-      this.syncBatchToMarketplacesInBackground( // NEW method call
+      this.syncBatchToMarketplacesInBackground(
+        // NEW method call
         pushItems,
         targetMarketplace ?? 'all',
         rozetkaActive,
@@ -788,7 +802,7 @@ class ProductService {
   // NEW private helper — runs AFTER the response is already sent to the user.
   // Mirrors syncToMarketplacesInBackground() but operates on a batch of products.
   // ────────────────────────────────────────────────────────────────────────────
- 
+
   /**
    * Calls Prom and Rozetka APIs for a batch of products in the background,
    * then writes the resulting sync-status metadata (lastPromSync, promQuantity,
@@ -806,15 +820,15 @@ class ProductService {
     console.log(
       `🔄 Starting background batch marketplace sync for ${items.length} products`,
     )
- 
+
     try {
       const { syncResults, syncErrors, syncStatus } =
         await this.pushProductsToMarketplaces(items, target, rozetkaActive)
- 
+
       // pushProductsToMarketplaces already handles the per-product DB
       // sync-status writes (lastPromSync, promQuantity, needsRozetkaSync, needsSync).
       // Nothing extra to do here — just log the outcome.
- 
+
       if (syncErrors.length === 0) {
         console.log(
           `✅ Background batch sync completed successfully for ${items.length} products`,
@@ -935,7 +949,7 @@ class ProductService {
           data.lastPromSync = syncTime
           if (updates.quantity !== undefined)
             data.promQuantity = updates.quantity
- data.needsPromSync = false
+          data.needsPromSync = false
         }
 
         if (syncStatus.rozetkaSynced) {
@@ -1121,6 +1135,13 @@ class ProductService {
           ),
           lastPromSync: new Date(),
           lastRozetkaSync: new Date(),
+          promId: promProduct.productId,
+          rozetkaItemId: matchingRozetkaProduct.externalIds.rozetka
+            ? String(matchingRozetkaProduct.externalIds.rozetka)
+            : null,
+          rozetkaRzItemId: matchingRozetkaProduct.productId
+            ? String(matchingRozetkaProduct.productId)
+            : null,
         })
 
         if (sku) matchedRozetkaSKUs.add(sku)
@@ -1131,6 +1152,7 @@ class ProductService {
           stockQuantity: normalizeQuantity(promProduct.stockQuantity),
           promQuantity: normalizeQuantity(promProduct.stockQuantity),
           lastPromSync: new Date(),
+          promId: promProduct.productId,
         })
       }
     }
@@ -1179,6 +1201,12 @@ class ProductService {
           stockQuantity: normalizeQuantity(rozetkaProduct.stockQuantity),
           rozetkaQuantity: normalizeQuantity(rozetkaProduct.stockQuantity),
           lastRozetkaSync: new Date(),
+          rozetkaItemId: rozetkaProduct.externalIds.rozetka
+            ? String(rozetkaProduct.externalIds.rozetka)
+            : null,
+          rozetkaRzItemId: rozetkaProduct.productId
+            ? String(rozetkaProduct.productId)
+            : null,
         }))
 
       createPromises.push(
@@ -1240,6 +1268,9 @@ class ProductService {
         stockQuantity: normalizeQuantity(promProduct.stockQuantity),
         promQuantity: normalizeQuantity(promProduct.stockQuantity),
         lastPromSync: new Date(),
+        promId: promProduct.externalIds?.prom
+          ? String(promProduct.externalIds.prom)
+          : null,
       },
     })
   }
@@ -1256,6 +1287,12 @@ class ProductService {
         stockQuantity: normalizeQuantity(rozetkaProduct.stockQuantity),
         rozetkaQuantity: normalizeQuantity(rozetkaProduct.stockQuantity),
         lastRozetkaSync: new Date(),
+        rozetkaItemId: rozetkaProduct.externalIds.rozetka
+          ? String(rozetkaProduct.externalIds.rozetka)
+          : null,
+        rozetkaRzItemId: rozetkaProduct.productId
+          ? String(rozetkaProduct.productId)
+          : null,
       },
     })
   }

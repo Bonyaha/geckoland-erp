@@ -162,30 +162,25 @@ class OrderService {
         if (product) return product.productId
       }
 
-      // Then try by external ID in the externalIds JSON field
-      //
-      const products = await prisma.products.findMany({
-        select: { productId: true, externalIds: true },
-      })
+      if (source === Source.prom) {
+        const product = await prisma.products.findUnique({
+          where: { promId: marketplaceProductId },
+          select: { productId: true },
+        })
+        if (product) return product.productId
+      } else if (source === Source.rozetka) {        
+        const byItemId = await prisma.products.findFirst({
+          where: { rozetkaItemId: marketplaceProductId },
+          select: { productId: true },
+        })
+        if (byItemId) return byItemId.productId
 
-      for (const product of products) {
-        const externalIds = product.externalIds as any
-
-        if (source === Source.prom) {
-          if (externalIds?.prom === marketplaceProductId) {
-            return product.productId
-          }
-        } else if (source === Source.rozetka) {
-          // For Rozetka, check both rz_item_id and item_id
-          if (
-            externalIds?.rozetka?.rz_item_id === marketplaceProductId ||
-            externalIds?.rozetka?.item_id === marketplaceProductId
-          ) {
-            return product.productId
-          }
-        }
+        const byRzItemId = await prisma.products.findFirst({
+          where: { rozetkaRzItemId: marketplaceProductId },
+          select: { productId: true },
+        })
+        if (byRzItemId) return byRzItemId.productId
       }
-
       // Product not found — throw so the order is rejected
       throw ErrorFactory.badRequest(
         `Product not found in inventory for SKU: "${sku || 'N/A'}", Marketplace Product ID: ${marketplaceProductId} (${source}). ` +
