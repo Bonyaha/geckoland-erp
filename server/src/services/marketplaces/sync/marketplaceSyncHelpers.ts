@@ -143,7 +143,7 @@ export async function syncRozetkaProductIds() {
     let updatedCount = 0
     let notFoundCount = 0
 
-    // Step 3: Iterate and update products in the database
+    // Iterate and update products in the database
     for (const rozetkaProduct of allRozetkaProducts) {
       const sku = rozetkaProduct.article
 
@@ -188,9 +188,11 @@ export async function syncRozetkaProductIds() {
 
           // Update each product using its actual primary key, `productId`
           await prisma.products.update({
-            where: { productId: productToUpdate.productId }, // Use the guaranteed unique @id field
+            where: { productId: productToUpdate.productId },
             data: {
               externalIds: newExternalIds,
+              rozetkaItemId: String(rozetkaProduct.item_id),
+              rozetkaRzItemId: String(rozetkaProduct.rz_item_id),
             },
           })
 
@@ -223,14 +225,14 @@ export async function syncRozetkaProductIds() {
 
 // ─── Marketplace Registry ────────────────────────────────────────────────────
 /**
-* Single source of truth for which marketplaces exist and how to detect
-* whether a product is linked to each one.
-*
-* To add a new marketplace:
-*   1. Add its key to KnownMarketplace in types/marketplaces.ts
-*   2. Add a matching entry here with the appropriate hasLink predicate
-*   3. Add the external ID structure to ProductExternalIds if needed
-*/
+ * Single source of truth for which marketplaces exist and how to detect
+ * whether a product is linked to each one.
+ *
+ * To add a new marketplace:
+ *   1. Add its key to KnownMarketplace in types/marketplaces.ts
+ *   2. Add a matching entry here with the appropriate hasLink predicate
+ *   3. Add the external ID structure to ProductExternalIds if needed
+ */
 export const MARKETPLACE_REGISTRY: Record<
   KnownMarketplace,
   { hasLink: (ext: ProductExternalIds | null) => boolean }
@@ -270,7 +272,6 @@ export const MARKETPLACE_REGISTRY: Record<
  *   isBatch: false
  * })
  */
-
 
 export async function createMarketplaceUpdatePromise({
   marketplaceName,

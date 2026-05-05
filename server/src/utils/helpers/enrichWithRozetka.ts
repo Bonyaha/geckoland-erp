@@ -55,6 +55,8 @@ export async function enrichWithRozetka(
         },
       },
       rozetkaQuantity: match.quantity,
+      rozetkaItemId: match.item_id,
+      rozetkaRzItemId: match.rz_item_id,
       categoryData:
         match.categoryId && match.categoryName
           ? {

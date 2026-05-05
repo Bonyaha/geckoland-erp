@@ -84,6 +84,15 @@ const updateAllMarketplaceQuantities = async () => {
       create: {
         ...promProduct,
         stockQuantity: normalizeQuantity(promProduct.stockQuantity),
+        promId: promProduct.externalIds?.prom
+          ? String(promProduct.externalIds.prom)
+          : null,
+        rozetkaItemId: (promProduct.externalIds as any)?.rozetka?.item_id
+          ? String((promProduct.externalIds as any).rozetka.item_id)
+          : null,
+        rozetkaRzItemId: (promProduct.externalIds as any)?.rozetka?.rz_item_id
+          ? String((promProduct.externalIds as any).rozetka.rz_item_id)
+          : null,
       },
     })
   }

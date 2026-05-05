@@ -375,6 +375,9 @@ export interface EnrichedProductData {
       item_id?: string
     }
   }
+  promId?: string | null
+  rozetkaItemId?: string | null
+  rozetkaRzItemId?: string | null
   categoryData?: {
     prom?: {
       id: number

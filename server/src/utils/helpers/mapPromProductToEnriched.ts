@@ -45,7 +45,10 @@ export function mapPromProductToEnriched(
               '',
           },
         }
-      : undefined,    
+      : undefined,
+    promId: p.externalIds.prom || null,
+    rozetkaItemId: null, // Will be filled by enrichWithRozetka
+    rozetkaRzItemId: null, // Will be filled by enrichWithRozetka
     // Preserve all Prom-specific sync fields via the index signature
     priceOld: p.priceOld ?? null,
     pricePromo: p.pricePromo ?? null,
