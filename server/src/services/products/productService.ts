@@ -1019,7 +1019,7 @@ const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
 
     console.log('🔄 Starting sync for new products from marketplaces...')
 
-    // OPTIMIZATION 1: Fetch marketplace data in parallel with minimal DB query
+    // Fetch marketplace data in parallel with minimal DB query
     // Instead of fetching ALL product fields, only get what we need for comparison
     const [existingLookup, promProducts, rozetkaProducts] = await Promise.all([
       // Only fetch the fields needed for duplicate detection
@@ -1041,7 +1041,7 @@ const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
       }),
     ])
 
-    // OPTIMIZATION 2: Early return if no new products to process
+    // Early return if no new products to process
     if (promProducts.length === 0 && rozetkaProducts.length === 0) {
       console.log('ℹ️ No products fetched from marketplaces')
       return result
@@ -1051,7 +1051,7 @@ const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
       `✅ Fetched ${promProducts.length} Prom, ${rozetkaProducts.length} Rozetka products`,
     )
 
-    // OPTIMIZATION 3: Build efficient lookup structures in a single pass
+    // Build efficient lookup structures in a single pass
     const existingPromIds = new Set<string>()
     const existingRozetkaIds = new Set<string>()
     const existingSKUs = new Set<string>()
@@ -1076,7 +1076,7 @@ const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
       `📦 Existing: ${existingPromIds.size} Prom, ${existingRozetkaIds.size} Rozetka, ${existingSKUs.size} SKUs`,
     )
 
-    // OPTIMIZATION 4: Build Rozetka lookup only once and filter simultaneously
+    // Build Rozetka lookup only once and filter simultaneously
     const rozetkaBySKU = new Map<string, RozetkaProductData>()
     const newRozetkaProducts: RozetkaProductData[] = []
 
@@ -1099,7 +1099,7 @@ const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
       }
     }
 
-    // OPTIMIZATION 5: Filter and prepare Prom products with matching in one pass
+    // Filter and prepare Prom products with matching in one pass
     const promCreateOperations: Prisma.ProductsCreateInput[] = []
     const matchedRozetkaSKUs = new Set<string>()
 
@@ -1160,7 +1160,7 @@ const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
     console.log(`📊 New products: ${promCreateOperations.length} Prom-sourced`)
     console.log('SKUs:', promCreateOperations.map((p) => p.sku).join(', '))
 
-    // OPTIMIZATION 6: Execute batch creates in parallel (not sequentially)
+    // Execute batch creates in parallel (not sequentially)
     const createPromises: Promise<any>[] = []
 
     // Prom products batch
@@ -1186,7 +1186,7 @@ const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
       )
     }
 
-    // OPTIMIZATION 7: Filter Rozetka-only products more efficiently
+    // Filter Rozetka-only products
     const rozetkaOnlyProducts = newRozetkaProducts.filter(
       (p) => !p.sku || !matchedRozetkaSKUs.has(p.sku),
     )
@@ -1232,7 +1232,7 @@ const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
       )
     }
 
-    // OPTIMIZATION 8: Wait for both batch operations in parallel
+    // Wait for both batch operations in parallel
     if (createPromises.length > 0) {
       await Promise.all(createPromises)
     }
