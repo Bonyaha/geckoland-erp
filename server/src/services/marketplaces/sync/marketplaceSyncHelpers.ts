@@ -56,10 +56,10 @@ export const initializeMarketplaceQuantitiesOptimized = async () => {
       // Use Prisma transaction for bulk updates
       await prisma.$transaction(
         needsPromInit.map((product) => {
-          const externalIds = product.externalIds as { prom?: string }
-          const promProduct = externalIds?.prom
-            ? promProductsMap.get(externalIds.prom)
+          const promProduct = product.promId
+            ? promProductsMap.get(product.promId)
             : null
+
           const quantity = promProduct
             ? normalizeQuantity(promProduct.quantity_in_stock)
             : product.stockQuantity
@@ -91,11 +91,8 @@ export const initializeMarketplaceQuantitiesOptimized = async () => {
       // Use Prisma transaction for bulk updates
       await prisma.$transaction(
         needsRozetkaInit.map((product) => {
-          const externalIds = product.externalIds as {
-            rozetka?: { rz_item_id: string; item_id: string }
-          }
-          const rozetkaProduct = externalIds?.rozetka
-            ? rozetkaProductsMap.get(externalIds.rozetka.rz_item_id)
+          const rozetkaProduct = product.rozetkaRzItemId
+            ? rozetkaProductsMap.get(product.rozetkaRzItemId)
             : null
           const quantity = rozetkaProduct
             ? normalizeQuantity(rozetkaProduct.stock_quantity)
@@ -223,55 +220,50 @@ export async function syncRozetkaProductIds() {
   }
 }
 
-// ─── Marketplace Registry ────────────────────────────────────────────────────
 /**
- * Single source of truth for which marketplaces exist and how to detect
- * whether a product is linked to each one.
- *
- * To add a new marketplace:
- *   1. Add its key to KnownMarketplace in types/marketplaces.ts
- *   2. Add a matching entry here with the appropriate hasLink predicate
- *   3. Add the external ID structure to ProductExternalIds if needed
+ * List of all supported marketplaces.
+ * Used when iterating over all marketplaces (e.g., sync/push operations).
  */
-export const MARKETPLACE_REGISTRY: Record<
-  KnownMarketplace,
-  { hasLink: (ext: ProductExternalIds | null) => boolean }
-> = {
-  prom: {
-    hasLink: (ext) => Boolean(ext?.prom),
-  },
-  rozetka: {
-    hasLink: (ext) => Boolean(ext?.rozetka?.item_id),
-  },
-}
-
+export const ALL_MARKETPLACES: readonly KnownMarketplace[] = ['prom', 'rozetka'] as const
+ 
+//NEW: Optimized helper using denormalized indexed columns
 /**
- * Creates a promise wrapper for marketplace update operations with consistent
- * error handling and result tracking. Supports both single and batch updates.
- *
- * @param options - Configuration for the marketplace update operation
- * @returns Promise that resolves when update completes (success or failure)
- *
- * @remarks
- * This function centralizes error handling for all marketplace updates.
- * Errors are caught and logged but don't throw to allow other updates to proceed.
- * Results are tracked in the provided arrays for later analysis.
- *
+ * Check if a product has marketplace links using denormalized indexed columns.
+ * This is MUCH faster than querying externalIds JSON field.
+ * 
+ * Uses B-tree indexes on promId, rozetkaItemId, rozetkaRzItemId for instant lookups.
+ * 
+ * @param product - Product with denormalized marketplace ID columns
+ * @param marketplace - Which marketplace to check
+ * @returns true if the product is linked to the marketplace
+ * 
  * @example
- * const syncResults: string[] = []
- * const syncErrors: MarketplaceUpdateResult[] = []
- * const syncStatus = createMarketplaceSyncStatus()
- *
- * await createMarketplaceUpdatePromise({
- *   marketplaceName: 'Prom',
- *   productId: 'prod_123',
- *   updateFunction: () => updatePromProduct('123', { quantity: 10 }),
- *   onSuccess: () => syncStatus.promSynced = true,
- *   resultsArray: syncResults,
- *   errorsArray: syncErrors,
- *   isBatch: false
+ * const product = await prisma.products.findUnique({
+ *   where: { productId: 'prod_123' },
+ *   select: { promId: true, rozetkaItemId: true, rozetkaRzItemId: true }
  * })
+ * 
+ * if (hasMarketplaceLink(product, 'prom')) {
+ *   // Product is linked to Prom
+ * }
  */
+export function hasMarketplaceLink(
+  product: {
+    promId?: string | null
+    rozetkaItemId?: string | null
+    rozetkaRzItemId?: string | null
+  },
+  marketplace: KnownMarketplace,
+): boolean {
+  switch (marketplace) {
+    case 'prom':
+      return Boolean(product.promId)
+    case 'rozetka':
+      return Boolean(product.rozetkaItemId || product.rozetkaRzItemId)
+    default:
+      return false
+  }
+}
 
 export async function createMarketplaceUpdatePromise({
   marketplaceName,

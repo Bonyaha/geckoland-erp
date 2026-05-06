@@ -293,7 +293,13 @@ const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
     const [currentProduct, rozetkaActive] = await Promise.all([
       prisma.products.findUnique({
         where: { productId },
-        select: { price: true, stockQuantity: true, externalIds: true },
+        select: {
+          price: true,
+          stockQuantity: true,
+          externalIds: true,
+          promId: true,
+          rozetkaItemId: true,
+        },
       }),
       settingsService.isRozetkaStoreActive(),
     ])
@@ -350,14 +356,14 @@ const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
         (!targetMarketplace ||
           targetMarketplace === 'all' ||
           targetMarketplace === 'prom') &&
-        externalIds?.prom
+        Boolean(currentProduct.promId)
 
       // Check if we need to sync to Rozetka
       const needsRozetkaSync =
         (!targetMarketplace ||
           targetMarketplace === 'all' ||
           targetMarketplace === 'rozetka') &&
-        externalIds?.rozetka?.item_id &&
+        Boolean(currentProduct.rozetkaItemId) &&
         rozetkaActive
 
       if (needsPromSync || needsRozetkaSync) {
@@ -368,7 +374,7 @@ const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
       // For Rozetka when store is inactive, track quantity but mark as needing sync
       if (
         !rozetkaActive &&
-        externalIds?.rozetka?.item_id &&
+        Boolean(currentProduct.rozetkaItemId) &&
         (!targetMarketplace ||
           targetMarketplace === 'all' ||
           targetMarketplace === 'rozetka') &&
@@ -573,6 +579,8 @@ const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
         productId: true,
         stockQuantity: true,
         externalIds: true,
+        promId: true,
+        rozetkaItemId: true,
       },
     })
 
@@ -631,20 +639,19 @@ const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
           item.updates.price !== undefined
 
         if (hasMarketplaceFields && !isCostPriceOnlyUpdate) {
-          const externalIds = dbMap.get(item.productId)
-            ?.externalIds as ProductExternalIds | null
+          const dbRow = dbMap.get(item.productId)
 
           const wouldSyncProm =
             (!targetMarketplace ||
               targetMarketplace === 'all' ||
               targetMarketplace === 'prom') &&
-            !!externalIds?.prom
+            Boolean(dbRow?.promId)
 
           const wouldSyncRozetka =
             (!targetMarketplace ||
               targetMarketplace === 'all' ||
               targetMarketplace === 'rozetka') &&
-            !!externalIds?.rozetka?.item_id &&
+            Boolean(dbRow?.rozetkaItemId) &&
             rozetkaActive
 
           if (wouldSyncProm || wouldSyncRozetka) {
@@ -657,7 +664,7 @@ const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
           // so the value is accurate when the store eventually resumes.
           if (
             !rozetkaActive &&
-            externalIds?.rozetka?.item_id &&
+            Boolean(dbRow?.rozetkaItemId) &&
             (!targetMarketplace ||
               targetMarketplace === 'all' ||
               targetMarketplace === 'rozetka') &&
@@ -1027,6 +1034,8 @@ const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
         select: {
           sku: true,
           externalIds: true,
+          promId: true,
+          rozetkaRzItemId: true,
         },
       }),
       fetchPromProductsWithTransformation().catch((error) => {
@@ -1057,14 +1066,12 @@ const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
     const existingSKUs = new Set<string>()
 
     for (const product of existingLookup) {
-      const externalIds = product.externalIds as ProductExternalIds | null
-
-      if (externalIds?.prom) {
-        existingPromIds.add(externalIds.prom.toString())
+      if (product.promId) {
+        existingPromIds.add(product.promId)
       }
 
-      if (externalIds?.rozetka?.rz_item_id) {
-        existingRozetkaIds.add(externalIds.rozetka.rz_item_id.toString())
+      if (product.rozetkaRzItemId) {
+        existingRozetkaIds.add(product.rozetkaRzItemId)
       }
 
       if (product.sku) {

@@ -66,9 +66,6 @@ const updateAllMarketplaceQuantities = async () => {
     )
   }
 
-  // Create a map for quick lookup
-  //const promProductsMap = new Map(promProducts.map((p) => [p.id.toString(), p]))
-
   // Update database with Prom products (stockQuantity and add new products)
   for (const promProduct of promProducts) {
     const quantity = normalizeQuantity(promProduct.stockQuantity)
@@ -99,15 +96,23 @@ const updateAllMarketplaceQuantities = async () => {
   console.log(`✅ Updated/created ${promProducts.length} products from Prom`)
 
   // Get all products after Prom sync
-  const allProducts = await prisma.products.findMany()
+  const allProducts = await prisma.products.findMany({
+    select: {
+      productId: true,
+      stockQuantity: true,
+      rozetkaItemId: true,
+      rozetkaRzItemId: true,
+      externalIds: true,
+    },
+  })
   console.log(
     `Found ${allProducts.length} products to update marketplace quantities`,
   )
 
-  const productsWithRozetka = allProducts.flatMap((p) => {
-    const rozetka = (p.externalIds as any)?.rozetka
-    return rozetka ? [{ ...p, rozetkaInfo: rozetka }] : [] // Return array with 1 item or empty array
-  })
+  const productsWithRozetka = allProducts.filter(
+    (p) => p.rozetkaRzItemId != null,
+  )
+
 
   console.log(`Found ${productsWithRozetka.length} products with Rozetka IDs`)
   console.log('example of a product with Rozetka ID:', productsWithRozetka[0])
@@ -124,9 +129,10 @@ const updateAllMarketplaceQuantities = async () => {
       // Simplified transaction logic using pre-extracted rozetkaInfo
       await prisma.$transaction(
         productsWithRozetka.map((product) => {
-          const rozetkaProduct = rozetkaProductsMap.get(
-            product.rozetkaInfo.rz_item_id,
-          )
+          const rozetkaProduct = product.rozetkaRzItemId
+            ? rozetkaProductsMap.get(product.rozetkaRzItemId)
+            : null
+
 
           const quantity = rozetkaProduct
             ? normalizeQuantity(rozetkaProduct.stock_quantity)
@@ -223,6 +229,16 @@ export const syncInventoryAdjustment = async (
 
     const appProduct = await prisma.products.findUnique({
       where: { productId: productId },
+      select: {
+        productId: true,
+        stockQuantity: true,
+        promQuantity: true,
+        rozetkaQuantity: true,
+        externalIds: true,
+        promId: true,
+        rozetkaItemId: true,
+        rozetkaRzItemId: true,
+      },
     })
 
     if (!appProduct) {
@@ -435,10 +451,9 @@ export const syncInventoryAdjustment = async (
         )
         continue
       }
-
-      console.log(
+     /*  console.log(
         `Preparing Rozetka sync for product ${entry.productId} with quantity ${entry.newRozetkaQuantity}`,
-      )
+      ) */
       rozetkaUpdates.push({
         productId: externalIds.rozetka.item_id,
         updates: { quantity: entry.newRozetkaQuantity },

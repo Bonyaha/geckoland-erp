@@ -7,7 +7,10 @@ import {
   ProductExternalIds,
   KnownMarketplace,
 } from '../../types/marketplaces'
-import { MARKETPLACE_REGISTRY } from '../../services/marketplaces/sync/marketplaceSyncHelpers'
+import {
+  ALL_MARKETPLACES,
+  hasMarketplaceLink,
+} from '../../services/marketplaces/sync/marketplaceSyncHelpers'
 import {
   ProductQueryParams,
   ProductCreateInput,
@@ -182,14 +185,20 @@ export const syncAllQuantitiesToMarketplaces = async (
   const target: 'prom' | 'rozetka' | 'all' =
     req.body?.targetMarketplace ?? 'all'
  
-  const marketplacesToSync: KnownMarketplace[] =
-    target === 'all'
-      ? (Object.keys(MARKETPLACE_REGISTRY) as KnownMarketplace[])
-      : [target as KnownMarketplace]
+    const marketplacesToSync: KnownMarketplace[] =
+      target === 'all' ? [...ALL_MARKETPLACES] : [target as KnownMarketplace]
+
  
   // Single DB read — shared across all marketplace iterations
   const allProducts = await prisma.products.findMany({
-    select: { productId: true, stockQuantity: true, externalIds: true },
+    select: {
+      productId: true,
+      stockQuantity: true,
+      externalIds: true,
+      promId: true, 
+      rozetkaItemId: true,
+      rozetkaRzItemId: true,
+    },
   })
  
 // Fetch the store-active flag once; reused inside pushProductsToMarketplaces
@@ -204,10 +213,9 @@ export const syncAllQuantitiesToMarketplaces = async (
   > = {}
  
   for (const marketplace of marketplacesToSync) {
-    const { hasLink } = MARKETPLACE_REGISTRY[marketplace]
-
+    
     const eligible = allProducts.filter((p) =>
-      hasLink(p.externalIds as ProductExternalIds | null),
+      hasMarketplaceLink(p, marketplace),
     )
 
     if (eligible.length === 0) {
