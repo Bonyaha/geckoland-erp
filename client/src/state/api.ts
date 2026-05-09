@@ -141,7 +141,7 @@ export interface ExpenseByCategorySummary {
   date: string
 }
 
-//NEW - Expense record type for CRUD table
+//Expense record type for CRUD table
 export interface ExpenseRecord {
   expenseId: string
   category: string
@@ -149,7 +149,7 @@ export interface ExpenseRecord {
   timestamp: string
 }
 
-//NEW - Input for creating/updating expense
+//Input for creating/updating expense
 export interface CreateExpenseInput {
   category: string
   amount: number
@@ -485,6 +485,15 @@ export interface SyncAllToMarketplacesResult {
   breakdown: Record<string, SyncMarketplaceBreakdown>
 }
 
+export type SyncStrategy = 'same_quantity' | 'different_quantity'
+
+export interface SyncStrategyResponse {
+  success: boolean
+  syncStrategy: SyncStrategy
+}
+
+
+
 export const api = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL }),
   reducerPath: 'api',
@@ -819,6 +828,22 @@ export const api = createApi({
         body: body ?? {},
       }),
     }),
+    getSyncStrategy: build.query<SyncStrategyResponse, void>({
+      query: () => '/settings/sync-strategy',
+      providesTags: ['Settings'],
+    }),
+    setSyncStrategy: build.mutation<
+      SyncStrategyResponse,
+      { strategy: SyncStrategy }
+    >({
+      query: (body) => ({
+        url: '/settings/sync-strategy',
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: ['Settings'],
+    }),
+
     getUsers: build.query<User[], void>({
       query: () => '/users',
       providesTags: ['Users'],
@@ -887,7 +912,7 @@ export const {
   useCreateCRMOrderMutation,
   useUpdateOrderMutation,
   useFetchTrackingNumberMutation,
-  useUpdateAllTrackingStatusesMutation,    
+  useUpdateAllTrackingStatusesMutation,
   useCheckForNewOrdersMutation,
   useSyncPaymentStatusesMutation,
   useDeleteOrderMutation,
@@ -899,6 +924,8 @@ export const {
   useDeleteClientAddressMutation,
   useGetRozetkaStoreStatusQuery,
   useSetRozetkaStoreStatusMutation,
+  useGetSyncStrategyQuery,
+  useSetSyncStrategyMutation,
   useSyncAllQuantitiesToMarketplacesMutation,
   useGetExpensesByCategoryQuery,
   useGetExpensesQuery,

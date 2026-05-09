@@ -2,13 +2,9 @@
 //import cron from 'node-cron'
 
 import prisma from '../../../config/database'
-import {
-  fetchPromProductsWithTransformation,
-} from '../../data-fetchers/fetchPromProducts'
+import { fetchPromProductsWithTransformation } from '../../data-fetchers/fetchPromProducts'
 import { fetchRozetkaProducts } from '../../data-fetchers/fetchRozetkaProducts'
-import {
-  RozetkaUpdateParams,
-} from '../rozetkaClient'
+import { RozetkaUpdateParams } from '../rozetkaClient'
 import { normalizeQuantity } from '../../../utils/helpers/normalizeQuantity'
 import type {
   ProductSyncEntry,
@@ -18,11 +14,11 @@ import type {
 import { gmailLogger } from '../../../utils/gmailLogger'
 import { settingsService } from '../../settings/settingsService'
 
-/* 
-* This function performs a full synchronization of product quantities between the internal database and connected marketplaces (Prom and Rozetka). It updates the internal product records based on the latest data from marketplaces. Marketplaces --> internal DB. Not the other way around!!!
-*
-* It first fetches the latest product data from Prom, updates the internal database accordingly (including handling orphaned products), and then fetches Rozetka data to update Rozetka-specific quantities. 
-* Note: This function is designed to be run periodically (e.g., via a cron job) to ensure that the internal database remains in sync with marketplace data. It can also be used as a manual sync trigger when needed.
+/*
+ * This function performs a full synchronization of product quantities between the internal database and connected marketplaces (Prom and Rozetka). It updates the internal product records based on the latest data from marketplaces. Marketplaces --> internal DB. Not the other way around!!!
+ *
+ * It first fetches the latest product data from Prom, updates the internal database accordingly (including handling orphaned products), and then fetches Rozetka data to update Rozetka-specific quantities.
+ * Note: This function is designed to be run periodically (e.g., via a cron job) to ensure that the internal database remains in sync with marketplace data. It can also be used as a manual sync trigger when needed.
  */
 const updateAllMarketplaceQuantities = async () => {
   console.log('Updating all marketplace quantities for all products...')
@@ -113,7 +109,6 @@ const updateAllMarketplaceQuantities = async () => {
     (p) => p.rozetkaRzItemId != null,
   )
 
-
   console.log(`Found ${productsWithRozetka.length} products with Rozetka IDs`)
   console.log('example of a product with Rozetka ID:', productsWithRozetka[0])
 
@@ -132,7 +127,6 @@ const updateAllMarketplaceQuantities = async () => {
           const rozetkaProduct = product.rozetkaRzItemId
             ? rozetkaProductsMap.get(product.rozetkaRzItemId)
             : null
-
 
           const quantity = rozetkaProduct
             ? normalizeQuantity(rozetkaProduct.stock_quantity)
@@ -218,6 +212,8 @@ export const syncInventoryAdjustment = async (
     `Processing order sync for ${orderedProducts.length} products from ${source}`,
   )
 
+// Get active sync strategy to determine how to propagate changes between marketplaces
+  const syncStrategy: SyncStrategy = await settingsService.getSyncStrategy()
   // Track products that need updates
   const productsToUpdate = new Map<string, ProductSyncEntry>()
 
@@ -264,11 +260,6 @@ export const syncInventoryAdjustment = async (
         masterQuantityDelta,
       },
     )
-    // Decide sync strategy
-    const syncStrategy: SyncStrategy =
-      currentPromQuantity === currentRozetkaQuantity
-        ? 'same_quantity'
-        : 'different_quantity'
 
     // Compute master new quantity once
     const newMasterQuantity = Math.max(
@@ -451,7 +442,7 @@ export const syncInventoryAdjustment = async (
         )
         continue
       }
-     /*  console.log(
+      /*  console.log(
         `Preparing Rozetka sync for product ${entry.productId} with quantity ${entry.newRozetkaQuantity}`,
       ) */
       rozetkaUpdates.push({

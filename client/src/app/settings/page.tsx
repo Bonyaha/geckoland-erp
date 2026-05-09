@@ -4,7 +4,9 @@ import React, { useState } from 'react'
 import Header from '@/app/(components)/Header'
 import {
   useGetRozetkaStoreStatusQuery,
+  useGetSyncStrategyQuery,
   useSetRozetkaStoreStatusMutation,
+useSetSyncStrategyMutation,
   useSyncAllQuantitiesToMarketplacesMutation,
 } from '@/state/api'
 import { useToast } from '@/hooks/useToast'
@@ -34,9 +36,16 @@ const Settings = () => {
   const [syncAllQuantitiesToMarketplaces, { isLoading: isSyncing }] =
     useSyncAllQuantitiesToMarketplacesMutation()
 
+  const { data: syncStrategyData, isLoading: isSyncStrategyLoading } =
+    useGetSyncStrategyQuery()
+  const [setSyncStrategy, { isLoading: isSettingStrategy }] =
+    useSetSyncStrategyMutation()
+
   const { toast, showToast, hideToast } = useToast()
 
   const rozetkaActive = rozetkaStatusData?.rozetkaStoreActive ?? true
+
+const syncStrategy = syncStrategyData?.syncStrategy ?? 'same_quantity'
 
   const handleToggleChange = (index: number) => {
     const settingsCopy = [...userSettings]
@@ -57,6 +66,22 @@ const Settings = () => {
       showToast('Помилка при зміні статусу магазину', 'error')
     }
   }
+
+const handleSyncStrategyToggle = async () => {
+  const next =
+    syncStrategy === 'same_quantity' ? 'different_quantity' : 'same_quantity'
+  try {
+    await setSyncStrategy({ strategy: next }).unwrap()
+    showToast(
+      next === 'same_quantity'
+        ? 'Стратегія: однакова кількість на всіх майданчиках'
+        : 'Стратегія: різна кількість на кожному майданчику',
+      'success',
+    )
+  } catch {
+    showToast('Помилка при зміні стратегії синхронізації', 'error')
+  }
+}
 
   const handleSync = async () => {
     try {
@@ -161,6 +186,50 @@ const Settings = () => {
                   </button>
                 )}
               </td>
+            </tr>
+            <tr className='hover:bg-blue-50 border-b'>
+              <td className='py-4 px-4'>
+                <div className='font-medium text-gray-800'>
+                  Стратегія синхронізації кількостей
+                </div>
+                <div className='text-sm text-gray-500 mt-0.5'>
+                  {syncStrategy === 'same_quantity'
+                    ? 'Однакова кількість: продаж на одному майданчику зменшує залишки на всіх інших.'
+                    : 'Різна кількість: кожен майданчик має незалежні залишки.'}
+                </div>
+              </td>
+              <td className='py-4 px-4'>
+                <div className='flex items-center gap-2'>
+                  {isSyncStrategyLoading ? (
+                    <div className='w-11 h-6 bg-gray-200 rounded-full animate-pulse' />
+                  ) : (
+                    <label className='inline-flex relative items-center cursor-pointer'>
+                      <input
+                        type='checkbox'
+                        className='sr-only peer'
+                        checked={syncStrategy === 'same_quantity'}
+                        onChange={handleSyncStrategyToggle}
+                        disabled={isSettingStrategy}
+                      />
+                      <div
+                        className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-blue-400 peer-focus:ring-4
+            transition peer-checked:after:translate-x-full peer-checked:after:border-white
+            after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white
+            after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all
+            peer-checked:bg-blue-600 disabled:opacity-50"
+                      />
+                    </label>
+                  )}
+                  <span className='text-sm font-medium text-gray-700'>
+                    {isSyncStrategyLoading
+                      ? '...'
+                      : syncStrategy === 'same_quantity'
+                        ? 'Однакова'
+                        : 'Різна'}
+                  </span>
+                </div>
+              </td>
+              <td className='py-4 px-4' />
             </tr>
           </tbody>
         </table>
