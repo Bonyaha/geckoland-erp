@@ -1,5 +1,6 @@
 // server/src/services/settings/settingsService.ts
 import prisma from '../../config/database'
+import { SyncStrategy } from '../../types/marketplaces';
 
 class SettingsService {
   private cache: Map<string, { value: string; cachedAt: number }> = new Map()
@@ -34,6 +35,24 @@ class SettingsService {
     console.log(
       `🏪 Rozetka store status set to: ${active ? 'ACTIVE' : 'INACTIVE'}`,
     )
+  }
+  
+  async getSyncStrategy(): Promise<SyncStrategy> {
+    const value = await this.get('sync_strategy')
+    return value === 'different_quantity'
+      ? 'different_quantity'
+      : 'same_quantity'
+  }
+
+  
+  async setSyncStrategy(strategy: SyncStrategy): Promise<void> {
+    await prisma.settings.upsert({
+      where: { key: 'sync_strategy' },
+      update: { value: strategy },
+      create: { key: 'sync_strategy', value: strategy },
+    })
+    this.cache.delete('sync_strategy')
+    console.log(`🔄 Sync strategy set to: ${strategy}`)
   }
 }
 
