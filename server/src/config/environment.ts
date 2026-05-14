@@ -58,7 +58,20 @@ const envSchema = z.looseObject({
   GOOGLE_PUBSUB_TOPIC: z.string().min(1, 'GOOGLE_PUBSUB_TOPIC is required'),
 
   // JWT Configuration
-  JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),
+  JWT_SECRET: z
+    .string()
+    .min(32, 'JWT_SECRET must be at least 32 characters long for security')
+    .refine(
+      (secret) => {
+        // In production, ensure it's not a default/weak secret
+        if (process.env.NODE_ENV === 'production') {
+          const weakSecrets = ['secret', 'password', 'changeme', 'default']
+          return !weakSecrets.includes(secret.toLowerCase())
+        }
+        return true
+      },
+      { error: 'JWT_SECRET cannot be a common/weak secret in production' },
+    ),
 })
 
 const envResult = envSchema.safeParse(process.env)

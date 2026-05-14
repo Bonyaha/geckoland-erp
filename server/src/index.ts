@@ -24,7 +24,32 @@ app.use(helmet())
 app.use(helmet.crossOriginResourcePolicy({ policy: 'cross-origin' }))
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
-app.use(cors())
+
+// CORS Configuration
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    // Allow requests with no origin (like mobile apps, Postman, curl)
+    if (!origin) return callback(null, true)
+    
+    // In production, only allow your frontend domain
+    const allowedOrigins = config.app.isProduction
+      ? [
+          'https://your-frontend-domain.com', //Replace with your actual frontend URL
+          'https://www.your-frontend-domain.com' //Replace with your actual frontend URL
+        ]
+      : ['http://localhost:3000', 'http://localhost:3001'] // Development URLs
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
+  credentials: true, // Allow cookies to be sent
+  optionsSuccessStatus: 200
+}
+
+app.use(cors(corsOptions))
 
 // Logging
 app.use(morgan('common'))

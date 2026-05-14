@@ -1,5 +1,6 @@
 // client/src/state/api.ts
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { getAuthToken } from '@/utils/authUtils'
 
 export interface Product {
   productId: string
@@ -495,7 +496,16 @@ export interface SyncStrategyResponse {
 
 
 export const api = createApi({
-  baseQuery: fetchBaseQuery({ baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL }),
+  baseQuery: fetchBaseQuery({
+    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+    prepareHeaders: (headers) => {
+      const token = getAuthToken()
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`)
+      }
+      return headers
+    },
+ }),
   reducerPath: 'api',
   tagTypes: [
     'DashboardMetrics',

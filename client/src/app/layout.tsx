@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import DashboardWrapper from './dashboardWrapper'
 import { ThemeProvider } from 'next-themes'
+import AuthGuard from '@/app/(components)/ProtectedRoute/AuthGuard'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: 'Iventory management system, owned by South_Geckoland',
   icons: {
     icon: '/favicon.ico',
-  }
+  },
 }
 
 export default function RootLayout({
@@ -28,7 +28,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <DashboardWrapper>{children}</DashboardWrapper>{' '}
+          <AuthGuard>{children}</AuthGuard>
         </ThemeProvider>
       </body>
     </html>

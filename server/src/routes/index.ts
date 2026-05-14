@@ -12,7 +12,7 @@ import trackingRoutes from './trackingRoutes'
 import salesRoutes from './salesRoutes'
 import clientRoutes from './clientRoutes'
 import settingsRoutes from './settingsRoutes'
-//import { gmail } from 'googleapis/build/src/apis/gmail'
+import { authenticate } from '../middleware/auth'
 
 const router = Router()
 
@@ -51,6 +51,17 @@ router.get('/', (req, res) => {
   })
 })
 
+// Auth routes — PUBLIC (no token needed)
+router.use('/api/auth', authRoutes)
+
+// Gmail webhook — PUBLIC (Google calls this, can't send a token)
+router.use('/api/notifications', notificationRoutes)
+router.use('/api/gmail', gmailRoutes)
+
+//NEW: Apply authentication to all routes below this line
+router.use(authenticate)
+
+
 /**
  * Mount all route modules
  */
@@ -58,9 +69,6 @@ router.use('/api/dashboard', dashboardRoutes)
 router.use('/api/products', productRoutes)
 router.use('/api/users', userRoutes)
 router.use('/api/expenses', expenseRoutes)
-router.use('/api/notifications', notificationRoutes)
-router.use('/api/gmail', gmailRoutes)
-router.use('/api/auth', authRoutes)
 router.use('/api/orders', orderRoutes)
 router.use('/api/tracking', trackingRoutes)
 router.use('/api/sales', salesRoutes)
