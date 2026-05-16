@@ -1,6 +1,6 @@
 // client/src/state/api.ts
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { getAuthToken } from '@/utils/authUtils'
+import { getValidToken, removeAuthToken } from '@/utils/authUtils'
 
 export interface Product {
   productId: string
@@ -496,16 +496,28 @@ export interface SyncStrategyResponse {
 
 
 export const api = createApi({
-  baseQuery: fetchBaseQuery({
+  baseQuery: async (args, apiApi, extraOptions) => {
+  const token = getValidToken() // validates expiry before each request
+
+  const rawBaseQuery = fetchBaseQuery({
     baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
     prepareHeaders: (headers) => {
-      const token = getAuthToken()
       if (token) {
         headers.set('Authorization', `Bearer ${token}`)
       }
       return headers
     },
- }),
+  })
+
+  const result = await rawBaseQuery(args, apiApi, extraOptions)
+
+  // if server says token is invalid, clear it and signal logout
+  if (result.error && result.error.status === 401) {
+    removeAuthToken()
+  }
+
+  return result
+},
   reducerPath: 'api',
   tagTypes: [
     'DashboardMetrics',
