@@ -1,6 +1,6 @@
 // client/src/state/api.ts
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { getValidToken, removeAuthToken } from '@/utils/authUtils'
+import { dispatchAuthExpired, getValidToken, removeAuthToken } from '@/utils/authUtils'
 
 export interface Product {
   productId: string
@@ -514,6 +514,7 @@ export const api = createApi({
   // if server says token is invalid, clear it and signal logout
   if (result.error && result.error.status === 401) {
     removeAuthToken()
+dispatchAuthExpired()
   }
 
   return result

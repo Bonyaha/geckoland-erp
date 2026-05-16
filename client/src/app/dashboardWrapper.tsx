@@ -3,20 +3,41 @@
 import Navbar from '@/app/(components)/Navbar'
 import Sidebar from '@/app/(components)/Sidebar'
 import StoreProvider, { useAppSelector } from './redux'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { getValidToken } from '@/utils/authUtils'
+import { useTokenExpiry } from '@/hooks/useTokenExpiry'
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const isSidebarCollapsed = useAppSelector(
     (state) => state.global.isSidebarCollapsed,
   )
-/*   const isAuthenticated = useAppSelector(
+  /*   const isAuthenticated = useAppSelector(
     (state) => state.global.isAuthenticated,
   ) */
   const router = useRouter()
   const pathname = usePathname()
   const [sessionExpired, setSessionExpired] = useState(false)
+
+  // stable callback so the hook's event listeners don't re-register on every render
+  const handleExpired = useCallback(() => {
+    setSessionExpired(true)
+  }, [])
+
+  // Method 1 — countdown timer
+  const { scheduleExpiry, clearTimer } = useTokenExpiry(handleExpired)
+
+  // Method 2 — listen for the CustomEvent fired by the API interceptor
+  useEffect(() => {
+    const handleAuthExpiredEvent = () => {
+      clearTimer() // cancel the countdown (already expired)
+      setSessionExpired(true)
+    }
+
+    window.addEventListener('auth:expired', handleAuthExpiredEvent)
+    return () =>
+      window.removeEventListener('auth:expired', handleAuthExpiredEvent)
+  }, [clearTimer])
 
   // check token validity on mount and whenever isAuthenticated changes
   useEffect(() => {
@@ -25,7 +46,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     if (!token) {
       setSessionExpired(true)
     }
-  }, [pathname])
+    scheduleExpiry()
+  }, [pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // redirect to login after showing the expired message
   useEffect(() => {
@@ -34,12 +56,17 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     return () => clearTimeout(timer)
   }, [sessionExpired, router])
 
-// skip auth checks entirely on the login page
+  // Cleanup timer when component unmounts
+  useEffect(() => {
+    return () => clearTimer()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // skip auth checks entirely on the login page
   if (pathname === '/login') {
     return <>{children}</>
   }
 
-// session expired overlay shown before redirect
+  // session expired overlay shown before redirect
   if (sessionExpired) {
     return (
       <div className='min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900'>
@@ -51,12 +78,13 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <p className='text-gray-500 dark:text-gray-400 text-sm mb-4'>
             Час дії вашого токену вийшов. Будь ласка, увійдіть знову.
           </p>
-          <p className='text-xs text-gray-400'>Перенаправлення на сторінку входу...</p>
+          <p className='text-xs text-gray-400'>
+            Перенаправлення на сторінку входу...
+          </p>
         </div>
       </div>
     )
   }
-
 
   return (
     <div

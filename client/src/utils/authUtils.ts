@@ -79,4 +79,13 @@ export const getValidToken = (): string | null => {
     return null 
   } 
   return token 
-} 
+}
+
+/**
+ * Dispatches a custom browser event when auth fails,
+ * so any listener (e.g. DashboardLayout) can react immediately.
+ */
+export const dispatchAuthExpired = (): void => {
+  if (!isClient) return
+  window.dispatchEvent(new CustomEvent('auth:expired'))
+}
