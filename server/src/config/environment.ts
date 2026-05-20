@@ -121,7 +121,7 @@ export const config = {
   },
   jwt: {
     secret: env.JWT_SECRET,
-    expiresIn: '2m', // Optional: define a standard expiration time
+    expiresIn: '7d', // Optional: define a standard expiration time
   },
   marketplaces: {
     prom: {

@@ -1,12 +1,16 @@
 'use client'
 
-import ThemeToggle from '@/app/theme-toggle'
 import { Bell, Settings } from 'lucide-react'
-// import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
+import UserMenu from '@/app/(components)/UserMenu'
+import { getUserData } from '@/utils/authUtils'
 
 const Navbar = () => {
+  // Get user data from localStorage
+  const userData = getUserData()
+  const userName = userData?.name || 'User'
+
   return (
     <div className='flex justify-between items-center w-full mb-7'>
       {/* LEFT SIDE */}
@@ -27,9 +31,6 @@ const Navbar = () => {
       {/* RIGHT SIDE */}
       <div className='flex justify-between items-center gap-5'>
         <div className='hidden md:flex justify-between items-center gap-5'>
-          <div>
-            <ThemeToggle />
-          </div>
           <div className='relative'>
             <Bell
               className='cursor-pointer text-gray-500 dark:text-gray-400'
@@ -40,16 +41,9 @@ const Navbar = () => {
             </span>
           </div>
           <hr className='w-0 h-7 border border-solid border-l border-gray-300 dark:border-gray-600 mx-3' />
-          <div className='flex items-center gap-3 cursor-pointer'>
-            {/* <Image
-              src='https://s3-geckoerp.s3.eu-central-1.amazonaws.com/profile.jpg'
-              alt='Profile'
-              width={50}
-              height={50}
-              className='rounded-full h-full object-cover'
-            /> */}
-            <span className='font-semibold dark:text-gray-50'>Roman</span>
-          </div>
+
+          {/* User Menu */}
+          <UserMenu userName={userName} />
         </div>
         <Link href='/settings'>
           <Settings

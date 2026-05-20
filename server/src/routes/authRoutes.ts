@@ -11,10 +11,10 @@ router.post('/login', validate(loginSchema), asyncHandler(authController.login))
 
 // POST /api/auth/register
 // (You can remove this later if you want to disable public registration)
-router.post(
+/* router.post(
   '/register',
   validate(registerSchema),
   asyncHandler(authController.register)
-)
+) */
 
 export default router
