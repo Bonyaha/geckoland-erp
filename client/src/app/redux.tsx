@@ -13,6 +13,7 @@ import { setupListeners } from '@reduxjs/toolkit/query'
 
 import {
   persistStore,
+  Persistor,
   persistReducer,
   FLUSH,
   REHYDRATE,
@@ -82,19 +83,20 @@ export default function StoreProvider({
 }: {
   children: React.ReactNode
 }) {
-   const storeRef = useRef<AppStore | null>(null)
+  const storeRef = useRef<AppStore | null>(null)
+  const persistorRef = useRef<Persistor | null>(null)
+
   if (!storeRef.current) {
     storeRef.current = makeStore()
     setupListeners(storeRef.current.dispatch)
+    persistorRef.current = persistStore(storeRef.current)
   }
-  const persistor = persistStore(storeRef.current)
 
   return (
     <Provider store={storeRef.current}>
-      <PersistGate loading={null} persistor={persistor}>
+      <PersistGate loading={null} persistor={persistorRef.current!}>
         {children}
       </PersistGate>
     </Provider>
   )
-//return <Provider store={storeRef.current}>{children}</Provider>
 }

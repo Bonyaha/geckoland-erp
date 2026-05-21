@@ -937,7 +937,7 @@ class OrderService {
   async createOrderFromCRM(
     frontendOrderData: CRMOrderCreateInput,
   ): Promise<OrderCreationResult> {
-    console.log('data from client: ', frontendOrderData)
+    //console.log('data from client: ', frontendOrderData)
 
     const orderId = `crm_${nanoid(8)}`
 
@@ -1040,7 +1040,7 @@ class OrderService {
     // CREATE OR GET CLIENT BEFORE ORDER CREATION
     // ============================================
 
-    console.log('📝 Creating or getting client before order creation...')
+    //console.log('📝 Creating or getting client before order creation...')
 
     try {
       const client = await clientService.getOrCreateClient({
@@ -1052,9 +1052,9 @@ class OrderService {
         address: deliveryAddress,
       })
 
-      console.log(
+      /* console.log(
         `✅ Client ready: ${client.clientId} (${client.firstName} ${client.lastName})`,
-      )
+      ) */
     } catch (clientError: any) {
       console.error('❌ Failed to create/get client:', clientError)
       throw ErrorFactory.internal(
@@ -1160,9 +1160,9 @@ class OrderService {
       include: { orderItems: true },
     })
 
-    console.log(
+    /* console.log(
       `Created order ${orderId} from CRM with ${order.orderItems.length} items`,
-    )
+    ) */
 
     // Deduct stock for all items in the new CRM order
     const itemsToDeduct: OrderItemForSync[] = order.orderItems.map((item) => ({
@@ -1172,7 +1172,7 @@ class OrderService {
 
     try {
       await syncInventoryAdjustment(itemsToDeduct, 'crm')
-      console.log(`✅ Inventory adjusted after CRM order ${orderId} ${orderId}`)
+      //console.log(`✅ Inventory adjusted after CRM order ${orderId} ${orderId}`)
     } catch (syncError) {
       console.error(
         `❌ Failed to adjust inventory for order ${orderId}:`,
