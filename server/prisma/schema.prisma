@@ -16,34 +16,33 @@ model Users {
 }
 
 model Clients {
-  clientId      String   @id @default(cuid())
-  firstName     String
-  lastName      String
-  secondName    String?
-  phone         String   @unique
-  email         String?
-  address       String?  
-  reliability   Decimal  @default(100) @db.Decimal(5, 2) 
-  successfulOrders Int      @default(0)
-  totalOrders   Int      @default(0)
-  totalSpent    Decimal  @default(0) @db.Decimal(10, 2)
-  createdAt     DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt     DateTime @updatedAt @db.Timestamptz(6)
-  orders        Orders[]
-phones           ClientPhones[]
-addresses        ClientAddresses[]
-comments         ClientComments[]
+  clientId         String            @id @default(cuid())
+  firstName        String
+  lastName         String
+  secondName       String?
+  phone            String            @unique
+  email            String?
+  address          String?
+  reliability      Decimal           @default(100) @db.Decimal(5, 2)
+  successfulOrders Int               @default(0)
+  totalOrders      Int               @default(0)
+  totalSpent       Decimal           @default(0) @db.Decimal(10, 2)
+  createdAt        DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime          @updatedAt @db.Timestamptz(6)
+  orders           Orders[]
+  phones           ClientPhones[]
+  addresses        ClientAddresses[]
+  comments         ClientComments[]
 
-  @@index([phone])               // Fast lookup for getOrCreateClient
-  @@index([email])               // For filtering/searching by email
+  @@index([phone]) // Fast lookup for getOrCreateClient
+  @@index([email]) // For filtering/searching by email
   @@index([lastName, firstName]) // Name search optimization  
-  
 }
 
 model ClientPhones {
   phoneId   String   @id @default(cuid())
   clientId  String
-  phone     String   
+  phone     String
   isPrimary Boolean  @default(false)
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   client    Clients  @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
@@ -54,10 +53,10 @@ model ClientPhones {
 
 model ClientAddresses {
   addressId          String   @id @default(cuid())
-  clientId           String  
-  address            String  // Full human-readable address string, e.g. "вул. Васильківська, 55 (м. Виставковий Центр)"
+  clientId           String
+  address            String // Full human-readable address string, e.g. "вул. Васильківська, 55 (м. Виставковий Центр)"
   branchNumber       String? //holds the branch identifier, e.g. "№64", "№59995 (Поштомат)"
-  deliveryOptionName String?  // "NovaPoshta" | "UkrPoshta" | etc.
+  deliveryOptionName String? // "NovaPoshta" | "UkrPoshta" | etc.
   isPrimary          Boolean  @default(false)
   createdAt          DateTime @default(now()) @db.Timestamptz(6)
   client             Clients  @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
@@ -68,7 +67,7 @@ model ClientAddresses {
 model ClientComments {
   commentId String   @id @default(cuid())
   clientId  String
-  text      String                         // the comment body
+  text      String // the comment body
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
   client    Clients  @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
@@ -77,13 +76,12 @@ model ClientComments {
   @@index([createdAt])
 }
 
-
 model Products {
   productId        String       @id
   sku              String?
   name             String
   price            Decimal      @db.Decimal(10, 2)
-  stockQuantity    Int  
+  stockQuantity    Int
   externalIds      Json
   promId           String?      @unique
   rozetkaItemId    String?
@@ -113,20 +111,19 @@ model Products {
   Sales            Sales[]
 
   @@index([sku])
-
   @@index([promId])
   @@index([rozetkaItemId])
   @@index([rozetkaRzItemId])
 }
 
 model Orders {
-  orderId                 String       @id
+  orderId                 String          @id
   externalOrderId         String
   source                  Source
   orderNumber             String?
-  createdAt               DateTime     @db.Timestamptz(6)
-  updatedAt               DateTime     @updatedAt @db.Timestamptz(6)
-  lastModified            DateTime?    @db.Timestamptz(6)
+  createdAt               DateTime        @db.Timestamptz(6)
+  updatedAt               DateTime        @updatedAt @db.Timestamptz(6)
+  lastModified            DateTime?       @db.Timestamptz(6)
   clientId                String?
   clientFirstName         String
   clientLastName          String
@@ -143,34 +140,34 @@ model Orders {
   deliveryAddress         String?
   deliveryCity            String?
   trackingNumber          String?
-  deliveryCost            Decimal?     @db.Decimal(10, 2)
-  deliveryProviderData    Json?  
+  deliveryCost            Decimal?        @db.Decimal(10, 2)
+  deliveryProviderData    Json?
   paymentOptionName       PaymentOption?
   paymentData             Json?
   paymentStatus           PaymentStatus?
-  totalAmount             Decimal      @db.Decimal(10, 2)
-  totalAmountWithDiscount Decimal?     @db.Decimal(10, 2)
-  fullPrice               Decimal?     @db.Decimal(10, 2)
-  currency                String       @default("UAH")
+  totalAmount             Decimal         @db.Decimal(10, 2)
+  totalAmountWithDiscount Decimal?        @db.Decimal(10, 2)
+  fullPrice               Decimal?        @db.Decimal(10, 2)
+  currency                String          @default("UAH")
   totalQuantity           Int?
   itemCount               Int
-  status                  OrderStatus  @default(RECEIVED)
-  statusName              String?  
-  cpaCommission           Decimal?     @db.Decimal(10, 2)
-  prosaleCommission       Decimal?     @db.Decimal(10, 2)
-  isCommissionRefunded    Boolean      @default(false)
+  status                  OrderStatus     @default(RECEIVED)
+  statusName              String?
+  cpaCommission           Decimal?        @db.Decimal(10, 2)
+  prosaleCommission       Decimal?        @db.Decimal(10, 2)
+  isCommissionRefunded    Boolean         @default(false)
   clientNotes             String?
-  sellerComment           String?  
+  sellerComment           String?
   orderSource             String?
-  dontCallCustomer        Boolean      @default(false)   
+  dontCallCustomer        Boolean         @default(false)
   rawOrderData            Json?
   orderItems              OrderItems[]
-  client                  Clients?     @relation(fields: [clientId], references: [clientId])
+  client                  Clients?        @relation(fields: [clientId], references: [clientId])
   sales                   Sales[]
 }
 
 model OrderItems {
-  orderItemId          String    @id @default(cuid())
+  orderItemId          String   @id @default(cuid())
   orderId              String
   productId            String
   sku                  String?
@@ -179,12 +176,12 @@ model OrderItems {
   productImage         String?
   productUrl           String?
   quantity             Int
-  unitPrice            Decimal   @db.Decimal(10, 2)
-  totalPrice           Decimal   @db.Decimal(10, 2)
+  unitPrice            Decimal  @db.Decimal(10, 2)
+  totalPrice           Decimal  @db.Decimal(10, 2)
   measureUnit          String?
-  cpaCommission        Decimal?  @db.Decimal(10, 2)
+  cpaCommission        Decimal? @db.Decimal(10, 2)
   rawItemData          Json?
-  order                Orders    @relation(fields: [orderId], references: [orderId], onDelete: Cascade)
+  order                Orders   @relation(fields: [orderId], references: [orderId], onDelete: Cascade)
   product              Products @relation(fields: [productId], references: [productId])
   sales                Sales[]
 
@@ -270,7 +267,7 @@ model Settings {
 
 enum Source {
   prom
-  rozetka  
+  rozetka
   telegram
   viber
   instagram

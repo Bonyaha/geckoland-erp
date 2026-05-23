@@ -145,7 +145,7 @@ const CreateOrderPage = () => {
 
   // 'saved' = showing the address pill / dropdown; 'manual' = NP autocomplete or plain input
   const [addressSource, setAddressSource] = useState<AddressSource>('manual')
-
+console.log('addressSource is: ', addressSource);
   // ref for the address dropdown so outside-clicks close it
   const addressDropdownRef = useRef<HTMLDivElement>(null)
   // ═══════════════════════════════════════════════════════════════════════════
@@ -207,7 +207,7 @@ const CreateOrderPage = () => {
     useGetClientAddressesQuery(selectedClient?.clientId || '', {
       skip: !selectedClient?.clientId,
     })
-
+console.log('clientAddresses are: ', clientAddresses)
   // ═══════════════════════════════════════════════════════════════════════════
   // COMPUTED VALUES
   // ═══════════════════════════════════════════════════════════════════════════
@@ -240,7 +240,7 @@ const CreateOrderPage = () => {
 
     try {
       const prefill = JSON.parse(raw)
-      //console.log('prefill is: ',prefill);
+      console.log('prefill is: ',prefill);
 
       sessionStorage.removeItem('order_prefill') // consume once
 
@@ -373,6 +373,7 @@ const CreateOrderPage = () => {
     const primary =
       clientAddresses.find((a) => a.isPrimary) ?? clientAddresses[0]
     if (primary) {
+console.log('Auto-selecting address: ', primary)
       applyAddressSelection(primary)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -402,17 +403,24 @@ const CreateOrderPage = () => {
       clientSecondName: client.secondName || '',
       clientPhone: client.phone,
       clientEmail: client.email || '',
-      deliveryAddress: '',
-      deliveryOptionName: client.deliveryOptionName || '',
+      deliveryAddress: client.address || '',
+      deliveryOptionName: client.deliveryOptionName || prev.deliveryOptionName,
       paymentOptionName: client.paymentOptionName || '',
     }))
     // reset address state so the auto-select effect can run
     setSelectedSavedAddress(null)
     setLastSavedAddress(null) //clear remembered address for new client
     setAddressSource('manual')
-    setNpCityQuery('')
-    setNpCityRef('')
-    setNpWarehouseQuery('')
+    if (client.deliveryOptionName === 'NovaPoshta' && client.address) {
+      const parts = client.address.split(', ')
+      setNpCityQuery(parts[0] || '')
+      setNpCityRef('') // ref unknown from stored string
+      setNpWarehouseQuery(parts.slice(1).join(', '))
+    } else {
+      setNpCityQuery('')
+      setNpCityRef('')
+      setNpWarehouseQuery('')
+    }
     setIsClientDropdownOpen(false)
 
     // clear phone lookup state when a client is explicitly selected
@@ -436,6 +444,7 @@ const CreateOrderPage = () => {
 
   // Create new client from search term
   const handleCreateNewClient = () => {
+console.log('Creating new client from search term: ', clientSearchTerm)
     // Clear the search field and close dropdown
     setClientSearchTerm('')
     setIsClientDropdownOpen(false)
@@ -479,6 +488,7 @@ const CreateOrderPage = () => {
     }))
     // if saved address is Nova Poshta, pre-populate NP query fields too
     if (address.deliveryOptionName === 'NovaPoshta') {
+console.log('Applying NP address to query fields: ', address.address)
       const parts = address.address.split(', ')
       setNpCityQuery(parts[0] || '')
       setNpCityRef('') // ref unknown from stored string; user can re-search
@@ -885,10 +895,10 @@ const CreateOrderPage = () => {
                     }`}
                   >
                     {/* Name and Stock Info */}
-                    <div className='flex-1 min-w-[250px]'>
+                    <div className='flex-1 min-w-62.5'>
                       <div className='flex items-center gap-2'>
                         {isOutOfStock && (
-                          <AlertTriangle className='w-4 h-4 text-red-500 flex-shrink-0' />
+                          <AlertTriangle className='w-4 h-4 text-red-500 shrink-0' />
                         )}
                         <p
                           className={`text-sm font-medium leading-tight ${
@@ -953,7 +963,7 @@ const CreateOrderPage = () => {
                       </button>
                     </div>
 
-                    <div className='flex items-center border border-gray-300 rounded px-2 py-1 bg-white min-w-[100px]'>
+                    <div className='flex items-center border border-gray-300 rounded px-2 py-1 bg-white min-w-25'>
                       <input
                         type='number'
                         value={item.unitPrice}
@@ -971,7 +981,7 @@ const CreateOrderPage = () => {
                       </span>
                     </div>
 
-                    <div className='flex items-center gap-2 min-w-[120px] justify-end'>
+                    <div className='flex items-center gap-2 min-w-30 justify-end'>
                       <ChevronDown size={14} className='text-blue-500' />
                       <span className='text-sm font-bold text-gray-700'>
                         {(item.totalPrice || 0).toFixed(2)} грн.
