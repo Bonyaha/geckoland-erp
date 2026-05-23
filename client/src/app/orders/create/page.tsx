@@ -14,6 +14,7 @@ import {
   type Client,
   useGetClientAddressesQuery,
   type ClientAddress,
+  type OrderStatus,
 } from '@/state/api'
 
 import {
@@ -86,6 +87,10 @@ const CreateOrderPage = () => {
     'UNPAID',
   )
   const [orderSource, setOrderSource] = useState<string>('telegram')
+  //STATE - Order Status (Sale, Order, Reserve)
+  const [orderStatusType, setOrderStatusType] = useState<
+    'sale' | 'order' | 'reserve'
+  >('order')
 
   // separate phone lookup for manual entry mode — does NOT affect the
   // client search dropdown; only used to show a "client found" hint banner.
@@ -145,7 +150,7 @@ const CreateOrderPage = () => {
 
   // 'saved' = showing the address pill / dropdown; 'manual' = NP autocomplete or plain input
   const [addressSource, setAddressSource] = useState<AddressSource>('manual')
-console.log('addressSource is: ', addressSource);
+
   // ref for the address dropdown so outside-clicks close it
   const addressDropdownRef = useRef<HTMLDivElement>(null)
   // ═══════════════════════════════════════════════════════════════════════════
@@ -207,7 +212,7 @@ console.log('addressSource is: ', addressSource);
     useGetClientAddressesQuery(selectedClient?.clientId || '', {
       skip: !selectedClient?.clientId,
     })
-console.log('clientAddresses are: ', clientAddresses)
+  console.log('clientAddresses are: ', clientAddresses)
   // ═══════════════════════════════════════════════════════════════════════════
   // COMPUTED VALUES
   // ═══════════════════════════════════════════════════════════════════════════
@@ -240,7 +245,7 @@ console.log('clientAddresses are: ', clientAddresses)
 
     try {
       const prefill = JSON.parse(raw)
-      console.log('prefill is: ',prefill);
+      console.log('prefill is: ', prefill)
 
       sessionStorage.removeItem('order_prefill') // consume once
 
@@ -314,21 +319,20 @@ console.log('clientAddresses are: ', clientAddresses)
   useEffect(() => {
     // do not run if a client is already selected via dropdown
     if (selectedClient) return
- 
+
     const digits = phoneSearchTerm.replace(/\D/g, '')
     // Only search when there are enough digits for a real phone number
     if (digits.length < 9) {
       setDebouncedPhoneSearch('')
       return
     }
- 
+
     const timer = setTimeout(() => {
       setDebouncedPhoneSearch(phoneSearchTerm)
     }, 600) // slightly longer debounce (600ms) to reduce noise — phone numbers are typed slowly
- 
+
     return () => clearTimeout(timer)
   }, [phoneSearchTerm, selectedClient])
-
 
   // Reset to page 1 when searching products
   useEffect(() => {
@@ -373,7 +377,7 @@ console.log('clientAddresses are: ', clientAddresses)
     const primary =
       clientAddresses.find((a) => a.isPrimary) ?? clientAddresses[0]
     if (primary) {
-console.log('Auto-selecting address: ', primary)
+      console.log('Auto-selecting address: ', primary)
       applyAddressSelection(primary)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -439,12 +443,11 @@ console.log('Auto-selecting address: ', primary)
       // reset the dismissed flag when the user starts typing a new number
       setPhoneMatchDismissed(false)
     }
-
   }
 
   // Create new client from search term
   const handleCreateNewClient = () => {
-console.log('Creating new client from search term: ', clientSearchTerm)
+    console.log('Creating new client from search term: ', clientSearchTerm)
     // Clear the search field and close dropdown
     setClientSearchTerm('')
     setIsClientDropdownOpen(false)
@@ -488,7 +491,7 @@ console.log('Creating new client from search term: ', clientSearchTerm)
     }))
     // if saved address is Nova Poshta, pre-populate NP query fields too
     if (address.deliveryOptionName === 'NovaPoshta') {
-console.log('Applying NP address to query fields: ', address.address)
+      console.log('Applying NP address to query fields: ', address.address)
       const parts = address.address.split(', ')
       setNpCityQuery(parts[0] || '')
       setNpCityRef('') // ref unknown from stored string; user can re-search
@@ -677,11 +680,23 @@ console.log('Applying NP address to query fields: ', address.address)
     }
 
     try {
+      //Determine status and payment status based on order type
+      let orderStatus: OrderStatus = 'RECEIVED'
+      let orderPaymentStatus: 'PAID' | 'UNPAID' = paymentStatus
+
+      if (orderStatusType === 'sale') {
+        orderStatus = 'DELIVERED'
+      } else if (orderStatusType === 'reserve') {
+        orderStatus = 'RECEIVED'
+        orderPaymentStatus = 'UNPAID' //Force UNPAID for reserves
+      }
+
       // Strip stockQuantity before sending to API — it's a UI-only field
       const payload: CreateCRMOrderInput = {
         ...formData,
-        paymentStatus,
+        paymentStatus: orderPaymentStatus,
         source: orderSource,
+        status: orderStatus,
         items: orderItems.map(({ stockQuantity: _s, ...rest }) => rest),
       }
       console.log('Submitting order with data: ', payload)
@@ -1628,6 +1643,38 @@ console.log('Applying NP address to query fields: ', address.address)
                   <option value='UNPAID'>Не оплачено</option>
                   <option value='PAID'>Оплачено</option>
                 </select>
+              </div>
+            </div>
+          </div>
+
+          <div className='bg-white rounded-lg shadow-sm p-6'>
+            <h2 className='text-xl font-semibold text-gray-900 mb-4'>
+              Статус замовлення
+            </h2>
+            <div className='grid grid-cols-1 gap-4'>
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-1'>
+                  Тип замовлення
+                </label>
+                <select
+                  value={orderStatusType}
+                  onChange={(e) =>
+                    setOrderStatusType(
+                      e.target.value as 'sale' | 'order' | 'reserve',
+                    )
+                  }
+                  className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+                >
+                  <option value='order'>Замовлення</option>
+                  <option value='sale'>Продаж</option>
+                  <option value='reserve'>Резерв</option>
+                </select>
+                <p className='mt-2 text-xs text-gray-500'>
+                  {orderStatusType === 'sale' && '• Статус: Доставлено'}
+                  {orderStatusType === 'order' && '• Статус: Прийнято'}
+                  {orderStatusType === 'reserve' &&
+                    '• Статус: Прийнято • Оплата: Не оплачено'}
+                </p>
               </div>
             </div>
           </div>
