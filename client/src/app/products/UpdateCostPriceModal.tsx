@@ -156,7 +156,7 @@ const UpdateCostPriceModal = ({
           </p>
 
           {/* Current Cost Display */}
-          <div className='bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-4'>
+          <div className='bg-linear-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-4'>
             <div className='flex items-center justify-between'>
               <div>
                 <p className='text-xs text-gray-500 font-medium mb-1'>

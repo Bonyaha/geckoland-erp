@@ -499,7 +499,7 @@ const ProductRow = ({
       <td className='px-4 py-4 align-top max-w-md'>
         <div className='flex gap-3'>
           {/* Image Placeholder/Thumbnail */}
-          <div className='flex-shrink-0 h-16 w-16 bg-gray-200 rounded-md overflow-hidden relative'>
+          <div className='shrink-0 h-16 w-16 bg-gray-200 rounded-md overflow-hidden relative'>
             <Image
               src={
                 product.mainImage ||
@@ -508,7 +508,7 @@ const ProductRow = ({
               alt={product.name}
               fill
               sizes='64px'
-              className='object-cover'
+              className='object-cover w-auto h-auto'
             />
           </div>
 
@@ -581,7 +581,7 @@ const ProductRow = ({
 
       {/* PRICE ("Card" Style) */}
       <td className='px-2 py-4 align-top'>
-        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
+        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-25'>
           <span className='text-xl font-bold text-green-600'>
             {product.price?.toFixed(2)}{' '}
             <span className='text-black text-xs font-light'>грн.</span>
@@ -600,7 +600,7 @@ const ProductRow = ({
 
       {/* AVAILABLE ("Card" Style) */}
       <td className='px-2 py-4 align-top'>
-        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
+        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-25'>
           <span
             className={`text-2xl font-bold ${
               product.stockQuantity > 0 ? 'text-green-600' : 'text-red-600'
@@ -625,7 +625,7 @@ const ProductRow = ({
 
       {/* SALES ("Card" Style) */}
       <td className='px-2 py-4 align-top'>
-        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
+        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-25'>
           <span className='text-xs text-gray-500 font-medium mb-1'>
             Кількість продажів
           </span>
@@ -670,7 +670,7 @@ const ProductRow = ({
 
       {/* COST ("Card" Style - Input) */}
       <td className='px-2 py-4 align-top'>
-        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[100px]'>
+        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-25'>
           <span className='text-xs text-gray-500 font-medium mb-1'>
             Собівартість
           </span>
@@ -721,7 +721,7 @@ const ProductRow = ({
 
       {/* MARGIN */}
       <td className='px-2 py-4 align-top'>
-        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-[120px]'>
+        <div className='flex flex-col items-center justify-center p-3 rounded-xl bg-gray-50 border border-gray-100 shadow-sm h-full min-w-30'>
           <span className='text-xs text-gray-500 font-medium mb-1'>
             Націнка
           </span>

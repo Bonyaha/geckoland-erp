@@ -544,7 +544,7 @@ const Products = () => {
               />
             </button>
 
-            <div className='opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-200 pointer-events-none absolute top-full left-0 mt-2 px-3 py-2 bg-gray-900 text-white text-[11px] font-medium rounded-lg whitespace-nowrap shadow-xl z-[100] normal-case tracking-normal'>
+            <div className='opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-200 pointer-events-none absolute top-full left-0 mt-2 px-3 py-2 bg-gray-900 text-white text-[11px] font-medium rounded-lg whitespace-nowrap shadow-xl z-100 normal-case tracking-normal'>
               Завантажити нові товари
               <div className='absolute bottom-full left-4 border-4 border-transparent border-b-gray-900' />
             </div>
@@ -555,7 +555,7 @@ const Products = () => {
 
           {/* Search Input Area */}
           <div className='relative flex items-center flex-1'>
-            <SearchIcon className='w-5 h-5 text-gray-400 ml-2 mr-1 flex-shrink-0' />
+            <SearchIcon className='w-5 h-5 text-gray-400 ml-2 mr-1 shrink-0' />
             <input
               className='w-full py-1.5 px-1 bg-transparent outline-none text-gray-700 text-sm'
               placeholder='Пошук за назвою, ID або SKU...'

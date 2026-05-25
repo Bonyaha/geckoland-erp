@@ -843,7 +843,7 @@ const CreateOrderPage = () => {
                                 alt=''
                                 width={40}
                                 height={40}
-                                className='rounded object-cover'
+                                className='rounded object-cover w-auto h-auto'
                               />
                               <div className='flex-1'>
                                 <p className='text-sm font-medium'>

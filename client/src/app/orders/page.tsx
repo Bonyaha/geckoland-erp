@@ -59,7 +59,7 @@ const DeleteConfirmModal = ({
   isDeleting,
 }: DeleteConfirmModalProps) => (
   <div
-    className='fixed inset-0 bg-black/50 z-[300] flex items-center justify-center p-4'
+    className='fixed inset-0 bg-black/50 z-300 flex items-center justify-center p-4'
     onClick={onCancel}
   >
     <div
@@ -504,7 +504,7 @@ const OrdersPage = () => {
       <div className='bg-white rounded-lg shadow-sm p-4 mb-6'>
         <div className='flex flex-wrap gap-4 items-center'>
           {/* Search */}
-          <div className='flex-1 min-w-[250px]'>
+          <div className='flex-1 min-w-62.5'>
             <div className='relative flex items-center'>
               <Search
                 className='absolute left-3 text-gray-400 pointer-events-none'
@@ -619,7 +619,7 @@ const OrdersPage = () => {
                           className={`${isSyncingPayments ? 'animate-spin text-violet-600' : 'text-gray-400 group-hover:text-violet-600'}`}
                         />
                       </button>
-                      <div className='invisible group-hover:visible absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-[11px] font-medium rounded-lg whitespace-nowrap shadow-xl z-[100] normal-case tracking-normal'>
+                      <div className='invisible group-hover:visible absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-[11px] font-medium rounded-lg whitespace-nowrap shadow-xl z-100 normal-case tracking-normal'>
                         Перевірити неоплачені статуси
                         {/* Tooltip Arrow pointing UP */}
                         <div className='absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-gray-900' />
@@ -774,7 +774,7 @@ const OrdersPage = () => {
                         <>
                           {/* Backdrop */}
                           <div
-                            className='fixed inset-0 z-[99]'
+                            className='fixed inset-0 z-99'
                             onClick={() => {
                               setActiveActionMenu(null)
                               setMenuPosition(null)
@@ -782,7 +782,7 @@ const OrdersPage = () => {
                           />
                           {/* Menu with fixed positioning */}
                           <div
-                            className='fixed w-48 rounded-md shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-[100] divide-y divide-gray-100'
+                            className='fixed w-48 rounded-md shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-100 divide-y divide-gray-100'
                             style={{
                               top: `${menuPosition.top}px`,
                               right: `${menuPosition.right}px`,
@@ -867,7 +867,7 @@ const OrdersPage = () => {
       {/* Order Details Modal (Selected Order) */}
       {selectedOrder && (
         <div
-          className='fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4'
+          className='fixed inset-0 bg-black/50 flex items-center justify-center z-110 p-4'
           onClick={() => setSelectedOrder(null)}
         >
           <div
