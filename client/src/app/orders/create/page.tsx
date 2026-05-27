@@ -1360,12 +1360,33 @@ const CreateOrderPage = () => {
                   onChange={(e) => {
                     const newDeliveryOption = e.target.value
                     handleInputChange('deliveryOptionName', newDeliveryOption)
-
+                    console.log(
+                      'Delivery option changed to: ',
+                      newDeliveryOption,
+                    )
                     //Use the currently-selected saved address OR the last
                     // remembered one so we can restore it if the user switches back.
                     const addressToCheck =
                       selectedSavedAddress ?? lastSavedAddress
-
+                    console.log('Address to check: ', addressToCheck)
+                    console.log(
+                      'formData.deliveryAddress is',
+                      formData.deliveryAddress,
+                    )
+                    // Keep existing address data when switching to Nova Poshta if it
+                    // matches the client's pre-filled information.
+                    if (
+                      newDeliveryOption === 'NovaPoshta' &&
+                      formData.deliveryAddress
+                    ) {
+                      // If the address was pushed from the client select block but addressSource is manual,
+                      // we re-hydrate the autocomplete fields from the existing deliveryAddress string.
+                      const parts = formData.deliveryAddress.split(', ')
+                      setNpCityQuery(parts[0] || '')
+                      setNpCityRef('') // Ref is unknown from static string, user can re-search if needed
+                      setNpWarehouseQuery(parts.slice(1).join(', '))
+                      return
+                    }
                     if (addressToCheck) {
                       const savedOption =
                         addressToCheck.deliveryOptionName || ''
