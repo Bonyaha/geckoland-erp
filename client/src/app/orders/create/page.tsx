@@ -658,6 +658,11 @@ const CreateOrderPage = () => {
       alert('Введіть номер телефону клієнта')
       return
     }
+    const requiredFieldErrors = getRequiredFieldErrors()
+    if (requiredFieldErrors.length > 0) {
+      showToast(requiredFieldErrors.join(' | '), 'error')
+      return
+    }
 
     //Check for insufficient inventory
     const itemsWithInsufficientStock = orderItems.filter(
@@ -706,6 +711,21 @@ const CreateOrderPage = () => {
       router.push('/orders')
     } catch (error: any) {
       console.error('Failed to create order:', error)
+      const validationIssues = error?.data?.context?.issues
+      if (Array.isArray(validationIssues) && validationIssues.length > 0) {
+        const details = validationIssues
+          .map((issue: any) => {
+            const fieldPath = issue?.path
+              ?.filter((part: string) => part !== 'body')
+              ?.join('.')
+            return fieldPath
+              ? `${fieldPath}: ${issue?.message || 'Некоректне значення'}`
+              : issue?.message || 'Некоректне значення'
+          })
+          .join(' | ')
+        showToast(`Помилка створення замовлення: ${details}`, 'error')
+        return
+      }
       showToast(
         `Помилка створення замовлення: ${error.data?.message || 'Невідома помилка'}`,
         'error',
@@ -716,6 +736,31 @@ const CreateOrderPage = () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // UTILITY FUNCTIONS
   // ═══════════════════════════════════════════════════════════════════════════
+  const getRequiredFieldErrors = () => {
+    
+    const errors: string[] = [] 
+
+    if (!formData.clientFirstName?.trim())
+      
+      errors.push('Не заповнено поле «Імʼя клієнта»') 
+    if (!formData.clientLastName?.trim())
+      
+      errors.push('Не заповнено поле «Прізвище клієнта»') 
+    if (!formData.clientPhone?.trim())
+      
+      errors.push('Не заповнено поле «Телефон клієнта»') 
+    if (!formData.deliveryAddress?.trim())
+      
+      errors.push('Не заповнено поле «Адреса доставки»') 
+    if (!formData.deliveryOptionName?.trim())
+      
+      errors.push('Не обрано «Спосіб доставки»') 
+    if (!formData.paymentOptionName?.trim())
+      errors.push('Не обрано «Спосіб оплати»') 
+
+    return errors 
+  } 
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('uk-UA', {
       style: 'currency',
@@ -1752,7 +1797,11 @@ const CreateOrderPage = () => {
             <div className='flex gap-3'>
               <button
                 type='submit'
-                disabled={isLoading || orderItems.length === 0}
+                disabled={
+                  isLoading ||
+                  orderItems.length === 0 ||
+                  getRequiredFieldErrors().length > 0
+                }
                 className='flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
               >
                 <Save size={20} />
