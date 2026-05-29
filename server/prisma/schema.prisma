@@ -56,7 +56,7 @@ model ClientAddresses {
   clientId           String
   address            String // Full human-readable address string, e.g. "вул. Васильківська, 55 (м. Виставковий Центр)"
   branchNumber       String? //holds the branch identifier, e.g. "№64", "№59995 (Поштомат)"
-  deliveryOptionName String? // "NovaPoshta" | "UkrPoshta" | etc.
+  deliveryOptionName DeliveryOption?
   isPrimary          Boolean  @default(false)
   createdAt          DateTime @default(now()) @db.Timestamptz(6)
   client             Clients  @relation(fields: [clientId], references: [clientId], onDelete: Cascade)

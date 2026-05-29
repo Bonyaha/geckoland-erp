@@ -1,0 +1,3 @@
+-- Migration file recreated manually.
+-- This migration was already applied to the database but its file was missing.
+-- The original migration likely added unique constraints to rozetka ID columns.
