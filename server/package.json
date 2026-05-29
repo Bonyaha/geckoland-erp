@@ -10,9 +10,10 @@
     "start": "cross-env NODE_ENV=production npm run build && node dist/index.js",
     "dev": "cross-env NODE_ENV=development concurrently --names \"TYPES,SERVER,NGROK\" -c \"auto\" \"tsc --noEmit --watch --preserveWatchOutput\" \"nodemon\" \"npx ngrok http --url=complete-pelican-endlessly.ngrok-free.app 8001\"",
     "type-check": "tsc --noEmit",
-    "migrate": "dotenv -e .env -- npx prisma migrate dev --config prisma/prisma.config.ts",
+    "migrate": "dotenv -e .env -- npx prisma migrate dev --config prisma/prisma.config.ts && dotenv -e .env -- npx prisma generate --config prisma/prisma.config.ts",
     "migrate-resolve": "dotenv -e .env -- npx prisma migrate resolve --config prisma/prisma.config.ts",
     "migrate-status": "dotenv -e .env -- npx prisma migrate status --config prisma/prisma.config.ts",
+    "generate": "dotenv -e .env -- npx prisma generate --config prisma/prisma.config.ts",
     "script": "dotenv -e .env -- npx tsx"
   },
   "prisma": {

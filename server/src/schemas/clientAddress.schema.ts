@@ -1,6 +1,7 @@
 //	server/src/schemas/clientAddress.schema.ts
 
 import { z } from 'zod'
+import { DeliveryOption } from '../config/database'
 
 // Reusable param validators
 const clientIdParam = z.object({
@@ -15,7 +16,7 @@ const addressIdParam = z.object({
 const addressBodyBase = z.object({
   address: z.string().min(1, "Адреса є обов'язковою"),
   branchNumber: z.string().optional(),
-  deliveryOptionName: z.string().optional(),
+  deliveryOptionName: z.enum(DeliveryOption).optional(),
   isPrimary: z.boolean().optional().default(false),
 })
 
