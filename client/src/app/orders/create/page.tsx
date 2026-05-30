@@ -15,6 +15,7 @@ import {
   useGetClientAddressesQuery,
   type ClientAddress,
   type OrderStatus,
+  DeliveryOption,
 } from '@/state/api'
 
 import {
@@ -521,7 +522,7 @@ const CreateOrderPage = () => {
   const handleNewAddressAdded = (address: {
     addressId: string
     address: string
-    deliveryOptionName?: string | null
+    deliveryOptionName?: DeliveryOption | null
   }) => {
     // treat a newly-created address like a saved selection
     const synthetic: ClientAddress = {
@@ -532,7 +533,7 @@ const CreateOrderPage = () => {
       branchNumber: null,
       isPrimary: false,
       createdAt: new Date().toISOString(),
-    } as any
+    }
     applyAddressSelection(synthetic)
     refetchAddresses() // refresh so new address appears in the list
   }
