@@ -4,7 +4,7 @@
 
 import { useState } from 'react'
 import { X, Save, MapPin } from 'lucide-react'
-import { useCreateClientAddressMutation } from '@/state/api'
+import { useCreateClientAddressMutation, type DeliveryOption } from '@/state/api'
 import { useToast } from '@/hooks/useToast'
 import {
   NpCitySearch,
@@ -19,15 +19,18 @@ interface AddAddressModalProps {
   onSuccess: (address: {
     addressId: string
     address: string
-    deliveryOptionName?: string | null
+    deliveryOptionName?: DeliveryOption | null
   }) => void
 }
 
-const DELIVERY_OPTIONS = [
-  { value: '', label: 'Оберіть спосіб' },
-  { value: 'NovaPoshta', label: 'Нова Пошта' },
-  { value: 'UkrPoshta', label: 'Укрпошта' },
-]
+type AddressDeliveryOption = DeliveryOption | '' //keeps the blank select option while preserving enum values for submissions
+
+const DELIVERY_OPTIONS: Array<{ value: AddressDeliveryOption; label: string }> =
+  [
+    { value: '', label: 'Оберіть спосіб' },
+    { value: 'NovaPoshta', label: 'Нова Пошта' },
+    { value: 'UkrPoshta', label: 'Укрпошта' },
+  ]
 
 export default function AddAddressModal({
   clientId,
@@ -41,7 +44,7 @@ export default function AddAddressModal({
   const [formData, setFormData] = useState({
     address: '',
     branchNumber: '',
-    deliveryOptionName: 'NovaPoshta',
+    deliveryOptionName: 'NovaPoshta' as AddressDeliveryOption,
     isPrimary: false,
   })
 
@@ -75,7 +78,7 @@ export default function AddAddressModal({
   }
 
   // Reset NP state when delivery option changes away from NovaPoshta
-  const handleDeliveryOptionChange = (value: string) => {
+  const handleDeliveryOptionChange = (value: AddressDeliveryOption) => {
     setFormData((prev) => ({
       ...prev,
       deliveryOptionName: value,
@@ -159,11 +162,10 @@ const isNovaPoshta = formData.deliveryOptionName === 'NovaPoshta'
             <div>
               <label className='block text-sm font-medium text-gray-700 mb-1'>
                 Служба доставки
-              </label>
-              {/* CHANGE: now calls handleDeliveryOptionChange instead of inline setFormData */}
+              </label>              
               <select
                 value={formData.deliveryOptionName}
-                onChange={(e) => handleDeliveryOptionChange(e.target.value)}
+                onChange={(e) => handleDeliveryOptionChange(e.target.value as AddressDeliveryOption)}
                 className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm'
               >
                 {DELIVERY_OPTIONS.map((option) => (
@@ -174,11 +176,11 @@ const isNovaPoshta = formData.deliveryOptionName === 'NovaPoshta'
               </select>
             </div>
 
-            {/* CHANGE: Show NP autocomplete fields when NovaPoshta is selected,
+            {/* Show NP autocomplete fields when NovaPoshta is selected,
                 otherwise show plain text inputs (original behaviour) */}
             {isNovaPoshta ? (
               <>
-                {/* NEW: NP City autocomplete */}
+                {/* NP City autocomplete */}
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-1'>
                     Місто <span className='text-red-500'>*</span>

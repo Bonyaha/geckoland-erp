@@ -77,7 +77,7 @@ export interface ClientAddress {
   clientId: string
   address: string
   branchNumber?: string | null
-  deliveryOptionName?: string | null
+  deliveryOptionName?: DeliveryOption | null
   isPrimary: boolean
   createdAt: string
 }
@@ -86,7 +86,7 @@ export interface CreateClientAddressInput {
   clientId: string
   address: string
   branchNumber?: string
-  deliveryOptionName?: string
+  deliveryOptionName?: DeliveryOption
   isPrimary?: boolean
 }
 
@@ -798,7 +798,7 @@ dispatchAuthExpired()
         updates: {
           address?: string
           branchNumber?: string
-          deliveryOptionName?: string
+          deliveryOptionName?: DeliveryOption
           isPrimary?: boolean
         }
       }

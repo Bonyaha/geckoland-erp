@@ -7,8 +7,11 @@ import {
   PaymentStatus,
 } from '../generated/prisma/client/client.js'
 import { PrismaPg } from '@prisma/adapter-pg'
-//import pg from 'pg'
 import { Decimal } from '../generated/prisma/client/internal/prismaNamespace.js'
+import {
+  DeliveryOption,
+  PaymentOption,
+} from '../generated/prisma/client/enums.js'
 
 // Declare global type for TypeScript
 declare global {
@@ -41,18 +44,14 @@ if (process.env.NODE_ENV !== 'production') {
   global.prisma = prisma
 }
 
-export enum DeliveryOption {
-  NovaPoshta = 'NovaPoshta',
-  UkrPoshta = 'UkrPoshta',
+export {
+  Source,
+  OrderStatus,
+  DeliveryOption,
+  PaymentOption,
+  PaymentStatus,
+  Prisma,
+  Decimal,
 }
 
-export enum PaymentOption {
-  ApplePay = 'ApplePay',
-  GooglePay = 'GooglePay',
-  RozetkaPay = 'RozetkaPay',
-  IBAN = 'IBAN',
-  PromPayment = 'PromPayment',
-  CashOnDelivery = 'CashOnDelivery',
-}
-export { Source, OrderStatus, PaymentStatus, Prisma, Decimal }
 export default prisma
