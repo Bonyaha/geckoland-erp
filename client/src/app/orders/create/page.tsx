@@ -449,6 +449,13 @@ const CreateOrderPage = () => {
   // Create new client from search term
   const handleCreateNewClient = () => {
     console.log('Creating new client from search term: ', clientSearchTerm)
+
+    if (phoneMatchedClient) {
+handleClientSelect(phoneMatchedClient)
+setShowAddAddressModal(true)
+return
+    }
+
     // Clear the search field and close dropdown
     setClientSearchTerm('')
     setIsClientDropdownOpen(false)
@@ -1666,6 +1673,19 @@ const CreateOrderPage = () => {
                         />
                       </div>
                     </>
+                  )}
+                  {selectedClient && addressSource === 'manual' && (
+                    <div className='md:col-span-2'>
+                      {/* Keep AddAddressModal reachable after switching a selected client to manual address entry. */}
+                      <button
+                        type='button'
+                        onClick={() => setShowAddAddressModal(true)}
+                        className='inline-flex items-center gap-2 px-4 py-2 border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium cursor-pointer'
+                      >
+                        <MapPin size={16} />
+                        Додати адресу доставки
+                      </button>
+                    </div>
                   )}
                 </>
               )}
