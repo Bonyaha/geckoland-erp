@@ -41,6 +41,7 @@ import { useToast } from '@/hooks/useToast'
 import Toast from '@/app/(components)/Toast'
 
 import { AddAddressModal } from '../(components)'
+import QuickEditProductModal from './QuickEditProductModal'
 
 import { PAYMENT_OPTIONS } from '@/utils/marketplaceUtils'
 
@@ -118,6 +119,18 @@ const CreateOrderPage = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([])
   const [prefilledSkus, setPrefilledSkus] = useState<string>('')
+
+  //═══════════════════════════════════════════════════════════════════════════
+  // STATE - Quick Edit Modal
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const [quickEditProduct, setQuickEditProduct] = useState<{
+    productId: string
+    productName: string
+    currentQuantity: number
+    currentCostPrice: number
+    currentPrice: number
+  } | null>(null)
 
   // ═══════════════════════════════════════════════════════════════════════════
   // STATE - Client Search & Selection & Address Management
@@ -451,9 +464,9 @@ const CreateOrderPage = () => {
     console.log('Creating new client from search term: ', clientSearchTerm)
 
     if (phoneMatchedClient) {
-handleClientSelect(phoneMatchedClient)
-setShowAddAddressModal(true)
-return
+      handleClientSelect(phoneMatchedClient)
+      setShowAddAddressModal(true)
+      return
     }
 
     // Clear the search field and close dropdown
@@ -745,29 +758,23 @@ return
   // UTILITY FUNCTIONS
   // ═══════════════════════════════════════════════════════════════════════════
   const getRequiredFieldErrors = () => {
-    
-    const errors: string[] = [] 
+    const errors: string[] = []
 
     if (!formData.clientFirstName?.trim())
-      
-      errors.push('Не заповнено поле «Імʼя клієнта»') 
+      errors.push('Не заповнено поле «Імʼя клієнта»')
     if (!formData.clientLastName?.trim())
-      
-      errors.push('Не заповнено поле «Прізвище клієнта»') 
+      errors.push('Не заповнено поле «Прізвище клієнта»')
     if (!formData.clientPhone?.trim())
-      
-      errors.push('Не заповнено поле «Телефон клієнта»') 
+      errors.push('Не заповнено поле «Телефон клієнта»')
     if (!formData.deliveryAddress?.trim())
-      
-      errors.push('Не заповнено поле «Адреса доставки»') 
+      errors.push('Не заповнено поле «Адреса доставки»')
     if (!formData.deliveryOptionName?.trim())
-      
-      errors.push('Не обрано «Спосіб доставки»') 
+      errors.push('Не обрано «Спосіб доставки»')
     if (!formData.paymentOptionName?.trim())
-      errors.push('Не обрано «Спосіб оплати»') 
+      errors.push('Не обрано «Спосіб оплати»')
 
-    return errors 
-  } 
+    return errors
+  }
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('uk-UA', {
@@ -973,7 +980,27 @@ return
                             isOutOfStock ? 'text-red-700' : 'text-blue-600'
                           }`}
                         >
-                          {item.productName}
+                          {/* NEW — clickable name when out of stock opens quick edit modal */}
+                          {isOutOfStock && item.productId ? (
+                            <button
+                              type='button'
+                              onClick={() =>
+                                setQuickEditProduct({
+                                  productId: item.productId!,
+                                  productName: item.productName,
+                                  currentQuantity: item.stockQuantity,
+                                  currentCostPrice: 0,
+                                  currentPrice: item.unitPrice,
+                                })
+                              }
+                              className='underline decoration-dotted underline-offset-2 cursor-pointer hover:text-red-900 transition-colors text-left'
+                              title='Натисніть, щоб відредагувати кількість'
+                            >
+                              {item.productName}
+                            </button>
+                          ) : (
+                            item.productName
+                          )}
                           <span className='text-gray-400 ml-1 font-normal text-xs'>
                             {item.sku}
                           </span>
@@ -1844,6 +1871,27 @@ return
             clientName={`${selectedClient.lastName} ${selectedClient.firstName}`}
             onClose={() => setShowAddAddressModal(false)}
             onSuccess={handleNewAddressAdded}
+          />
+        )}
+        {quickEditProduct && (
+          <QuickEditProductModal
+            productId={quickEditProduct.productId}
+            productName={quickEditProduct.productName}
+            currentQuantity={quickEditProduct.currentQuantity}
+            currentCostPrice={quickEditProduct.currentCostPrice}
+            currentPrice={quickEditProduct.currentPrice}
+            onClose={() => setQuickEditProduct(null)}
+            onSaved={(newQty) => {
+              // update stockQuantity in the local orderItems state
+              // so the warning clears immediately without a page refresh
+              setOrderItems((prev) =>
+                prev.map((item) =>
+                  item.productId === quickEditProduct.productId
+                    ? { ...item, stockQuantity: newQty }
+                    : item,
+                ),
+              )
+            }}
           />
         )}
       </div>

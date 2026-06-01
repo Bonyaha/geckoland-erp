@@ -135,7 +135,7 @@ export const updateSingleProduct = async (
 ): Promise<void> => {
   // Middleware guarantees req.params and req.body match updateSingleProductSchema
   const { productId } = req.params as { productId: string }
-  const { quantity, price, costPrice, targetMarketplace } = req.body
+  const { quantity, price, costPrice, targetMarketplace, internalOnly } = req.body
 
   const input: SingleProductUpdateInput = {
     productId,
@@ -145,6 +145,7 @@ export const updateSingleProduct = async (
       costPrice,
     },
     targetMarketplace,
+    internalOnly,
   }
   const result: SingleProductUpdateResult =
     await productService.updateSingleProduct(input)

@@ -255,21 +255,17 @@ class ProductService {
    * })
    */
   async createProduct(productData: ProductCreateInput) {
-const externalIds = productData.externalIds as any
-const promId = externalIds?.prom ? String(externalIds.prom) : null
-const rozetkaItemId = externalIds?.rozetka?.item_id
-  ? String(externalIds.rozetka.item_id)
-  : null
-const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
-  ? String(externalIds.rozetka.rz_item_id)
-  : null
+    const externalIds = productData.externalIds as any
+    const promId = externalIds?.prom ? String(externalIds.prom) : null
+    const rozetkaItemId = externalIds?.rozetka?.item_id
+      ? String(externalIds.rozetka.item_id)
+      : null
+    const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
+      ? String(externalIds.rozetka.rz_item_id)
+      : null
 
     const product = await prisma.products.create({
-      data: {...productData,
-        promId,
-        rozetkaItemId,
-        rozetkaRzItemId
-      },
+      data: { ...productData, promId, rozetkaItemId, rozetkaRzItemId },
     })
     return product
   }
@@ -288,6 +284,7 @@ const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
     productId,
     updates,
     targetMarketplace,
+    internalOnly,
   }: SingleProductUpdateInput): Promise<SingleProductUpdateResult> {
     // First, get the current product to save old price
     const [currentProduct, rozetkaActive] = await Promise.all([
@@ -348,7 +345,8 @@ const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
 
     // Only sync to marketplaces if quantity or price changed (not costPrice)
     const needsMarketplaceSync =
-      updates.quantity !== undefined || updates.price !== undefined
+!internalOnly &&
+      (updates.quantity !== undefined || updates.price !== undefined)
 
     if (needsMarketplaceSync) {
       // Check if we need to sync to Prom
@@ -408,9 +406,10 @@ const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
     }
     // Return immediately with optimistic response
     // User doesn't wait for marketplace APIs
-    const message =
-      needsMarketplaceSync &&
-      (updates.quantity !== undefined || updates.price !== undefined)
+    const message = internalOnly
+      ? 'Product quantity updated internally (no marketplace sync)'
+      : needsMarketplaceSync &&
+          (updates.quantity !== undefined || updates.price !== undefined)
         ? 'Product updated successfully (syncing to marketplaces in background)'
         : updates.costPrice !== undefined && !needsMarketplaceSync
           ? 'Cost price updated successfully'

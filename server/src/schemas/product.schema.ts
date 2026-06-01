@@ -98,6 +98,7 @@ export const updateProductParamsSchema = z.object({
 export const updateProductBodySchema = z
   .object({
     targetMarketplace: z.enum(['prom', 'rozetka', 'all']).optional(),
+    internalOnly: z.boolean().optional(),
   })
   .extend(productUpdateParamsSchema.shape)
 
@@ -133,6 +134,7 @@ export type SingleProductUpdateInput = {
   productId: string
   updates: ProductUpdateParams
   targetMarketplace?: 'prom' | 'rozetka' | 'all'
+  internalOnly?: boolean
 }
 export type BatchProductUpdateItem = z.infer<
   typeof batchProductUpdateSchema

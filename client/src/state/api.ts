@@ -38,6 +38,7 @@ export interface UpdateProduct {
   price?: number
   costPrice?: number
   targetMarketplace?: 'prom' | 'rozetka' | 'all'
+  internalOnly?: boolean
 }
 
 export interface BatchUpdateProductQuantity {
@@ -578,6 +579,7 @@ dispatchAuthExpired()
         price,
         costPrice,
         targetMarketplace,
+        internalOnly,
       }) => ({
         url: `/products/${productId}`,
         method: 'PATCH',
@@ -586,6 +588,7 @@ dispatchAuthExpired()
           price,
           costPrice,
           targetMarketplace: targetMarketplace || 'all',
+          internalOnly,
         },
       }),
       invalidatesTags: ['Products'],
