@@ -519,7 +519,9 @@ export interface RozetkaBatchUpdate {
  *   stockQuantity: 100,
  *   promQuantity: 100,
  *   rozetkaQuantity: 100,
- *   externalIds: { prom: '123', rozetka: { item_id: '456' } },
+ *    promId: '123',
+ *   rozetkaItemId: '456',
+ *   rozetkaRzItemId: '789',
  *   masterQuantityDelta: -5, // 5 items sold
  *   needsPromSync: true,
  *   needsRozetkaSync: true,
@@ -528,14 +530,16 @@ export interface RozetkaBatchUpdate {
  */
 export interface ProductSyncEntry {
   productId: string
-  
+
   // Snapshot of app product fields
   stockQuantity: number
   promQuantity?: number | null
   rozetkaQuantity?: number | null
-  
+
   // Strictly typed external IDs
-  externalIds?: ProductExternalIds
+  promId?: string | null
+  rozetkaItemId?: string | null
+  rozetkaRzItemId?: string | null
 
   // Deltas calculated from incoming feeds or orders
   promQuantityDelta?: number

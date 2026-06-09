@@ -8,7 +8,6 @@ import { RozetkaUpdateParams } from '../rozetkaClient'
 import { normalizeQuantity } from '../../../utils/helpers/normalizeQuantity'
 import type {
   ProductSyncEntry,
-  ProductExternalIds,
   SyncStrategy,
 } from '../../../types/marketplaces'
 import { gmailLogger } from '../../../utils/gmailLogger'
@@ -230,7 +229,6 @@ export const syncInventoryAdjustment = async (
         stockQuantity: true,
         promQuantity: true,
         rozetkaQuantity: true,
-        externalIds: true,
         promId: true,
         rozetkaItemId: true,
         rozetkaRzItemId: true,
@@ -241,8 +239,6 @@ export const syncInventoryAdjustment = async (
       console.warn(`Product ${productId} not found in database`)
       continue
     }
-
-    const externalIds = appProduct.externalIds as ProductExternalIds
 
     // Calculate quantity delta (negative because items were ordered/sold)
     const masterQuantityDelta = -quantity
@@ -273,8 +269,9 @@ export const syncInventoryAdjustment = async (
       stockQuantity: appProduct.stockQuantity,
       promQuantity: appProduct.promQuantity ?? null,
       rozetkaQuantity: appProduct.rozetkaQuantity ?? null,
-      // externalIds stored here — eliminates redundant findUnique in sync section
-      externalIds,
+      promId: appProduct.promId ?? undefined,
+      rozetkaItemId: appProduct.rozetkaItemId ?? undefined,
+      rozetkaRzItemId: appProduct.rozetkaRzItemId ?? undefined,
       masterQuantityDelta,
       newMasterQuantity,
       needsPromSync: false,
@@ -294,7 +291,7 @@ export const syncInventoryAdjustment = async (
       )
 
       // For same_quantity strategy, sync to other marketplace
-      if (syncStrategy === 'same_quantity' && externalIds?.rozetka) {
+      if (syncStrategy === 'same_quantity' && appProduct.rozetkaItemId) {
         entry.needsRozetkaSync = true
         entry.newRozetkaQuantity = newMasterQuantity
       }
@@ -309,7 +306,7 @@ export const syncInventoryAdjustment = async (
       )
 
       // For same_quantity strategy, sync to other marketplace
-      if (syncStrategy === 'same_quantity' && externalIds?.prom) {
+      if (syncStrategy === 'same_quantity' && appProduct.promId) {
         entry.needsPromSync = true
         entry.newPromQuantity = newMasterQuantity
       }
@@ -321,11 +318,11 @@ export const syncInventoryAdjustment = async (
 
       if (syncStrategy === 'same_quantity') {
         // If marketplaces were in sync, reduce both by the same amount
-        if (externalIds?.prom) {
+        if (appProduct.promId) {
           entry.newPromQuantity = newMasterQuantity
           entry.needsPromSync = true
         }
-        if (externalIds?.rozetka) {
+        if (appProduct.rozetkaItemId) {
           entry.newRozetkaQuantity = newMasterQuantity
           entry.needsRozetkaSync = true
         }
@@ -413,19 +410,18 @@ export const syncInventoryAdjustment = async (
   const rozetkaActive = await settingsService.isRozetkaStoreActive()
 
   for (const entry of productsNeedingSync) {
-    const { externalIds } = entry
 
     // Collect Prom updates
     if (
       entry.needsPromSync &&
-      externalIds?.prom &&
+      entry.promId &&
       entry.newPromQuantity !== undefined
     ) {
       console.log(
         `Preparing Prom sync for product ${entry.productId} with quantity ${entry.newPromQuantity}`,
       )
       promUpdates.push({
-        productId: externalIds.prom,
+        productId: entry.promId,
         quantity: entry.newPromQuantity,
       })
     }
@@ -433,7 +429,7 @@ export const syncInventoryAdjustment = async (
     // Collect Rozetka updates(only if store is active)
     if (
       entry.needsRozetkaSync &&
-      externalIds?.rozetka?.item_id &&
+      entry.rozetkaItemId &&
       entry.newRozetkaQuantity !== undefined
     ) {
       if (!rozetkaActive) {
@@ -446,7 +442,7 @@ export const syncInventoryAdjustment = async (
         `Preparing Rozetka sync for product ${entry.productId} with quantity ${entry.newRozetkaQuantity}`,
       ) */
       rozetkaUpdates.push({
-        productId: externalIds.rozetka.item_id,
+        productId: entry.rozetkaItemId,
         updates: { quantity: entry.newRozetkaQuantity },
       })
     }
