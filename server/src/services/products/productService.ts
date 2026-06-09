@@ -60,7 +60,9 @@ type BatchEnrichedProduct = {
  */
 type MarketplacePushItem = {
   productId: string // internal DB id — used only for the DB sync-status write
-  externalIds: ProductExternalIds | null
+  promId?: string | null
+  rozetkaItemId?: string | null
+  rozetkaRzItemId?: string | null
   updates: ProductUpdateParams
 }
 
@@ -345,7 +347,7 @@ class ProductService {
 
     // Only sync to marketplaces if quantity or price changed (not costPrice)
     const needsMarketplaceSync =
-!internalOnly &&
+      !internalOnly &&
       (updates.quantity !== undefined || updates.price !== undefined)
 
     if (needsMarketplaceSync) {
@@ -577,9 +579,9 @@ class ProductService {
       select: {
         productId: true,
         stockQuantity: true,
-        externalIds: true,
         promId: true,
         rozetkaItemId: true,
+        rozetkaRzItemId: true,
       },
     })
 
@@ -756,10 +758,15 @@ class ProductService {
         original.updates.price !== undefined
       if (!hasMarketplaceUpdates) continue
 
-      const externalIds = dbMap.get(productId)
-        ?.externalIds as ProductExternalIds | null
+      const dbProduct = dbMap.get(productId)
 
-      pushItems.push({ productId, externalIds, updates: original.updates })
+      pushItems.push({
+        productId,
+        promId: dbProduct?.promId ?? null,
+        rozetkaItemId: dbProduct?.rozetkaItemId ?? null,
+        rozetkaRzItemId: dbProduct?.rozetkaRzItemId ?? null,
+        updates: original.updates,
+      })
     }
 
     // CHANGE: Fire-and-forget background marketplace sync — return response
@@ -866,7 +873,7 @@ class ProductService {
    * sync metadata (`lastPromSync`, `promQuantity`, `needsRozetkaSync`, …) so
    * the DB stays accurate for future reconciliation runs.
    *
-   * @param items   Products to push, each carrying their externalIds and the
+   * @param items   Products to push, each carrying canonical scalar marketplace IDs and the
    *                update payload (quantity / price) to send to the APIs.
    * @param target  Which marketplace(s) to push to.
    * @param rozetkaActive  Pre-fetched Rozetka store-active flag.  The caller
@@ -881,28 +888,25 @@ class ProductService {
     const rozetkaUpdates: RozetkaBatchUpdate[] = []
 
     // Collect per-marketplace payloads
-    for (const { externalIds, updates } of items) {
-      if ((target === 'all' || target === 'prom') && externalIds?.prom) {
+    for (const { promId, rozetkaItemId, updates } of items) {
+      if ((target === 'all' || target === 'prom') && promId) {
         const params: ProductUpdateParams = {}
         if (updates.quantity !== undefined) params.quantity = updates.quantity
         if (updates.price !== undefined) params.price = updates.price
-        promUpdates.push({ productId: externalIds.prom, updates: params })
+        promUpdates.push({ productId: promId, updates: params })
       }
 
-      if (
-        (target === 'all' || target === 'rozetka') &&
-        externalIds?.rozetka?.item_id
-      ) {
+      if ((target === 'all' || target === 'rozetka') && rozetkaItemId) {
         if (!rozetkaActive) {
           console.log(
-            `Skipping Rozetka sync for product with item_id=${externalIds.rozetka.item_id} - store is paused`,
+            `Skipping Rozetka sync for product with item_id=${rozetkaItemId} - store is paused`,
           )
         } else {
           const params: ProductUpdateParams = {}
           if (updates.quantity !== undefined) params.quantity = updates.quantity
           if (updates.price !== undefined) params.price = updates.price
           rozetkaUpdates.push({
-            productId: externalIds.rozetka.item_id,
+            productId: rozetkaItemId,
             updates: params,
           })
         }
@@ -948,7 +952,7 @@ class ProductService {
     // Write sync-status metadata back to the DB
     const syncTime = new Date()
     const metaUpdatePromises = items.map(
-      ({ productId, externalIds, updates }) => {
+      ({ productId, rozetkaItemId, updates }) => {
         const data: Record<string, unknown> = {}
 
         if (syncStatus.promSynced) {
@@ -963,7 +967,7 @@ class ProductService {
           if (updates.quantity !== undefined)
             data.rozetkaQuantity = updates.quantity
           data.needsRozetkaSync = false
-        } else if (!rozetkaActive && externalIds?.rozetka?.item_id) {
+        } else if (!rozetkaActive && rozetkaItemId) {
           // Store is paused — mirror quantity internally so it's accurate on resume
           if (updates.quantity !== undefined)
             data.rozetkaQuantity = updates.quantity

@@ -4,7 +4,6 @@ import prisma from '../../config/database'
 import productService from '../../services/products/productService'
 import {
   BatchUpdateInput,
-  ProductExternalIds,
   KnownMarketplace,
 } from '../../types/marketplaces'
 import {
@@ -195,7 +194,6 @@ export const syncAllQuantitiesToMarketplaces = async (
     select: {
       productId: true,
       stockQuantity: true,
-      externalIds: true,
       promId: true, 
       rozetkaItemId: true,
       rozetkaRzItemId: true,
@@ -234,7 +232,10 @@ export const syncAllQuantitiesToMarketplaces = async (
     // Build push items — each carries only what the push method needs
     const pushItems = eligible.map((p) => ({
       productId: p.productId,
-      externalIds: p.externalIds as ProductExternalIds | null,
+      promId: p.promId,
+      rozetkaItemId: p.rozetkaItemId,
+      rozetkaRzItemId: p.rozetkaRzItemId,
+
       updates: { quantity: p.stockQuantity },
     }))
 
