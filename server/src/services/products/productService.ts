@@ -295,9 +295,9 @@ class ProductService {
         select: {
           price: true,
           stockQuantity: true,
-          externalIds: true,
           promId: true,
           rozetkaItemId: true,
+          rozetkaRzItemId: true,
         },
       }),
       settingsService.isRozetkaStoreActive(),
@@ -342,8 +342,6 @@ class ProductService {
         'You cannot change quantity bigger than there is in warehouse!',
       )
     }
-
-    const externalIds = currentProduct.externalIds as ProductExternalIds | null
 
     // Only sync to marketplaces if quantity or price changed (not costPrice)
     const needsMarketplaceSync =
@@ -398,7 +396,8 @@ class ProductService {
       this.syncToMarketplacesInBackground(
         productId,
         updates,
-        externalIds,
+        currentProduct.promId,
+        currentProduct.rozetkaItemId,
         targetMarketplace,
         rozetkaActive,
       ).catch((err) => {
@@ -430,7 +429,8 @@ class ProductService {
   private async syncToMarketplacesInBackground(
     productId: string,
     updates: ProductUpdateParams,
-    externalIds: ProductExternalIds | null,
+    promId: string | null,
+  rozetkaItemId: string | null,
     targetMarketplace?: TargetMarketplace,
     rozetkaActive: boolean = true,
   ): Promise<void> {
@@ -449,7 +449,7 @@ class ProductService {
       (!targetMarketplace ||
         targetMarketplace === 'all' ||
         targetMarketplace === 'prom') &&
-      externalIds?.prom
+      promId
     ) {
       const promUpdates: ProductUpdateParams = {}
       if (updates.quantity !== undefined)
@@ -461,7 +461,7 @@ class ProductService {
           marketplaceName: 'Prom',
           productId,
           updateFunction: () =>
-            updatePromProduct(externalIds.prom!, promUpdates),
+            updatePromProduct(promId!, promUpdates),
           onSuccess: () => (syncStatus.promSynced = true),
           resultsArray: syncResults,
           errorsArray: syncErrors,
@@ -474,7 +474,7 @@ class ProductService {
       (!targetMarketplace ||
         targetMarketplace === 'all' ||
         targetMarketplace === 'rozetka') &&
-      externalIds?.rozetka?.item_id &&
+      rozetkaItemId &&
       rozetkaActive
     ) {
       const rozetkaUpdates: ProductUpdateParams = {}
@@ -487,7 +487,7 @@ class ProductService {
           marketplaceName: 'Rozetka',
           productId,
           updateFunction: () =>
-            updateRozetkaProduct(externalIds.rozetka!.item_id!, rozetkaUpdates),
+            updateRozetkaProduct(rozetkaItemId!, rozetkaUpdates),
           onSuccess: () => (syncStatus.rozetkaSynced = true),
           resultsArray: syncResults,
           errorsArray: syncErrors,
@@ -522,7 +522,7 @@ class ProductService {
       finalUpdateData.needsRozetkaSync = false
     } else if (
       !rozetkaActive &&
-      externalIds?.rozetka?.item_id &&
+      rozetkaItemId &&
       (!targetMarketplace ||
         targetMarketplace === 'all' ||
         targetMarketplace === 'rozetka') &&
