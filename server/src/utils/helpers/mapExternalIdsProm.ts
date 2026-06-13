@@ -42,10 +42,8 @@ async function updateProductsExternalIds() {
         updatedCount++
         return {
           ...product,
-          externalIds: {
-            ...product.externalIds,
-            prom: matchingPromProductId,
-          },
+          promId: matchingPromProductId ? String(matchingPromProductId) : null,
+          externalIds: {}, //temporary Prisma compatibility only; do not use as source of truth.
         }
       } else {
         notFoundCount++
@@ -120,10 +118,8 @@ export async function enrichWithPromIds(
 
       return {
         ...product,
-        externalIds: {
-          ...product.externalIds,
-          prom: promId, // Assign the *individual* promId
-        },
+        promId: promId ? String(promId) : null, //Assign the *individual* scalar promId.
+        externalIds: {}, //temporary Prisma compatibility only; do not use as source of truth.
       }
     } else {
       // No match found, just return the original product

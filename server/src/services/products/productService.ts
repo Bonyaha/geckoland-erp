@@ -25,7 +25,6 @@ import type {
   MarketplaceSyncStatus,
   PromBatchUpdate,
   RozetkaBatchUpdate,
-  ProductExternalIdsJson,
 } from '../../types/marketplaces'
 import {
   ProductUpdateParams,
@@ -1127,17 +1126,9 @@ class ProductService {
 
       if (matchingRozetkaProduct) {
         // Combined Prom + Rozetka product
-        const combinedExternalIds: ProductExternalIdsJson = {
-          prom: promId,
-          rozetka: {
-            rz_item_id: matchingRozetkaProduct.productId,
-            item_id: matchingRozetkaProduct.externalIds.rozetka,
-          },
-        }
 
         promCreateOperations.push({
           ...promProduct,
-          externalIds: combinedExternalIds,
           stockQuantity: normalizeQuantity(promProduct.stockQuantity),
           promQuantity: normalizeQuantity(promProduct.stockQuantity),
           rozetkaQuantity: normalizeQuantity(
@@ -1145,13 +1136,13 @@ class ProductService {
           ),
           lastPromSync: new Date(),
           lastRozetkaSync: new Date(),
-          promId: promProduct.productId,
-          rozetkaItemId: matchingRozetkaProduct.externalIds.rozetka
-            ? String(matchingRozetkaProduct.externalIds.rozetka)
-            : null,
-          rozetkaRzItemId: matchingRozetkaProduct.productId
-            ? String(matchingRozetkaProduct.productId)
-            : null,
+          promId: promProduct.promId ?? promProduct.productId,
+          rozetkaItemId: matchingRozetkaProduct.rozetkaItemId ?? null,
+          rozetkaRzItemId:
+            matchingRozetkaProduct.rozetkaRzItemId ??
+            matchingRozetkaProduct.productId ??
+            null,
+          externalIds: {},
         })
 
         if (sku) matchedRozetkaSKUs.add(sku)
@@ -1162,7 +1153,8 @@ class ProductService {
           stockQuantity: normalizeQuantity(promProduct.stockQuantity),
           promQuantity: normalizeQuantity(promProduct.stockQuantity),
           lastPromSync: new Date(),
-          promId: promProduct.productId,
+          promId: promProduct.promId ?? promProduct.productId, //scalar Prom ID is the source of truth.
+          externalIds: {},
         })
       }
     }
@@ -1211,12 +1203,10 @@ class ProductService {
           stockQuantity: normalizeQuantity(rozetkaProduct.stockQuantity),
           rozetkaQuantity: normalizeQuantity(rozetkaProduct.stockQuantity),
           lastRozetkaSync: new Date(),
-          rozetkaItemId: rozetkaProduct.externalIds.rozetka
-            ? String(rozetkaProduct.externalIds.rozetka)
-            : null,
-          rozetkaRzItemId: rozetkaProduct.productId
-            ? String(rozetkaProduct.productId)
-            : null,
+          rozetkaItemId: rozetkaProduct.rozetkaItemId ?? null, //scalar Rozetka item_id is the source of truth.
+          rozetkaRzItemId:
+            rozetkaProduct.rozetkaRzItemId ?? rozetkaProduct.productId ?? null, //scalar Rozetka rz_item_id is the source of truth.
+          externalIds: {},
         }))
 
       createPromises.push(
@@ -1278,9 +1268,8 @@ class ProductService {
         stockQuantity: normalizeQuantity(promProduct.stockQuantity),
         promQuantity: normalizeQuantity(promProduct.stockQuantity),
         lastPromSync: new Date(),
-        promId: promProduct.externalIds?.prom
-          ? String(promProduct.externalIds.prom)
-          : null,
+        promId: promProduct.promId ?? promProduct.productId ?? null, //scalar Prom ID is the source of truth.
+        externalIds: {},
       },
     })
   }
@@ -1297,12 +1286,10 @@ class ProductService {
         stockQuantity: normalizeQuantity(rozetkaProduct.stockQuantity),
         rozetkaQuantity: normalizeQuantity(rozetkaProduct.stockQuantity),
         lastRozetkaSync: new Date(),
-        rozetkaItemId: rozetkaProduct.externalIds.rozetka
-          ? String(rozetkaProduct.externalIds.rozetka)
-          : null,
-        rozetkaRzItemId: rozetkaProduct.productId
-          ? String(rozetkaProduct.productId)
-          : null,
+        rozetkaItemId: rozetkaProduct.rozetkaItemId ?? null, //scalar Rozetka item_id is the source of truth.
+        rozetkaRzItemId:
+          rozetkaProduct.rozetkaRzItemId ?? rozetkaProduct.productId ?? null, //scalar Rozetka rz_item_id is the source of truth.
+        externalIds: {},
       },
     })
   }

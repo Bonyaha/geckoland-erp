@@ -5,10 +5,11 @@ import type { PromProductData, EnrichedProductData } from '../../types/products'
  * Maps a PromProductData object (returned by fetchPromProductsWithTransformation)
  * to the EnrichedProductData shape expected by enrichAndInsertProducts().
  *
- * Key decisions:
- * - externalIds.prom is set from the known Prom ID.
- * - externalIds.rozetka is intentionally omitted so enrichWithRozetkaIds()
- *   can fill it in by SKU matching during the enrichment pipeline.
+ * Key decisions: 
+ * - promId is set from the known Prom ID.
+ * - externalIds is kept as an empty object only for temporary Prisma compatibility.
+ * - rozetkaItemId and rozetkaRzItemId are intentionally null so enrichWithRozetka()
+ *   can fill them in by SKU matching during the enrichment pipeline.
  * - All extra Prom-specific fields (lastPromSync, needsSync, etc.) are
  *   preserved via the index signature on EnrichedProductData, so nothing is
  *   lost after the enrichment spread.
@@ -26,10 +27,7 @@ export function mapPromProductToEnriched(
     price: p.price,
     stockQuantity: p.stockQuantity,
     available: p.available,
-    externalIds: {
-      prom: p.externalIds.prom,
-      // rozetka is intentionally absent — enrichWithRozetkaIds() fills it in
-    },
+    externalIds: {},
     description: p.description ?? null,
     mainImage: p.mainImage ?? null,
     images: p.images,
@@ -46,7 +44,7 @@ export function mapPromProductToEnriched(
           },
         }
       : undefined,
-    promId: p.externalIds.prom || null,
+    promId: p.promId ?? p.externalIds.prom ?? null,
     rozetkaItemId: null, // Will be filled by enrichWithRozetka
     rozetkaRzItemId: null, // Will be filled by enrichWithRozetka
     // Preserve all Prom-specific sync fields via the index signature

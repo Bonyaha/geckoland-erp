@@ -137,7 +137,8 @@ export async function fetchPromProductsWithTransformation(): Promise<
     (product: any) => ({
       productId: String(product.id),
       sku: product.sku || null,
-      externalIds: { prom: String(product.id), rozetka: null },
+      externalIds: { prom: String(product.id), rozetka: null }, //temporary compatibility only; promId is the source-of-truth scalar.
+      promId: String(product.id),
       name: product.name_multilang.uk || '',
       price: String(product.price || '0.00'),
       priceOld: null,
@@ -166,7 +167,7 @@ export async function fetchPromProductsWithTransformation(): Promise<
       measureUnit: product.measure_unit || 'шт.',
       rozetkaQuantity: null,
       lastRozetkaSync: null,
-    })
+    }),
   )
 
   await fs.writeFile(

@@ -235,7 +235,6 @@ export const syncAllQuantitiesToMarketplaces = async (
       promId: p.promId,
       rozetkaItemId: p.rozetkaItemId,
       rozetkaRzItemId: p.rozetkaRzItemId,
-
       updates: { quantity: p.stockQuantity },
     }))
 

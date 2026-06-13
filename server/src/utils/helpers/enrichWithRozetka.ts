@@ -9,7 +9,7 @@ export async function enrichWithRozetka(
 
   interface RozetkaMatchData {
     rz_item_id: string
-    item_id: string
+    item_id: string | null
     quantity: number
     categoryId: number | null
     categoryName: string | null
@@ -20,8 +20,8 @@ export async function enrichWithRozetka(
   rozetkaProducts.forEach((p) => {
     if (!p.sku) return
     rozetkaMap.set(p.sku, {
-      rz_item_id: p.productId,
-      item_id: p.externalIds.rozetka,
+      rz_item_id: p.rozetkaRzItemId ?? p.productId,
+      item_id: p.rozetkaItemId ?? null,
       quantity: p.stockQuantity,
       categoryId: p.categoryData?.id ?? null,
       categoryName: p.categoryData?.title ?? null,
@@ -47,13 +47,7 @@ export async function enrichWithRozetka(
     matchedCount++
     return {
       ...product,
-      externalIds: {
-        ...product.externalIds,
-        rozetka: {
-          rz_item_id: match.rz_item_id,
-          item_id: match.item_id,
-        },
-      },
+      externalIds: {},
       rozetkaQuantity: match.quantity,
       rozetkaItemId: match.item_id,
       rozetkaRzItemId: match.rz_item_id,

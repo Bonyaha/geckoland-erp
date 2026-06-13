@@ -255,6 +255,7 @@ export interface PromProductData {
     prom: string
     rozetka: string | null
   }
+  promId?: string | null
   name: string
   price: string
   priceOld?: string | null
@@ -276,7 +277,7 @@ export interface PromProductData {
   categoryData?: any
   measureUnit?: string
   rozetkaQuantity?: number | null
-  lastRozetkaSync?: Date | null  
+  lastRozetkaSync?: Date | null
 }
 
 /**
@@ -306,6 +307,8 @@ export interface RozetkaProductData {
     prom: string | null
     rozetka: string
   }
+  rozetkaItemId?: string | null
+  rozetkaRzItemId?: string | null
   name: string
   price: string
   stockQuantity: number

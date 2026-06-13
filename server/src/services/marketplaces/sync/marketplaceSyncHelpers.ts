@@ -171,23 +171,23 @@ export async function syncRozetkaProductIds() {
 
         // Loop through each product found with that SKU
         for (const productToUpdate of existingProducts) {
-          const currentExternalIds = (productToUpdate.externalIds as any) || {}
+          /* const currentExternalIds = (productToUpdate.externalIds as any) || {}
 
           const rozetkaData = {
             rz_item_id: String(rozetkaProduct.rz_item_id),
             item_id: String(rozetkaProduct.item_id),
-          }
+          } */
 
-          const newExternalIds = {
+          /* const newExternalIds = {
             ...currentExternalIds,
             rozetka: rozetkaData,
-          }
+          } */
 
           // Update each product using its actual primary key, `productId`
           await prisma.products.update({
             where: { productId: productToUpdate.productId },
             data: {
-              externalIds: newExternalIds,
+              externalIds: {},
               rozetkaItemId: String(rozetkaProduct.item_id),
               rozetkaRzItemId: String(rozetkaProduct.rz_item_id),
             },

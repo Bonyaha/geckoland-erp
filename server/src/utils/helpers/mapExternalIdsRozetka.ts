@@ -27,7 +27,10 @@ async function updateProductsExternalIds() {
     rozetkaProducts.forEach((rozetkaProduct: any) => {
       rozetkaProductsMap.set(rozetkaProduct.uniqueProductKey, {
         rz_item_id: rozetkaProduct.productId,
-        item_id: rozetkaProduct.externalIds.rozetka,
+        item_id:
+          rozetkaProduct.rozetkaItemId ??
+          rozetkaProduct.externalIds?.rozetka ??
+          null,
       })
     })
 
@@ -42,13 +45,13 @@ async function updateProductsExternalIds() {
         updatedCount++
         return {
           ...product,
-          externalIds: {
-            ...product.externalIds,
-            rozetka: {
-              rz_item_id: matchingRozetkaData.rz_item_id,
-              item_id: matchingRozetkaData.item_id,
-            },
-          },
+          rozetkaItemId: matchingRozetkaData.item_id
+            ? String(matchingRozetkaData.item_id)
+            : null, //set scalar Rozetka item_id instead of meaningful externalIds.rozetka.
+          rozetkaRzItemId: matchingRozetkaData.rz_item_id
+            ? String(matchingRozetkaData.rz_item_id)
+            : null, //set scalar Rozetka rz_item_id instead of meaningful externalIds.rozetka.
+          externalIds: {}, //temporary Prisma compatibility only; do not use as source of truth.
         }
       } else {
         notFoundCount++
@@ -89,7 +92,10 @@ export async function enrichWithRozetkaIds(
   rozetkaProducts.forEach((rozetkaProduct: any) => {
     rozetkaProductsMap.set(rozetkaProduct.sku, {
       rz_item_id: rozetkaProduct.productId,
-      item_id: rozetkaProduct.externalIds.rozetka,
+      item_id:
+        rozetkaProduct.rozetkaItemId ??
+        rozetkaProduct.externalIds?.rozetka ??
+        null, //prefer scalar Rozetka item_id; fallback is temporary compatibility.
     })
   })
   //console.log('Rozetka products map:', rozetkaProductsMap);
@@ -104,13 +110,13 @@ export async function enrichWithRozetkaIds(
 
       return {
         ...product,
-        externalIds: {
-          ...product.externalIds,
-          rozetka: {
-            rz_item_id: matchingRozetkaData.rz_item_id,
-            item_id: matchingRozetkaData.item_id,
-          },
-        },
+        rozetkaItemId: matchingRozetkaData.item_id
+          ? String(matchingRozetkaData.item_id)
+          : null, //set scalar Rozetka item_id instead of meaningful externalIds.rozetka.
+        rozetkaRzItemId: matchingRozetkaData.rz_item_id
+          ? String(matchingRozetkaData.rz_item_id)
+          : null, //set scalar Rozetka rz_item_id instead of meaningful externalIds.rozetka.
+        externalIds: {}, //temporary Prisma compatibility only; do not use as source of truth.
       }
     }
     // Keep the product as is if no match found
