@@ -15,7 +15,6 @@ import {
 } from 'lucide-react'
 import { formatDateTime } from '@/utils/dateUtils'
 import {
-  parseExternalIds,
   getPromEditUrl,
   getRozetkaProductUrl,
   openInNewTab,
@@ -46,6 +45,9 @@ type ProductType = {
   sku: string
   mainImage?: string
   lastSynced?: string
+  promId?: string | null
+  rozetkaItemId?: string | null
+  rozetkaRzItemId?: string | null
   externalIds?: string | Record<string, any>
   categoryData?: {
     prom?: CategoryData
@@ -217,23 +219,19 @@ const ProductRow = ({
     openInNewTab(url)
   }
 
-  // Helper function to render marketplace tags based on externalIds
+  // Helper function to render marketplace tags from scalar marketplace IDs
   const renderMarketplaceTags = useMemo(() => {
-    const ids = parseExternalIds(product.externalIds) as Record<
-      string,
-      any
-    > | null
-
+    
     const tags: React.ReactNode[] = []
 
-    if (ids?.prom) {
+    if (product.promId) {
       tags.push(
         <span
           key='prom'
-          title={`Prom ID: ${ids.prom}\nНатисни, щоб відкрити в Prom маркетплейсі`}
+          title={`Prom ID: ${product.promId}\nНатисни, щоб відкрити в Prom маркетплейсі`}
           onClick={(e) => {
             e.stopPropagation() // Prevent row selection
-            handleMarketplaceClick('prom', ids.prom)
+            handleMarketplaceClick('prom', product.promId as string)
           }}
           className='px-1.5 py-0.5 bg-purple-600 text-white text-[10px] rounded font-bold cursor-pointer hover:bg-purple-700 transition-colors'
         >
@@ -242,14 +240,14 @@ const ProductRow = ({
       )
     }
 
-    if (ids?.rozetka) {
+    if (product.rozetkaRzItemId) {
       tags.push(
         <span
           key='rozetka'
-          title={`Rozetka ID: ${ids.rozetka.rz_item_id}\nНатисни, щоб відкрити в Rozetka маркетплейсі`}
+          title={`Rozetka ID: ${product.rozetkaRzItemId}\nНатисни, щоб відкрити в Rozetka маркетплейсі`}
           onClick={(e) => {
             e.stopPropagation() // Prevent row selection
-            handleMarketplaceClick('rozetka', ids.rozetka.rz_item_id)
+            handleMarketplaceClick('rozetka', product.rozetkaRzItemId as string)
           }}
           className='px-1.5 py-0.5 bg-green-600 text-white text-[10px] rounded font-bold cursor-pointer hover:bg-green-700 transition-colors'
         >
@@ -275,7 +273,7 @@ const ProductRow = ({
       )
     }
     return tags.length > 0 ? tags : null
-  }, [product.externalIds, product.productId])
+  }, [product.promId, product.productId, product.rozetkaRzItemId])
 
   const handleQuantityUpdate = async (newQuantity: number) => {
     try {

@@ -14,6 +14,10 @@ export interface Product {
   needsSync?: boolean
   needsPromSync?: boolean
   needsRozetkaSync?: boolean
+  promId?: string | null
+  rozetkaItemId?: string | null
+  rozetkaRzItemId?: string | null
+  externalIds?: string | Record<string, any> | null
 }
 
 export interface ProductInventoryStats {
