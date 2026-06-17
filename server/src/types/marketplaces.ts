@@ -97,38 +97,6 @@ export interface MarketplaceUpdateResult {
   error?: string
 }
 
-/**
- * Represents the strict structure of the 'externalIds' JSON field in Prisma.
- * Used to cast the 'any' type coming from Prisma/Zod to ensure type safety.
- * 
- * @remarks
- * externalIds is a JSON column.
- * For READS: Prisma returns JSON with weak typing, so cast to ProductExternalIds
- *           when accessing properties in application code.
- *
- * For WRITES: Prisma requires Prisma.InputJsonValue-compatible objects.
- *            When persisting externalIds, cast/convert to Prisma.InputJsonValue
- *            (or use a dedicated Json type) to satisfy the index signature requirement.
- * 
- * @example
- * const product = await prisma.products.findUnique({ where: { productId } })
- * const externalIds = product.externalIds as ProductExternalIds
- * 
- * if (externalIds?.prom) {
- *   await updatePromProduct(externalIds.prom, updates)
- * }
- */
-export interface ProductExternalIds {
-  prom?: string
-  rozetka?: {
-    rz_item_id?: string
-    item_id?: string
-  }
-  // Add other marketplaces here in the future
-}
-
-export type ProductExternalIdsJson = Prisma.InputJsonObject & ProductExternalIds
-
 // ============================================
 // PROM MARKETPLACE TYPES
 // ============================================

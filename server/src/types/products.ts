@@ -162,7 +162,9 @@ export interface BatchProductUpdateResult {
  * - price: Product price (Decimal)
  * - stockQuantity: Initial stock level (integer)
  * - available: Availability status (boolean)
- * - externalIds: Marketplace IDs (can be empty object)
+ * - promId: Marketplace ID for Prom
+ * - rozetkaItemId: Marketplace ID for Rozetka
+ * - rozetkaRzItemId: Rz Marketplace ID for Rozetka
  * - images: Image URLs (can be empty array)
  *
  * Optional fields have defaults or are nullable.
@@ -174,7 +176,9 @@ export interface BatchProductUpdateResult {
  *   price: 25000,
  *   stockQuantity: 10,
  *   available: true,
- *   externalIds: { prom: '123456' },
+ *   promId: '123456',
+ *   rozetkaItemId: null,
+ *   rozetkaRzItemId: null,
  *   images: ['https://example.com/image.jpg'],
  *   sku: 'LAPTOP-001',
  *   description: 'High-performance gaming laptop',
@@ -243,18 +247,14 @@ export interface ProductSyncResult {
  *   stockQuantity: 10,
  *   promQuantity: 10,
  *   available: true,
- *   externalIds: { prom: '1234567', rozetka: null },
+ *   promId: '1234567',
  *   source: 'prom',
  *   lastPromSync: new Date()
  * }
  */
 export interface PromProductData {
   productId: string
-  sku?: string | null
-  externalIds: {
-    prom: string
-    rozetka: string | null
-  }
+  sku?: string | null 
   promId?: string | null
   name: string
   price: string
@@ -296,17 +296,14 @@ export interface PromProductData {
  *   price: '25000',
  *   stockQuantity: 10,
  *   available: true,
- *   externalIds: { prom: null, rozetka: '498694064' },
+ *   rozetkaItemId: '498694064',
+ *   rozetkaRzItemId: '998694724',
  *   source: 'rozetka'
  * }
  */
 export interface RozetkaProductData {
   productId: string
   sku?: string | null
-  externalIds: {
-    prom: string | null
-    rozetka: string
-  }
   rozetkaItemId?: string | null
   rozetkaRzItemId?: string | null
   name: string
@@ -353,7 +350,7 @@ export interface RozetkaProductData {
  * // After enrichment with Prom IDs
  * const enriched: EnrichedProductData = {
  *   ...product,
- *   externalIds: { prom: '1234567' }
+ *   promId: '1234567'
  * }
  *
  * // After enrichment with categories
@@ -371,13 +368,6 @@ export interface EnrichedProductData {
   price: number | string
   stockQuantity: number
   available: boolean
-  externalIds: {
-    prom?: string
-    rozetka?: {
-      rz_item_id?: string
-      item_id?: string
-    }
-  }
   promId?: string | null
   rozetkaItemId?: string | null
   rozetkaRzItemId?: string | null

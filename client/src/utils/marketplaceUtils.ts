@@ -37,45 +37,6 @@ export function openInNewTab(url: string): void {
   window.open(url, '_blank', 'noopener,noreferrer')
 }
 
-/**
- * Type guard to check if external IDs contain Prom ID
- */
-export function hasPromId(externalIds: any): externalIds is { prom: string } {
-  return externalIds?.prom && typeof externalIds.prom === 'string'
-}
-
-/**
- * Type guard to check if external IDs contain Rozetka ID
- */
-export function hasRozetkaId(externalIds: any): externalIds is {
-  rozetka: { rz_item_id: string; item_id: string }
-} {
-  return (
-    externalIds?.rozetka?.rz_item_id &&
-    typeof externalIds.rozetka.rz_item_id === 'string'
-  )
-}
-
-/**
- * Safely parses externalIds JSON string or object
- * @param externalIds - Either a JSON string or object
- * @returns Parsed external IDs object or null
- */
-export function parseExternalIds(
-  externalIds: string | Record<string, any> | undefined,
-): Record<string, any> | null {
-  if (!externalIds) return null
-
-  if (typeof externalIds === 'string') {
-    try {
-      return JSON.parse(externalIds)
-    } catch {
-      return null
-    }
-  }
-
-  return externalIds
-}
 
 /*
  * Maps internal payment status codes to user-friendly labels in Ukrainian. This is used to display the payment status in the UI based on the API response.

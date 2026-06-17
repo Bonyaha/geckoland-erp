@@ -27,7 +27,6 @@ export interface ProductFromDbCSV {
   price: string
   stockQuantity: string
   source: string
-  externalIds: string
   description: string
   mainImage: string
   images: string
@@ -79,7 +78,7 @@ export function mapHPCsvToProduct(row: ProductFromHPCSV): any {
     price,
     costPrice,
     stockQuantity: quantity,    
-    externalIds: { prom: null, rozetka: null },
+    promId: { prom: null, rozetka: null },
     description: row['Опис'] || null,
     mainImage: imageUrls[0] || null,
     images: imageUrls,
@@ -121,8 +120,7 @@ export function mapDbCsvToProduct(row: ProductFromDbCSV): any {
     name: row.name || 'Unnamed Product',
     price: String(row.price || '0.00'),
     costPrice: row.costPrice ? String(row.costPrice) : null,
-    stockQuantity: parseInt(row.stockQuantity, 10) || 0,    
-    externalIds: safeJsonParse(row.externalIds),
+    stockQuantity: parseInt(row.stockQuantity, 10) || 0,
     description: row.description || null,
     mainImage: row.mainImage || null,
     images: safeJsonParse(row.images) || [],

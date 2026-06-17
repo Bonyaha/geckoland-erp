@@ -76,15 +76,9 @@ const updateAllMarketplaceQuantities = async () => {
       create: {
         ...promProduct,
         stockQuantity: normalizeQuantity(promProduct.stockQuantity),
-        promId: promProduct.externalIds?.prom
-          ? String(promProduct.externalIds.prom)
-          : null,
-        rozetkaItemId: (promProduct.externalIds as any)?.rozetka?.item_id
-          ? String((promProduct.externalIds as any).rozetka.item_id)
-          : null,
-        rozetkaRzItemId: (promProduct.externalIds as any)?.rozetka?.rz_item_id
-          ? String((promProduct.externalIds as any).rozetka.rz_item_id)
-          : null,
+        promId: promProduct.promId ?? promProduct.productId ?? null,
+        rozetkaItemId: promProduct.rozetkaItemId ?? null,
+        rozetkaRzItemId: promProduct.rozetkaRzItemId ?? null,
       },
     })
   }
@@ -97,7 +91,6 @@ const updateAllMarketplaceQuantities = async () => {
       stockQuantity: true,
       rozetkaItemId: true,
       rozetkaRzItemId: true,
-      externalIds: true,
     },
   })
   console.log(

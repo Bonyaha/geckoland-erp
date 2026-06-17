@@ -14,13 +14,14 @@ export const createProductBodySchema = z.object({
     .nonnegative('stockQuantity must be a non-negative integer'),
   available: z.boolean(), // This is required in your schema (no '?' or @default)
 
-  // externalIds is 'Json', not optional
-  externalIds: z.any().default({}),
+  promId: z.string().nullable().optional(),
+  rozetkaItemId: z.string().nullable().optional(),
+  rozetkaRzItemId: z.string().nullable().optional(),
 
   // images is 'String[]', not optional, but can be empty
   images: z.array(z.string()).default([]),
 
-  // --- Fields with Defaults (optional in Zod) ---  
+  // --- Fields with Defaults (optional in Zod) ---
   needsSync: z.boolean().default(false).optional(),
   needsPromSync: z.boolean().default(false).optional(),
   needsRozetkaSync: z.boolean().default(false).optional(),

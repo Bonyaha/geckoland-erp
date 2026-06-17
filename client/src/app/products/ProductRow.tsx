@@ -48,7 +48,6 @@ type ProductType = {
   promId?: string | null
   rozetkaItemId?: string | null
   rozetkaRzItemId?: string | null
-  externalIds?: string | Record<string, any>
   categoryData?: {
     prom?: CategoryData
     rozetka?: CategoryData

@@ -44,7 +44,7 @@ export async function enrichWithPromCategoriesAndDescription(
 
   const enrichedProducts = products.map((product) => {
     // Get the unique prom ID that was assigned in the previous step
-    const promId = product.externalIds?.prom
+    const promId = product.promId
 
     // If this product doesn't have a promId, we can't look it up.
     if (!promId) {

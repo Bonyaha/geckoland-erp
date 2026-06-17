@@ -18,7 +18,6 @@ import { settingsService } from '../settings/settingsService'
 import { normalizeQuantity } from '../../utils/helpers/normalizeQuantity'
 import { ErrorFactory } from '../../middleware/errorHandler'
 import type {
-  ProductExternalIds,
   TargetMarketplace,
   MarketplaceUpdateResult,
   BaseProductUpdateParams,
@@ -46,9 +45,14 @@ import {
 type BatchEnrichedProduct = {
   original: BatchProductUpdateItem
   dbProduct:
-    | { productId: string; stockQuantity: number; externalIds: unknown }
+    | {
+        productId: string
+        stockQuantity: number
+        promId?: string | null
+        rozetkaItemId?: string | null
+        rozetkaRzItemId?: string | null
+      }
     | undefined
-  externalIds: ProductExternalIds | null
   hasMarketplaceUpdates: boolean
 }
 
@@ -251,22 +255,25 @@ class ProductService {
    *   price: 299.99,
    *   stockQuantity: 10,
    *   available: true,
-   *   externalIds: { prom: '123' },
+   *   promId: 'prom_123',
+   *   rozetkaItemId: 'rozetka_456',
+   *   rozetkaRzItemId: 'rozetka_rz_789',
    *   images: []
    * })
    */
   async createProduct(productData: ProductCreateInput) {
-    const externalIds = productData.externalIds as any
-    const promId = externalIds?.prom ? String(externalIds.prom) : null
-    const rozetkaItemId = externalIds?.rozetka?.item_id
-      ? String(externalIds.rozetka.item_id)
-      : null
-    const rozetkaRzItemId = externalIds?.rozetka?.rz_item_id
-      ? String(externalIds.rozetka.rz_item_id)
-      : null
-
+    
     const product = await prisma.products.create({
-      data: { ...productData, promId, rozetkaItemId, rozetkaRzItemId },
+      data: {
+        ...productData,
+        promId: productData.promId ? String(productData.promId) : null,
+        rozetkaItemId: productData.rozetkaItemId
+          ? String(productData.rozetkaItemId)
+          : null,
+        rozetkaRzItemId: productData.rozetkaRzItemId
+          ? String(productData.rozetkaRzItemId)
+          : null,
+      },
     })
     return product
   }
@@ -1034,8 +1041,7 @@ class ProductService {
       // Only fetch the fields needed for duplicate detection
       prisma.products.findMany({
         select: {
-          sku: true,
-          externalIds: true,
+          sku: true,          
           promId: true,
           rozetkaRzItemId: true,
         },
@@ -1142,7 +1148,6 @@ class ProductService {
             matchingRozetkaProduct.rozetkaRzItemId ??
             matchingRozetkaProduct.productId ??
             null,
-          externalIds: {},
         })
 
         if (sku) matchedRozetkaSKUs.add(sku)
@@ -1154,7 +1159,6 @@ class ProductService {
           promQuantity: normalizeQuantity(promProduct.stockQuantity),
           lastPromSync: new Date(),
           promId: promProduct.promId ?? promProduct.productId, //scalar Prom ID is the source of truth.
-          externalIds: {},
         })
       }
     }
@@ -1206,7 +1210,6 @@ class ProductService {
           rozetkaItemId: rozetkaProduct.rozetkaItemId ?? null, //scalar Rozetka item_id is the source of truth.
           rozetkaRzItemId:
             rozetkaProduct.rozetkaRzItemId ?? rozetkaProduct.productId ?? null, //scalar Rozetka rz_item_id is the source of truth.
-          externalIds: {},
         }))
 
       createPromises.push(
@@ -1269,7 +1272,6 @@ class ProductService {
         promQuantity: normalizeQuantity(promProduct.stockQuantity),
         lastPromSync: new Date(),
         promId: promProduct.promId ?? promProduct.productId ?? null, //scalar Prom ID is the source of truth.
-        externalIds: {},
       },
     })
   }
@@ -1289,7 +1291,6 @@ class ProductService {
         rozetkaItemId: rozetkaProduct.rozetkaItemId ?? null, //scalar Rozetka item_id is the source of truth.
         rozetkaRzItemId:
           rozetkaProduct.rozetkaRzItemId ?? rozetkaProduct.productId ?? null, //scalar Rozetka rz_item_id is the source of truth.
-        externalIds: {},
       },
     })
   }

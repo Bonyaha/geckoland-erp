@@ -7,7 +7,6 @@ import type { PromProductData, EnrichedProductData } from '../../types/products'
  *
  * Key decisions: 
  * - promId is set from the known Prom ID.
- * - externalIds is kept as an empty object only for temporary Prisma compatibility.
  * - rozetkaItemId and rozetkaRzItemId are intentionally null so enrichWithRozetka()
  *   can fill them in by SKU matching during the enrichment pipeline.
  * - All extra Prom-specific fields (lastPromSync, needsSync, etc.) are
@@ -27,7 +26,6 @@ export function mapPromProductToEnriched(
     price: p.price,
     stockQuantity: p.stockQuantity,
     available: p.available,
-    externalIds: {},
     description: p.description ?? null,
     mainImage: p.mainImage ?? null,
     images: p.images,
@@ -44,7 +42,7 @@ export function mapPromProductToEnriched(
           },
         }
       : undefined,
-    promId: p.promId ?? p.externalIds.prom ?? null,
+    promId: p.promId ?? null,
     rozetkaItemId: null, // Will be filled by enrichWithRozetka
     rozetkaRzItemId: null, // Will be filled by enrichWithRozetka
     // Preserve all Prom-specific sync fields via the index signature

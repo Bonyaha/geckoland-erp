@@ -136,8 +136,7 @@ export async function fetchPromProductsWithTransformation(): Promise<
   const transformedProducts: PromProductData[] = allProducts.map(
     (product: any) => ({
       productId: String(product.id),
-      sku: product.sku || null,
-      externalIds: { prom: String(product.id), rozetka: null }, //temporary compatibility only; promId is the source-of-truth scalar.
+      sku: product.sku || null,     
       promId: String(product.id),
       name: product.name_multilang.uk || '',
       price: String(product.price || '0.00'),

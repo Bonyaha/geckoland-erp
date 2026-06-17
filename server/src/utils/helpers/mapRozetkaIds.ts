@@ -29,7 +29,6 @@ async function updateProductsExternalIds() {
         rz_item_id: rozetkaProduct.productId,
         item_id:
           rozetkaProduct.rozetkaItemId ??
-          rozetkaProduct.externalIds?.rozetka ??
           null,
       })
     })
@@ -50,8 +49,7 @@ async function updateProductsExternalIds() {
             : null, //set scalar Rozetka item_id instead of meaningful externalIds.rozetka.
           rozetkaRzItemId: matchingRozetkaData.rz_item_id
             ? String(matchingRozetkaData.rz_item_id)
-            : null, //set scalar Rozetka rz_item_id instead of meaningful externalIds.rozetka.
-          externalIds: {}, //temporary Prisma compatibility only; do not use as source of truth.
+            : null, //set scalar Rozetka rz_item_id instead of meaningful externalIds.rozetka
         }
       } else {
         notFoundCount++
@@ -94,7 +92,6 @@ export async function enrichWithRozetkaIds(
       rz_item_id: rozetkaProduct.productId,
       item_id:
         rozetkaProduct.rozetkaItemId ??
-        rozetkaProduct.externalIds?.rozetka ??
         null, //prefer scalar Rozetka item_id; fallback is temporary compatibility.
     })
   })
@@ -116,7 +113,6 @@ export async function enrichWithRozetkaIds(
         rozetkaRzItemId: matchingRozetkaData.rz_item_id
           ? String(matchingRozetkaData.rz_item_id)
           : null, //set scalar Rozetka rz_item_id instead of meaningful externalIds.rozetka.
-        externalIds: {}, //temporary Prisma compatibility only; do not use as source of truth.
       }
     }
     // Keep the product as is if no match found

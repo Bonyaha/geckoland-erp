@@ -47,7 +47,6 @@ export async function enrichWithRozetka(
     matchedCount++
     return {
       ...product,
-      externalIds: {},
       rozetkaQuantity: match.quantity,
       rozetkaItemId: match.item_id,
       rozetkaRzItemId: match.rz_item_id,

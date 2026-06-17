@@ -41,7 +41,6 @@ type ProductType = {
   stockQuantity: number
   sku: string
   source?: string
-  externalIds?: string
   description?: string
   mainImage?: string
   images?: string[]

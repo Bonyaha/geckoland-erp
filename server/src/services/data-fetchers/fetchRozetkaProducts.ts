@@ -126,7 +126,6 @@ export async function fetchRozetkaProductsWithTransformation(): Promise<
     const transformedProducts = allProducts.map((item: any) => ({
       productId: String(item.rz_item_id),
       sku: item.article || null,
-      externalIds: { prom: null, rozetka: String(item.item_id) },
       name: item.name,
       price: String(item.price || '0.00'),
       stockQuantity: item.stock_quantity || 0,

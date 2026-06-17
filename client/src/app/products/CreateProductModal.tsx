@@ -9,7 +9,6 @@ type ProductFormData = {
   stockQuantity: number
   sku: string
   source?: string
-  externalIds?: string
   description?: string
   mainImage?: string
   images?: string[]
@@ -48,7 +47,6 @@ const CreateProductModal = ({
     price: 0,
     stockQuantity: 0,
     source: 'prom', // Default from schema
-    externalIds: '{}', // Default JSON object
     images: [], // Default empty array
     needsSync: false, // Default from schema
     inStock: 0, // Initialized, will be updated with stockQuantity
@@ -102,7 +100,6 @@ const CreateProductModal = ({
       ...formData,
       inStock: formData.stockQuantity, // Ensure inStock matches stockQuantity
       available: formData.stockQuantity > 0, // Ensure availability logic
-      externalIds: formData.externalIds || '{}', // Ensure valid JSON
       images: formData.images || [],
       // Parse JSON strings if provided
       categoryData: formData.categoryData
@@ -203,19 +200,6 @@ const CreateProductModal = ({
             placeholder='Description (optional)'
             onChange={handleChange}
             value={formData.description || ''}
-            className={inputCssStyles}
-          />
-
-          {/* EXTERNAL IDS (JSON) */}
-          <label htmlFor='externalIds' className={labelCssStyles}>
-            External IDs (JSON, e.g., {`{"prom": "123"}`})
-          </label>
-          <input
-            type='text'
-            name='externalIds'
-            placeholder='External IDs (optional)'
-            onChange={handleChange}
-            value={formData.externalIds || '{}'}
             className={inputCssStyles}
           />
 

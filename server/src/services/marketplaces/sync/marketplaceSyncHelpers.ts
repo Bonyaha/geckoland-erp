@@ -7,7 +7,6 @@ import type {
   MarketplaceSyncStatus,
   MarketplaceUpdateResult,
   KnownMarketplace,
-  ProductExternalIds,
 } from '../../../types/marketplaces'
 import { normalizeQuantity } from '../../../utils/helpers/normalizeQuantity'
 
@@ -122,7 +121,7 @@ export const initializeMarketplaceQuantitiesOptimized = async () => {
  *
  * @remarks
  * This function should be run periodically or when product mappings need
- * to be refreshed. It updates the externalIds.rozetka field for matching products.
+ * to be refreshed. It updates the rozetkaItemId rozetkaRzItemId field for matching products.
  *
  * @throws {Error} If unable to fetch Rozetka products or update database
  *
@@ -171,23 +170,10 @@ export async function syncRozetkaProductIds() {
 
         // Loop through each product found with that SKU
         for (const productToUpdate of existingProducts) {
-          /* const currentExternalIds = (productToUpdate.externalIds as any) || {}
-
-          const rozetkaData = {
-            rz_item_id: String(rozetkaProduct.rz_item_id),
-            item_id: String(rozetkaProduct.item_id),
-          } */
-
-          /* const newExternalIds = {
-            ...currentExternalIds,
-            rozetka: rozetkaData,
-          } */
-
           // Update each product using its actual primary key, `productId`
           await prisma.products.update({
             where: { productId: productToUpdate.productId },
             data: {
-              externalIds: {},
               rozetkaItemId: String(rozetkaProduct.item_id),
               rozetkaRzItemId: String(rozetkaProduct.rz_item_id),
             },
@@ -229,7 +215,6 @@ export const ALL_MARKETPLACES: readonly KnownMarketplace[] = ['prom', 'rozetka']
 //NEW: Optimized helper using denormalized indexed columns
 /**
  * Check if a product has marketplace links using denormalized indexed columns.
- * This is MUCH faster than querying externalIds JSON field.
  * 
  * Uses B-tree indexes on promId, rozetkaItemId, rozetkaRzItemId for instant lookups.
  * 
