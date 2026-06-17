@@ -254,8 +254,10 @@ export interface ProductSyncResult {
  */
 export interface PromProductData {
   productId: string
-  sku?: string | null 
+  sku?: string | null
   promId?: string | null
+  rozetkaItemId?: string | null
+  rozetkaRzItemId?: string | null
   name: string
   price: string
   priceOld?: string | null

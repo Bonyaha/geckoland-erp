@@ -82,7 +82,7 @@ model Products {
   name             String
   price            Decimal      @db.Decimal(10, 2)
   stockQuantity    Int
-  externalIds      Json
+  externalIds      Json?
   promId           String?      @unique
   rozetkaItemId    String?
   rozetkaRzItemId  String?
