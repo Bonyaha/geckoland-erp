@@ -46,10 +46,10 @@ async function updateProductsExternalIds() {
           ...product,
           rozetkaItemId: matchingRozetkaData.item_id
             ? String(matchingRozetkaData.item_id)
-            : null, //set scalar Rozetka item_id instead of meaningful externalIds.rozetka.
+            : null, //set scalar Rozetka item_id
           rozetkaRzItemId: matchingRozetkaData.rz_item_id
             ? String(matchingRozetkaData.rz_item_id)
-            : null, //set scalar Rozetka rz_item_id instead of meaningful externalIds.rozetka
+            : null, //set scalar Rozetka rz_item_id
         }
       } else {
         notFoundCount++
@@ -109,10 +109,10 @@ export async function enrichWithRozetkaIds(
         ...product,
         rozetkaItemId: matchingRozetkaData.item_id
           ? String(matchingRozetkaData.item_id)
-          : null, //set scalar Rozetka item_id instead of meaningful externalIds.rozetka.
+          : null, //set scalar Rozetka item_id
         rozetkaRzItemId: matchingRozetkaData.rz_item_id
           ? String(matchingRozetkaData.rz_item_id)
-          : null, //set scalar Rozetka rz_item_id instead of meaningful externalIds.rozetka.
+          : null, //set scalar Rozetka rz_item_id
       }
     }
     // Keep the product as is if no match found
