@@ -21,7 +21,41 @@ router.get(
   })
 )
 
-// Step 2: Handle the callback with the authorization code
+// Step 2: Handle Google's browser redirect directly (GET).
+// Google sends the user's browser here after they approve access,
+// e.g. /api/gmail/callback?code=4/xxxx&scope=...
+// This lets the whole flow finish right in the browser tab.
+router.get(
+  '/callback',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { code, error } = req.query as { code?: string; error?: string }
+
+    if (error) {
+      res
+        .status(400)
+        .send(`<h2>❌ Authorization failed</h2><p>Google returned: ${error}</p>`)
+      return
+    }
+
+    if (!code) {
+      res.status(400).send('<h2>❌ No authorization code received</h2>')
+      return
+    }
+
+    try {
+      await saveToken(code)
+      res.send(`
+        <h2>✅ Gmail authorization successful</h2>
+        <p>Token saved. Now start the Gmail watch:</p>
+        <pre>curl -X POST http://localhost:8001/api/gmail/start-watch</pre>
+      `)
+    } catch (err: any) {
+      console.error('❌ Failed to save token from callback:', err)
+      res.status(500).send(`<h2>❌ Failed to save token</h2><p>${err.message}</p>`)
+    }
+  })
+)
+
 router.post(
   '/callback',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {

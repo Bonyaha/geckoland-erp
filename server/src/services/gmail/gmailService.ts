@@ -6,6 +6,7 @@ import { promises as fs } from 'fs'
 import { google } from 'googleapis'
 import type { OAuth2Client } from 'googleapis-common'
 import { config, GMAIL_SCOPES } from '../../config/environment'
+import { saveLastHistoryId } from '../../utils/gmailHistoryStore'
 
 const TOKEN_PATH = config.paths.gmailTokenFile
 
@@ -283,6 +284,15 @@ export async function startGmailWatch() {
     // The response includes an 'expiration' timestamp.
     const expirationDate = new Date(parseInt(res.data.expiration || '0'))
     console.log('⏰ Watch expires:', expirationDate.toLocaleString())
+
+    // persist the historyId watch() gave us — this is the point
+    // Gmail considers "now," tracking begins from here forward.
+    if (res.data.historyId) {
+      await saveLastHistoryId(res.data.historyId)
+      console.log(
+        `💾 Synced history cursor to watch start: ${res.data.historyId}`,
+      )
+    }
 
     return res.data
   } catch (error: any) {

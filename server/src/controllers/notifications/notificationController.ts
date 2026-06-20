@@ -10,11 +10,14 @@ import crypto from 'crypto'
 import OrderService from '../../services/orders/orderService'
 import { gmailLogger } from '../../utils/gmailLogger'
 import { config } from '../../config/environment'
+import {
+  loadLastHistoryId,
+  saveLastHistoryId,
+} from '../../utils/gmailHistoryStore'
 
 // Initialize order service
 const orderService = new OrderService()
 
-const HISTORY_PATH = config.paths.historyFile
 const PROCESSED_MESSAGES_PATH = config.paths.processedMessagesFile
 
 // In-memory cache for recently processed messages (prevents duplicates within same session)
@@ -68,42 +71,6 @@ async function saveProcessedMessages(messageIds: Set<string>): Promise<void> {
   )
 }
 
-/**
- * Load the last known history ID from a file
- */
-async function loadLastHistoryId(): Promise<string | null> {
-  try {
-    const content = await fs.readFile(HISTORY_PATH)
-    const raw = content.toString().trim()
-    if (!raw) return null // Handle empty file
-
-    const data = JSON.parse(raw)
-    console.log('Loaded last history ID: ', data)
-
-    return data.historyId
-  } catch (error: unknown) {
-    if (
-      typeof error === 'object' &&
-      error !== null &&
-      'code' in error &&
-      (error as any).code === 'ENOENT'
-    ) {
-      return null
-    }
-    if (error instanceof SyntaxError) {
-      console.warn('gmail-history.json is corrupted, starting fresh')
-      return null
-    }
-    throw error
-  }
-}
-
-/**
- * Save the latest history ID to a file
- */
-async function saveLastHistoryId(historyId: string): Promise<void> {
-  await fs.writeFile(HISTORY_PATH, JSON.stringify({ historyId }))
-}
 
 /**
  * Fetches and caches the mapping of label names to label IDs
@@ -419,12 +386,27 @@ async function processNotification(req: Request): Promise<void> {
   const auth = await authorize()
   const gmail = google.gmail({ version: 'v1', auth })
 
-  // Fetch the history of changes since the last notification
-  const historyResponse = await gmail.users.history.list({
-    userId: 'me',
-    startHistoryId: lastHistoryId,
-    historyTypes: ['messageAdded'],
-  })
+  let historyResponse
+  try {
+    historyResponse = await gmail.users.history.list({
+      userId: 'me',
+      startHistoryId: lastHistoryId,
+      historyTypes: ['messageAdded'],
+    })
+  } catch (error: any) {
+    // Gmail only retains history for a limited window. If our stored
+    // historyId fell outside it, Google returns 404. We can't recover
+    // the missed messages, but we CAN resync so future notifications
+    // stop failing.
+    if (error.code === 404 || error.response?.status === 404) {
+      gmailLogger.warn(
+        `startHistoryId ${lastHistoryId} is too old / no longer retained by Gmail. Resyncing to ${newHistoryId}.`,
+      )
+      await saveLastHistoryId(newHistoryId)
+      return
+    }
+    throw error
+  }
 
   const historyRecords = historyResponse.data.history
   if (!historyRecords || historyRecords.length === 0) {
