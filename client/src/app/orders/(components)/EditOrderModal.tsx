@@ -340,7 +340,7 @@ const handleNpWarehouseSelect = (w: NpWarehouse) => {
     <>
       {/* Backdrop */}
       <div
-        className='fixed inset-0 bg-black/50 z-[200] flex items-start justify-center overflow-y-auto py-6 px-4'
+        className='fixed inset-0 bg-black/50 z-200 flex items-start justify-center overflow-y-auto py-6 px-4'
         onClick={onClose}
       >
         {/* Modal panel */}
@@ -515,7 +515,7 @@ const handleNpWarehouseSelect = (w: NpWarehouse) => {
                       }`}
                     >
                       {/* Name */}
-                      <div className='flex-1 min-w-[200px]'>
+                      <div className='flex-1 min-w-50'>
                         <div className='flex items-center gap-1.5'>
                           {outOfStock && (
                             <AlertTriangle className='w-4 h-4 text-red-500 shrink-0' />
@@ -581,7 +581,7 @@ const handleNpWarehouseSelect = (w: NpWarehouse) => {
                       </div>
 
                       {/* Price input */}
-                      <div className='flex items-center border border-gray-300 rounded px-2 py-1 bg-white min-w-[90px]'>
+                      <div className='flex items-center border border-gray-300 rounded px-2 py-1 bg-white min-w-22.5'>
                         <input
                           type='number'
                           value={item.unitPrice}
@@ -595,7 +595,7 @@ const handleNpWarehouseSelect = (w: NpWarehouse) => {
                       </div>
 
                       {/* Row total */}
-                      <div className='flex items-center gap-1 min-w-[100px] justify-end'>
+                      <div className='flex items-center gap-1 min-w-25 justify-end'>
                         <ChevronDown size={13} className='text-blue-500' />
                         <span className='text-sm font-bold text-gray-700'>
                           {(item.totalPrice || 0).toFixed(2)} грн.
