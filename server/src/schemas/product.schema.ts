@@ -5,7 +5,6 @@ import { Source } from '../config/database'
 // --- CREATE PRODUCT SCHEMA ---
 export const createProductBodySchema = z.object({
   // --- Required Fields (per Prisma schema) ---
-  productId: z.string().min(1, 'productId is required'),
   name: z.string().min(1, 'name is required'),
   price: z.number().nonnegative('price must be a non-negative number'),
   stockQuantity: z
@@ -129,7 +128,8 @@ export const updateBatchProductSchema = z.object({
 // ============================================
 
 export type ProductUpdateParams = z.infer<typeof productUpdateParamsSchema>
-export type CreateProductInput = z.infer<typeof createProductBodySchema>
+export type CreateProductInput = z.input<typeof createProductBodySchema>
+export type CreateProductData = z.output<typeof createProductBodySchema>
 export type ProductQueryParams = z.infer<typeof getProductsQuerySchema>['query']
 export type SingleProductUpdateInput = {
   productId: string

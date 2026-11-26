@@ -1,5 +1,4 @@
 // server/src/utils/helpers/mapCsvProductToEnriched.ts
-import { nanoid } from 'nanoid'
 
 /**
  * ============================================================
@@ -26,7 +25,6 @@ export interface ProductFromDbCSV {
   name: string
   price: string
   stockQuantity: string
-  source: string
   description: string
   mainImage: string
   images: string
@@ -47,98 +45,248 @@ export interface ProductFromDbCSV {
   promQuantity: string
   rozetkaQuantity: string
   costPrice: string
+  promId?: string
+  rozetkaItemId?: string
+  rozetkaRzItemId?: string
 }
 
 /**
  * ============================================================
- * MAPPER FUNCTIONS
+ * SHARED HELPERS
  * ============================================================
  */
 
-/**
- * Maps a row from the HugeProfit CSV export ('products.csv') to the product
- * shape expected by enrichAndInsertProducts().
- */
-export function mapHPCsvToProduct(row: ProductFromHPCSV): any {
-  const quantity = parseInt(row['Кількість'], 10) || 0
-  const price = String(parseFloat(row['Ціна']) || '0.00')
-  const costPrice = row['Собівр.'] ? String(parseFloat(row['Собівр.'])) : null
+function parseNumber(value: unknown, fallback = 0): number {
+  if (value === null || value === undefined || value === '') {
+    return fallback
+  }
 
-  const imageUrls = row['Зображення']
+  const parsed = Number(value)
+
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+function parseBoolean(value: unknown): boolean {
+  if (typeof value === 'boolean') return value
+
+  return ['true', '1', 'yes'].includes(
+    String(value ?? '')
+      .trim()
+      .toLowerCase(),
+  )
+}
+
+function parseJson<T>(value: unknown, fallback: T): T {
+  if (typeof value !== 'string' || value.trim() === '') {
+    return fallback
+  }
+
+  try {
+    return JSON.parse(value) as T
+  } catch {
+    return fallback
+  }
+}
+
+function parseDate(value: unknown): Date | null {
+  if (!value) return null
+
+  const date = new Date(String(value))
+
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+function parseImages(value: unknown): string[] {
+  if (!value) return []
+
+  const parsed = parseJson<unknown>(value, null)
+
+  if (Array.isArray(parsed)) {
+    return parsed
+      .filter((item): item is string => typeof item === 'string')
+      .filter(Boolean)
+  }
+
+  // Fallback for CSV exports where images are comma-separated.
+  return String(value)
+    .split(',')
+    .map((url) => url.trim())
+    .filter(Boolean)
+}
+
+/**
+ * ============================================================
+ * HUGEProfit CSV MAPPER
+ * ============================================================
+ *
+ * Maps products.csv from HugeProfit CRM.
+ *
+ * The ID is stable across imports. This is important because
+ * generating a random ID on every import creates duplicates.
+ */
+
+export function mapHPCsvToProduct(
+  row: ProductFromHPCSV,
+): Record<string, any> | null {
+  const externalId = String(row.ID ?? '').trim()
+
+  if (!externalId) {
+    console.warn('⚠️ Skipping HugeProfit CSV row without ID.')
+    return null
+  }
+
+  const quantity = Math.max(0, Math.trunc(parseNumber(row['Кількість'])))
+
+  const price = Math.max(0, parseNumber(row['Ціна']))
+
+  const costPrice =
+    row['Собівр.']?.trim() !== ''
+      ? Math.max(0, parseNumber(row['Собівр.']))
+      : undefined
+
+  const images = row['Зображення']
     ? row['Зображення']
         .split(',')
         .map((url) => url.trim())
-        .filter((url) => url)
+        .filter(Boolean)
     : []
 
   return {
-    productId: `${row.ID}_${nanoid(6)}`,
-    sku: row['Артикул'] || null,
-    name: row['Назва'] || 'Unnamed Product',
-    price,
-    costPrice,
-    stockQuantity: quantity,    
-    promId: { prom: null, rozetka: null },
-    description: row['Опис'] || null,
-    mainImage: imageUrls[0] || null,
-    images: imageUrls,
+    // Stable ID; existing records can also be matched by SKU.
+    productId: `hp_${externalId}`,
+
+    sku: row['Артикул']?.trim() || null,
+
+    name: row['Назва']?.trim() || 'Unnamed Product',
+
+    price: String(price),
+
+    costPrice: costPrice !== undefined ? String(costPrice) : undefined,
+
+    stockQuantity: quantity,
+
     available: quantity > 0,
+
+    description: row['Опис']?.trim() || null,
+
+    mainImage: images[0] || null,
+
+    images,
+
     currency: 'UAH',
+
+    measureUnit: row['Од.вим.']?.trim() || 'шт.',
+
+    categoryData: row['Категорія']?.trim()
+      ? {
+          hugeprofit: {
+            name: row['Категорія'].trim(),
+          },
+        }
+      : undefined,
+
     lastSynced: new Date(),
+
     needsSync: false,
-    categoryData: row['Категорія'] ? { name: row['Категорія'] } : null,
-    measureUnit: row['Од.вим.'] || 'шт',
-    promQuantity: null,
-    rozetkaQuantity: null,
-    priceOld: null,
-    pricePromo: null,
-    updatedPrice: null,
-    dateModified: new Date(),
-    lastPromSync: null,
-    lastRozetkaSync: null,
-    needsPromSync: false,
-    needsRozetkaSync: false,
   }
 }
 
 /**
- * Maps a row from the database CSV export ('productsFromDB.csv') to the
- * product shape expected by enrichAndInsertProducts().
+ * ============================================================
+ * DATABASE CSV MAPPER
+ * ============================================================
+ *
+ * Maps productsFromDB.csv.
+ *
+ * This mapper restores the database fields, including marketplace
+ * identifiers and existing internal product IDs.
  */
-export function mapDbCsvToProduct(row: ProductFromDbCSV): any {
-  const safeJsonParse = (jsonString: string) => {
-    try {
-      return JSON.parse(jsonString)
-    } catch {
-      return null
-    }
+
+export function mapDbCsvToProduct(
+  row: ProductFromDbCSV,
+): Record<string, any> | null {
+  const productId = String(row.productId ?? '').trim()
+
+  if (!productId) {
+    console.warn('⚠️ Skipping database CSV row without productId.')
+    return null
   }
 
+  const images = parseImages(row.images)
+
   return {
-    productId: row.productId,
+    productId,
+
     sku: row.sku || null,
+
     name: row.name || 'Unnamed Product',
-    price: String(row.price || '0.00'),
-    costPrice: row.costPrice ? String(row.costPrice) : null,
-    stockQuantity: parseInt(row.stockQuantity, 10) || 0,
+
+    price: String(Math.max(0, parseNumber(row.price))),
+
+    stockQuantity: Math.max(0, Math.trunc(parseNumber(row.stockQuantity))),
+
+    promId: row.promId || undefined,
+
+    rozetkaItemId: row.rozetkaItemId || undefined,
+
+    rozetkaRzItemId: row.rozetkaRzItemId || undefined,
+
     description: row.description || null,
-    mainImage: row.mainImage || null,
-    images: safeJsonParse(row.images) || [],
-    available: row.available === 'true',
-    priceOld: row.priceOld ? String(row.priceOld) : null,
-    pricePromo: row.pricePromo ? String(row.pricePromo) : null,
-    updatedPrice: row.updatedPrice ? String(row.updatedPrice) : null,
+
+    mainImage: row.mainImage || images[0] || null,
+
+    images,
+
+    available: parseBoolean(row.available),
+
+    priceOld:
+      row.priceOld !== '' && row.priceOld !== null
+        ? String(parseNumber(row.priceOld))
+        : null,
+
+    pricePromo:
+      row.pricePromo !== '' && row.pricePromo !== null
+        ? String(parseNumber(row.pricePromo))
+        : null,
+
+    updatedPrice:
+      row.updatedPrice !== '' && row.updatedPrice !== null
+        ? String(parseNumber(row.updatedPrice))
+        : null,
+
     currency: row.currency || 'UAH',
-    dateModified: row.dateModified ? new Date(row.dateModified) : null,
-    lastSynced: row.lastSynced ? new Date(row.lastSynced) : new Date(),
-    needsSync: row.needsSync === 'true',
-    categoryData: safeJsonParse(row.categoryData),
-    measureUnit: row.measureUnit || 'шт',
-    lastPromSync: row.lastPromSync ? new Date(row.lastPromSync) : null,
-    lastRozetkaSync: row.lastRozetkaSync ? new Date(row.lastRozetkaSync) : null,
-    needsPromSync: row.needsPromSync === 'true',
-    needsRozetkaSync: row.needsRozetkaSync === 'true',
-    promQuantity: null,
-    rozetkaQuantity: null,
+
+    dateModified: parseDate(row.dateModified),
+
+    lastSynced: parseDate(row.lastSynced) ?? new Date(),
+
+    needsSync: parseBoolean(row.needsSync),
+
+    categoryData: parseJson(row.categoryData, null),
+
+    measureUnit: row.measureUnit || 'шт.',
+
+    lastPromSync: parseDate(row.lastPromSync),
+
+    lastRozetkaSync: parseDate(row.lastRozetkaSync),
+
+    needsPromSync: parseBoolean(row.needsPromSync),
+
+    needsRozetkaSync: parseBoolean(row.needsRozetkaSync),
+
+    promQuantity:
+      row.promQuantity !== '' && row.promQuantity !== null
+        ? Math.trunc(parseNumber(row.promQuantity))
+        : null,
+
+    rozetkaQuantity:
+      row.rozetkaQuantity !== '' && row.rozetkaQuantity !== null
+        ? Math.trunc(parseNumber(row.rozetkaQuantity))
+        : null,
+
+    costPrice:
+      row.costPrice !== '' && row.costPrice !== null
+        ? String(parseNumber(row.costPrice))
+        : null,
   }
 }

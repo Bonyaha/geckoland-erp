@@ -18,14 +18,8 @@ async function fetchAllRozetkaProducts(accessToken: string): Promise<any[]> {
   const pageSize = 20 // Maximum items per page
   let totalPages = 1 // Will be updated from first response
 
-  //console.log('📦 Starting to fetch all products with pagination...')
-
   try {
     while (currentPage <= totalPages) {
-      /*   console.log(
-        `Fetching page ${currentPage}/${totalPages} (${pageSize} items per page)`
-      ) */
-
       const response = await axios.get(baseUrl, {
         headers,
         params: {
@@ -35,24 +29,16 @@ async function fetchAllRozetkaProducts(accessToken: string): Promise<any[]> {
         },
       })
 
-      // console.log('Response received:', response.data);
-
       const { content } = response.data
       const { items, _meta } = content
 
       // Update pagination info from first response
       if (currentPage === 1) {
         totalPages = _meta.pageCount
-        /* console.log(
-          `📊 Total products: ${_meta.totalCount}, Total pages: ${totalPages}`
-        ) */
       }
 
       if (items && items.length > 0) {
         allProducts.push(...items)
-        /*  console.log(
-          `✅ Fetched ${items.length} products from page ${currentPage}. Total so far: ${allProducts.length}`
-        ) */
       } else {
         console.log(`⚠️ No products returned from page ${currentPage}`)
       }
@@ -141,6 +127,7 @@ export async function fetchRozetkaProductsWithTransformation(): Promise<
         title: item.rz_category?.title_ua || null,
       },
     }))
+
 
     await fs.writeFile(
       'prisma/data/rozetkaProducts.json',

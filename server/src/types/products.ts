@@ -292,7 +292,6 @@ export interface PromProductData {
  *
  * @example
  * const rozetkaProduct: RozetkaProductData = {
- *   productId: '498694064',
  *   sku: 'LAPTOP-001',
  *   name: 'Gaming Laptop',
  *   price: '25000',

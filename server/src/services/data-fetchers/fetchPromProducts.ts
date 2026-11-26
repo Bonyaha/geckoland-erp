@@ -128,15 +128,14 @@ function checkForDuplicates(products: any[]) {
 
 //Function to fetch Prom products and transform them to match the database structure
 export async function fetchPromProductsWithTransformation(): Promise<
-  PromProductData[]
+PromProductData[]
 > {
   const allProducts = await fetchPromProducts()
-  //console.log('example: ', allProducts[0])
 
   const transformedProducts: PromProductData[] = allProducts.map(
     (product: any) => ({
       productId: String(product.id),
-      sku: product.sku || null,     
+      sku: product.sku || null,
       promId: String(product.id),
       name: product.name_multilang.uk || '',
       price: String(product.price || '0.00'),
@@ -145,7 +144,7 @@ export async function fetchPromProductsWithTransformation(): Promise<
       updatedPrice: product.price ? String(product.price) : null,
       stockQuantity: product.quantity_in_stock || 0,
       promQuantity: product.quantity_in_stock,
-      available: product.in_stock || false,
+      available: product.presence === 'available',
       description: product.description_multilang.uk || null,
       mainImage: product.main_image || null,
       images: product.images ? product.images.map((img: any) => img.url) : [],
@@ -173,7 +172,7 @@ export async function fetchPromProductsWithTransformation(): Promise<
     'prisma/data/promProducts.json',
     JSON.stringify(transformedProducts, null, 2)
   )
-  console.log('Prom products data saved to prisma/realData/promProducts.json')
+  console.log('Prom products data saved to prisma/data/promProducts.json')
   console.log('Total saved products: ', transformedProducts.length)
 
   return transformedProducts

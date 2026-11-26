@@ -77,7 +77,7 @@ model ClientComments {
 }
 
 model Products {
-  productId        String       @id
+  productId        String @id @default(dbgenerated("uuidv7()")) @db.Uuid
   sku              String?
   name             String
   price            Decimal      @db.Decimal(10, 2)
@@ -168,7 +168,7 @@ model Orders {
 model OrderItems {
   orderItemId          String   @id @default(cuid())
   orderId              String
-  productId            String
+  productId            String @db.Uuid
   sku                  String?
   productName          String
   productNameMultilang Json?
@@ -190,7 +190,7 @@ model OrderItems {
 
 model Sales {
   saleId      String      @id @default(cuid())
-  productId   String
+  productId   String @db.Uuid
   orderId     String?
   orderItemId String?
   createdAt   DateTime    @db.Timestamptz(6)
@@ -213,7 +213,7 @@ model Sales {
 
 model Purchases {
   purchaseId String   @id
-  productId  String
+  productId  String @db.Uuid
   timestamp  DateTime
   quantity   Int
   unitCost   Decimal  @db.Decimal(10, 2)

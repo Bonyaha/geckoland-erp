@@ -19,54 +19,74 @@ import { settingsService } from '../../settings/settingsService'
  * It first fetches the latest product data from Prom, updates the internal database accordingly (including handling orphaned products), and then fetches Rozetka data to update Rozetka-specific quantities.
  * Note: This function is designed to be run periodically (e.g., via a cron job) to ensure that the internal database remains in sync with marketplace data. It can also be used as a manual sync trigger when needed.
  */
+
 const updateAllMarketplaceQuantities = async () => {
   console.log('Updating all marketplace quantities for all products...')
 
-  // First, fetch and sync Prom products as main source
+  // 1. Fetch Prom products (Prom is the main stock source)
   console.log('🔄 Fetching Prom products data...')
   const promProducts = await fetchPromProductsWithTransformation()
   console.log(`Fetched ${promProducts.length} Prom products`)
 
-  const promProductIds = new Set(promProducts.map((p) => p.productId))
+  // Do not reconcile against an empty response.
+  // An empty response could otherwise mark every product as out of stock.
+  if (promProducts.length === 0) {
+    console.warn(
+      '⚠️ Prom returned no products. Skipping Prom and Rozetka quantity synchronization.',
+    )
+    return
+  }
 
-  // Find products in our DB that are NOT in the latest Prom fetch.
-  const productsInDb = await prisma.products.findMany({
-    select: { productId: true },
+  // 2. Build a set of Prom external IDs.
+  const promProductIds = new Set(
+    promProducts.map((product) => String(product.promId ?? product.productId)),
+  )
+
+  // 3. Find only DB products that are linked to Prom.
+  const promProductsInDb = await prisma.products.findMany({
+    where: {
+      promId: { not: null },
+    },
+    select: {
+      productId: true,
+      promId: true,
+    },
   })
 
-  const orphanedProductIds = productsInDb
-    .filter((p) => !promProductIds.has(p.productId))
-    .map((p) => p.productId)
+  // 4. Mark missing Prom listings as out of stock.
+  const orphanedProductIds = promProductsInDb
+    .filter(
+      (product) =>
+        product.promId !== null && !promProductIds.has(product.promId),
+    )
+    .map((product) => product.productId)
 
   if (orphanedProductIds.length > 0) {
     console.log(
-      `Found ${orphanedProductIds.length} orphaned products. Setting their stock to 0 instead of deleting.`,
+      `Found ${orphanedProductIds.length} missing Prom listings. Setting stock to 0.`,
     )
-    // Set their quantities to 0 to make them inactive.
+
     await prisma.products.updateMany({
       where: {
-        productId: {
-          in: orphanedProductIds,
-        },
+        productId: { in: orphanedProductIds },
       },
       data: {
         stockQuantity: 0,
         promQuantity: 0,
-        rozetkaQuantity: 0,
         available: false,
       },
     })
-    console.log(
-      `🗑️ Marked ${orphanedProductIds.length} orphaned products as out of stock.`,
-    )
   }
 
-  // Update database with Prom products (stockQuantity and add new products)
+  // 5. Update or create products using Prom's external ID as promId.
   for (const promProduct of promProducts) {
+    const { productId: promExternalProductId, ...productData } = promProduct
+
+    const promId = String(promProduct.promId ?? promExternalProductId)
     const quantity = normalizeQuantity(promProduct.stockQuantity)
 
     await prisma.products.upsert({
-      where: { productId: promProduct.productId },
+      where: { promId },
       update: {
         stockQuantity: quantity,
         promQuantity: quantity,
@@ -74,17 +94,21 @@ const updateAllMarketplaceQuantities = async () => {
         lastPromSync: new Date(),
       },
       create: {
-        ...promProduct,
-        stockQuantity: normalizeQuantity(promProduct.stockQuantity),
-        promId: promProduct.promId ?? promProduct.productId ?? null,
+        ...productData,
+        promId,
+        stockQuantity: quantity,
+        promQuantity: quantity,
+        available: quantity > 0,
         rozetkaItemId: promProduct.rozetkaItemId ?? null,
         rozetkaRzItemId: promProduct.rozetkaRzItemId ?? null,
+        lastPromSync: new Date(),
       },
     })
   }
+
   console.log(`✅ Updated/created ${promProducts.length} products from Prom`)
 
-  // Get all products after Prom sync
+  // 6. Get products after Prom synchronization.
   const allProducts = await prisma.products.findMany({
     select: {
       productId: true,
@@ -93,27 +117,30 @@ const updateAllMarketplaceQuantities = async () => {
       rozetkaRzItemId: true,
     },
   })
+
   console.log(
     `Found ${allProducts.length} products to update marketplace quantities`,
   )
 
   const productsWithRozetka = allProducts.filter(
-    (p) => p.rozetkaRzItemId != null,
+    (product) => product.rozetkaRzItemId != null,
   )
 
   console.log(`Found ${productsWithRozetka.length} products with Rozetka IDs`)
-  console.log('example of a product with Rozetka ID:', productsWithRozetka[0])
 
-  // Process Rozetka products (updates only rozetkaQuantity)
+  // 7. Update Rozetka quantities.
   if (productsWithRozetka.length > 0) {
     try {
       console.log('🔄 Fetching ALL Rozetka products data...')
       const rozetkaProducts = await fetchRozetkaProducts()
+
       const rozetkaProductsMap = new Map(
-        rozetkaProducts.map((p) => [p.rz_item_id.toString(), p]),
+        rozetkaProducts.map((product) => [
+          product.rz_item_id.toString(),
+          product,
+        ]),
       )
 
-      // Simplified transaction logic using pre-extracted rozetkaInfo
       await prisma.$transaction(
         productsWithRozetka.map((product) => {
           const rozetkaProduct = product.rozetkaRzItemId
@@ -134,6 +161,7 @@ const updateAllMarketplaceQuantities = async () => {
           })
         }),
       )
+
       console.log(`✅ Updated ${productsWithRozetka.length} Rozetka quantities`)
     } catch (error) {
       console.error('❌ Error with Rozetka update:', error)
@@ -142,6 +170,7 @@ const updateAllMarketplaceQuantities = async () => {
 
   console.log('✅ All marketplace quantities update completed')
 }
+
 
 /**
  * Applies a signed inventory adjustment for one or more products, updating

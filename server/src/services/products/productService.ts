@@ -1058,6 +1058,7 @@ class ProductService {
       }),
     ])
 
+//I think the check below is stupid, because it can't be true that marketplace products fetching is empty. There are products in the marketplaces, it's guaranteed. The only reason it would be empty is if the fetch failed, in which case we already logged the error and added it to result.errors. So this check is redundant and can be removed.
     // Early return if no new products to process
     if (promProducts.length === 0 && rozetkaProducts.length === 0) {
       console.log('ℹ️ No products fetched from marketplaces')
@@ -1096,7 +1097,7 @@ class ProductService {
     const newRozetkaProducts: RozetkaProductData[] = []
 
     for (const p of rozetkaProducts) {
-      const itemId = p.productId?.toString()
+      const itemId = p.rozetkaRzItemId
       const sku = p.sku
 
       // Add to SKU lookup for Prom matching
@@ -1108,7 +1109,7 @@ class ProductService {
       if (
         itemId &&
         !existingRozetkaIds.has(itemId) &&
-        !(sku && existingSKUs.has(sku))
+        !(sku && existingSKUs.has(sku)) //By De Morgan's Law, !(A && B) is equivalent to !A || !B
       ) {
         newRozetkaProducts.push(p)
       }
@@ -1132,9 +1133,10 @@ class ProductService {
 
       if (matchingRozetkaProduct) {
         // Combined Prom + Rozetka product
+        const { productId: _promExternalId, ...promData } = promProduct
 
         promCreateOperations.push({
-          ...promProduct,
+          ...promData,
           stockQuantity: normalizeQuantity(promProduct.stockQuantity),
           promQuantity: normalizeQuantity(promProduct.stockQuantity),
           rozetkaQuantity: normalizeQuantity(
@@ -1144,17 +1146,16 @@ class ProductService {
           lastRozetkaSync: new Date(),
           promId: promProduct.promId ?? promProduct.productId,
           rozetkaItemId: matchingRozetkaProduct.rozetkaItemId ?? null,
-          rozetkaRzItemId:
-            matchingRozetkaProduct.rozetkaRzItemId ??
-            matchingRozetkaProduct.productId ??
-            null,
+          rozetkaRzItemId: matchingRozetkaProduct.rozetkaRzItemId ?? null,
         })
 
         if (sku) matchedRozetkaSKUs.add(sku)
       } else {
         // Prom-only product
+        const { productId: _promExternalId, ...promData } = promProduct
+
         promCreateOperations.push({
-          ...promProduct,
+          ...promData,
           stockQuantity: normalizeQuantity(promProduct.stockQuantity),
           promQuantity: normalizeQuantity(promProduct.stockQuantity),
           lastPromSync: new Date(),
@@ -1202,15 +1203,16 @@ class ProductService {
     // Rozetka-only products batch
     if (rozetkaOnlyProducts.length > 0) {
       const rozetkaCreateOperations: Prisma.ProductsCreateInput[] =
-        rozetkaOnlyProducts.map((rozetkaProduct) => ({
-          ...rozetkaProduct,
-          stockQuantity: normalizeQuantity(rozetkaProduct.stockQuantity),
-          rozetkaQuantity: normalizeQuantity(rozetkaProduct.stockQuantity),
-          lastRozetkaSync: new Date(),
-          rozetkaItemId: rozetkaProduct.rozetkaItemId ?? null, //scalar Rozetka item_id is the source of truth.
-          rozetkaRzItemId:
-            rozetkaProduct.rozetkaRzItemId ?? rozetkaProduct.productId ?? null, //scalar Rozetka rz_item_id is the source of truth.
-        }))
+        rozetkaOnlyProducts.map(
+          ({ productId: _rozetkaExternalId, ...rozetkaData }) => ({
+            ...rozetkaData,
+            stockQuantity: normalizeQuantity(rozetkaData.stockQuantity),
+            rozetkaQuantity: normalizeQuantity(rozetkaData.stockQuantity),
+            lastRozetkaSync: new Date(),
+            rozetkaItemId: rozetkaData.rozetkaItemId ?? null,
+            rozetkaRzItemId: rozetkaData.rozetkaRzItemId ?? null,
+          }),
+        )
 
       createPromises.push(
         prisma
@@ -1257,42 +1259,6 @@ class ProductService {
     }
 
     return result
-  }
-
-  /**
-   * Internal helper: Creates a product from Prom data.
-   */
-  private async createProductFromProm(
-    promProduct: PromProductData,
-  ): Promise<void> {
-    await prisma.products.create({
-      data: {
-        ...promProduct,
-        stockQuantity: normalizeQuantity(promProduct.stockQuantity),
-        promQuantity: normalizeQuantity(promProduct.stockQuantity),
-        lastPromSync: new Date(),
-        promId: promProduct.promId ?? promProduct.productId ?? null, //scalar Prom ID is the source of truth.
-      },
-    })
-  }
-
-  /**
-   * Internal helper: Creates a product from Rozetka data.
-   */
-  private async createProductFromRozetka(
-    rozetkaProduct: RozetkaProductData,
-  ): Promise<void> {
-    await prisma.products.create({
-      data: {
-        ...rozetkaProduct,
-        stockQuantity: normalizeQuantity(rozetkaProduct.stockQuantity),
-        rozetkaQuantity: normalizeQuantity(rozetkaProduct.stockQuantity),
-        lastRozetkaSync: new Date(),
-        rozetkaItemId: rozetkaProduct.rozetkaItemId ?? null, //scalar Rozetka item_id is the source of truth.
-        rozetkaRzItemId:
-          rozetkaProduct.rozetkaRzItemId ?? rozetkaProduct.productId ?? null, //scalar Rozetka rz_item_id is the source of truth.
-      },
-    })
   }
 }
 

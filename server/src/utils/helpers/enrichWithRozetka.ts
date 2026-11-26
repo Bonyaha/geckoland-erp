@@ -18,9 +18,9 @@ export async function enrichWithRozetka(
   const rozetkaMap = new Map<string, RozetkaMatchData>()
 
   rozetkaProducts.forEach((p) => {
-    if (!p.sku) return
+    if (!p.sku || !p.rozetkaRzItemId) return
     rozetkaMap.set(p.sku, {
-      rz_item_id: p.rozetkaRzItemId ?? p.productId,
+      rz_item_id: p.rozetkaRzItemId,
       item_id: p.rozetkaItemId ?? null,
       quantity: p.stockQuantity,
       categoryId: p.categoryData?.id ?? null,
