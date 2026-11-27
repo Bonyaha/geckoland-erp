@@ -1,5 +1,7 @@
 // server/prisma/seeds/seed.ts
-import prisma from "../../src/config/database";
+
+/* If you ever need to run this seed file, be aware that the implementation may need changes because its backup data was deleted. We should not run it without reviewing its ID handling and relationships. */
+/* import prisma from "../../src/config/database";
 import fs from "fs";
 import path from "path";
 
@@ -20,4 +22,4 @@ async function main() {
     skipDuplicates: true,
   })
 }
-main().finally(() => prisma.$disconnect())
+main().finally(() => prisma.$disconnect()) */

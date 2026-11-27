@@ -1,10 +1,16 @@
 import axios from 'axios'
 import * as fs from 'fs/promises'
-import { all } from 'axios'
-import { solar } from 'googleapis/build/src/apis/solar'
-import { Source } from '../../config/database'
+import * as path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { config } from '../../config/environment'
 import { PromProductData } from '../../types/products'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+// Resolve server/prisma/data relative to this file.
+// fetchPromProducts.ts is in server/src/services/data-fetchers/
+const dataDirectory = path.resolve(__dirname, '../../../prisma/data')
 
 //Function to fetch Prom products without transformation
 export async function fetchPromProducts() {
@@ -168,12 +174,18 @@ PromProductData[]
     }),
   )
 
+  const outputPath = path.join(dataDirectory, 'promProducts.json')
+
+  await fs.mkdir(dataDirectory, { recursive: true })
+
   await fs.writeFile(
-    'prisma/data/promProducts.json',
-    JSON.stringify(transformedProducts, null, 2)
+    outputPath,
+    JSON.stringify(transformedProducts, null, 2),
+    'utf-8',
   )
-  console.log('Prom products data saved to prisma/data/promProducts.json')
-  console.log('Total saved products: ', transformedProducts.length)
+
+  console.log(`Prom products data saved to ${outputPath}`)
+  console.log('Total saved products:', transformedProducts.length)
 
   return transformedProducts
 }
